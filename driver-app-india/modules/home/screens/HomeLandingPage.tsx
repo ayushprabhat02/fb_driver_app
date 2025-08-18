@@ -1,149 +1,180 @@
 //dependencies
-import React from 'react';
-import {View, ScrollView, Platform} from 'react-native';
-import {vs, ms, ScaledSheet} from 'react-native-size-matters';
+import {BottomSheetModal} from '@gorhom/bottom-sheet';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
+import {
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  View,
+} from 'react-native';
+import {hasNotch} from 'react-native-device-info';
+import {ScaledSheet} from 'react-native-size-matters';
 
 //components
 import {
-  Divider,
-  ImageCard,
-  Text,
   Container,
-  GradientPrimary,
+  FocusAwareStatusBar,
+  SwitchProfileHeader,
 } from '@/components';
 
-//types and interfaces
-import {FBColorPalette} from '@/types/styles';
-interface HomeLandingPageProps {} // No props for now
+// service
+import {requestAppPermissions} from '@/utils/general';
 
-import {ForYouDecoration, BusinessHomeCard} from '../components/delivery';
+// store
+import {checkinStore, deliveryStore, homeStore, userStore} from '@/globalStore';
 
-//images
-const pumpImage = require('@/assets/home/pump.png');
-const bowserImage = require('@/assets/home/bowser.png');
-const giftImage = require('@/assets/home/gift.png');
-const evImage = require('@/assets/home/ev.png');
+import {UserService} from '@/services';
+import {FBBackground} from '@/types/styles';
+import {useFocusEffect} from '@react-navigation/native';
+import OrderSummaryCard from '../components/delivery/OrderSummaryCard';
+import homeService from '../services';
 
-const HomeLandingPage: React.FC<HomeLandingPageProps> = () => {
+const HomeLandingPage: React.FC = () => {
+  const [refreshing, setRefreshing] = React.useState(false);
+  const [checkBusinessLeadLoader, setCheckBusinessLeadLoader] =
+    useState<boolean>(false);
+  const loggedInUser = userStore.use.loggedInUser();
+  const driverVehicleId = checkinStore.use.driverVehicleId();
+  const deliveryStats = homeStore.use.deliveryStats();
+  const selectedDate = deliveryStore.use.selectedDate();
+  const selectedSlot = deliveryStore.use.selectedSlot();
+  const showRepeatOrder = homeStore.use.showRepeatOrder();
+
+  const startLoader = homeStore.use.startLoader();
+  const stopLoader = homeStore.use.stopLoader();
+  const isOrderStatsLoading = homeStore.use.loaders().driverOrderStats;
+
+  const resetDeliveryStore = deliveryStore.use.resetDeliveryStore();
+
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    requestAppPermissions().then(response => {
+      if (response === 'granted') {
+        // fetchCurrentLocation();
+      }
+    });
+  }, []);
+
+  const onRefresh = React.useCallback(() => {
+    resetDeliveryStore();
+
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 2000);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      scrollViewRef?.current?.scrollTo({x: 0, y: 0, animated: true});
+    }, []),
+  );
+
+  // checking if user business lead exists
+  useEffect(() => {
+    if (loggedInUser?.length) {
+      UserService.checkIfUserExists({
+        phone_number: loggedInUser[0]?.phone_number,
+      })
+        .then(response => {
+          if (response.length === 3) {
+            const businessOrg = response[0]?.organization_users.filter(
+              orgUser => {
+                return orgUser.organization?.is_business;
+              },
+            );
+            if (
+              businessOrg?.length &&
+              !businessOrg[0]?.organization?.erp_code
+            ) {
+              polling();
+            }
+          }
+        })
+        .catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const polling = () => {
+    setCheckBusinessLeadLoader(true);
+    const timerID = setInterval(async () => {
+      if (loggedInUser?.length) {
+        await UserService.checkIfUserExists({
+          phone_number: loggedInUser[0].phone_number,
+        })
+          .then(res => {
+            if (res.length) {
+              const businessOrg = res[0]?.organization_users.filter(orgUser => {
+                return orgUser.organization?.is_business;
+              });
+
+              if (
+                businessOrg?.length &&
+                businessOrg[0]?.organization?.erp_code
+              ) {
+                clearInterval(timerID);
+                setCheckBusinessLeadLoader(false);
+              }
+            }
+          })
+          .catch(() => {
+            clearInterval(timerID);
+            setCheckBusinessLeadLoader(false);
+          });
+      }
+    }, 5000);
+  };
+
+  /**
+   * @description: fetch order stats for driver
+   */
+  const fetchOrderStats = async () => {
+    if (driverVehicleId) {
+      startLoader('driverOrderStats');
+      homeService
+        .fetchOrderStatsForDriver({
+          object: {
+            driver_vehicle_id: driverVehicleId,
+          },
+        })
+        .finally(() => {
+          stopLoader('driverOrderStats');
+        });
+    }
+  };
+
+  useEffect(() => {
+    fetchOrderStats();
+  }, [driverVehicleId]);
+
   return (
-    <GradientPrimary>
-      <ScrollView style={styles.body}>
-        <Container paddingHorizontal={20}>
-          {/* top image cards*/}
-          <View
-            style={{
-              flexDirection: 'row',
-              paddingHorizontal: ms(5),
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}>
-            <ImageCard
-              imageSource={pumpImage}
-              title="Drive-In"
-              description="Get best deals on pumps"
-              cardStyle={styles.lightCard} // Shorten type casting
-              titleStyle={{
-                fontSize: ms(18),
-                color: FBColorPalette.secondary,
-              }}
-              descriptionStyle={{
-                fontSize: ms(10),
-                marginTop: vs(5),
-                fontWeight: 'bold',
-                color: FBColorPalette.secondary,
-              }}
-            />
-            <ImageCard
-              imageSource={bowserImage}
-              title="Delivery"
-              description="Get doorstep fuel delivery"
-              cardStyle={styles.lightCard} // Shorten type casting
-              titleStyle={{
-                fontSize: ms(18),
-                color: FBColorPalette.secondary,
-              }}
-              descriptionStyle={{
-                fontSize: ms(10),
-                marginTop: vs(5),
-                fontWeight: 'bold',
-                color: FBColorPalette.secondary,
-              }}
-            />
-          </View>
+    <View style={{flex: 1, backgroundColor: FBBackground.white}}>
+      <FocusAwareStatusBar
+        translucent
+        backgroundColor={'transparent'}
+        barStyle="dark-content"
+      />
 
-          {/* refer now card*/}
-          <Divider height={24} />
-          <BusinessHomeCard />
+      <View style={styles.headerContainer}>
+        <SwitchProfileHeader />
+      </View>
 
-          {/* bottom image cards*/}
-          <Divider height={24} />
-          <View
-            style={{
-              flexDirection: 'row',
-              paddingHorizontal: ms(5),
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}>
-            <ImageCard
-              imageSource={giftImage}
-              title="Rewards"
-              description="Play and Earn"
-              cardStyle={styles.lightCard} // Shorten type casting
-              titleStyle={{
-                fontSize: ms(18),
-                color: FBColorPalette.secondary,
-              }}
-              descriptionStyle={{
-                fontSize: ms(10),
-                marginTop: vs(5),
-                fontWeight: 'bold',
-                color: FBColorPalette.secondary,
-              }}
-            />
-            <ImageCard
-              imageSource={evImage}
-              title="EV Charging"
-              description="Charge your electric vehicles"
-              cardStyle={styles.lightCard} // Shorten type casting
-              titleStyle={{
-                fontSize: ms(18),
-                color: FBColorPalette.secondary,
-              }}
-              descriptionStyle={{
-                fontSize: ms(10),
-                marginTop: vs(5),
-                fontWeight: 'bold',
-                color: FBColorPalette.secondary,
-              }}
-            />
-          </View>
-
-          {/* for you decoration */}
-          <Divider height={24} />
-          <ForYouDecoration />
-
-          {/* refer now card*/}
-          <Divider height={24} />
-
-          {/* bottom text */}
-          <Divider height={24} />
-          <Text
-            lines={2}
-            style={{fontSize: ms(60), paddingHorizontal: ms(5)}}
-            color="complementary">
-            Doorstep fuel delivery
-          </Text>
-
-          {/* footer text */}
-          <Divider height={10} />
-          <Text size="lg" color="darkGray" style={{textAlign: 'center'}}>
-            ❤️ Gurugram, Haryana
-          </Text>
-
-          <Divider height={40} />
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        ref={scrollViewRef}
+        style={styles.body}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{paddingBottom: 10}}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }>
+        <Container paddingHorizontal={10} style={{position: 'relative'}}>
+          <OrderSummaryCard />
         </Container>
       </ScrollView>
-    </GradientPrimary>
+    </View>
   );
 };
 
@@ -152,11 +183,21 @@ const styles = ScaledSheet.create({
     flex: '1@mvs',
     width: '100%',
     position: 'relative',
-    marginTop: '4@vs',
+    marginTop: hasNotch() ? 115 : 100,
+  },
+
+  headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    zIndex: 0,
+    width: '100%',
   },
   image: {
     width: '310@s',
-    height: '200@ms',
+    height: '120@ms',
     marginVertical: '5@vs',
     borderRadius: '10@ms',
   },
@@ -164,20 +205,7 @@ const styles = ScaledSheet.create({
     flexDirection: 'column',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  lightCard: {
-    backgroundColor: FBColorPalette.white,
-    color: FBColorPalette.secondary,
-    borderColor: FBColorPalette.complementary,
-    padding: 0,
-    borderRadius: '20@ms',
-    height: '190@vs',
-    width: '140@ms',
-    ...Platform.select({
-      android: {
-        elevation: 0,
-      },
-    }),
+    width: '100%',
   },
 });
 

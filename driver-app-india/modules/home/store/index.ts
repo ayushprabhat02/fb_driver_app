@@ -1,5 +1,6 @@
 // dependencies
 import {create} from 'zustand';
+import {FetchOrderStatsForDriverQuery} from '@/generated/graphql';
 
 // utils
 import createSelectors from '@/utils/selectors';
@@ -8,9 +9,10 @@ import createSelectors from '@/utils/selectors';
 import {LastCustomerOrderQuery} from '@/generated/graphql';
 import {DeliveryStat} from '../types';
 
-type LoaderTypes = 'lastCustomerOrder';
+type LoaderTypes = 'lastCustomerOrder' | 'driverOrderStats';
 
 type Loaders = {
+  driverOrderStats: boolean;
   lastCustomerOrder: boolean;
 };
 
@@ -20,6 +22,7 @@ type HomeStore = {
     | null;
 
   deliveryStats: DeliveryStat[];
+  driverOrderStats: FetchOrderStatsForDriverQuery['fetchOrderStatsForDriver'];
 
   userCoordinates: any;
   userLocationAddress: any;
@@ -46,9 +49,11 @@ const homeIntialState: HomeStore = {
   userCoordinates: {},
   userLocationAddress: {},
   showRepeatOrder: false,
+  driverOrderStats: null,
 
   loaders: {
     lastCustomerOrder: false,
+    driverOrderStats: false,
   },
 };
 

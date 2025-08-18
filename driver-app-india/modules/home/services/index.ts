@@ -4,7 +4,7 @@
  */
 
 // dependencies
-import {callQuery} from '@/utils/client';
+import {callMutation, callQuery} from '@/utils/client';
 
 // store
 import homeStore from '../store';
@@ -20,6 +20,11 @@ import {
   CustomerStatsDocument,
   CustomerStatsQuery,
   CustomerStatsQueryVariables,
+
+  // fetch order stats for driver
+  FetchOrderStatsForDriverMutationVariables,
+  FetchOrderStatsForDriverDocument,
+  FetchOrderStatsForDriverMutation,
 } from '@/generated/graphql';
 import {DeliveryStat} from '../types';
 
@@ -144,6 +149,22 @@ class HomeService {
     }));
 
     return response.customer_order_item;
+  }
+
+  public async fetchOrderStatsForDriver(
+    args: FetchOrderStatsForDriverMutationVariables,
+  ) {
+    const response: FetchOrderStatsForDriverMutation = await callMutation({
+      queryDocument: FetchOrderStatsForDriverDocument,
+      variables: {
+        ...args,
+      },
+    });
+
+    homeStore.setState(state => ({
+      ...state,
+      driverOrderStats: response?.fetchOrderStatsForDriver,
+    }));
   }
 }
 

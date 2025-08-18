@@ -9,7 +9,7 @@ import {
 import {Wallet, HouseLine, FileText} from 'phosphor-react-native';
 
 // components
-import {DeliveryLandingPage} from '@/modules/home/screens';
+import {HomeLandingPage} from '@/modules/home/screens';
 import {WalletDelivery} from '@/modules/wallet/delivery/screens';
 import {MyOrders} from '@/modules/order/delivery/screens';
 
@@ -102,7 +102,7 @@ const Home: React.FC<Props> = () => {
       />
       <TabNav.Screen
         name="home-tab"
-        component={DeliveryLandingPage}
+        component={HomeLandingPage}
         options={{
           headerShown: false,
           tabBarIcon: HomeTabIcon,

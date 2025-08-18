@@ -151,34 +151,6 @@ const SwitchProfileHeader: React.FC = () => {
           alignItems: 'center',
           justifyContent: 'space-between',
         }}>
-        {loader.setActiveDelOrgUser ? (
-          <SkeletonPlaceholder borderRadius={4} speed={1000}>
-            <SkeletonPlaceholder.Item
-              width={180}
-              height={32}
-              borderRadius={12}
-            />
-          </SkeletonPlaceholder>
-        ) : (
-          <Pressable
-            onPress={() => {
-              navigation.navigate('business');
-            }}
-            style={styles.profileName}>
-            <Text
-              size="lg"
-              weight="600"
-              lines={1}
-              style={{maxWidth: Platform.OS === 'android' ? '100%' : '85%'}}>
-              {activeDeliveryOrgUser?.organization?.is_business
-                ? `${activeDeliveryOrgUser?.organization?.name}`
-                : `${activeDeliveryOrgUser?.user?.first_name} ${activeDeliveryOrgUser?.user?.last_name}`}
-            </Text>
-
-            <CaretCircleDown size={24} color={FBColors.primary} />
-          </Pressable>
-        )}
-
         <Pressable
           onPress={() => navigation.navigate('settings')}
           style={styles.settingsBtn}>
@@ -190,7 +162,7 @@ const SwitchProfileHeader: React.FC = () => {
 };
 
 const styles = ScaledSheet.create({
-  container: {paddingTop: hasNotch() ? 50 : 35},
+  container: {paddingTop: hasNotch() ? 50 : 35, alignItems: 'flex-end'},
 
   settingsBtn: {
     width: 56,
