@@ -1,0 +1,44 @@
+query fetchSupportTicketsByOrgUserIds(
+  $limit: Int
+  $offset: Int
+  $organization_user_id: [uuid!]
+) {
+  support_tickets(
+    limit: $limit
+    offset: $offset
+    where: {organization_user_id: {_in: $organization_user_id}}
+    order_by: {created_at: desc}
+  ) {
+    id
+    is_active
+    message
+    created_at
+    organization_user_id
+    source
+    subject
+    support_ticket_erp_code
+    support_category_id
+    support_tickets_subcategory_id
+    support_tickets_subcategory {
+      id
+      subject
+    }
+    support_tickets_category {
+      category
+      id
+    }
+    support_tickets_photos {
+      id
+      url
+      support_ticket_id
+      is_active
+    }
+  }
+  support_tickets_aggregate(
+    where: {organization_user_id: {_in: $organization_user_id}}
+  ) {
+    aggregate {
+      count
+    }
+  }
+}

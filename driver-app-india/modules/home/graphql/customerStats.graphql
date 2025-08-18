@@ -1,0 +1,120 @@
+query customerStats(
+  $state: [customer_order_item_state_enum!]
+  $organization_user_id: uuid
+) {
+  customer_order_item(
+    where: {
+      state: {_in: $state}
+      customer_order: {
+        organization_user: {user: {is_active: {_eq: true}}}
+        organization_user_id: {_eq: $organization_user_id}
+      }
+    }
+    order_by: {customer_order: {order_date: desc}}
+  ) {
+    product_variation_partner_localities_slot {
+      start_time
+      end_time
+      day_date
+    }
+    id
+    state
+    task {
+      driver_vehicle {
+        vehicle {
+          name
+          registration_number
+        }
+      }
+      state
+      task_values {
+        customer_asset {
+          id
+          capacity
+          name
+          description
+        }
+        key
+        value
+        url
+        quantity_dispensed
+        created_at
+      }
+    }
+    customer_order {
+      order_code
+      id
+      order_date
+      customer_order_customer_assets {
+        customer_asset {
+          id
+          capacity
+          name
+          description
+        }
+      }
+      organization_user {
+        user {
+          first_name
+          middle_name
+          last_name
+        }
+      }
+      organizationAddressByShippingAddressId {
+        instruction
+        landMark
+        name
+        house_number
+        location
+        address_line1
+        address_line2
+        street_address
+        city {
+          name
+        }
+        state {
+          name
+        }
+        country {
+          name
+        }
+        pincode
+      }
+      invoices {
+        invoiced_items {
+          actual_amount
+          actual_qty
+          created_at
+          customer_asset {
+            id
+            capacity
+            name
+            description
+          }
+        }
+        invoiced_items_aggregate {
+          aggregate {
+            sum {
+              actual_amount
+              actual_qty
+            }
+          }
+        }
+      }
+    }
+    actual_qty
+    actual_delivery_date
+    estimate_delivery_date
+    actual_amount
+    product_variation {
+      variation {
+        product_variations {
+          price
+          product {
+            name
+          }
+        }
+      }
+    }
+  }
+}

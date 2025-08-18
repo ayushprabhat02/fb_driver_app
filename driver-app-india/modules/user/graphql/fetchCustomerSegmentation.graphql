@@ -1,0 +1,12 @@
+query fetchCustomerSegmentationList($limit: Int, $offset: Int) {
+  customer_segmentation(
+    limit: $limit
+    offset: $offset
+    order_by: {rank_id: asc}
+  ) {
+    id
+    name
+    rank_id
+    sku
+  }
+}

@@ -1,0 +1,9 @@
+mutation verifyWalletTopup($object: WalletEasebuzzTopupVerifyInput!) {
+  walletEasebuzzTopupVerify(object: $object) {
+    status
+    wallet_id
+    wallet_transaction_id
+  }
+}
+
+# {"object": {"amount": "5000", "wallet_transaction_id": "d5143c7f-4b34-4277-b172-e51b16bd2741"}}

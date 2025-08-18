@@ -1,0 +1,79 @@
+query customerAsset(
+  $limit: Int = 100
+  $offset: Int = 0
+  $organization_user_id: uuid
+  $search_key: String
+) {
+  customer_asset(
+    limit: $limit
+    offset: $offset
+    order_by: {created_at: desc_nulls_last}
+    where: {
+      organization_user_id: {_eq: $organization_user_id}
+      _or: [
+        {name: {_ilike: $search_key}}
+        {description: {_ilike: $search_key}}
+        {slug: {_ilike: $search_key}}
+      ]
+    }
+  ) {
+    created_at
+    capacity
+    color
+    description
+    id
+    is_active
+    name
+    slug
+    organization_user {
+      id
+      total_limit
+      limit_used
+      role {
+        role
+      }
+      limit_used
+      user {
+        id
+        first_name
+        middle_name
+        last_name
+        phone_number
+        pan_number
+        email
+      }
+      organization {
+        id
+        name
+        pan_number
+        is_business
+        credit_days
+        allowed_credit_limit
+      }
+    }
+    asset_type {
+      id
+      name
+      slug
+      description
+    }
+    product {
+      name
+      id
+    }
+  }
+  customer_asset_aggregate(
+    where: {
+      organization_user_id: {_eq: $organization_user_id}
+      _or: [
+        {name: {_ilike: $search_key}}
+        {description: {_ilike: $search_key}}
+        {slug: {_ilike: $search_key}}
+      ]
+    }
+  ) {
+    aggregate {
+      count
+    }
+  }
+}

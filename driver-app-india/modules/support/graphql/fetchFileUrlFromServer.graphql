@@ -1,0 +1,5 @@
+query fetchFileUrlFromServer($file: FileInput!) {
+  fetchFile(file: $file) {
+    url
+  }
+}

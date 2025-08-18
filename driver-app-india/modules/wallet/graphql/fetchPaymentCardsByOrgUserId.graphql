@@ -1,0 +1,5 @@
+query fetchPaymentCardsByOrgUserId($organization_user_id: uuid!) {
+  fetchPaymentCards(object: {organization_user_id: $organization_user_id}) {
+    data
+  }
+}

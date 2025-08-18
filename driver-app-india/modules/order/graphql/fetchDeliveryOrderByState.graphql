@@ -1,0 +1,267 @@
+query fetchDeliveryOrderByState(
+  $state: [customer_order_state_enum!]
+  $limit: Int
+  $offset: Int
+  $organization_user_id: uuid
+) {
+  customer_order(
+    limit: $limit
+    offset: $offset
+    where: {
+      state: {_in: $state}
+      organization_user_id: {_eq: $organization_user_id}
+    }
+    order_by: {order_date: desc_nulls_last}
+  ) {
+    customer_purchase_order_number
+    organization_user {
+      id
+      organization_user_type
+      role_id
+      role {
+        role
+        id
+      }
+      id
+      is_owner
+      organization_id
+      organization {
+        is_business
+        cin_number
+        brand
+        brand_logo
+        name
+        is_post_paid
+        is_active
+        id
+        default_currency
+        pan_number
+        description
+        gst_number
+        holding_company
+        signed_invoice_on_email
+        technical_contact_email
+        technical_contact_full_name
+        technical_contact_phone_number
+      }
+      user_id
+      user {
+        email
+        middle_name
+        last_name
+        pan_number
+        phone_number
+        first_name
+        is_active
+      }
+    }
+    created_at
+    order_code
+    amount
+    amount_paid
+    amount_to_be_paid
+    invoices {
+      invoiced_items {
+        actual_amount
+        actual_qty
+        created_at
+        customer_asset {
+          id
+          capacity
+          name
+          description
+        }
+      }
+      invoiced_items_aggregate {
+        aggregate {
+          sum {
+            actual_amount
+            actual_qty
+          }
+        }
+      }
+    }
+    otp
+    is_otp_required
+    customer_order_customer_assets {
+      customer_asset {
+        id
+        capacity
+        name
+        description
+      }
+    }
+    billing_address_id
+    delivery_fee
+    delivery_preference
+    description
+    instruction
+    id
+    is_active
+    is_prepaid
+    name
+    order_date
+    service_tax
+    shipping_address_id
+    state
+    tax
+    customer_order_items {
+      actual_amount
+      actual_delivery_date
+      actual_qty
+      amount
+      created_at
+      delivery_fee
+      estimate_delivery_date
+      id
+      is_active
+      order_id
+      product_variation_id
+      product_variation {
+        id
+        is_active
+        product {
+          name
+          is_active
+          category {
+            description
+            id
+            is_active
+            name
+          }
+          sku
+          slug
+        }
+        variation {
+          is_active
+          description
+        }
+        expiry_date
+      }
+      qty
+      service_tax
+      state
+      task_id
+      task {
+        state
+        task_values {
+          id
+          task_id
+          key
+          value
+          quantity_dispensed
+          url
+          customer_asset {
+            name
+            id
+            is_active
+            color
+            capacity
+            registration_number
+            description
+            modal
+            invoiced_items {
+              actual_amount
+              actual_qty
+            }
+          }
+        }
+        id
+        driver_vehicle {
+          driver_id
+          vehicle {
+            registration_number
+          }
+          user {
+            first_name
+            middle_name
+            last_name
+            phone_number
+          }
+        }
+      }
+      tax
+      unit
+      product_variation_partner_localities_slot {
+        start_time
+        day_date
+
+        end_time
+        id
+      }
+    }
+    organization_address {
+      name
+      house_number
+      address_line1
+      address_line2
+      address_type
+      landMark
+      pincode
+      locality {
+        name
+        description
+      }
+      street_address
+      city {
+        code
+        id
+        name
+      }
+      city_id
+      country_id
+      country {
+        alpha_code2
+        id
+        name
+      }
+      location
+      instruction
+      state {
+        name
+      }
+    }
+    organizationAddressByShippingAddressId {
+      name
+      house_number
+      address_line1
+      address_line2
+      address_type
+      landMark
+      pincode
+      locality {
+        name
+        description
+      }
+      street_address
+      city {
+        code
+        id
+        name
+      }
+      city_id
+      country_id
+      country {
+        alpha_code2
+        id
+        name
+      }
+      location
+      instruction
+      state {
+        name
+      }
+    }
+  }
+  customer_order_aggregate(
+    where: {
+      state: {_in: $state}
+      organization_user_id: {_eq: $organization_user_id}
+    }
+    order_by: {order_date: desc}
+  ) {
+    aggregate {
+      count
+    }
+  }
+}

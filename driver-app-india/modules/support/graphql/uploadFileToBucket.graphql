@@ -1,0 +1,10 @@
+mutation uploadFileToBucket($file: StorageInput!) {
+  uploadFile(object: $file) {
+    contentType
+    signedUrl
+    storeUrl
+  }
+}
+
+# example
+# {"file": {"bucketName": "fb-compliance-storage", "fileName": "randomfilethatdoesntexists.png"}}

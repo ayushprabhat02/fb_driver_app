@@ -1,0 +1,39 @@
+query userByPhone($phone_number: String) {
+  user(limit: 1, offset: 0, where: {phone_number: {_eq: $phone_number}}) {
+    code
+    created_at
+    customer_code
+    delivery_otp
+    customer_segmentation_id
+    description
+    driver_code
+    email
+    erp_code
+    first_name
+    google_firebase_id
+    id
+    is_active
+    is_test
+    middle_name
+    license_number
+    last_name
+    pan_number
+    referral_code
+    profile_pic
+    phone_number
+    time_zone
+    organization_users {
+      id
+      is_owner
+      role {
+        role
+      }
+      customer_erp_code
+      organization {
+        is_business
+        erp_code
+        id
+      }
+    }
+  }
+}

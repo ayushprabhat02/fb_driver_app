@@ -1,0 +1,21 @@
+mutation payForOrderViaWallet(
+  $amount: numeric!
+  $order_id: uuid!
+  $wallet_id: uuid!
+) {
+  payThroughWallet(
+    object: {amount: $amount, order_id: $order_id, wallet_id: $wallet_id}
+  ) {
+    order_id
+    payment_id
+    status
+  }
+}
+
+# "data": {
+#         "payThroughWallet": {
+#             "order_id": "da1b9193-c173-4274-b5ad-f99c586ab86d",
+#             "payment_id": "41654419-9331-4a59-82aa-fab8f63243a3",
+#             "status": "PAID"
+#         }
+#     }

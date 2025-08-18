@@ -1,0 +1,21 @@
+query fetchDeliveryFees(
+  $object: deliveryFeesInput = {
+    organization_user_id: ""
+    product_variation_id: ""
+    qty: ""
+    shipping_address_id: ""
+  }
+) {
+  fetchDeliveryFees(object: $object) {
+    code
+    delivery_fees
+    discount
+    error
+    message
+    tax_amount
+    total_amount
+    custom_cgst
+    custom_igst
+    custom_sgst
+  }
+}

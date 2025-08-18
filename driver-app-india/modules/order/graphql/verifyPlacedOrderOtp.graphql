@@ -1,0 +1,8 @@
+query verifyPlacedOrderOtp($customer_order_id: uuid = "", $otp: numeric = "") {
+  verifyPlacedOrderOtp(
+    object: {customer_order_id: $customer_order_id, otp: $otp}
+  ) {
+    is_verified
+    customer_order_id
+  }
+}

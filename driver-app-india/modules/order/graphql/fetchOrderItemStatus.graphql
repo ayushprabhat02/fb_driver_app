@@ -1,0 +1,7 @@
+query fetchOrderItemStatus($customer_order_item_id: uuid!) {
+  fetchOrderItemStatus(object: {customer_order_item_id: $customer_order_item_id}) {
+    data
+  }
+}
+
+

@@ -1,0 +1,7 @@
+mutation axisBankCobrandedPaymentVerify($object: axisBankPaymentVerifyInput!) {
+  axisBankPaymentVerify(object: $object) {
+    status
+    wallet_id
+    wallet_transaction_id
+  }
+}

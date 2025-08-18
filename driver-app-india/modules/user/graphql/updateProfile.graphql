@@ -1,0 +1,43 @@
+mutation updateUserProfile(
+  $first_name: String
+  $last_name: String
+  $middle_name: String
+  $phone_number: String
+  $profile_pic: String
+  $id: uuid
+  $customer_segmentation_id: uuid
+  $pan_number: String
+  $referral_code: String
+  $email: String
+) {
+  update_user(
+    where: {id: {_eq: $id}}
+    _set: {
+      first_name: $first_name
+      last_name: $last_name
+      middle_name: $middle_name
+      phone_number: $phone_number
+      profile_pic: $profile_pic
+      customer_segmentation_id: $customer_segmentation_id
+      referral_code: $referral_code
+      pan_number: $pan_number
+      email: $email
+    }
+  ) {
+    returning {
+      description
+      first_name
+      last_name
+      middle_name
+      profile_pic
+      phone_number
+      referral_code
+      pan_number
+      email
+      customer_segmentation {
+        id
+        name
+      }
+    }
+  }
+}

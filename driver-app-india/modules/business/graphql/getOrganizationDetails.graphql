@@ -1,0 +1,49 @@
+query getOrganizationDetails {
+  organization_user {
+    id
+    is_active
+    is_owner
+    organization {
+      currency {
+        formatted_name
+        id
+        name
+      }
+      brand
+      brand_logo
+      cin_number
+      default_currency
+      delivery_charge_id
+      description
+      gst_number
+      head_office_general_email
+      head_office_general_phone_number
+      holding_company
+      id
+      holding_company_name
+      invoice_email
+      invoices_uploaded
+      name
+      pan_number
+      signed_invoice_on_email
+      technical_contact_phone_number
+      technical_contact_full_name
+      technical_contact_email
+    }
+    organization_id
+    user {
+      delivery_otp
+      description
+      first_name
+      id
+      is_active
+      last_name
+      middle_name
+      pan_number
+      phone_number
+      referral_code
+      profile_pic
+    }
+    user_id
+  }
+}

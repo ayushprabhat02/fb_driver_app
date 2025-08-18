@@ -1,0 +1,163 @@
+query customerOrderReportIndividual(
+  $orderDateStart: timestamp!
+  $orderDateEnd: timestamp!
+  $state: [customer_order_item_state_enum!]
+  $organization_user_id: uuid
+) {
+  customer_order_item(
+    where: {
+      _or: [
+        {estimate_delivery_date: {_gte: $orderDateStart, _lte: $orderDateEnd}}
+        {actual_delivery_date: {_gte: $orderDateStart, _lte: $orderDateEnd}}
+      ]
+      state: {_in: $state}
+      customer_order: {organization_user: {id: {_eq: $organization_user_id}}}
+    }
+    order_by: {customer_order: {order_date: asc}}
+  ) {
+    product_variation_partner_localities_slot {
+      start_time
+      end_time
+      day_date
+    }
+    customer_order_item_stateflows {
+      id
+      created_at
+      state
+    }
+    id
+    state
+    unit_price
+    task {
+      driver_vehicle {
+        vehicle {
+          name
+          registration_number
+        }
+      }
+      state
+      task_values {
+        customer_asset {
+          id
+          capacity
+          name
+          description
+        }
+        key
+        value
+        url
+        quantity_dispensed
+        created_at
+      }
+    }
+    unit_price
+    customer_order {
+      delivery_fee
+      voucher_discount
+      order_code
+      erp_code
+      customer_purchase_order_number
+      state
+      id
+      order_date
+      customer_order_customer_assets {
+        customer_asset {
+          id
+          capacity
+          name
+          description
+        }
+      }
+      organization_user {
+        organization_id
+        user {
+          first_name
+          middle_name
+          last_name
+        }
+      }
+      organization_address {
+        id
+        location
+        address_line1
+        address_line2
+      }
+      organizationAddressByShippingAddressId {
+        instruction
+        landMark
+        name
+        id
+        house_number
+        location
+        address_line1
+        address_line2
+        street_address
+        city {
+          name
+        }
+        state {
+          name
+        }
+        country {
+          name
+        }
+        pincode
+      }
+      invoices {
+        amount
+        delivery_fee
+        delivery_fee_no_tax
+        delivery_tax
+        discount_amount
+        invoiced_items {
+          actual_amount
+          actual_qty
+          created_at
+          customer_asset {
+            id
+            capacity
+            name
+            description
+          }
+        }
+        invoiced_items_aggregate {
+          aggregate {
+            sum {
+              actual_amount
+              actual_qty
+            }
+          }
+        }
+      }
+    }
+    actual_qty
+    actual_delivery_date
+    estimate_delivery_date
+    actual_amount
+    product_variation {
+      variation {
+        product_variations {
+          price
+          product {
+            name
+          }
+        }
+      }
+    }
+  }
+  customer_order_item_aggregate(
+    where: {
+      _or: [
+        {estimate_delivery_date: {_gte: $orderDateStart, _lte: $orderDateEnd}}
+        {actual_delivery_date: {_gte: $orderDateStart, _lte: $orderDateEnd}}
+      ]
+      state: {_in: $state}
+      customer_order: {organization_user: {id: {_eq: $organization_user_id}}}
+    }
+    order_by: {customer_order: {order_date: asc}}
+  ) {
+    aggregate {
+      count
+    }
+  }
+}

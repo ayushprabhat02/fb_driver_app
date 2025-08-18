@@ -1,0 +1,10 @@
+mutation fetchTicketDetailsFromERP(
+  $object: fetchSupportTicketErpInput = {support_ticket_id: ""}
+) {
+  fetchSupportTicketErp(object: $object) {
+    code
+    error
+    issue
+    message
+  }
+}

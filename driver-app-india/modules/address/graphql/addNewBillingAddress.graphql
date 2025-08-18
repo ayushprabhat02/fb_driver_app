@@ -1,0 +1,193 @@
+mutation addNewBillingAddress(
+  $address_line1: String
+  $address_line2: String
+  $city_id: uuid
+  $country_id: uuid
+  $house_number: String
+  $is_active: Boolean
+  $landMark: String
+  $location: point
+  $pincode: String
+  $organization_user_id: uuid
+  $state_id: uuid
+  $street_address: String
+  $name: String
+  $instruction: String
+  $address_type: address_type_enum
+  $gst_number: String
+  $ownership: String
+) {
+  insert_organization_address(
+    objects: {
+      address_line1: $address_line1
+      address_line2: $address_line2
+      country_id: $country_id
+      house_number: $house_number
+      is_active: $is_active
+      landMark: $landMark
+      location: $location
+      pincode: $pincode
+      organization_user_id: $organization_user_id
+      state_id: $state_id
+      city_id: $city_id
+      street_address: $street_address
+      name: $name
+      instruction: $instruction
+      address_type: $address_type
+      gst_number: $gst_number
+      ownership: $ownership
+    }
+  ) {
+    returning {
+      address_line1
+      address_line2
+      house_number
+      city {
+        name
+        id
+        district
+        organization_addresses {
+          address_line1
+          address_line2
+          city_id
+          country {
+            alpha_code2
+            alpha_code3
+            id
+            name
+            numeric_code_id
+            official_state
+          }
+          country_id
+          house_number
+          id
+          is_active
+          landMark
+          location
+          name
+          organization_user_id
+          pincode
+          state_id
+          street_address
+          address_type
+        }
+      }
+
+      city_id
+
+      country {
+        alpha_code2
+        alpha_code3
+        id
+        name
+        official_state
+        numeric_code_id
+      }
+      country_id
+
+      house_number
+      id
+      is_active
+      landMark
+      localities_id
+      location
+
+      name
+      organization_user_id
+      pincode
+      instruction
+      state_id
+      street_address
+      address_type
+
+      ownership
+      location
+      pincode
+
+      state {
+        code
+        country_id
+        id
+        name
+        numeric_code_id
+      }
+    }
+  }
+}
+
+# mutation addAddress(
+#   $address_line1: String
+#   $address_line2: String
+#   $city_id: uuid
+#   $country_id: uuid
+#   $house_number: String
+#   $is_active: Boolean
+#   $landMark: String
+#   $location: point
+#   $pincode: String
+#   $organization_user_id: uuid
+#   $state_id: uuid
+#   $street_address: String
+#   $name: String
+# ) {
+#   insert_organization_address(
+#     objects: {
+#       address_line1: $address_line1
+#       address_line2: $address_line2
+#       country_id: $country_id
+#       house_number: $house_number
+#       is_active: $is_active
+#       landMark: $landMark
+#       location: $location
+#       pincode: $pincode
+#       organization_user_id: $organization_user_id
+#       state_id: $state_id
+#       city_id: $city_id
+#       street_address: $street_address
+#       name: $name
+#     }
+#   ) {
+#     returning {
+#       address_line1
+#       address_line2
+#       location
+#       city {
+#         name
+#         id
+#         district
+#         organization_addresses {
+#           address_line1
+#           address_line2
+#           city_id
+#           country {
+#             alpha_code2
+#             alpha_code3
+#             id
+#             name
+#             numeric_code_id
+#             official_state
+#           }
+#           country_id
+#           house_number
+#           id
+#           is_active
+#           landMark
+#           location
+#           name
+#           organization_user_id
+#           pincode
+#           state {
+#             code
+#             country_id
+#             id
+#             name
+#             numeric_code_id
+#           }
+#           state_id
+#           street_address
+#           type
+#         }
+#       }
+#     }
+#   }
+# }

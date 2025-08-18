@@ -1,0 +1,15 @@
+mutation createDeliveryOrder($object: customer_order_insert_input!) {
+  insert_customer_order_one(object: $object) {
+    amount
+    amount_paid
+    amount_to_be_paid
+    id
+    delivery_fee
+    is_prepaid
+    name
+    order_date
+    service_tax
+    tax
+    category
+  }
+}

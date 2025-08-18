@@ -1,0 +1,195 @@
+query lastCustomerOrder($organization_user_id: uuid) {
+  customer_order_stateflow(
+    limit: 1
+    offset: 0
+    order_by: {created_at: desc}
+    where: {
+      state: {_eq: DELIVERED}
+      customer_order: {organization_user_id: {_eq: $organization_user_id}}
+    }
+  ) {
+    customer_order {
+      order_code
+      amount
+      amount_paid
+      amount_to_be_paid
+      otp
+      voucher_discount
+      is_otp_required
+      customer_order_customer_assets {
+        customer_asset {
+          capacity
+          color
+          description
+          id
+          is_active
+          name
+          slug
+          organization_user {
+            id
+            total_limit
+            limit_used
+            role {
+              role
+            }
+            limit_used
+            user {
+              id
+              first_name
+              middle_name
+              last_name
+              phone_number
+              pan_number
+              email
+            }
+            organization {
+              id
+              name
+              pan_number
+              is_business
+              credit_days
+              allowed_credit_limit
+            }
+          }
+          asset_type {
+            id
+            name
+            slug
+            description
+          }
+        }
+      }
+      invoices {
+        invoiced_items {
+          actual_amount
+          actual_qty
+          created_at
+          customer_asset {
+            id
+            capacity
+            name
+            description
+          }
+        }
+        invoiced_items_aggregate {
+          aggregate {
+            sum {
+              actual_amount
+              actual_qty
+            }
+          }
+        }
+      }
+      organizationAddressByShippingAddressId {
+        address_line1
+        address_line2
+        house_number
+        instruction
+        landMark
+        city {
+          id
+          district
+          code
+          name
+          state_id
+        }
+        organization_address_payment_methods {
+          customer_payment_method {
+            id
+            name
+            value
+          }
+        }
+        city_id
+        country {
+          alpha_code2
+          alpha_code3
+          id
+          name
+          official_state
+          numeric_code_id
+        }
+        country_id
+        house_number
+        id
+        is_active
+        landMark
+        localities_id
+        location
+        name
+        organization_user_id
+        pincode
+        state_id
+        street_address
+        address_type
+        state {
+          country_id
+          id
+          code
+          name
+          numeric_code_id
+        }
+      }
+      billing_address_id
+      delivery_fee
+      delivery_preference
+      description
+      instruction
+      id
+      is_active
+      is_prepaid
+      name
+      order_date
+      service_tax
+      shipping_address_id
+      state
+      tax
+      customer_order_items {
+        actual_amount
+        actual_delivery_date
+        actual_qty
+        amount
+        voucher_discount
+        created_at
+        delivery_fee
+        estimate_delivery_date
+        id
+        unit_price
+        is_active
+        order_id
+        product_variation_id
+        product_variation {
+          id
+          is_active
+          product {
+            name
+            description
+            is_active
+            category {
+              description
+              id
+              is_active
+              name
+            }
+            sku
+            slug
+          }
+          variation {
+            id
+            variation_name
+            slug
+            is_active
+            description
+          }
+          expiry_date
+        }
+        qty
+        service_tax
+        state
+        task_id
+        tax
+        unit
+      }
+    }
+  }
+}

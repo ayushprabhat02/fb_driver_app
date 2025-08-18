@@ -1,0 +1,7 @@
+{
+  "name": "driver_app_in",
+  "displayName": "driver_app_in",
+  "android": {
+    "softwareKeyboardLayoutMode": "pan"
+  }
+}

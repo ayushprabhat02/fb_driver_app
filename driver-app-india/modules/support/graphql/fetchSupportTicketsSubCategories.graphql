@@ -1,0 +1,10 @@
+query fetchSupportTicketsSubCategories($supportTicketsCategoryId: uuid) {
+  support_tickets_subcategory(
+    where: {support_tickets_category_id: {_eq: $supportTicketsCategoryId}}
+  ) {
+    id
+    is_active
+    subject
+    support_tickets_category_id
+  }
+}

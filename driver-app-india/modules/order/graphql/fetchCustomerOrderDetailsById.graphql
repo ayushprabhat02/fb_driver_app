@@ -1,0 +1,14 @@
+query fetchCustomerOrderDetailsById(
+  $order_id: uuid = "4cf66b77-ad5f-4fc2-b1d0-c0641dc812f5"
+  $organization_user_id: uuid = "b581d169-e10c-4824-b732-7651ee5e2c34"
+) {
+  fetchCustomerOrderDetailsById(
+    object: {order_id: $order_id, organization_user_id: $organization_user_id}
+  ) {
+    data
+  }
+}
+# {
+#   "order_id":"",
+#   "organization_user_id": "",
+# }

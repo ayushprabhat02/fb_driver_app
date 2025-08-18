@@ -1,0 +1,26 @@
+query checkIfBillingAddressExists(
+  $organization_user_id: uuid!
+  $address_line1: String!
+  $pincode: String!
+  $city_id: uuid!
+  $country_id: uuid!
+  $state_id: uuid!
+) {
+  organization_address(
+    where: {
+      is_active: {_eq: true}
+      organization_user_id: {_eq: $organization_user_id}
+      address_type: {_eq: BILLING}
+      address_line1: {_eq: $address_line1}
+      pincode: {_eq: $pincode}
+      city_id: {_eq: $city_id}
+      country_id: {_eq: $country_id}
+      state_id: {_eq: $state_id}
+      erp_code: {_is_null: false}
+    }
+  ) {
+    id
+    erp_code
+    location
+  }
+}

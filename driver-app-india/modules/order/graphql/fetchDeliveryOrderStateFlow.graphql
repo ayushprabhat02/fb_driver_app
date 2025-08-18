@@ -1,0 +1,12 @@
+query fetchDeliveryOrderStateflow($customerOrderItemId: uuid) {
+  customer_order_item_stateflow(
+    where: {order_item_id: {_eq: $customerOrderItemId}}
+  ) {
+    organization_user_id
+    order_item_id
+    created_at
+    last_modified
+    id
+    state
+  }
+}

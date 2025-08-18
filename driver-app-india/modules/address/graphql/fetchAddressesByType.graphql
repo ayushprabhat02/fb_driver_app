@@ -1,0 +1,58 @@
+query fetchAddressByType(
+  $address_type: address_type_enum
+  $organization_user_id: uuid
+) {
+  organization_address(
+    where: {
+      address_type: {_eq: $address_type}
+      organization_user_id: {_eq: $organization_user_id}
+    }
+    order_by: {created_at: desc}
+  ) {
+    created_at
+    address_line1
+    address_line2
+    house_number
+    address_type
+    city {
+      id
+      name
+      code
+    }
+    country {
+      id
+      name
+      alpha_code3
+      alpha_code2
+    }
+    country_id
+    house_number
+    id
+    organization_address_payment_methods {
+      customer_payment_method {
+        id
+        name
+        value
+      }
+    }
+    instruction
+    is_active
+    landMark
+    location
+    localities_id
+    name
+    locality {
+      area
+      name
+    }
+    pincode
+    organization_user_id
+    state {
+      code
+      id
+      name
+    }
+    street_address
+    gst_number
+  }
+}

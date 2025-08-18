@@ -1,0 +1,12 @@
+mutation checkWalletAmountExist(
+	$object: checkWalletAmountExitsInput!
+) {
+	checkWalletAmountExits(object: $object) {
+		block_amount
+		amount
+		is_amount_available
+		organization_user_id
+		wallet_id
+		is_invoice_pending
+	}
+}

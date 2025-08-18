@@ -1,0 +1,46 @@
+query checkServiceAblility($latitude: Float, $longitude: Float) {
+  partner(
+    where: {
+      partner_localities: {
+        locality: {
+          area: {
+            _st_contains: {type: "Point", coordinates: [$longitude, $latitude]}
+          }
+        }
+        is_active: {_eq: true}
+      }
+      category: {_eq: FRANCHISE}
+    }
+  ) {
+    id
+    name
+    is_fuelbuddy
+    partner_localities(
+      where: {
+        locality: {
+          area: {
+            _st_contains: {type: "Point", coordinates: [$longitude, $latitude]}
+          }
+        }
+      }
+    ) {
+      product_partner_localities_prices {
+        id
+        parent_id
+        product_variation {
+          product {
+            name
+          }
+        }
+      }
+      id
+      locality {
+        is_buddycan_delivery
+        is_minimum_order_quantity_enabled
+        minimum_order_quantity
+        area
+        name
+      }
+    }
+  }
+}

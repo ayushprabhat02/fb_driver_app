@@ -1,0 +1,14 @@
+export {default as DeliveryCheckout} from './DeliveryCheckout';
+export {default as DeliveryCartPage} from './DeliveryCartPage';
+export {default as DeliveryOrderTracking} from './DeliveryOrderTracking';
+export {default as SelectAddress} from './SelectAddress';
+export {default as AddAssetsNewUser} from './AddAssetsNewUser';
+export {default as AddShippingNewUser} from './AddShippingNewUser';
+export {default as AddBillingNewUser} from './AddBillingNewUser';
+export {default as PaymentSuccessful} from './PaymentSuccessful';
+export {default as IciciPaymentDelivery} from './IciciPaymentDelivery';
+export {default as IciciDeliverySuccess} from './IciciDeliverySuccess';
+export {default as IciciDeliveryFailure} from './IciciDeliveryFailure';
+export {default as AxisPaymentDelivery} from './AxisPaymentDelivery';
+export {default as AxisDeliverySuccess} from './AxisDeliverySuccess';
+export {default as AxisDeliveryFailure} from './AxisDeliveryFailure';

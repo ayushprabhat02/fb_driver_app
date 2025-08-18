@@ -1,0 +1,14 @@
+mutation cancelOrderByUser(
+  $cancellation_reason_id: uuid
+  $orderId: uuid
+) {
+  cancelOrderByUser(object:{
+    cancellation_reason_id: $cancellation_reason_id
+    orderId: $orderId
+  }) {
+    orderId
+    orderStatus
+    reason
+    updateStatus
+  }
+}

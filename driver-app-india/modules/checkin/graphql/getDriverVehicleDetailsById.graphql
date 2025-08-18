@@ -1,0 +1,53 @@
+query getDriverVehicleDetailsById($driver_vehicle_id: uuid!) {
+  driver_vehicle_by_pk(id: $driver_vehicle_id) {
+    user {
+      id
+      license_number
+    }
+    vehicle {
+      id
+      is_elocking_enable
+      fuel_tank_capacity
+      insurance_expire_date
+      is_active
+      is_mothership
+      location
+      model
+      name
+      rc_expire_date
+      registration_number
+      rfid
+      tanker_capacity
+      tanker_compartment_number
+      category
+      vehicle_type
+      vehicle_tank_types {
+        tank_type {
+          id
+          is_active
+          name
+          slug
+        }
+        tank_type_id
+        vehicle_tank_type_product_variations {
+          id
+          product_variation {
+            expiry_date
+            id
+            price
+            product_id
+            variation {
+              pack_size
+              is_active
+              id
+              slug
+              variation_type
+            }
+            variation_id
+          }
+        }
+      }
+      totalizer_reading
+    }
+  }
+}

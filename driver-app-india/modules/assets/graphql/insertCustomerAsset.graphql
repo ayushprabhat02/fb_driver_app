@@ -1,0 +1,85 @@
+mutation insertCustomerAsset(
+  $capacity: String
+  $color: String
+  $description: String
+  $is_active: Boolean
+  $name: String
+  $slug: String
+  $organization_user_id: uuid
+  $asset_type_id: uuid
+  $make: String
+  $modal: String
+  $state_id: uuid
+  $registration_number: String
+) {
+  insert_customer_asset(
+    objects: {
+      capacity: $capacity
+      color: $color
+      description: $description
+      is_active: $is_active
+      name: $name
+      slug: $slug
+      organization_user_id: $organization_user_id
+      asset_type_id: $asset_type_id
+      modal: $modal
+      make: $make
+      state_id: $state_id
+      registration_number: $registration_number
+    }
+  ) {
+    returning {
+      asset_type_id
+      capacity
+      color
+      description
+      id
+      name
+      slug
+      registration_number
+      organization_user_id
+      organization_user {
+        user {
+          first_name
+          id
+          last_name
+          middle_name
+        }
+      }
+    }
+  }
+}
+
+# mutation insert_customer_asset {
+#   insert_customer_asset(
+#     objects: {
+#       capacity: "100"
+#       color: "#FFFFFF"
+#       description: "this is car"
+#       is_active: true
+#       name: "Ford eco sport"
+#       slug: "car"
+#       organization_user_id: "af4c3a98-3e9c-4385-91ad-bb9ab3b2f50d"
+#       asset_type_id: "c9f3a30d-101c-4049-a98a-bfa86079ba0f"
+#     }
+#   ) {
+#     returning {
+#       asset_type_id
+#       capacity
+#       color
+#       description
+#       id
+#       name
+#       slug
+#       organization_user_id
+#       organization_user {
+#         user {
+#           first_name
+#           id
+#           last_name
+#           middle_name
+#         }
+#       }
+#     }
+#   }
+# }

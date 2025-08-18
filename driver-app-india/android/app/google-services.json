@@ -1,0 +1,258 @@
+{
+  "project_info": {
+    "project_number": "925454439986",
+    "project_id": "fuelbuddy-india",
+    "storage_bucket": "fuelbuddy-india.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:925454439986:android:e627f062035ba85a6e4e2b",
+        "android_client_info": {
+          "package_name": "com.fuelbuddy.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "925454439986-1rkl6pkut4uov0hncr729rhkr7vh0gkl.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.fuelbuddy.app",
+            "certificate_hash": "2ebd693433c2a399017bc2b72ae48a7c1c7153e3"
+          }
+        },
+        {
+          "client_id": "925454439986-3catch7v3vtjotmckn28fj1bhd48pubc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.fuelbuddy.app",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "925454439986-kpi8e80jgacif5rdi4cf987mj51k794t.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.fuelbuddy.app",
+            "certificate_hash": "75b5994a26620d332177910b958802682f604309"
+          }
+        },
+        {
+          "client_id": "925454439986-qmk2ohf1f3lvrmf8j4ecu4rj84m19pvu.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.fuelbuddy.app",
+            "certificate_hash": "2a2f51f0a82c5ef399022b8ac074101a0468bbff"
+          }
+        },
+        {
+          "client_id": "925454439986-tu5f601n2i9n511pmd7erltm2iks8urp.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDJvyllnIu_WuS_Ko8MzLeGlQzO45yo2HA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "925454439986-76vqd47oh1s6cv04ev0i96rldql18i8s.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "925454439986-17h0m2g96tl80k2o3831ljsogmccqmh9.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.customerAppTest"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:925454439986:android:386174cca87feb026e4e2b",
+        "android_client_info": {
+          "package_name": "in.driver.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "925454439986-tu5f601n2i9n511pmd7erltm2iks8urp.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDJvyllnIu_WuS_Ko8MzLeGlQzO45yo2HA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "925454439986-76vqd47oh1s6cv04ev0i96rldql18i8s.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "925454439986-17h0m2g96tl80k2o3831ljsogmccqmh9.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.customerAppTest"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:925454439986:android:f97cf9f35fbf1cec6e4e2b",
+        "android_client_info": {
+          "package_name": "in.fuelbuddy.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "925454439986-7angijv0eck6da4jdrr9o2cuhobij0oh.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "in.fuelbuddy.app",
+            "certificate_hash": "2a2f51f0a82c5ef399022b8ac074101a0468bbff"
+          }
+        },
+        {
+          "client_id": "925454439986-7t95dqdv9lp2kcmt96po6mfva5kp082m.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "in.fuelbuddy.app",
+            "certificate_hash": "9ad07114bb1a4f25844d256a1dd1ac1e1129dd24"
+          }
+        },
+        {
+          "client_id": "925454439986-97pjabtdrnjpgsu96f0ridr7tb6mh8mr.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "in.fuelbuddy.app",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "925454439986-jnmnmrvg9b3qjuneafeq5c20tubd3d6d.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "in.fuelbuddy.app",
+            "certificate_hash": "75b5994a26620d332177910b958802682f604309"
+          }
+        },
+        {
+          "client_id": "925454439986-r6pi9osokmg20s9r7l1t85oc1m3t93qn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "in.fuelbuddy.app",
+            "certificate_hash": "f8b9a16468cd66f7a7dc1bbe67277899b486dc2c"
+          }
+        },
+        {
+          "client_id": "925454439986-u6mmc3ofj2ajs695nknurifpfk714nk5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "in.fuelbuddy.app",
+            "certificate_hash": "2ebd693433c2a399017bc2b72ae48a7c1c7153e3"
+          }
+        },
+        {
+          "client_id": "925454439986-tu5f601n2i9n511pmd7erltm2iks8urp.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDJvyllnIu_WuS_Ko8MzLeGlQzO45yo2HA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "925454439986-76vqd47oh1s6cv04ev0i96rldql18i8s.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "925454439986-17h0m2g96tl80k2o3831ljsogmccqmh9.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.customerAppTest"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:925454439986:android:6eb2e1c1217e3c386e4e2b",
+        "android_client_info": {
+          "package_name": "in.fuelbuddy.fms"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "925454439986-2q4u0cn86412mccblnfc111mjp9gdcj6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "in.fuelbuddy.fms",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "925454439986-gse04aqvmuj1oecpmagpguina68r14en.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "in.fuelbuddy.fms",
+            "certificate_hash": "0744d91a737860fd3edd6683f3b5ff1e479fb477"
+          }
+        },
+        {
+          "client_id": "925454439986-utrbdj5a9dikhh6pu707p6091msl2qvi.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "in.fuelbuddy.fms",
+            "certificate_hash": "2a2f51f0a82c5ef399022b8ac074101a0468bbff"
+          }
+        },
+        {
+          "client_id": "925454439986-tu5f601n2i9n511pmd7erltm2iks8urp.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDJvyllnIu_WuS_Ko8MzLeGlQzO45yo2HA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "925454439986-76vqd47oh1s6cv04ev0i96rldql18i8s.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "925454439986-17h0m2g96tl80k2o3831ljsogmccqmh9.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.customerAppTest"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

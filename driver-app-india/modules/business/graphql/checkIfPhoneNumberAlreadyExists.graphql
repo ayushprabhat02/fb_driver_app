@@ -1,0 +1,25 @@
+query checkIfPhoneNumberAlreadyExists($id: uuid, $phone_number: String) {
+  organization_user(
+    where: {
+      id: {_eq: $id}
+      organization: {
+        organization_users: {user: {phone_number: {_eq: $phone_number}}}
+      }
+      organization_user_type: {_eq: "DELIVERY"}
+    }
+  ) {
+    id
+    organization {
+      id
+      organization_users {
+        user {
+          first_name
+          middle_name
+          last_name
+          id
+          phone_number
+        }
+      }
+    }
+  }
+}

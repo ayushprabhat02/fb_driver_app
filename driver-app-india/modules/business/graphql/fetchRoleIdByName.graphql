@@ -1,0 +1,6 @@
+query fetchRoleIdByName($role: String) {
+  role(where: {role: {_eq: $role}, is_active: {_eq: true}}) {
+    id
+    is_active
+  }
+}

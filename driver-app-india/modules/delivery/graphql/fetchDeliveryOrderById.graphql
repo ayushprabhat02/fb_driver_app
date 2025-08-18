@@ -1,0 +1,221 @@
+query fetchDeliveryOrderById($OrderId: uuid) {
+  customer_order(where: {id: {_eq: $OrderId}}) {
+    created_at
+    order_code
+    tax
+    delivery_fee
+    voucher_discount
+    invoices {
+      invoiced_items {
+        actual_amount
+        actual_qty
+        created_at
+        customer_asset {
+          id
+          capacity
+          name
+          description
+        }
+      }
+      invoiced_items_aggregate {
+        aggregate {
+          sum {
+            actual_amount
+            actual_qty
+          }
+        }
+      }
+    }
+    amount
+    amount_paid
+    amount_to_be_paid
+    otp
+    is_otp_required
+    customer_order_customer_assets {
+      customer_asset {
+        id
+        capacity
+        name
+        description
+        registration_number
+        asset_type_id
+      }
+    }
+    billing_address_id
+    delivery_fee
+    delivery_preference
+    description
+    instruction
+    id
+    is_active
+    is_prepaid
+    name
+    order_date
+    service_tax
+    shipping_address_id
+    state
+    tax
+    customer_order_items {
+      voucher_discount
+      unit_price
+      actual_amount
+      actual_delivery_date
+      actual_qty
+      amount
+      created_at
+      delivery_fee
+      estimate_delivery_date
+      id
+      is_active
+      order_id
+      product_variation_id
+      product_variation {
+        id
+        is_active
+        product {
+          name
+          is_active
+          category {
+            description
+            id
+            is_active
+            name
+          }
+          sku
+          slug
+        }
+        variation {
+          is_active
+          description
+        }
+        expiry_date
+      }
+      qty
+      service_tax
+      state
+      task_id
+      task {
+        state
+        task_values {
+          id
+          task_id
+          key
+          value
+          quantity_dispensed
+          url
+          customer_asset {
+            name
+            id
+            is_active
+            color
+            capacity
+            registration_number
+            description
+            modal
+            invoiced_items {
+              actual_amount
+              actual_qty
+            }
+          }
+        }
+        id
+        driver_vehicle {
+          driver_id
+          vehicle {
+            registration_number
+          }
+          user {
+            first_name
+            middle_name
+            last_name
+            phone_number
+          }
+        }
+      }
+      tax
+      unit
+      product_variation_partner_localities_slot {
+        start_time
+        day_date
+
+        end_time
+        id
+      }
+    }
+    organization_address {
+      name
+      house_number
+      address_line1
+      address_line2
+      address_type
+      landMark
+      pincode
+      locality {
+        name
+        description
+      }
+      street_address
+      city {
+        code
+        id
+        name
+      }
+      city_id
+      country_id
+      country {
+        alpha_code2
+        id
+        name
+      }
+      location
+      instruction
+      state {
+        name
+      }
+    }
+    organization_user {
+      user {
+        email
+        first_name
+        is_active
+        last_name
+        middle_name
+        pan_number
+        phone_number
+        profile_pic
+      }
+    }
+    organizationAddressByShippingAddressId {
+      id
+      name
+      house_number
+      address_line1
+      address_line2
+      address_type
+      landMark
+      pincode
+      locality {
+        name
+        description
+      }
+      street_address
+      city {
+        code
+        id
+        name
+      }
+      city_id
+      country_id
+      country {
+        alpha_code2
+        id
+        name
+      }
+      location
+      instruction
+      state {
+        name
+      }
+    }
+  }
+}

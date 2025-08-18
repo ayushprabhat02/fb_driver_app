@@ -1,0 +1,240 @@
+import {
+  FetchAllUserOrganizationsByTypeDocument,
+  FetchAllUserOrganizationsByTypeQuery,
+  FetchAllUserOrganizationsByTypeQueryVariables,
+  FetchFileUrlFromServerDocument,
+  FetchFileUrlFromServerQuery,
+  Support_Tickets,
+} from './../../../generated/graphql';
+/**
+ * @module Support
+ * @description This is the service file for the support module.
+ */
+
+// dependencies
+import {callQuery, callMutation} from '@/utils/client';
+import axios from 'axios';
+
+// store
+import supportStore from '../store';
+
+// graphql-documents
+import {
+  //categories
+  FetchSupportTicketsCategoriesQuery,
+  FetchSupportTicketsCategoriesDocument,
+
+  //sub categories
+  FetchSupportTicketsSubCategoriesDocument,
+  FetchSupportTicketsSubCategoriesQuery,
+  FetchSupportTicketsSubCategoriesQueryVariables,
+
+  //create support ticket
+  CreateSupportTicketMutationVariables,
+  CreateSupportTicketMutation,
+  CreateSupportTicketDocument,
+
+  //fetch support tickets
+  FetchSupportTicketsByOrgUserIdsQuery,
+  FetchSupportTicketsByOrgUserIdsDocument,
+  FetchSupportTicketsByOrgUserIdsQueryVariables,
+
+  //ticket erp details
+  FetchTicketDetailsFromErpMutation,
+  FetchTicketDetailsFromErpDocument,
+  FetchTicketDetailsFromErpMutationVariables,
+
+  //upload file
+  UploadFileToBucketMutation,
+  UploadFileToBucketDocument,
+
+  //fetch file
+} from '@/generated/graphql';
+
+/**
+ * @class SupportService
+ * @description This class represents the service for the support module.
+ */
+class SupportService {
+  private static instance: SupportService;
+
+  /**
+   * @method getInstance
+   * @description Returns the singleton instance of the SupportService class.
+   * @returns {SupportService} The singleton instance of the SupportService class.
+   */
+  public static getInstance(): SupportService {
+    if (!SupportService.instance) {
+      SupportService.instance = new SupportService();
+    }
+    return SupportService.instance;
+  }
+  /**
+   * @method fetchAllUserOrganizationsByType
+   * @description Retrieves all user organizations filtered by type.
+   * @args {FetchAllUserOrganizationsByTypeQueryVariables} args - The arguments for the query.
+   * @returns An array of user organization details.
+   */
+  public async fetchAllUserOrganizationsByType(
+    args: FetchAllUserOrganizationsByTypeQueryVariables,
+  ) {
+    const response: FetchAllUserOrganizationsByTypeQuery = await callQuery({
+      queryDocument: FetchAllUserOrganizationsByTypeDocument,
+      variables: {...args},
+    });
+    supportStore.setState({
+      allUserOrgsForSupportProfiles: response.organization_user,
+    });
+
+    return response;
+  }
+
+  /**
+   * @method fetchSupportTicketSubCategories
+   * @description Function to get support ticket by org user id
+   * @args FetchSupportTicketsByOrgUserIdsQueryVariables
+   */
+  public async fetchSupportTicketsByOrgUserIds(
+    args: FetchSupportTicketsByOrgUserIdsQueryVariables,
+  ) {
+    const response: FetchSupportTicketsByOrgUserIdsQuery = await callQuery({
+      queryDocument: FetchSupportTicketsByOrgUserIdsDocument,
+      variables: {...args},
+    });
+    const existingSupportTickets = supportStore.getState()?.supportTickets;
+    const fetchedSupportTickets = response.support_tickets;
+    const updatedSupportTickets = [
+      ...existingSupportTickets,
+      ...fetchedSupportTickets,
+    ].filter(
+      (ticket, index, self) =>
+        index === self.findIndex(t => t.id === ticket.id),
+    );
+
+    const maxCount = response.support_tickets_aggregate.aggregate
+      ?.count as number;
+    const totalFetchedCount = updatedSupportTickets.length;
+
+    supportStore.setState(state => ({
+      ...state,
+      supportTickets: updatedSupportTickets as Support_Tickets[],
+      supportTicketsCnt: maxCount,
+      supportTicketsHasMoreOrders:
+        fetchedSupportTickets.length === 0 || totalFetchedCount >= maxCount
+          ? false
+          : true,
+    }));
+    return response.support_tickets;
+  }
+
+  /**
+   * @method fetchSupportTicketCategories
+   * @description Function to get support ticket categories
+   * @args no args required
+   */
+  public async fetchSupportTicketCategories() {
+    const response: FetchSupportTicketsCategoriesQuery = await callQuery({
+      queryDocument: FetchSupportTicketsCategoriesDocument,
+      variables: {},
+    });
+    const formattedOptions = response.support_tickets_category.map(element => {
+      return {
+        option: element.category,
+        value: element.id,
+      };
+    });
+    supportStore.setState({supportTicketCategories: formattedOptions as any});
+    return response.support_tickets_category;
+  }
+
+  /**
+   * @method fetchSupportTicketSubCategories
+   * @description Function to get support ticket sub categories based on category id
+   * @args
+   */
+  public async fetchSupportTicketSubCategories(
+    args: FetchSupportTicketsSubCategoriesQueryVariables,
+  ) {
+    const response: FetchSupportTicketsSubCategoriesQuery = await callQuery({
+      queryDocument: FetchSupportTicketsSubCategoriesDocument,
+      variables: {...args},
+    });
+    const formattedSubTickets = response.support_tickets_subcategory.map(
+      element => {
+        return {
+          option: element.subject,
+          value: element.id,
+        };
+      },
+    );
+    supportStore.setState({
+      supportTicketSubCategories: formattedSubTickets as any,
+    });
+    return response.support_tickets_subcategory;
+  }
+
+  /**
+   * @method createSupportTicket
+   * @description create support ticket
+   * @args CreateSupportTicketMutationVariables
+   */
+  public async createSupportTicket(args: CreateSupportTicketMutationVariables) {
+    const response: CreateSupportTicketMutation = await callMutation({
+      queryDocument: CreateSupportTicketDocument,
+      variables: {...args},
+    });
+    return response.insert_support_tickets_one;
+  }
+
+  /**
+   * @method fetchTicketDetailsFromERP
+   * @description fetch ticket details from erp
+   * @args fetchTicketDetailsFromERP
+   */
+  public async fetchTicketDetailsFromERP(
+    args: FetchTicketDetailsFromErpMutationVariables,
+  ) {
+    const response: FetchTicketDetailsFromErpMutation = await callMutation({
+      queryDocument: FetchTicketDetailsFromErpDocument,
+      variables: {...args},
+    });
+    supportStore.setState({
+      erpTicketDetails: response.fetchSupportTicketErp,
+    });
+    return response.fetchSupportTicketErp?.message;
+  }
+
+  public async uploadFile(args: any) {
+    const {uploadFile}: UploadFileToBucketMutation = await callMutation({
+      queryDocument: UploadFileToBucketDocument,
+      variables: {
+        file: {
+          bucketName: 'fb-in-compliance-storage',
+          fileName: `${Date.now()}${args.fileName.replace(' ', '-')}`,
+          contentType: args.contentType,
+        },
+      },
+    });
+    await axios.put(`${uploadFile?.signedUrl}`, args.fileData, {
+      headers: {
+        'Content-Type': args.contentType,
+      },
+    });
+    const src = await this.fetchFile(uploadFile?.storeUrl);
+    return {src: src, storeUrl: uploadFile?.storeUrl};
+  }
+
+  public async fetchFile(url: string | null | undefined) {
+    const response: FetchFileUrlFromServerQuery = await callQuery({
+      queryDocument: FetchFileUrlFromServerDocument,
+      variables: {
+        file: {fileUrl: url as string},
+      },
+    });
+    return response.fetchFile?.url;
+  }
+}
+
+const supportService = SupportService.getInstance();
+
+export default supportService;

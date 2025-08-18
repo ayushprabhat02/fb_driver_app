@@ -1,0 +1,64 @@
+query fetchAllUserOrganizationsByType(
+	$limit: Int
+	$offset: Int
+	$distinct_on: [organization_user_select_column!] = organization_id
+	$organization_user_type: String
+) {
+	organization_user(
+		limit: $limit
+		offset: $offset
+		distinct_on: $distinct_on
+		where: {
+			is_active: { _eq: true }
+			organization_user_type: { _eq: $organization_user_type }
+		}
+	) {
+		organization_user_type
+		role_id
+		role {
+			role
+			id
+		}
+		id
+		is_owner
+		organization_id
+		organization {
+			is_credit_available
+			organization_segmentation {
+				name
+			}
+			is_business
+			cin_number
+			brand
+			brand_logo
+			name
+			is_post_paid
+			is_active
+			id
+			default_currency
+			pan_number
+			description
+			gst_number
+			holding_company
+			signed_invoice_on_email
+			technical_contact_email
+			technical_contact_full_name
+			technical_contact_phone_number
+		}
+		user_id
+		user {
+			email
+			middle_name
+			last_name
+			pan_number
+			phone_number
+			first_name
+			is_active
+		}
+	}
+	organization_user_aggregate(where: { is_active: { _eq: true } }) {
+		aggregate {
+			count
+		}
+	}
+}

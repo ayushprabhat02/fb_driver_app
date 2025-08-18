@@ -1,0 +1,23 @@
+query fetchAllCountries {
+  country(limit: 10) {
+    id
+    alpha_code3
+    alpha_code2
+    name
+    official_state
+    states(order_by: {name: asc_nulls_last}) {
+      cities {
+        code
+        district
+        id
+        name
+        state_id
+      }
+      country_id
+      name
+      numeric_code_id
+      id
+    }
+    numeric_code_id
+  }
+}

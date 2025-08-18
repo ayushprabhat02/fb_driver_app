@@ -1,0 +1,19 @@
+query fetchCancellationReasonsByReasonType(
+	$reasonType: reason_type_enum
+) {
+	reasons(
+		where: {
+			reason_type: { _eq: $reasonType }
+			is_active: { _eq: true }
+		}
+		order_by: { rank_id: asc }
+	) {
+		id
+		rank_id
+		reason
+		is_active
+	}
+}
+# {
+#   "reasonType": "CUSTOMER_ORDER"
+# }

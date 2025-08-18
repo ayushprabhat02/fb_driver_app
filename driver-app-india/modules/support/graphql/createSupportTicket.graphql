@@ -1,0 +1,29 @@
+mutation createSupportTicket($object: support_tickets_insert_input!) {
+  insert_support_tickets_one(object: $object) {
+    id
+    is_active
+    message
+    source
+    subject
+    support_tickets_subcategory {
+      id
+      subject
+      support_tickets_category {
+        category
+        id
+      }
+    }
+  }
+}
+
+# {
+#   "object": {
+#     "message": "",
+#     "source": "CUSTOMER",
+#     "subject": "",
+#     "support_category_id": "",
+#     "support_tickets_subcategory_id": "",
+#     "organization_user_id": "",
+#     "is_active": true
+#   }
+# }

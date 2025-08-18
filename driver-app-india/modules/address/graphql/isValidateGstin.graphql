@@ -1,0 +1,6 @@
+query isValidateGstin($state_id: uuid, $gstin: String!) {
+  isValidateGstin(object: {gstin: $gstin, state_id: $state_id}) {
+    gstin
+    status
+  }
+}

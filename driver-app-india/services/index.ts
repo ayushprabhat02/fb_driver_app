@@ -1,0 +1,10 @@
+export {default as UserService} from '@/modules/user/services';
+export {default as HomeService} from '@/modules/home/services';
+export {default as AddressService} from '@/modules/address/services';
+export {default as AssetService} from '@/modules/assets/services';
+export {default as LocationService} from '@/modules/location/services';
+export {default as DeliveryService} from '@/modules/delivery/services';
+export {default as BusinessService} from '@/modules/business/services';
+export {default as WalletService} from '@/modules/wallet/services';
+export {default as OrderService} from '@/modules/order/services';
+export {default as SupportService} from '@/modules/support/services';

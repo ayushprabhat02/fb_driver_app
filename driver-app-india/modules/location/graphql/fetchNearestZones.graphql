@@ -1,0 +1,35 @@
+query fetchNearestZones(
+  $latitude: Float
+  $longitude: Float
+  $distance_meters: Float!
+) {
+  partner(
+    where: {
+      partner_localities: {
+        locality: {
+          area: {
+            _st_d_within: {
+              distance: $distance_meters
+              from: {type: "Point", coordinates: [$longitude, $latitude]}
+            }
+          }
+        }
+        is_active: {_eq: true}
+      }
+      category: {_eq: FRANCHISE}
+    }
+  ) {
+    id
+    name
+    partner_localities(where: {is_active: {_eq: true}}) {
+      is_active
+      locality {
+        name
+        area
+        is_buddycan_delivery
+        is_minimum_order_quantity_enabled
+        minimum_order_quantity
+      }
+    }
+  }
+}

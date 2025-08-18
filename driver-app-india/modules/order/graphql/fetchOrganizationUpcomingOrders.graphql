@@ -1,0 +1,7 @@
+query fetchOrganizationUpcomingOrders($organization_id: uuid = "") {
+  fetchOrganizationUpcomingOrdersOtp(
+    object: {organization_id: $organization_id}
+  ) {
+    data
+  }
+}

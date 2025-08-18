@@ -1,0 +1,46 @@
+query fetchUserLedgerOrgId(
+  $limit: Int = 10
+  $offset: Int = 0
+  $where: user_ledger_bool_exp
+) {
+  user_ledger(
+    limit: $limit
+    offset: $offset
+    where: $where
+    order_by: {created_at: desc_nulls_last}
+  ) {
+    transaction_details
+    amount
+    created_at
+    currency_id
+    customer_payment_id
+    id
+    partner_payment_id
+    organization_user_id
+    payment_type
+    invoice {
+      id
+      amount
+      sales_invoice_erp_code
+      erp_sales_invoice_status
+      customer_order {
+        organizationAddressByShippingAddressId {
+          address_line1
+          address_line2
+          address_type
+        }
+        order_date
+        state
+        customer_order_items {
+          id
+          estimate_delivery_date
+        }
+      }
+    }
+  }
+  user_ledger_aggregate(where: $where) {
+    aggregate {
+      count
+    }
+  }
+}

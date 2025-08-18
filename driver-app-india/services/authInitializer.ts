@@ -1,0 +1,124 @@
+// src/services/authInitializer.ts
+
+import auth, {FirebaseAuthTypes} from '@react-native-firebase/auth';
+import Toast from 'react-native-toast-message';
+import {DateTime} from 'luxon';
+
+// Global Stores
+import {authStore, splashStore} from '@/globalStore';
+
+// Services & Utilities
+import {
+  checkHasuraId,
+  addHasuraClaimsViaRefreshToken,
+  signOut,
+} from '@/modules/auth/services';
+import {initializeClient} from '@/utils/client';
+
+// This function holds all the logic you had in SplashScreen
+const initializeAuthListener = () => {
+  const {
+    setGraphQLClient,
+    setFirebaseUser,
+    setAuthToken,
+    setXHasuraId,
+    stopLoader,
+    setIsNewUser,
+    resetAuthStore,
+  } = authStore.getState();
+
+  // Helper functions
+  const isNewUserCheck = (creationTime?: string, lastSignInTime?: string) => {
+    if (!creationTime || !lastSignInTime) return false;
+    const diff = DateTime.fromISO(lastSignInTime).diff(
+      DateTime.fromISO(creationTime),
+      ['seconds'],
+    );
+    return diff.seconds <= 15;
+  };
+
+  const fireRefreshToken = async (user: FirebaseAuthTypes.User | null) => {
+    // Logic to handle token refresh and claim setting
+    await addHasuraClaimsViaRefreshToken(3000, user?.uid as string, () => {
+      resetAuthStore();
+      signOut();
+      stopLoader('auth');
+    });
+
+    setTimeout(async () => {
+      const updatedToken = await user?.getIdToken(true);
+      const updatedTokenResult = await user?.getIdTokenResult(true);
+      const hasuraIdExists = checkHasuraId(updatedTokenResult);
+
+      if (!hasuraIdExists?.hasuraId) {
+        await fireRefreshToken(user); // Recursive call if claims not set yet
+      } else {
+        if (hasuraIdExists?.role !== 'driver') {
+          Toast.show({type: 'error', text1: 'Unauthorized account role.'});
+          setTimeout(() => {
+            signOut();
+            resetAuthStore();
+          }, 1500);
+          return;
+        }
+
+        const isNew = isNewUserCheck(
+          user?.metadata.creationTime,
+          user?.metadata.lastSignInTime,
+        );
+        setIsNewUser(isNew);
+        const client = initializeClient();
+        setGraphQLClient(client);
+        setXHasuraId(hasuraIdExists.hasuraId);
+        setAuthToken(updatedToken as string);
+        setFirebaseUser(user);
+      }
+    }, 500);
+  };
+
+  // The main listener
+  auth().onAuthStateChanged(async user => {
+    if (user) {
+      const tokenResult = await user.getIdTokenResult();
+      const hasuraIdExists = checkHasuraId(tokenResult);
+
+      if (!hasuraIdExists?.hasuraId) {
+        await fireRefreshToken(user);
+      } else {
+        const allowedRoles = ['driver', 'admin'];
+        // if (hasuraIdExists.role !== 'customer') {
+        if (!allowedRoles.includes(hasuraIdExists.role)) {
+          Toast.show({type: 'error', text1: 'Unauthorized account role.'});
+          setTimeout(() => signOut(), 1500);
+          return;
+        }
+
+        const isNew = isNewUserCheck(
+          user.metadata.creationTime,
+          user.metadata.lastSignInTime,
+        );
+        setIsNewUser(isNew);
+
+        setXHasuraId(hasuraIdExists.hasuraId);
+        const token = await user.getIdToken();
+        setAuthToken(token);
+        setFirebaseUser(user);
+
+        // This is where you set the client to switch navigators
+        const graphqlClient = initializeClient();
+        setGraphQLClient(graphqlClient);
+      }
+    } else {
+      // User is signed out, clear everything
+      setGraphQLClient(null);
+      resetAuthStore();
+    }
+
+    // After auth check is complete, hide the splash screen
+    setTimeout(() => {
+      splashStore.setState({isLoading: false});
+    }, 500); // A small delay to prevent screen flicker
+  });
+};
+
+export {initializeAuthListener};

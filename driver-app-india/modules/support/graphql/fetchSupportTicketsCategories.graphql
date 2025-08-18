@@ -1,0 +1,6 @@
+query fetchSupportTicketsCategories {
+  support_tickets_category {
+    id
+    category
+  }
+}

@@ -1,0 +1,34 @@
+query fetchDeliveryProductsWithPrices(
+  $id: uuid
+  $productname: String = "Diesel"
+) {
+  product_partner_localities_price(
+    where: {
+      id: {_eq: $id}
+      product_variation: {product: {name: {_eq: $productname}}}
+    }
+  ) {
+    id
+    sale_price
+    parent_id
+    product_variation_id
+    product_variation {
+      variation {
+        pack_size
+        id
+        slug
+        variation_type
+      }
+      product {
+        id
+        hsn_code
+        description
+        name
+      }
+    }
+    parent_id
+    partner_locality {
+      partner_id
+    }
+  }
+}

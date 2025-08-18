@@ -1,0 +1,45 @@
+mutation toggleAssetActivation($assetId: uuid, $isActive: Boolean) {
+  update_customer_asset(
+    where: {id: {_eq: $assetId}}
+    _set: {is_active: $isActive}
+  ) {
+    returning {
+      id
+      name
+      is_active
+    }
+  }
+}
+
+# {
+#   "customerid": "444640b3-e30e-4ab6-932e-16abca577aae",
+#   "isActive": true
+# }
+
+# mutation AssetActivation {
+#   update_customer_asset(
+#     where: { id: { _eq: "444640b3-e30e-4ab6-932e-16abca577aae" } }
+#     _set: { is_active: true }
+#   ) {
+#     returning {
+#       id
+#       name
+#       is_active
+#     }
+#   }
+# }
+
+# Response
+# {
+#   "data": {
+#     "update_customer_asset": {
+#       "returning": [
+#         {
+#           "id": "444640b3-e30e-4ab6-932e-16abca577aae",
+#           "name": "truck",
+#           "is_active": true
+#         }
+#       ]
+#     }
+#   }
+# }

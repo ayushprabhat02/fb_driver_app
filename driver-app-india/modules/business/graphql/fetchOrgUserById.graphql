@@ -1,0 +1,29 @@
+query fetchOrgUserById($id: uuid) {
+  organization_user(where: {id: {_eq: $id}}) {
+    organization {
+      is_business
+      is_credit_available
+      is_active
+      name
+      id
+      technical_contact_email
+      technical_contact_full_name
+    }
+    user {
+      first_name
+      last_name
+      id
+      email
+    }
+    user_id
+    is_owner
+    organization_id
+    id
+    is_active
+    organization_user_type
+    role_id
+    role {
+      role
+    }
+  }
+}

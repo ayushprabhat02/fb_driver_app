@@ -1,0 +1,9 @@
+mutation blockPoc(
+  $object: blockPocInput = {is_active: false, organization_user_id: ""}
+) {
+  blockPoc(object: $object) {
+    code
+    error
+    message
+  }
+}

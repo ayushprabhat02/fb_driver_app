@@ -1,0 +1,8 @@
+query validateGST($object: isValidateGstinInput!) {
+  isValidateGstin(object: $object) {
+    gstin
+    status
+  }
+}
+
+# {"object":{"gstin":"06AALFT6964F1ZR","is_tcs_gstin":false,"is_transporter_id":false}}

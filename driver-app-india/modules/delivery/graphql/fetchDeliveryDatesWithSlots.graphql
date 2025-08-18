@@ -1,0 +1,56 @@
+query fetchDeliveryDatesWithSlots(
+  $date: date
+  $latitude: Float
+  $longitude: Float
+) {
+  product_variation_partner_localities_slots(
+    where: {
+      day_date: {_gte: $date}
+      partner_locality: {
+        locality: {
+          area: {
+            _st_contains: {type: "Point", coordinates: [$longitude, $latitude]}
+          }
+        }
+      }
+    }
+  ) {
+    is_express_delivery_enable
+    express_delivery_fee
+    day_date
+    end_time
+    id
+    is_active
+    is_visible
+    order_limit
+    partner_locality {
+      is_active
+      partner {
+        id
+      }
+      locality {
+        id
+        is_active
+        name
+        state_localities {
+          id
+          numeric_code_id
+          name
+        }
+      }
+      slug
+      zone_name
+      partner_id
+    }
+    product_variation_id
+    start_time
+    product_variation {
+      expiry_date
+      id
+      is_active
+      price
+      product_id
+      variation_id
+    }
+  }
+}

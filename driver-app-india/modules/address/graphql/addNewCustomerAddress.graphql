@@ -1,0 +1,39 @@
+query addNewCustomerAddress(
+  $object: addCustomerAddressInput = {
+    city_id: ""
+    country_id: ""
+    organization_user_id: ""
+    ownership: ""
+    state_id: ""
+  }
+) {
+  addCustomerAddress(object: $object) {
+    address {
+      id
+    }
+    code
+    error
+    message
+  }
+}
+
+# {
+# 	"object": {
+#       "house_number": "dweff",
+#       "address_line1": "639, Udyog Vihar 3, Phase V, Udyog Vihar, Sector 19, Gurugram, Haryana 122008, India",
+#       "address_line2": "yoyooyoy",
+#       "city_id": "5e51aca9-fd3f-43f7-a16e-6085ab2491b2",
+#       "country_id": "b161a168-000a-4109-9b94-b70fec1fb233",
+#       "is_active": true,
+#       "landMark": "dfewfwfef",
+#       "location": "(77.08429251089768,28.50154758284854)",
+#       "pincode": "113223",
+#       "organization_user_id": "f70b39ad-7a51-480d-9652-fdd5e90e0397",
+#       "state_id": "e9aa1f76-a1f8-4e2d-9a8b-7ce72811a458",
+#       "street_address": "639, Udyog Vihar 3, Phase V, Udyog Vihar, Sector 19, Gurugram, Haryana 122008, India",
+#       "name": "home",
+#       "address_type": "SHIPPING",
+#       "ownership": "INDIVIDUAL",
+#       "instruction": "efrefref"
+#   }
+# }

@@ -1,0 +1,8 @@
+mutation iciciCoBrandedCardsPaymentInput($object: iciciCoBrandedCardsPaymentInput!) {
+  iciciCoBrandedCardsPayment(object: $object) {
+    amount
+    url
+    wallet_id
+    wallet_transaction_id
+  }
+}

@@ -1,0 +1,14 @@
+mutation toggleAddressActivation(
+  $orgAddressId: uuid
+  $is_Active: Boolean = false
+) {
+  update_organization_address(
+    where: {id: {_eq: $orgAddressId}}
+    _set: {is_active: $is_Active}
+  ) {
+    returning {
+      id
+      is_active
+    }
+  }
+}

@@ -1,0 +1,13 @@
+mutation pendingInvoices($object: postPaidInvoiceInput = { organization_id: "" }) {
+  fetchPostpaidInvoice(object: $object) {
+    code
+    error
+    message
+    totalOverDueAmt
+    overdueInvoice
+    invoice
+    totalPendingAmt
+    countOfOverDueInvoices
+    countOfPendingInvoices
+  }
+}

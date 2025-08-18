@@ -1,0 +1,8 @@
+query fetchSalesInvoicePdf($object: salesInvoicePdfInput = {}) {
+  fetchSalesInvoicePdf(object: $object) {
+    data
+    message
+    error
+    code
+  }
+}
