@@ -26,6 +26,7 @@
     "@eabdullazyanov/react-native-sms-user-consent": "^1.2.0",
     "@gorhom/bottom-sheet": "^4.6.1",
     "@hookform/resolvers": "^3.3.4",
+    "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-clipboard/clipboard": "^1.14.2",
     "@react-native-firebase/analytics": "19.3.0",
     "@react-native-firebase/app": "19.3.0",

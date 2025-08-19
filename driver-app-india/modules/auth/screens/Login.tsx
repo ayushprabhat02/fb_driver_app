@@ -20,6 +20,7 @@ import {
   orderStore,
   userStore,
   walletStore,
+  checkinStore,
 } from '@/globalStore';
 
 // types
@@ -40,6 +41,7 @@ const Login: React.FC<Props> = ({navigation}: Props) => {
   const resetOrderStore = orderStore.use.resetOrderStore();
   const resetUserStore = userStore.use.resetUserStore();
   const resetWalletStore = walletStore.use.resetWalletStore();
+  const resetCheckinStore = checkinStore.use.resetCheckinStore();
   // import second from '@/assets/auth/login-banner.png'
   useEffect(() => {
     // need to reset all stores before user logs in
@@ -52,6 +54,7 @@ const Login: React.FC<Props> = ({navigation}: Props) => {
     resetOrderStore();
     resetUserStore();
     resetWalletStore();
+    resetCheckinStore();
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

@@ -11,3 +11,8 @@ export const setActiveDelOrgUserId = (id: string) =>
 export const getActiveDelOrg = () => localStorage.getString('deliveryOrgId');
 export const setActiveDelOrg = (id: string) =>
   localStorage.set('deliveryOrgId', id);
+
+export const getDriverVehicleId = () => localStorage.getString('driverVehicleId');
+export const setDriverVehicleId = (id: string) =>
+  localStorage.set('driverVehicleId', id);
+export const clearDriverVehicleId = () => localStorage.delete('driverVehicleId');

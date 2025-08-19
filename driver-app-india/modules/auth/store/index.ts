@@ -10,6 +10,7 @@ type LoaderTypes = 'auth';
 
 type Loaders = {
   auth: boolean;
+  signOut: boolean;
 };
 
 type AuthStore = {
@@ -48,6 +49,7 @@ export const authIntialState: AuthStore = {
   // loading states
   loaders: {
     auth: false,
+    signOut: false,
   },
 };
 

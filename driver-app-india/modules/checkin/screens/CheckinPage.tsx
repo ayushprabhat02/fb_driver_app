@@ -27,23 +27,31 @@ import {RNCamera} from 'react-native-camera';
 import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
 import supportService from '@/modules/support/services';
 import {LoaderTypes} from '../store';
-import {useNavigation, NavigationProp} from '@react-navigation/native';
+import {useNavigation} from '@react-navigation/native';
 import BouncyCheckbox from 'react-native-bouncy-checkbox';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 
 type RootStackParamList = {
   home: undefined;
-  // Add other routes here if needed
 };
 
 const CheckinPage: React.FC = () => {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const driverVehicleId = checkinStore.use.driverVehicleId();
+  const isCheckedIn = checkinStore.use.isCheckedIn();
+
+  useEffect(() => {
+    if (isCheckedIn) {
+      navigation.navigate('home');
+    }
+  }, [isCheckedIn, navigation]);
+
   const scrollViewRef = useRef<ScrollView>(null);
   const cameraRef = useRef<RNCamera | null>(null);
   const odometerViewY = useRef(0);
   const [isSubmitState, setIsSubmitState] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   type ImageCaptureType = 'selfie' | 'refueller' | 'odometer' | 'totalizer';
 
   const [imageType, setImageType] = useState<ImageCaptureType | null>(null);
@@ -64,16 +72,15 @@ const CheckinPage: React.FC = () => {
   const isTotalizerImageUploading =
     checkinStore.use.loaders().isTotalizerImageUploading;
 
-  const driverVehicleId = checkinStore.use.driverVehicleId();
   const driverVehicleDetails = checkinStore.use.driverVehicleDetails();
 
   const isQuantityCheckEnabled = checkinStore.use.isQuantityCheckEnabled();
 
-  console.log('---driverVehicleDetails-----', driverVehicleDetails);
-
   const startLoader = checkinStore.use.startLoader();
   const stopLoader = checkinStore.use.stopLoader();
   const loaders = checkinStore.use.loaders();
+
+  console.log('----driverVehicleId--------', driverVehicleId);
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const {layoutMeasurement, contentOffset, contentSize} = event.nativeEvent;
@@ -105,6 +112,8 @@ const CheckinPage: React.FC = () => {
     ) {
       Alert.alert('Pls fill all details');
     } else {
+      // Mark check-in as completed explicitly
+      checkinStore.setState(state => ({...state, isCheckedIn: true}));
       navigation.navigate('home');
     }
   };
@@ -450,6 +459,6 @@ const styles = StyleSheet.create({
   },
   quantityCheckText: {
     textDecorationLine: 'none',
-    color: FBColors.text,
+    color: FBColors.darkGray,
   },
 });

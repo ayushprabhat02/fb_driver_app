@@ -1,5 +1,7 @@
 // dependencies
 import {create} from 'zustand';
+import {persist, createJSONStorage} from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // utils
 import createSelectors from '@/utils/selectors';
@@ -30,6 +32,8 @@ type CheckinStore = {
   odometerImageData: string | null;
   totalizerImageData: string | null;
   isQuantityCheckEnabled: boolean;
+  // New explicit completion flag for check-in state
+  isCheckedIn: boolean;
   loaders: Loaders;
 };
 
@@ -52,6 +56,8 @@ const checkinInitialState: CheckinStore = {
   isQuantityCheckEnabled: false,
   odometerImageData: null,
   totalizerImageData: null,
+  // Initially, user is not checked in
+  isCheckedIn: false,
   loaders: {
     isDriverVehicleIdLoading: false,
     isSelfieImageUploading: false,
@@ -61,24 +67,37 @@ const checkinInitialState: CheckinStore = {
   },
 };
 
-const checkinStore = create<CheckinStore & CheckinActions>(set => ({
-  ...checkinInitialState,
+const checkinStore = create(
+  persist<CheckinStore & CheckinActions>(
+    set => ({
+      ...checkinInitialState,
 
-  // loader actions
-  startLoader: (loaderType: LoaderTypes) =>
-    set(state => ({
-      ...state,
-      loaders: {...state.loaders, [loaderType]: true},
-    })),
+      // loader actions
+      startLoader: (loaderType: LoaderTypes) =>
+        set(state => ({
+          ...state,
+          loaders: {...state.loaders, [loaderType]: true},
+        })),
 
-  stopLoader: (loaderType: LoaderTypes) =>
-    set(state => ({
-      ...state,
-      loaders: {...state.loaders, [loaderType]: false},
-    })),
+      stopLoader: (loaderType: LoaderTypes) =>
+        set(state => ({
+          ...state,
+          loaders: {...state.loaders, [loaderType]: false},
+        })),
 
-  // reset checkin store
-  resetCheckinStore: () => set(checkinInitialState),
-}));
+      // reset checkin store
+      resetCheckinStore: () => set(checkinInitialState),
+    }),
+    {
+      name: 'checkin-storage',
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: state => ({
+        driverVehicleId: state.driverVehicleId,
+        // Persist check-in completion status to preserve UX across app reloads
+        isCheckedIn: state.isCheckedIn,
+      }) as any,
+    },
+  ),
+);
 
 export default createSelectors(checkinStore);
