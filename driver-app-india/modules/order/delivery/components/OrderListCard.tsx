@@ -117,7 +117,7 @@ const styles = ScaledSheet.create({
     borderWidth: 1,
     borderColor: '#3B82F6', // blue border
     marginBottom: '10@vs',
-    marginHorizontal: '12@s',
+    marginHorizontal: '0@s',
   },
   selectedCard: {
     backgroundColor: '#E8F0FF',

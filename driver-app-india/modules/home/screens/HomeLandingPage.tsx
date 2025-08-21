@@ -15,10 +15,11 @@ import {ScaledSheet} from 'react-native-size-matters';
 import {
   Container,
   FocusAwareStatusBar,
-  FullScreenLoader,
   SwitchProfileHeader,
   Button,
 } from '@/components';
+import {OrderListSkeleton} from '../components/SkeletonLoader';
+import CustomDateSelector from '../components/CustomDateSelector';
 
 // service
 import {requestAppPermissions} from '@/utils/general';
@@ -44,6 +45,7 @@ const HomeLandingPage: React.FC = () => {
   const [refreshing, setRefreshing] = React.useState(false);
   const [checkBusinessLeadLoader, setCheckBusinessLeadLoader] =
     useState<boolean>(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const loggedInUser = userStore.use.loggedInUser();
   const driverVehicleId = checkinStore.use.driverVehicleId();
   const driverOrders = homeStore.use.driverOrders();
@@ -162,7 +164,13 @@ const HomeLandingPage: React.FC = () => {
   };
 
   // fetch driver orders api
-  const fetchCurrentOrder = async () => {
+  const fetchCurrentOrder = async (date?: Date) => {
+    const targetDate = date || selectedDate;
+    const startDate = new Date(targetDate);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(targetDate);
+    endDate.setHours(23, 59, 59, 999);
+
     startLoader('driverCurrentOrder');
     homeService
       .fetchDriverOrders({
@@ -178,8 +186,8 @@ const HomeLandingPage: React.FC = () => {
         limit: 10,
         offset: 0,
         driver_vehicle_id: driverVehicleId,
-        start_date: new Date('2025-08-18').toISOString(),
-        end_date: new Date('2025-08-20').toISOString(),
+        start_date: startDate.toISOString(),
+        end_date: endDate.toISOString(),
       })
       .finally(() => {
         stopLoader('driverCurrentOrder');
@@ -204,6 +212,13 @@ const HomeLandingPage: React.FC = () => {
     fetchCurrentOrder();
     fetchFillupHistory();
   }, [driverVehicleId]);
+
+  // Refetch orders when date changes
+  useEffect(() => {
+    if (driverVehicleId) {
+      fetchCurrentOrder(selectedDate);
+    }
+  }, [selectedDate]);
 
   useEffect(() => {
     if (fillupHistory?.length > 0 && !allFillupsCompleted) {
@@ -232,8 +247,13 @@ const HomeLandingPage: React.FC = () => {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }>
-        <Container paddingHorizontal={10} style={{position: 'relative'}}>
+        <Container paddingHorizontal={16} style={{position: 'relative'}}>
           <OrderSummaryCard />
+          <CustomDateSelector
+            selectedDate={selectedDate}
+            onDateChange={setSelectedDate}
+            style={{marginHorizontal: 0}}
+          />
           <View
             style={{
               opacity: allFillupsCompleted ? 1 : 0.5,
@@ -244,9 +264,9 @@ const HomeLandingPage: React.FC = () => {
             ))}
           </View>
         </Container>
-        <FullScreenLoader
-          showLoader={isLoadingOrder || isLoadingFillupHistory}
-        />
+        {(isLoadingOrder || isLoadingFillupHistory) && (
+          <OrderListSkeleton count={3} />
+        )}
       </ScrollView>
 
       {/* Floating Buttons */}
