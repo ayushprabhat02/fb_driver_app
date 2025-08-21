@@ -3,6 +3,7 @@ import {BottomSheetModal} from '@gorhom/bottom-sheet';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
   ActivityIndicator,
+  Alert,
   RefreshControl,
   ScrollView,
   View,
@@ -16,13 +17,20 @@ import {
   FocusAwareStatusBar,
   FullScreenLoader,
   SwitchProfileHeader,
+  Button,
 } from '@/components';
 
 // service
 import {requestAppPermissions} from '@/utils/general';
 
 // store
-import {checkinStore, deliveryStore, homeStore, userStore} from '@/globalStore';
+import {
+  checkinStore,
+  deliveryStore,
+  homeStore,
+  userStore,
+  orderStore,
+} from '@/globalStore';
 
 import {UserService} from '@/services';
 import {FBBackground} from '@/types/styles';
@@ -42,9 +50,13 @@ const HomeLandingPage: React.FC = () => {
   const fillupHistory = homeStore.use.fillupHistory();
   const isLoadingOrder = homeStore.use.loaders().driverCurrentOrder;
   const isLoadingFillupHistory = homeStore.use.loaders().fillupHistory;
+  const selectedOrder = orderStore.use.selectedOrder();
 
-  console.log('-----fillupHistory-------', fillupHistory);
+  console.log('----selectedOrder------', selectedOrder);
 
+  const allFillupsCompleted = fillupHistory?.every(
+    (item: any) => item.state === 'COMPLETE' || item.state === 'REJECTED',
+  );
   const startLoader = homeStore.use.startLoader();
   const stopLoader = homeStore.use.stopLoader();
 
@@ -193,6 +205,12 @@ const HomeLandingPage: React.FC = () => {
     fetchFillupRequest();
   }, [driverVehicleId]);
 
+  useEffect(() => {
+    if (fillupHistory?.length > 0 && !allFillupsCompleted) {
+      Alert.alert('Warning', 'Please complete fillup first');
+    }
+  }, [fillupHistory, allFillupsCompleted]);
+
   return (
     <View style={{flex: 1, backgroundColor: FBBackground.white}}>
       <FocusAwareStatusBar
@@ -216,14 +234,44 @@ const HomeLandingPage: React.FC = () => {
         }>
         <Container paddingHorizontal={10} style={{position: 'relative'}}>
           <OrderSummaryCard />
-          {driverOrders?.map((order, index) => (
-            <OrderListCard key={index} order={order} />
-          ))}
+          <View
+            style={{
+              opacity: allFillupsCompleted ? 1 : 0.5,
+              pointerEvents: allFillupsCompleted ? 'auto' : 'none',
+            }}>
+            {driverOrders?.map((order, index) => (
+              <OrderListCard key={index} order={order} />
+            ))}
+          </View>
         </Container>
         <FullScreenLoader
           showLoader={isLoadingOrder || isLoadingFillupHistory}
         />
       </ScrollView>
+
+      {/* Floating Buttons */}
+      {selectedOrder && allFillupsCompleted && (
+        <View style={styles.floatingButtonsContainer}>
+          <Button
+            variant="solid"
+            style={[styles.floatingButton, styles.navigationButton]}
+            onPress={() => {
+              // Handle navigation
+              console.log('Navigation pressed');
+            }}>
+            Navigation
+          </Button>
+          <Button
+            variant="solid"
+            style={[styles.floatingButton, styles.startTripButton]}
+            onPress={() => {
+              // Handle start trip
+              console.log('Start trip pressed');
+            }}>
+            Start Trip
+          </Button>
+        </View>
+      )}
     </View>
   );
 };
@@ -256,6 +304,27 @@ const styles = ScaledSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     width: '100%',
+  },
+  floatingButtonsContainer: {
+    position: 'absolute',
+    bottom: '20@vs',
+    left: '20@s',
+    right: '20@s',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    zIndex: 1000,
+  },
+  floatingButton: {
+    flex: 1,
+    marginHorizontal: '5@s',
+    borderRadius: '25@s',
+    paddingVertical: '12@vs',
+  },
+  navigationButton: {
+    backgroundColor: '#3B82F6',
+  },
+  startTripButton: {
+    backgroundColor: '#10B981',
   },
 });
 

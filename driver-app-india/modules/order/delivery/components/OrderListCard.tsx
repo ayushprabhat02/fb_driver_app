@@ -1,38 +1,55 @@
 import React from 'react';
-import {View} from 'react-native';
+import {View, TouchableOpacity} from 'react-native';
 import {ScaledSheet} from 'react-native-size-matters';
 import {Text, Chip, Divider} from '@/components';
 import {FBColors} from '@/types/styles';
 import {DateTime} from 'luxon';
 import {User, MapPin, Package, Check} from 'lucide-react-native';
+import orderStore from '../../store';
 
 interface Props {
   order: any; // type from your driverOrders API
 }
 
 const DriverOrderCard: React.FC<Props> = ({order}) => {
+  const selectedOrder = orderStore.use.selectedOrder();
+  const setSelectedOrder = orderStore.use.setSelectedOrder();
+  const isSelected = selectedOrder?.id === order?.id;
+  
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
     return new Date(dateString).toLocaleDateString();
   };
+  
+  const handleOrderSelect = () => {
+    if (isSelected) {
+      setSelectedOrder(null);
+    } else {
+      setSelectedOrder(order);
+    }
+  };
 
   return (
-    <View style={styles.card}>
+    <TouchableOpacity 
+      style={[styles.card, isSelected && styles.selectedCard]} 
+      onPress={handleOrderSelect}
+      activeOpacity={0.7}
+    >
       {/* Header */}
       <View style={styles.header}>
-        <Text weight="700" size="lg" color={FBColors.secondary}>
+        <Text weight="700" size="lg" color="neutral">
           #{order?.customer_order?.order_code}
         </Text>
         <View style={styles.statusChip}>
-          <Text style={styles.statusText}>{order?.state}</Text>
+          <Text color="primary" size="xs" weight="600">{order?.state}</Text>
           <Check size={12} color="#1E40AF" style={{marginLeft: 4}} />
         </View>
       </View>
 
       {/* Customer + Quantity */}
       <View style={styles.row}>
-        <User size={14} color={FBColors.darkGray} />
-        <Text size="sm" style={styles.text}>
+        <User size={14} color="#6B7280" />
+        <Text size="sm" style={{marginLeft: 4}}>
           {order?.customer_order?.organization_user?.user?.first_name ||
           order?.customer_order?.organization_user?.user?.last_name
             ? `${
@@ -44,7 +61,7 @@ const DriverOrderCard: React.FC<Props> = ({order}) => {
         </Text>
         <Package
           size={14}
-          color={FBColors.darkGray}
+          color="#6B7280"
           style={styles.iconSpacing}
         />
         <Text size="sm">
@@ -54,7 +71,7 @@ const DriverOrderCard: React.FC<Props> = ({order}) => {
 
       {/* Customer Name */}
       <View style={styles.row}>
-        <Text size="sm" color={FBColors.darkGray}>
+        <Text size="sm" color="lightGray">
           {order.customer_order?.organization_user?.organization?.name ||
             'Organization'}
         </Text>
@@ -62,7 +79,7 @@ const DriverOrderCard: React.FC<Props> = ({order}) => {
 
       {/* Site */}
       <View style={styles.row}>
-        <Text size="sm" color={FBColors.darkGray}>
+        <Text size="sm" color="lightGray">
           Site:{' '}
           {order.customer_order?.organizationAddressByShippingAddressId?.name}
         </Text>
@@ -70,8 +87,8 @@ const DriverOrderCard: React.FC<Props> = ({order}) => {
 
       {/* Address */}
       <View style={styles.row}>
-        <MapPin size={14} color={FBColors.darkGray} />
-        <Text size="sm" style={styles.text}>
+        <MapPin size={14} color="#6B7280" />
+        <Text size="sm" style={{marginLeft: 4}}>
           {
             order.customer_order?.organizationAddressByShippingAddressId
               ?.address_line1
@@ -84,11 +101,11 @@ const DriverOrderCard: React.FC<Props> = ({order}) => {
       {/* Footer */}
       <View style={styles.footer}>
         <View style={styles.deliveryChip}>
-          <Text style={styles.deliveryText}>DELIVERY</Text>
+          <Text color="lightGray" size="xs" weight="600">DELIVERY</Text>
         </View>
         <Text size="sm">{formatDate(order.customer_order?.order_date)}</Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -101,6 +118,11 @@ const styles = ScaledSheet.create({
     borderColor: '#3B82F6', // blue border
     marginBottom: '10@vs',
     marginHorizontal: '12@s',
+  },
+  selectedCard: {
+    backgroundColor: '#E8F0FF',
+    borderColor: '#1E40AF',
+    borderWidth: 2,
   },
   header: {
     flexDirection: 'row',
@@ -116,11 +138,8 @@ const styles = ScaledSheet.create({
     paddingHorizontal: '8@s',
     paddingVertical: '2@vs',
   },
-  statusText: {
-    color: '#1E40AF',
-    fontSize: '11@s',
-    fontWeight: '600',
-  },
+
+
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -140,16 +159,12 @@ const styles = ScaledSheet.create({
     marginTop: '6@vs',
   },
   deliveryChip: {
-    backgroundColor: FBColors.lightGray,
+    backgroundColor: '#F3F4F6',
     borderRadius: '6@s',
     paddingHorizontal: '6@s',
     paddingVertical: '2@vs',
   },
-  deliveryText: {
-    color: FBColors.darkGray,
-    fontSize: '11@s',
-    fontWeight: '600',
-  },
+
 });
 
 export default DriverOrderCard;

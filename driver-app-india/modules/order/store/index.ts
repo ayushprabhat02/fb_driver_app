@@ -66,6 +66,9 @@ type OrderStore = {
 
   // bottom sheet
   bottomSheetRefOtp: React.RefObject<BottomSheetModal> | null;
+  
+  // selected order
+  selectedOrder: FetchDeliveryOrderByStateQuery['customer_order'][0] | null;
 };
 
 type OrderActions = {
@@ -75,6 +78,9 @@ type OrderActions = {
   resetOrderPagination: () => void;
   // bottom sheet
   setBottomSheetRefOtp: (ref: React.RefObject<BottomSheetModal>) => void;
+  
+  // selected order
+  setSelectedOrder: (order: FetchDeliveryOrderByStateQuery['customer_order'][0] | null) => void;
 };
 
 /*
@@ -99,6 +105,7 @@ const orderInitialState: OrderStore = {
     currentOrdersInView: false,
     singleOrderDetails: false,
     fetchInvoices: true,
+    verifyPlacedOrderOtp: false,
   },
   currentOrderStatus: undefined,
   upcomingOrders: undefined,
@@ -107,6 +114,7 @@ const orderInitialState: OrderStore = {
 
   // bottom sheet
   bottomSheetRefOtp: null,
+  selectedOrder: null,
 };
 
 const orderPaginationInitialState = {
@@ -144,6 +152,11 @@ const orderStore = create<OrderStore & OrderActions>(set => ({
   setBottomSheetRefOtp: ref =>
     set(() => ({
       bottomSheetRefOtp: ref,
+    })),
+    
+  setSelectedOrder: order =>
+    set(() => ({
+      selectedOrder: order,
     })),
 }));
 
