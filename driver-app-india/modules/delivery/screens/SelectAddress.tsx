@@ -13,7 +13,7 @@ import {
   FullScreenLoader,
   Button,
 } from '@/components';
-import {AddressCard} from '@/modules/address/components';
+import {AddressCard} from '@/modules/fillupRequest/components';
 import {SearchBox} from '../components/address';
 import {LocationPermissionRequest} from '@/modules/location/components';
 

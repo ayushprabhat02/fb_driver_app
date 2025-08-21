@@ -6,7 +6,7 @@ import {StyleSheet} from 'react-native';
 
 // components
 import {CustomFormInput} from '@/modules/user/components';
-import {CustomSelectInput} from '@/modules/address/components';
+import {CustomSelectInput} from '@/modules/fillupRequest/components';
 import {Divider} from '@/components';
 
 // services

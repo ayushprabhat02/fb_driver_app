@@ -46,7 +46,7 @@ const CustomSelectInput: React.FC<Props> = ({
       ...inputContainerStyle,
     },
     label: {
-      fontSize: '12@ms',
+      fontSize: '14@ms',
       fontWeight: '500',
       color: FBColors.steelBlue,
       marginBottom: '5@ms',
@@ -116,11 +116,11 @@ const CustomSelectInput: React.FC<Props> = ({
                 value: null,
                 color: FBColors.placeHolderPrimary,
               }}
-              Icon={() => (
-                <View style={styles.iconContainer}>
-                  <CaretDown size={ms(20)} color={FBColors.neutral} />
-                </View>
-              )}
+              // Icon={() => (
+              //   <View style={styles.iconContainer}>
+              //     <CaretDown size={ms(20)} color={FBColors.neutral} />
+              //   </View>
+              // )}
             />
             {errors[name] && (
               <>

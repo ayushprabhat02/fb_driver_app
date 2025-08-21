@@ -25,7 +25,7 @@ import {locationStore} from '@/globalStore';
 
 // components
 import {CheckServiceabilityModal} from '../components';
-import {AddNewAddressForm} from '@/modules/address/components/AddNewAddress';
+import {AddNewAddressForm} from '@/modules/fillupRequest/components/AddNewAddress';
 import {SimpleBottomSheet} from '@/components';
 
 //imports

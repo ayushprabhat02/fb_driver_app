@@ -4,7 +4,7 @@ import {SafeAreaView, ScrollView} from 'react-native';
 import {ScaledSheet} from 'react-native-size-matters';
 import {useNavigation} from '@react-navigation/native';
 // conmponents
-import {BillingAddressForm} from '@/modules/address/components';
+import {BillingAddressForm} from '@/modules/fillupRequest/components';
 
 //imports
 import {FBColorPalette} from '@/types/styles';

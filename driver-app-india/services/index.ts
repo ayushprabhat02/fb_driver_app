@@ -1,6 +1,6 @@
 export {default as UserService} from '@/modules/user/services';
 export {default as HomeService} from '@/modules/home/services';
-export {default as AddressService} from '@/modules/address/services';
+export {default as AddressService} from '@/modules/fillupRequest/services';
 export {default as AssetService} from '@/modules/assets/services';
 export {default as LocationService} from '@/modules/location/services';
 export {default as DeliveryService} from '@/modules/delivery/services';

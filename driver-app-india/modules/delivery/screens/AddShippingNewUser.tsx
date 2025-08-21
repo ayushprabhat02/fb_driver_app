@@ -26,7 +26,7 @@ import CurrentLocationCardUpdated from '@/modules/location/components/CurrentLoc
 import LocationBarUpdated from '@/modules/location/components/LocationBarUpdated';
 import {CheckServiceabilityModal} from '@/modules/location/components';
 import {SimpleBottomSheet} from '@/components';
-import {AddNewAddressForm} from '@/modules/address/components/AddNewAddress';
+import {AddNewAddressForm} from '@/modules/fillupRequest/components/AddNewAddress';
 
 //styles & types
 import {FBColors} from '@/types/styles';

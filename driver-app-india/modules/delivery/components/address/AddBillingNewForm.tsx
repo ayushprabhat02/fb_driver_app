@@ -13,7 +13,7 @@ import {Button, Divider, Text} from '@/components';
 import {
   ActiveCityBilling,
   ActiveStateBilling,
-} from '@/modules/address/components/AddNewAddress';
+} from '@/modules/fillupRequest/components/AddNewAddress';
 
 //stores
 import {
@@ -25,7 +25,7 @@ import {
 } from '@/globalStore';
 
 //services
-import AddressService from '@/modules/address/services';
+import AddressService from '@/modules/fillupRequest/services';
 
 //types
 import {Address_Type_Enum} from '@/generated/graphql';

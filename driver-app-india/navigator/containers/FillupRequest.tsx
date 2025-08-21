@@ -6,47 +6,47 @@ import {createStackNavigator} from '@react-navigation/stack';
 import {
   AddShippingAddress,
   AddBillingAddress,
-  MyAddress,
-} from '@/modules/address/screens';
+  FillupRequest as FillupRequestScreen,
+} from '@/modules/fillupRequest/screens';
 import {BackButtonArrow} from '@/components';
 
 // styles
 import {commonHeaderStyles} from '@/styles';
 
-export type AddressStackParamList = {
+export type FillupRequestParamList = {
   'add-shipping-address': undefined;
   'add-billing-address': undefined;
-  'my-address': undefined;
+  'fillup-request': undefined;
   'search-location': undefined;
 };
 
-const AddressStack = createStackNavigator<AddressStackParamList>();
+const FillupRequestStack = createStackNavigator<FillupRequestParamList>();
 
-const AddressNavigator: React.FC = () => {
+const FillupRequestNavigator: React.FC = () => {
   return (
-    <AddressStack.Navigator
+    <FillupRequestStack.Navigator
       screenOptions={{
         ...commonHeaderStyles,
         headerLeft: BackButtonArrow,
       }}
-      initialRouteName="my-address">
-      <AddressStack.Screen
-        name="my-address"
-        component={MyAddress}
-        options={{headerTitle: 'My Address'}}
+      initialRouteName="fillup-request">
+      <FillupRequestStack.Screen
+        name="fillup-request"
+        component={FillupRequestScreen}
+        options={{headerTitle: 'Fillup Request'}}
       />
-      <AddressStack.Screen
+      <FillupRequestStack.Screen
         name="add-shipping-address"
         component={AddShippingAddress}
         options={{headerTitle: 'Add shipping address'}}
       />
-      <AddressStack.Screen
+      <FillupRequestStack.Screen
         name="add-billing-address"
         component={AddBillingAddress}
         options={{headerTitle: 'Add billing address'}}
       />
-    </AddressStack.Navigator>
+    </FillupRequestStack.Navigator>
   );
 };
 
-export default AddressNavigator;
+export default FillupRequestNavigator;

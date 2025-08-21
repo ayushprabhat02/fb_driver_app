@@ -18,7 +18,7 @@ import {localStorage, getActiveDelOrgUserId} from '@/utils/localStorage';
 
 // components
 import {Button, Text} from '@/components';
-import {CustomBottomFormInput} from '@/modules/address/components';
+import {CustomBottomFormInput} from '@/modules/fillupRequest/components';
 
 //types
 import {Order_By} from '@/generated/graphql';

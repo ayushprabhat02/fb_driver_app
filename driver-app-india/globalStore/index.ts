@@ -1,7 +1,7 @@
 export {default as businessStore} from '@/modules/business/store';
 export {default as authStore} from '@/modules/auth/store';
 export {default as homeStore} from '@/modules/home/store';
-export {default as addressStore} from '@/modules/address/store';
+export {default as addressStore} from '@/modules/fillupRequest/store';
 export {default as deliveryStore} from '@/modules/delivery/store';
 export {default as assetStore} from '@/modules/assets/store';
 export {default as userStore} from '@/modules/user/store';

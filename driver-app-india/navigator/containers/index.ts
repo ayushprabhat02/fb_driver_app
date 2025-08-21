@@ -3,7 +3,7 @@ export {default as PickupNavigator} from './Pickup';
 export {default as HomeNavigator} from './Home';
 export {default as AssetsNavigator} from './Assets';
 export {default as LocationNavigator} from './Location';
-export {default as AddressNavigator} from './Address';
+export {default as AddressNavigator} from './FillupRequest';
 export {default as WalletNavigator} from './Wallet';
 export {default as SettingsNavigator} from './Settings';
 export {default as OrderNavigator} from './Order';

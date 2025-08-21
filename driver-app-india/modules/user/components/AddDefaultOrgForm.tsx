@@ -11,7 +11,7 @@ import * as z from 'zod';
 
 //imports and components
 import {Button, Divider, Text} from '@/components';
-import {CustomBottomFormInput} from '@/modules/address/components';
+import {CustomBottomFormInput} from '@/modules/fillupRequest/components';
 import OrganisationSegmentList from '@/modules/business/components/common/OrganisationSegmentList';
 import UserSegmentationList from '../components/UserSegmentationList';
 

@@ -12,12 +12,12 @@ import {localStorage, getActiveDelOrgUserId} from '@/utils/localStorage';
 import {
   CustomBottomFormInput,
   CustomSelectInput,
-} from '@/modules/address/components';
+} from '@/modules/fillupRequest/components';
 import {Button, Text, Divider} from '@/components';
 //stores
 import {deliveryStore, addressStore, homeStore} from '@/globalStore';
 //services
-import AddressService from '@/modules/address/services';
+import AddressService from '@/modules/fillupRequest/services';
 //types
 import {Address_Type_Enum} from '@/generated/graphql';
 import {StyleSheet, View} from 'react-native';

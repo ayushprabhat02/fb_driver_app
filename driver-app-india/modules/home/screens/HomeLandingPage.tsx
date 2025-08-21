@@ -186,7 +186,7 @@ const HomeLandingPage: React.FC = () => {
       });
   };
 
-  const fetchFillupRequest = async () => {
+  const fetchFillupHistory = async () => {
     startLoader('fillupHistory');
     homeService
       .fetchFillupHistory({
@@ -202,7 +202,7 @@ const HomeLandingPage: React.FC = () => {
   useEffect(() => {
     fetchOrderStats();
     fetchCurrentOrder();
-    fetchFillupRequest();
+    fetchFillupHistory();
   }, [driverVehicleId]);
 
   useEffect(() => {

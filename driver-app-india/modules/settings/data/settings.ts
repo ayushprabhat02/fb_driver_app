@@ -32,7 +32,7 @@ export const settingsOptions = [
   {
     title: 'Fillup Request',
     icon: 'truck-outline',
-    module: 'assets',
+    module: 'address',
   },
 
   // {

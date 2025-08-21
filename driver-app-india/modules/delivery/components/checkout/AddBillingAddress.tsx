@@ -5,7 +5,7 @@ import analytics from '@react-native-firebase/analytics';
 
 //imports
 import {Button, Divider, Text} from '@/components';
-import {AddressCard} from '@/modules/address/components';
+import {AddressCard} from '@/modules/fillupRequest/components';
 
 //stores
 import {deliveryStore, addressStore, businessStore} from '@/globalStore';

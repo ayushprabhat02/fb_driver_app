@@ -23,7 +23,7 @@ import {Button, Divider, Input, Text, TextButton} from '@/components';
 import {AddressService, LocationService} from '@/services';
 
 //stores
-import addressStore from '@/modules/address/store';
+import addressStore from '@/modules/fillupRequest/store';
 import {ScaledSheet, ms} from 'react-native-size-matters';
 
 //types
