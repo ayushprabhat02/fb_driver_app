@@ -47,6 +47,7 @@
     "graphql": "^16.8.1",
     "json-2-csv": "^5.5.5",
     "lottie-react-native": "^6.7.2",
+    "lucide-react-native": "^0.540.0",
     "luxon": "^3.4.4",
     "papaparse": "^5.4.1",
     "phosphor-react-native": "^2.0.0",

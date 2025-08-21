@@ -25,6 +25,16 @@ import {
   FetchOrderStatsForDriverMutationVariables,
   FetchOrderStatsForDriverDocument,
   FetchOrderStatsForDriverMutation,
+
+  // fetch order for driver new 2
+  FetchOrderForDriverNew2QueryVariables,
+  FetchOrderForDriverNew2Document,
+  FetchOrderForDriverNew2Query,
+
+  // fillup history
+  FillupHistoryQueryVariables,
+  FillupHistoryDocument,
+  FillupHistoryQuery,
 } from '@/generated/graphql';
 import {DeliveryStat} from '../types';
 
@@ -164,6 +174,36 @@ class HomeService {
     homeStore.setState(state => ({
       ...state,
       driverOrderStats: response?.fetchOrderStatsForDriver,
+    }));
+  }
+
+  // fetchOrderForDriverNew2
+  public async fetchDriverOrders(args: FetchOrderForDriverNew2QueryVariables) {
+    const response: FetchOrderForDriverNew2Query = await callQuery({
+      queryDocument: FetchOrderForDriverNew2Document,
+      variables: {
+        ...args,
+      },
+    });
+
+    homeStore.setState(state => ({
+      ...state,
+      driverOrders: response.task,
+    }));
+    return response.task;
+  }
+
+  public async fetchFillupHistory(args: FillupHistoryQueryVariables) {
+    const response: FillupHistoryQuery = await callQuery({
+      queryDocument: FillupHistoryDocument,
+      variables: {
+        ...args,
+      },
+    });
+
+    homeStore.setState(state => ({
+      ...state,
+      fillupHistory: response?.fillup_request,
     }));
   }
 }

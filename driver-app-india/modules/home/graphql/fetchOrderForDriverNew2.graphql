@@ -1,0 +1,290 @@
+query fetchOrderForDriverNew2(
+  $state: [task_state_enum!]
+  $limit: Int
+  $offset: Int
+  $driver_vehicle_id: uuid
+  $start_date: timestamp
+  $end_date: timestamp
+) {
+  task(
+    where: {
+      is_active: {_eq: true}
+      state: {_nin: $state}
+      driver_vehicle_id: {_eq: $driver_vehicle_id}
+      estimate_delivery_date: {_gte: $start_date, _lte: $end_date}
+    }
+    limit: $limit
+    offset: $offset
+    order_by: {rank_id: asc}
+  ) {
+    is_enable_totalizer_reading_image_upload
+    state
+    category
+    driver_vehicle_id
+    driver_vehicle {
+      vehicle {
+        vehicle_devices(
+          offset: 0
+          limit: 1
+          order_by: {created_at: desc}
+          where: {is_active: {_eq: true}}
+        ) {
+          device_id
+        }
+      }
+    }
+    customer_order {
+      erp_code
+      order_code
+      is_otp_required
+      instruction
+      state
+      organizationAddressByShippingAddressId {
+        name
+        id
+        location
+        address_line1
+        address_line2
+        organization_address_payment_methods(where: {is_active: {_eq: true}}) {
+          customer_payment_method {
+            id
+            name
+            value
+          }
+        }
+      }
+      organization_user {
+        organization {
+          name
+          is_credit_available
+        }
+        user {
+          middle_name
+          first_name
+          last_name
+          pan_number
+          phone_number
+          description
+          delivery_otp
+        }
+        user_id
+      }
+      customer_order_items {
+        task {
+          state
+          task_values {
+            id
+            task_id
+            key
+            value
+            quantity_dispensed
+            url
+            customer_asset {
+              name
+              id
+              is_active
+            }
+          }
+        }
+        unit_price
+        actual_amount
+        actual_delivery_date
+        actual_qty
+        amount
+        id
+        delivery_fee
+        estimate_delivery_date
+        qty
+        service_tax
+        state
+        product_variation_id
+        product_variation {
+          expiry_date
+          id
+          is_active
+          price
+          product_id
+          product {
+            category_id
+            description
+            hsn_code
+            id
+            is_active
+            name
+            sku
+            slug
+            product_type
+          }
+          variation {
+            description
+            id
+            pack_size
+            is_active
+            slug
+            variation_type
+          }
+        }
+        product_variation_partner_localities_slot {
+          day_date
+          end_time
+          id
+          is_active
+          is_visible
+          order_limit
+          partner_localities_id
+          product_variation_id
+          start_time
+        }
+        product_variation_partner_localities_slot_id
+      }
+      delivery_fee
+      delivery_preference
+      order_code
+      id
+      description
+      order_date
+      name
+      is_prepaid
+      is_active
+      customer_order_customer_assets {
+        quantity_dispensed
+        quantity_requested
+        customer_asset {
+          tag_id
+          asset_type_id
+          capacity
+          color
+          id
+          description
+          organization_user_id
+          name
+          registration_number
+        }
+      }
+    }
+    fillup_requests {
+      driver_vehicle_id
+      fuel_request_type
+      id
+      is_active
+      product_variation_id
+      quantity_approved
+      quantity
+      state
+      task_id
+      unit
+      driver_vehicle {
+        driver_id
+        is_active
+        user {
+          first_name
+          last_name
+          license_number
+          middle_name
+          pan_number
+          phone_number
+          referral_code
+        }
+        vehicle {
+          created_at
+          category
+          id
+          insurance_expire_date
+          fuel_tank_capacity
+          model
+          name
+          partner_address_id
+          location
+          tanker_capacity
+          vehicle_type
+          category
+          registration_number
+          rc_expire_date
+          rfid
+          tanker_compartment_number
+          year
+          device_id
+          description
+          partner_address {
+            address_line1
+            address_line2
+            address_type
+            city_id
+            country_id
+            house_number
+            id
+            location
+            name
+            pincode
+            street_address
+          }
+        }
+      }
+      vehicle_tank_type_product_variation {
+        vehicle_tank_type_id
+        vehicle_tank_type {
+          id
+          vehicle_id
+          vehicle {
+            rfid
+            category
+            description
+            device_id
+            fuel_tank_capacity
+            id
+            insurance_expire_date
+            is_active
+            is_mothership
+            name
+            model
+            location
+          }
+          tank_type {
+            description
+            id
+            is_active
+            name
+            slug
+          }
+        }
+        product_variation {
+          expiry_date
+          id
+          is_active
+          product {
+            name
+            id
+            hsn_code
+            sku
+            product_type
+          }
+          variation {
+            id
+            pack_size
+          }
+        }
+      }
+    }
+    is_done_locally
+    is_enable_buddycan_flow
+    is_enable_customer_location_test
+    id
+    organization_address {
+      instruction
+      location
+      address_line1
+      address_line2
+      pincode
+      city_id
+      country {
+        alpha_code2
+        alpha_code3
+        id
+        name
+        numeric_code_id
+        official_state
+      }
+      country_id
+    }
+  }
+}

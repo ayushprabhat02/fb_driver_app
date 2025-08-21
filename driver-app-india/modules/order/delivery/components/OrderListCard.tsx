@@ -1,185 +1,155 @@
-// dependencies
-import {useNavigation} from '@react-navigation/native';
-import {DateTime} from 'luxon';
-import React, {memo, useCallback} from 'react';
+import React from 'react';
 import {View} from 'react-native';
 import {ScaledSheet} from 'react-native-size-matters';
-
-// components
-import {Divider, Text, TextButton} from '@/components';
-
-// utils
-import {getOrderStatus} from '@/utils/general';
-
-// store
-import orderStore from '../../store';
-
-// types
-import {FetchDeliveryOrderByStateQuery} from '@/generated/graphql';
-import {OrderService} from '@/services';
-import {FBBorders} from '@/types/styles';
+import {Text, Chip, Divider} from '@/components';
+import {FBColors} from '@/types/styles';
+import {DateTime} from 'luxon';
+import {User, MapPin, Package, Check} from 'lucide-react-native';
 
 interface Props {
-  order: FetchDeliveryOrderByStateQuery['customer_order'][0];
+  order: any; // type from your driverOrders API
 }
 
-const OrderListCard: React.FC<Props> = ({order}) => {
-  const navigation = useNavigation();
-
-  const startLoader = orderStore.use.startLoader();
-  const stopLoader = orderStore.use.stopLoader();
-
-  const showOrderDetails = useCallback(() => {
-    startLoader('fetchInvoices');
-    startLoader('singleOrderDetails');
-
-    orderStore.setState(state => ({
-      ...state,
-      singleOrderDetails: order,
-    }));
-    OrderService.fetchCustomerOrderById({OrderId: order.id}).finally(() => {
-      stopLoader('singleOrderDetails');
-    });
-
-    OrderService.fetchSalesInvoicePdfQuery({
-      object: {customer_order_id: order.id, isPickup: false},
-    }).finally(() => {
-      stopLoader('fetchInvoices');
-    });
-    navigation.navigate('order', {screen: 'order-details', orderId: order.id});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+const DriverOrderCard: React.FC<Props> = ({order}) => {
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '';
+    return new Date(dateString).toLocaleDateString();
+  };
 
   return (
-    <View style={styles.orderListCardContainer}>
-      {/* order code */}
-
-      <OrderDetail detail="Order Code" value={order.order_code} emphasize />
-
-      <Divider height={6} />
-      <OrderDetail
-        detail="Status"
-        value={getOrderStatus(order?.state) as string}
-        emphasize
-      />
-
-      {order.customer_purchase_order_number && (
-        <>
-          {/* order date */}
-          <Divider height={6} />
-          <OrderDetail
-            detail="Purchase order code"
-            value={order.customer_purchase_order_number as string}
-            emphasize
-          />
-        </>
-      )}
-
-      {/* order date */}
-      <Divider height={6} />
-      <OrderDetail
-        detail="Order Date"
-        value={`${DateTime.fromISO(order.order_date).toFormat(
-          'dd-MMM-yyyy',
-        )} ${DateTime.fromISO(order.order_date)
-          .setZone('Asia/Kolkata')
-          .toFormat('hh:mm a')}`}
-      />
-
-      {/* estimated delivery date */}
-      <Divider height={6} />
-      <OrderDetail
-        detail="Estimated Delivery Date"
-        value={`${DateTime.fromISO(
-          order?.customer_order_items[0].estimate_delivery_date,
-        ).toFormat('dd-MMM-yyyy')}, ${DateTime.fromISO(
-          order.customer_order_items[0]
-            ?.product_variation_partner_localities_slot?.start_time,
-        ).toFormat('hh:mm a')} - ${DateTime.fromISO(
-          order.customer_order_items[0]
-            ?.product_variation_partner_localities_slot?.end_time,
-        ).toFormat('hh:mm a')}`}
-      />
-
-      {/* address */}
-      <Divider height={6} />
-      <View style={{width: '100%', flexDirection: 'row'}}>
-        <Text size="sm" weight="600">
-          Address:{' '}
+    <View style={styles.card}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text weight="700" size="lg" color={FBColors.secondary}>
+          #{order?.customer_order?.order_code}
         </Text>
-        <View style={{flexDirection: 'row', flexWrap: 'wrap', maxWidth: '80%'}}>
-          <Text size="sm" lines={1}>
-            {order?.organizationAddressByShippingAddressId?.house_number
-              ? `${order?.organizationAddressByShippingAddressId?.house_number},`
-              : null}
-            {order?.organizationAddressByShippingAddressId?.address_line1
-              ? `${order?.organizationAddressByShippingAddressId?.address_line1},`
-              : null}
-            {order?.organizationAddressByShippingAddressId?.address_line2
-              ? `${order?.organizationAddressByShippingAddressId?.address_line2},`
-              : null}
-            {order?.organizationAddressByShippingAddressId?.pincode
-              ? `${order?.organizationAddressByShippingAddressId?.pincode},`
-              : null}
-            {order?.organizationAddressByShippingAddressId?.country?.name
-              ? `${order?.organizationAddressByShippingAddressId?.country?.name}`
-              : null}
-          </Text>
+        <View style={styles.statusChip}>
+          <Text style={styles.statusText}>{order?.state}</Text>
+          <Check size={12} color="#1E40AF" style={{marginLeft: 4}} />
         </View>
       </View>
 
-      {/* view order btn */}
-      <Divider height={20} />
-      <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
-        <TextButton textSize="sm" onPress={showOrderDetails}>
-          View Order Details
-        </TextButton>
-        {order.otp && (
-          <Text size="sm" weight="bold">
-            OTP: {order?.otp}
-          </Text>
-        )}
+      {/* Customer + Quantity */}
+      <View style={styles.row}>
+        <User size={14} color={FBColors.darkGray} />
+        <Text size="sm" style={styles.text}>
+          {order?.customer_order?.organization_user?.user?.first_name ||
+          order?.customer_order?.organization_user?.user?.last_name
+            ? `${
+                order?.customer_order?.organization_user?.user?.first_name ?? ''
+              } ${
+                order?.customer_order?.organization_user?.user?.last_name ?? ''
+              }`.trim()
+            : 'Customer'}
+        </Text>
+        <Package
+          size={14}
+          color={FBColors.darkGray}
+          style={styles.iconSpacing}
+        />
+        <Text size="sm">
+          {(order?.customer_order?.customer_order_items?.[0]?.qty ?? 0) + 'L'}
+        </Text>
+      </View>
+
+      {/* Customer Name */}
+      <View style={styles.row}>
+        <Text size="sm" color={FBColors.darkGray}>
+          {order.customer_order?.organization_user?.organization?.name ||
+            'Organization'}
+        </Text>
+      </View>
+
+      {/* Site */}
+      <View style={styles.row}>
+        <Text size="sm" color={FBColors.darkGray}>
+          Site:{' '}
+          {order.customer_order?.organizationAddressByShippingAddressId?.name}
+        </Text>
+      </View>
+
+      {/* Address */}
+      <View style={styles.row}>
+        <MapPin size={14} color={FBColors.darkGray} />
+        <Text size="sm" style={styles.text}>
+          {
+            order.customer_order?.organizationAddressByShippingAddressId
+              ?.address_line1
+          }
+        </Text>
+      </View>
+
+      <Divider height={8} />
+
+      {/* Footer */}
+      <View style={styles.footer}>
+        <View style={styles.deliveryChip}>
+          <Text style={styles.deliveryText}>DELIVERY</Text>
+        </View>
+        <Text size="sm">{formatDate(order.customer_order?.order_date)}</Text>
       </View>
     </View>
   );
 };
 
-interface OrderDetailProps {
-  detail: string;
-  value: string | number;
-  emphasize?: boolean;
-}
-
-const OrderDetail: React.FC<OrderDetailProps> = memo(
-  ({detail, value, emphasize = false}) => (
-    <View style={styles.flexRow}>
-      <Text weight="600" size="sm">
-        {detail} :{' '}
-      </Text>
-      <Text
-        weight={emphasize ? '600' : '400'}
-        size="sm"
-        lines={1}
-        style={{width: '50%'}}>
-        {value}
-      </Text>
-    </View>
-  ),
-);
-
-export default OrderListCard;
-
 const styles = ScaledSheet.create({
-  orderListCardContainer: {
+  card: {
     backgroundColor: 'white',
     padding: '10@s',
     borderRadius: '10@s',
     borderWidth: 1,
-    borderColor: FBBorders.secondary,
+    borderColor: '#3B82F6', // blue border
+    marginBottom: '10@vs',
+    marginHorizontal: '12@s',
   },
-
-  flexRow: {
-    width: '100%',
+  header: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '6@vs',
+  },
+  statusChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F0FF',
+    borderRadius: '12@s',
+    paddingHorizontal: '8@s',
+    paddingVertical: '2@vs',
+  },
+  statusText: {
+    color: '#1E40AF',
+    fontSize: '11@s',
+    fontWeight: '600',
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: '4@vs',
+  },
+  text: {
+    marginLeft: '4@s',
+  },
+  iconSpacing: {
+    marginLeft: '10@s',
+    marginRight: '4@s',
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: '6@vs',
+  },
+  deliveryChip: {
+    backgroundColor: FBColors.lightGray,
+    borderRadius: '6@s',
+    paddingHorizontal: '6@s',
+    paddingVertical: '2@vs',
+  },
+  deliveryText: {
+    color: FBColors.darkGray,
+    fontSize: '11@s',
+    fontWeight: '600',
   },
 });
+
+export default DriverOrderCard;

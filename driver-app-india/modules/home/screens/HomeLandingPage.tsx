@@ -14,6 +14,7 @@ import {ScaledSheet} from 'react-native-size-matters';
 import {
   Container,
   FocusAwareStatusBar,
+  FullScreenLoader,
   SwitchProfileHeader,
 } from '@/components';
 
@@ -26,8 +27,10 @@ import {checkinStore, deliveryStore, homeStore, userStore} from '@/globalStore';
 import {UserService} from '@/services';
 import {FBBackground} from '@/types/styles';
 import {useFocusEffect} from '@react-navigation/native';
-import OrderSummaryCard from '../components/delivery/OrderSummaryCard';
 import homeService from '../services';
+import {Task_State_Enum} from '@/generated/graphql';
+import OrderSummaryCard from '../components/delivery/OrderSummaryCard';
+import {OrderListCard} from '@/modules/order/delivery/components';
 
 const HomeLandingPage: React.FC = () => {
   const [refreshing, setRefreshing] = React.useState(false);
@@ -35,14 +38,15 @@ const HomeLandingPage: React.FC = () => {
     useState<boolean>(false);
   const loggedInUser = userStore.use.loggedInUser();
   const driverVehicleId = checkinStore.use.driverVehicleId();
-  const deliveryStats = homeStore.use.deliveryStats();
-  const selectedDate = deliveryStore.use.selectedDate();
-  const selectedSlot = deliveryStore.use.selectedSlot();
-  const showRepeatOrder = homeStore.use.showRepeatOrder();
+  const driverOrders = homeStore.use.driverOrders();
+  const fillupHistory = homeStore.use.fillupHistory();
+  const isLoadingOrder = homeStore.use.loaders().driverCurrentOrder;
+  const isLoadingFillupHistory = homeStore.use.loaders().fillupHistory;
+
+  console.log('-----fillupHistory-------', fillupHistory);
 
   const startLoader = homeStore.use.startLoader();
   const stopLoader = homeStore.use.stopLoader();
-  const isOrderStatsLoading = homeStore.use.loaders().driverOrderStats;
 
   const resetDeliveryStore = deliveryStore.use.resetDeliveryStore();
 
@@ -145,8 +149,48 @@ const HomeLandingPage: React.FC = () => {
     }
   };
 
+  // fetch driver orders api
+  const fetchCurrentOrder = async () => {
+    startLoader('driverCurrentOrder');
+    homeService
+      .fetchDriverOrders({
+        state: [
+          Task_State_Enum.Cancelled,
+          Task_State_Enum.CancellationRequested,
+          Task_State_Enum.Delivered,
+          Task_State_Enum.Rejected,
+          Task_State_Enum.Schedule,
+          Task_State_Enum.Rescheduled,
+          Task_State_Enum.Open,
+        ],
+        limit: 10,
+        offset: 0,
+        driver_vehicle_id: driverVehicleId,
+        start_date: new Date('2025-08-18').toISOString(),
+        end_date: new Date('2025-08-20').toISOString(),
+      })
+      .finally(() => {
+        stopLoader('driverCurrentOrder');
+      });
+  };
+
+  const fetchFillupRequest = async () => {
+    startLoader('fillupHistory');
+    homeService
+      .fetchFillupHistory({
+        limit: 5,
+        offset: 0,
+        driver_vehicle_id: driverVehicleId,
+      })
+      .finally(() => {
+        stopLoader('fillupHistory');
+      });
+  };
+
   useEffect(() => {
     fetchOrderStats();
+    fetchCurrentOrder();
+    fetchFillupRequest();
   }, [driverVehicleId]);
 
   return (
@@ -172,7 +216,13 @@ const HomeLandingPage: React.FC = () => {
         }>
         <Container paddingHorizontal={10} style={{position: 'relative'}}>
           <OrderSummaryCard />
+          {driverOrders?.map((order, index) => (
+            <OrderListCard key={index} order={order} />
+          ))}
         </Container>
+        <FullScreenLoader
+          showLoader={isLoadingOrder || isLoadingFillupHistory}
+        />
       </ScrollView>
     </View>
   );
