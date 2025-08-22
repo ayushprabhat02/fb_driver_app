@@ -49,6 +49,11 @@ import {
   IsValidateGstinDocument,
   IsValidateGstinQuery,
   IsValidateGstinQueryVariables,
+
+  // raise fillup request
+  RaiseFillupRequestDocument,
+  RaiseFillupRequestMutation,
+  RaiseFillupRequestMutationVariables,
 } from '@/generated/graphql';
 import {deliveryStore, locationStore} from '@/globalStore';
 import Toast from 'react-native-toast-message';
@@ -313,6 +318,17 @@ class AddressService {
     //   // );
     // }
     return filterAddresses;
+  }
+
+  public async raiseFillupRequest(args: RaiseFillupRequestMutationVariables) {
+    const response: RaiseFillupRequestMutation = await callMutation({
+      queryDocument: RaiseFillupRequestDocument,
+      variables: {
+        ...args,
+      },
+    });
+
+    return response.insert_fillup_request_one;
   }
 }
 

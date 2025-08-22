@@ -22,6 +22,7 @@ import CancellationModal from '../components/CancellationModal';
 // services
 import OrderService from '../../services';
 import orderStore from '../../store';
+import homeStore from '@/modules/home/store';
 
 // types
 import {Customer_Order_State_Enum, Reason_Type_Enum} from '@/generated/graphql';
@@ -133,55 +134,67 @@ const OrderDetails: React.FC<Props> = () => {
     );
   }
 
+  const fillupHistory = homeStore.use.fillupHistory();
+  const allFillupsCompleted = fillupHistory.every(
+    item => item.state === 'COMPLETE' || item.state === 'REJECTED',
+  );
   return (
-    <HeaderAvoidingContainer paddingHorizontal={0}>
-      <ScrollView
-        style={{flex: 1}}
-        contentContainerStyle={{paddingBottom: 20}}
-        showsVerticalScrollIndicator={false}>
-        <View style={{paddingHorizontal: 16, marginTop: -12}}>
-          {orderStateFlow.length ? (
-            <DetailsComponent title={''} cardStyle={{minHeight: 200}}>
-              <OrderStatusSteps
-                orderStateFlow={singleOrderState}
-                orderDetails={singleOrderDetails}
-              />
-            </DetailsComponent>
-          ) : null}
-          <Divider height={20} />
-          <ShareOrderIdCard />
-          <Divider height={20} />
-          <ItemsTotal />
-          <Divider height={20} />
-          <DeliveryAddress />
-          <Divider height={20} />
-          <BillingAddress />
-          <Divider height={20} />
-          <OrderInstruction />
-          <Divider height={20} />
-          <SupportCancelButton
-            setCancellationModalVisible={setCancellationModalVisible}
-            canOrderCancel={canOrderCancel()}
+    <View style={{flex: 1}}>
+      <HeaderAvoidingContainer paddingHorizontal={0} style={{flex: 1}}>
+        <ScrollView
+          style={{flex: 1}}
+          contentContainerStyle={{paddingBottom: 20}}
+          showsVerticalScrollIndicator={false}>
+          <View style={{paddingHorizontal: 16, marginTop: -12}}>
+            {orderStateFlow.length ? (
+              <DetailsComponent title={''} cardStyle={{minHeight: 200}}>
+                <OrderStatusSteps
+                  orderStateFlow={singleOrderState}
+                  orderDetails={singleOrderDetails}
+                />
+              </DetailsComponent>
+            ) : null}
+            <Divider height={20} />
+            <ShareOrderIdCard />
+            <Divider height={20} />
+            <ItemsTotal />
+            <Divider height={20} />
+            <DeliveryAddress />
+            <Divider height={20} />
+            <BillingAddress />
+            <Divider height={20} />
+            <OrderInstruction />
+            <Divider height={20} />
+            <SupportCancelButton
+              setCancellationModalVisible={setCancellationModalVisible}
+              canOrderCancel={canOrderCancel()}
+            />
+          </View>
+        </ScrollView>
+        <Modal
+          isVisible={cancellationModalVisible}
+          onBackdropPress={() => setCancellationModalVisible(false)}
+          backdropTransitionOutTiming={0}
+          backdropTransitionInTiming={1000}
+          backdropOpacity={0.5}
+          animationIn="slideInUp"
+          animationOut="slideOutDown">
+          <CancellationModal
+            comment={cancellationComment}
+            onChangeComment={setCancellationComment}
+            onCancel={() => setCancellationModalVisible(false)}
+            onSubmit={handleCancelOrder}
+            loading={loaders.singleOrderDetails}
           />
+        </Modal>
+      </HeaderAvoidingContainer>
+      {allFillupsCompleted && (
+        <View style={{flexDirection: 'row', justifyContent: 'space-around', padding: 10, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#ddd'}}>
+          <Button title="Navigation" onPress={() => console.log('Navigation pressed')} />
+          <Button title="Start Trip" onPress={() => console.log('Start Trip pressed')} />
         </View>
-      </ScrollView>
-      <Modal
-        isVisible={cancellationModalVisible}
-        onBackdropPress={() => setCancellationModalVisible(false)}
-        backdropTransitionOutTiming={0}
-        backdropTransitionInTiming={1000}
-        backdropOpacity={0.5}
-        animationIn="slideInUp"
-        animationOut="slideOutDown">
-        <CancellationModal
-          comment={cancellationComment}
-          onChangeComment={setCancellationComment}
-          onCancel={() => setCancellationModalVisible(false)}
-          onSubmit={handleCancelOrder}
-          loading={loaders.singleOrderDetails}
-        />
-      </Modal>
-    </HeaderAvoidingContainer>
+      )}
+    </View>
   );
 };
 

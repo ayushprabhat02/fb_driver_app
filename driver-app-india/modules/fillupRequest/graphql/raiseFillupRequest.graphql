@@ -1,0 +1,29 @@
+mutation raiseFillupRequest($object: fillup_request_insert_input!) {
+  insert_fillup_request_one(object: $object) {
+    id
+    is_active
+    quantity
+    state
+    unit
+    otp
+    product_variation_id
+    fuel_request_type
+    driver_vehicle {
+      driver_id
+      state
+      status
+      vehicle_id
+    }
+    task_id
+  }
+}
+
+# {"object": {
+#     "quantity": "100",
+#     "state": "PENDING",
+#     "unit": "liter",
+#   "fuel_request_type":"BOWSERS_TANK",
+#     "is_active": true,
+#   "driver_vehicle_id": "578773cc-5c2f-4ab2-a27f-7e8d89dc650a",
+#   "vehicle_tank_type_product_variation_id": "7743cd2f-d688-4618-ad21-dbaa293787b2"
+# }

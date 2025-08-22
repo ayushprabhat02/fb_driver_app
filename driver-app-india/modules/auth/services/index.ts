@@ -119,17 +119,47 @@ export const verifyOTP = async (
   }
 };
 
+// export const checkHasuraId = (token: FirebaseAuthTypes.IdTokenResult) => {
+//   const hasuraClaim = token?.claims['https://hasura.io/jwt/claims'];
+
+//   if (!hasuraClaim) {
+//     return null;
+//   } else {
+//     return {
+//       hasuraId: hasuraClaim['x-hasura-user-id'],
+//       role: hasuraClaim['x-hasura-default-role'],
+//     };
+//   }
+// };
+
 export const checkHasuraId = (token: FirebaseAuthTypes.IdTokenResult) => {
   const hasuraClaim = token?.claims['https://hasura.io/jwt/claims'];
 
-  if (!hasuraClaim) {
-    return null;
-  } else {
+  if (!hasuraClaim) return null;
+
+  const allowedRoles = hasuraClaim['x-hasura-allowed-roles'] as string[];
+  const defaultRole = hasuraClaim['x-hasura-default-role'] as string;
+  const hasuraId = hasuraClaim['x-hasura-user-id'];
+
+  console.log('---allowedRoles---', allowedRoles, 'defaultRole:', defaultRole);
+
+  const isDriver = allowedRoles?.includes('driver');
+  const isCustomer = allowedRoles?.includes('customer');
+
+  // ✅ Only pass if both conditions met
+  if (isDriver && isCustomer) {
     return {
-      hasuraId: hasuraClaim['x-hasura-user-id'],
-      role: hasuraClaim['x-hasura-default-role'],
+      hasuraId,
+      role: 'customer', // force role to customer
+      isDriverAccount: true,
     };
   }
+
+  return {
+    hasuraId: null,
+    role: null,
+    isDriverAccount: false,
+  };
 };
 
 export const signOut = async () => {

@@ -82,42 +82,34 @@ const initializeAuthListener = () => {
       const tokenResult = await user.getIdTokenResult();
       const hasuraIdExists = checkHasuraId(tokenResult);
 
-      if (!hasuraIdExists?.hasuraId) {
-        await fireRefreshToken(user);
-      } else {
-        const allowedRoles = ['driver', 'admin'];
-        // if (hasuraIdExists.role !== 'customer') {
-        if (!allowedRoles.includes(hasuraIdExists.role)) {
-          Toast.show({type: 'error', text1: 'Unauthorized account role.'});
-          setTimeout(() => signOut(), 1500);
-          return;
-        }
-
-        const isNew = isNewUserCheck(
-          user.metadata.creationTime,
-          user.metadata.lastSignInTime,
-        );
-        setIsNewUser(isNew);
-
-        setXHasuraId(hasuraIdExists.hasuraId);
-        const token = await user.getIdToken();
-        setAuthToken(token);
-        setFirebaseUser(user);
-
-        // This is where you set the client to switch navigators
-        const graphqlClient = initializeClient();
-        setGraphQLClient(graphqlClient);
+      if (!hasuraIdExists?.hasuraId || !hasuraIdExists?.isDriverAccount) {
+        Toast.show({type: 'error', text1: 'Unauthorized account role.'});
+        setTimeout(() => signOut(), 1500);
+        return;
       }
+
+      const isNew = isNewUserCheck(
+        user.metadata.creationTime,
+        user.metadata.lastSignInTime,
+      );
+      setIsNewUser(isNew);
+
+      setXHasuraId(hasuraIdExists.hasuraId);
+      const token = await user.getIdToken();
+      setAuthToken(token);
+      setFirebaseUser(user);
+
+      // ✅ always initialize with customer role
+      const graphqlClient = initializeClient();
+      setGraphQLClient(graphqlClient);
     } else {
-      // User is signed out, clear everything
       setGraphQLClient(null);
       resetAuthStore();
     }
 
-    // After auth check is complete, hide the splash screen
     setTimeout(() => {
       splashStore.setState({isLoading: false});
-    }, 500); // A small delay to prevent screen flicker
+    }, 500);
   });
 };
 
