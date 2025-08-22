@@ -4,7 +4,7 @@ import React from 'react';
 import {ScaledSheet} from 'react-native-size-matters';
 
 // store
-import {userStore} from '@/globalStore';
+import {checkinStore, userStore} from '@/globalStore';
 
 // components
 import {Text} from '@/components';
@@ -15,6 +15,9 @@ import {FetchUserProfileQuery} from '@/generated/graphql';
 
 const SettingsHeader: React.FC = () => {
   const loggedInUser = userStore.use.loggedInUser();
+  const driverVehicleDetails = checkinStore.use.driverVehicleDetails();
+
+  console.log('----driverVehicleDetails------', driverVehicleDetails);
 
   return (
     <View style={styles.headerContainer}>

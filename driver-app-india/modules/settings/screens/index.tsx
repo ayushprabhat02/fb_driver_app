@@ -21,7 +21,7 @@ import {UserService} from '@/services';
 
 const Settings: React.FC = () => {
   useEffect(() => {
-    UserService.getUserProfile();
+    // UserService.getUserProfile();
   }, []);
 
   const navigation = useNavigation();

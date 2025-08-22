@@ -1,5 +1,5 @@
 /**
- * @module Address
+ * @module Fillup
  * @description This module contains the service file for the address module.
  */
 
@@ -7,7 +7,7 @@
 import {callMutation, callQuery} from '@/utils/client';
 
 // store
-import addressStore from '../store';
+import fillupStore from '../store';
 
 // graphql-documents
 import {
@@ -58,23 +58,101 @@ import {
 import {deliveryStore, locationStore} from '@/globalStore';
 import Toast from 'react-native-toast-message';
 
+// types
+type TankTypeOption = {
+  label: string;
+  value: string;
+  tankTypeDetails: {
+    id: string;
+    name: string;
+    slug: string;
+    tank_type_id: string;
+    vehicle_tank_type_product_variations: Array<{
+      id: string;
+      product_variation: {
+        id: string;
+        price: string;
+        product_id: string;
+        variation: {
+          id: string;
+          slug: string;
+          variation_type: string;
+        };
+      };
+    }>;
+  };
+};
+
 /**
- * @class AddressService
+ * @function extractTankTypeOptions
+ * @description Extracts tank type options from driverVehicleDetails
+ * @param driverVehicleDetails - The driver vehicle details object
+ * @returns Array of tank type options for the dropdown
+ */
+export const extractTankTypeOptions = (driverVehicleDetails: any): TankTypeOption[] => {
+  if (!driverVehicleDetails?.vehicle_tank_types) {
+    return [];
+  }
+
+  return driverVehicleDetails.vehicle_tank_types.map((tankType: any) => ({
+    label: tankType.tank_type.name,
+    value: tankType.tank_type.slug,
+    tankTypeDetails: {
+      id: tankType.tank_type.id,
+      name: tankType.tank_type.name,
+      slug: tankType.tank_type.slug,
+      tank_type_id: tankType.tank_type_id,
+      vehicle_tank_type_product_variations: tankType.vehicle_tank_type_product_variations,
+    },
+  }));
+};
+
+/**
+ * @function findTankTypeById
+ * @description Finds tank type details by tank type ID
+ * @param driverVehicleDetails - The driver vehicle details object
+ * @param tankTypeId - The tank type ID to search for
+ * @returns Tank type details or null if not found
+ */
+export const findTankTypeById = (driverVehicleDetails: any, tankTypeId: string) => {
+  if (!driverVehicleDetails?.vehicle_tank_types) {
+    return null;
+  }
+
+  const tankType = driverVehicleDetails.vehicle_tank_types.find(
+    (tank: any) => tank.tank_type.id === tankTypeId || tank.tank_type.slug === tankTypeId
+  );
+
+  if (!tankType) {
+    return null;
+  }
+
+  return {
+    id: tankType.tank_type.id,
+    name: tankType.tank_type.name,
+    slug: tankType.tank_type.slug,
+    tank_type_id: tankType.tank_type_id,
+    vehicle_tank_type_product_variations: tankType.vehicle_tank_type_product_variations,
+  };
+};
+
+/**
+ * @class FillupService
  * @description This class represents the service for the address module.
  */
-class AddressService {
-  private static instance: AddressService;
+class FillupService {
+  private static instance: FillupService;
 
   /**
    * @method getInstance
-   * @description Returns the singleton instance of the AddressService class.
-   * @returns {AddressService} The singleton instance of the AddressService class.
+   * @description Returns the singleton instance of the FillupService class.
+   * @returns {FillupService} The singleton instance of the FillupService class.
    */
-  public static getInstance(): AddressService {
-    if (!AddressService.instance) {
-      AddressService.instance = new AddressService();
+  public static getInstance(): FillupService {
+    if (!FillupService.instance) {
+      FillupService.instance = new FillupService();
     }
-    return AddressService.instance;
+    return FillupService.instance;
   }
 
   /**
@@ -91,7 +169,7 @@ class AddressService {
       },
     });
 
-    addressStore.setState(state => ({
+    fillupStore.setState(state => ({
       ...state,
       shippingAddresses: response.organization_address,
     }));
@@ -110,7 +188,7 @@ class AddressService {
         ...args,
       },
     });
-    addressStore.setState(state => ({
+    fillupStore.setState(state => ({
       ...state,
       shippingAddresses: response.organization_address,
     }));
@@ -130,7 +208,7 @@ class AddressService {
       },
     });
 
-    addressStore.setState(state => ({
+    fillupStore.setState(state => ({
       ...state,
       billingAddresses: response.organization_address,
     }));
@@ -186,7 +264,7 @@ class AddressService {
       return country.alpha_code2 === 'IN';
     });
 
-    addressStore.setState({
+    fillupStore.setState({
       deliveryCountry: foundCountry,
     });
 
@@ -204,7 +282,7 @@ class AddressService {
       selectedCountry: foundCountry,
     }));
 
-    addressStore.setState({
+    fillupStore.setState({
       deliveryStates: states,
     });
 
@@ -332,6 +410,6 @@ class AddressService {
   }
 }
 
-const addressService = AddressService.getInstance();
+const fillupService = FillupService.getInstance();
 
-export default addressService;
+export default fillupService;

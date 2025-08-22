@@ -54,7 +54,7 @@ const HomeLandingPage: React.FC = () => {
   const isLoadingFillupHistory = homeStore.use.loaders().fillupHistory;
   const selectedOrder = orderStore.use.selectedOrder();
 
-  console.log('----selectedOrder------', selectedOrder);
+  console.log('----loggedInUser------', loggedInUser);
 
   const allFillupsCompleted = fillupHistory?.every(
     (item: any) => item.state === 'COMPLETE' || item.state === 'REJECTED',
@@ -220,11 +220,7 @@ const HomeLandingPage: React.FC = () => {
     }
   }, [selectedDate]);
 
-  useEffect(() => {
-    if (fillupHistory?.length > 0 && !allFillupsCompleted) {
-      Alert.alert('Warning', 'Please complete fillup first');
-    }
-  }, [fillupHistory, allFillupsCompleted]);
+  // Removed fillup completion alert as requested
 
   return (
     <View style={{flex: 1, backgroundColor: FBBackground.white}}>

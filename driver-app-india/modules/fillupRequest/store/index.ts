@@ -10,13 +10,34 @@ import {
   FetchAddressByNameQuery,
 } from '@/generated/graphql';
 
-type LoaderTypes = 'fetchAddresses';
+type LoaderTypes = 'fetchAddresses' | 'raiseFillupRequest';
 
 type Loaders = {
   fetchAddresses: boolean;
+  raiseFillupRequest: boolean;
 };
 
-type AddressStore = {
+type TankTypeDetails = {
+  id: string;
+  name: string;
+  slug: string;
+  tank_type_id: string;
+  vehicle_tank_type_product_variations: Array<{
+    id: string;
+    product_variation: {
+      id: string;
+      price: string;
+      product_id: string;
+      variation: {
+        id: string;
+        slug: string;
+        variation_type: string;
+      };
+    };
+  }>;
+};
+
+type FillupStore = {
   shippingAddresses:
     | FetchAddressByTypeQuery['organization_address']
     | []
@@ -25,6 +46,7 @@ type AddressStore = {
   currentLocationAddress: any;
   deliveryCountry: any;
   deliveryStates: any;
+  selectedTankType: TankTypeDetails | null;
 
   // loading states
   loaders: Loaders;
@@ -33,7 +55,8 @@ type AddressStore = {
 type AddressActions = {
   startLoader: (loaderType: LoaderTypes) => void;
   stopLoader: (loaderType: LoaderTypes) => void;
-  resetAddressStore: () => void;
+  setSelectedTankType: (tankType: TankTypeDetails | null) => void;
+  resetFillupStore: () => void;
 };
 
 /*
@@ -41,18 +64,20 @@ type AddressActions = {
  * Hence make sure to use 'setState' method provided by zustand to update the state
  */
 
-const addressInitialState: AddressStore = {
+const addressInitialState: FillupStore = {
   shippingAddresses: [],
   billingAddresses: [],
   currentLocationAddress: {},
   deliveryCountry: [],
   deliveryStates: [],
+  selectedTankType: null,
   loaders: {
     fetchAddresses: true,
+    raiseFillupRequest: false,
   },
 };
 
-const addressStore = create<AddressStore & AddressActions>(set => ({
+const fillupStore = create<FillupStore & AddressActions>(set => ({
   ...addressInitialState,
 
   // loader actions
@@ -66,8 +91,15 @@ const addressStore = create<AddressStore & AddressActions>(set => ({
       return {...state, loaders: {...state.loaders, [loaderType]: false}};
     }),
 
+  // tank type actions
+  setSelectedTankType: (tankType: TankTypeDetails | null) =>
+    set(state => ({
+      ...state,
+      selectedTankType: tankType,
+    })),
+
   // reset address store
-  resetAddressStore: () => set(addressInitialState),
+  resetFillupStore: () => set(addressInitialState),
 }));
 
-export default createSelectors(addressStore);
+export default createSelectors(fillupStore);

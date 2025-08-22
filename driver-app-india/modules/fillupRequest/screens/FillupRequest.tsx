@@ -20,9 +20,14 @@ import {
 
 // store
 import homeStore from '@/modules/home/store';
+import fillupStore from '../store';
 
 // services
 import homeService from '@/modules/home/services';
+import fillupService, {
+  extractTankTypeOptions,
+  findTankTypeById,
+} from '../services';
 
 // actions, utils
 import {getDriverVehicleId} from '@/utils/localStorage';
@@ -30,6 +35,11 @@ import {getDriverVehicleId} from '@/utils/localStorage';
 // styles
 import {headerTransparentContainer} from '@/styles';
 import {checkinStore} from '@/globalStore';
+import {
+  Fillup_Request_Status_Enum,
+  Fuel_Request_Type_Enum,
+  Order_Type_Enum,
+} from '@/generated/graphql';
 
 // FillupHistoryCard component
 const FillupHistoryCard = ({item}: {item: any}) => {
@@ -94,11 +104,24 @@ const FillupRequest: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
 
   // store
+  const driverVehicleId = checkinStore.use.driverVehicleId();
+  const fillupHistoryData = homeStore.use.fillupHistory();
+  const driverVehicleDetails = checkinStore.use.driverVehicleDetails();
+  const selectedTankType = fillupStore.use.selectedTankType();
+  const setSelectedTankType = fillupStore.use.setSelectedTankType();
+
+  //loader
   const homeLoaders = homeStore.use.loaders();
   const startHomeLoader = homeStore.use.startLoader();
   const stopHomeLoader = homeStore.use.stopLoader();
-  const driverVehicleId = checkinStore.use.driverVehicleId();
-  const fillupHistoryData = homeStore.use.fillupHistory();
+  const fillupLoaders = fillupStore.use.loaders();
+  const startFillupLoader = fillupStore.use.startLoader();
+  const stopFillupLoader = fillupStore.use.stopLoader();
+
+  console.log(
+    '----driverVehicleDetails------',
+    JSON.stringify(driverVehicleDetails),
+  );
 
   // Modal and form handling
   const bottomSheetRef = useRef<BottomSheetModal>(null);
@@ -119,12 +142,10 @@ const FillupRequest: React.FC = () => {
   const watchedValues = watch();
   const isFormValid = watchedValues.tankType && watchedValues.fuelQuantity;
 
-  // Tank type options
-  const tankTypeOptions = [
-    {label: 'Fuel Tank', value: 'fuel_tank'},
-    {label: 'Browser Tank', value: 'browser_tank'},
-    {label: 'Rotation Flow', value: 'rotation_flow'},
-  ];
+  // Tank type options - dynamically extracted from driverVehicleDetails
+  const tankTypeOptions = React.useMemo(() => {
+    return extractTankTypeOptions(driverVehicleDetails);
+  }, [driverVehicleDetails]);
 
   const openModal = () => {
     bottomSheetRef.current?.present();
@@ -137,8 +158,50 @@ const FillupRequest: React.FC = () => {
 
   const onSubmitFillupRequest = (data: any) => {
     console.log('Fillup request data:', data);
-    // TODO: Implement API call to submit fillup request
+    console.log('Selected tank type:', selectedTankType);
+
+    if (!selectedTankType) {
+      console.error('No tank type selected');
+      return;
+    }
+
+    // Call the API with form data and selected tank type
+    raiseFillupRequest(data.fuelQuantity, selectedTankType);
     closeModal();
+  };
+
+  const raiseFillupRequest = async (quantity: string, tankTypeDetails: any) => {
+    startFillupLoader('raiseFillupRequest');
+
+    // Get the vehicle_tank_type_product_variation_id from the selected tank type
+    const vehicleTankTypeProductVariationId =
+      tankTypeDetails.vehicle_tank_type_product_variations?.[0]?.id;
+
+    if (!vehicleTankTypeProductVariationId) {
+      console.error('No vehicle tank type product variation ID found');
+      stopFillupLoader('raiseFillupRequest');
+      return;
+    }
+
+    fillupService
+      .raiseFillupRequest({
+        object: {
+          quantity: quantity,
+          state: Fillup_Request_Status_Enum.Pending,
+          unit: 'liter',
+          fuel_request_type: Fuel_Request_Type_Enum.FuelTank,
+          is_active: true,
+          driver_vehicle_id: driverVehicleId,
+          vehicle_tank_type_product_variation_id:
+            vehicleTankTypeProductVariationId,
+          otp: Math.floor(1000 + Math.random() * 9000),
+          category: Order_Type_Enum.Delivery,
+        },
+      })
+      .finally(() => {
+        stopFillupLoader('raiseFillupRequest');
+        fetchFillupHistory();
+      });
   };
 
   const fetchFillupHistory = async () => {
@@ -213,7 +276,16 @@ const FillupRequest: React.FC = () => {
             placeholder="Please select tank"
             required
             items={tankTypeOptions}
-            setChange={value => console.log('Tank type changed:', value)}
+            setChange={value => {
+              console.log('Tank type changed:', value);
+              // Find and store the selected tank type details
+              const selectedOption = tankTypeOptions.find(
+                option => option.value === value,
+              );
+              if (selectedOption) {
+                setSelectedTankType(selectedOption.tankTypeDetails);
+              }
+            }}
             renderObject={item => item}
           />
           <Divider height={5} />
@@ -243,6 +315,10 @@ const FillupRequest: React.FC = () => {
           </View>
         </BottomSheetView>
       </SimpleBottomSheet>
+      <FullScreenLoader
+        showLoader={fillupLoaders.raiseFillupRequest}
+        loaderText="Raising fillup request"
+      />
     </HeaderAvoidingContainer>
   );
 };
