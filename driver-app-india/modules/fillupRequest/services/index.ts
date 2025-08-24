@@ -50,10 +50,13 @@ import {
   IsValidateGstinQuery,
   IsValidateGstinQueryVariables,
 
-  // raise fillup request
+  // fillup request
   RaiseFillupRequestDocument,
   RaiseFillupRequestMutation,
   RaiseFillupRequestMutationVariables,
+  FillupRequestByIdDocument,
+  FillupRequestByIdQuery,
+  FillupRequestByIdQueryVariables,
 } from '@/generated/graphql';
 import {deliveryStore, locationStore} from '@/globalStore';
 import Toast from 'react-native-toast-message';
@@ -407,6 +410,24 @@ class FillupService {
     });
 
     return response.insert_fillup_request_one;
+  }
+
+  public async fetchFillupRequestById(args: FillupRequestByIdQueryVariables) {
+    fillupStore.getState().startLoader('fetchFillupRequestById');
+    try {
+      const response: FillupRequestByIdQuery = await callQuery({
+        queryDocument: FillupRequestByIdDocument,
+        variables: {
+          ...args,
+        },
+      });
+      fillupStore.getState().setFillupRequestDetails(response?.fillup_request_by_pk || null);
+      fillupStore.getState().stopLoader('fetchFillupRequestById');
+      return response;
+    } catch (error) {
+      fillupStore.getState().stopLoader('fetchFillupRequestById');
+      throw error;
+    }
   }
 }
 

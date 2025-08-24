@@ -1,3 +1,4 @@
+import {MyProfileQuery, MyProfileDocument} from './../../../generated/graphql';
 /**
  * @module User
  * @description This module contains the service file for the user module.
@@ -18,10 +19,6 @@ import userStore from '../store';
 
 // graphql-documents
 import {
-  // user Profile
-  FetchUserProfileDocument,
-  FetchUserProfileQuery,
-
   // customer segmentation
   FetchCustomerSegmentationListDocument,
   FetchCustomerSegmentationListQuery,
@@ -61,17 +58,17 @@ class UserService {
    * @description Retrieves the user profile.
    */
   public async getUserProfile() {
-    const response: FetchUserProfileQuery = await callQuery({
-      queryDocument: FetchUserProfileDocument,
+    const response: MyProfileQuery = await callQuery({
+      queryDocument: MyProfileDocument,
       variables: {},
     });
 
     userStore.setState(state => ({
       ...state,
-      loggedInUser: response.user,
+      loggedInUser: response.fetchUserDetails,
     }));
 
-    return response.user;
+    return response.fetchUserDetails;
 
     // const allOrgUsers = response.user[0]?.organization_users; //todo:remove later after testing
 
@@ -164,6 +161,30 @@ class UserService {
     });
 
     return response.user;
+  }
+
+  /**
+   * @method fetchMyProfile
+   * @description Fetches user profile with proper JWT handling
+   */
+  public async fetchMyProfile() {
+    try {
+      const response: MyProfileQuery = await callQuery({
+        queryDocument: MyProfileDocument,
+        variables: {},
+      });
+
+      if (response?.fetchUserDetails) {
+        userStore.setState(state => ({
+          ...state,
+          loggedInUser: response.fetchUserDetails,
+        }));
+        return response.fetchUserDetails;
+      }
+    } catch (error) {
+      console.error('Failed to fetch profile:', error);
+      throw error;
+    }
   }
 }
 

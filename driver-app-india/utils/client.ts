@@ -68,18 +68,23 @@ export const initializeClient = () => {
            * @returns A promise that resolves when the token is refreshed.
            */
           async refreshAuth() {
-            return new Promise(resolve => {
-              const unsubscribe = auth().onAuthStateChanged(async user => {
-                unsubscribe();
-                const refreshToken = (await user?.getIdToken()) as string;
+            try {
+              const user = auth().currentUser;
+              if (user) {
+                const refreshToken = await user.getIdToken(true); // Force refresh
                 authStore.setState(state => ({
                   ...state,
                   authToken: refreshToken,
                 }));
-                resolve();
-              });
-              resolve();
-            });
+                console.log('Token refreshed successfully');
+              } else {
+                console.error('No authenticated user found for token refresh');
+                throw new Error('No authenticated user');
+              }
+            } catch (error) {
+              console.error('Failed to refresh token:', error);
+              throw error;
+            }
           },
         };
       }),

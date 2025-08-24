@@ -10,11 +10,12 @@ import {
   FetchAddressByNameQuery,
 } from '@/generated/graphql';
 
-type LoaderTypes = 'fetchAddresses' | 'raiseFillupRequest';
+type LoaderTypes = 'fetchAddresses' | 'raiseFillupRequest' | 'fetchFillupRequestById';
 
 type Loaders = {
   fetchAddresses: boolean;
   raiseFillupRequest: boolean;
+  fetchFillupRequestById: boolean;
 };
 
 type TankTypeDetails = {
@@ -47,6 +48,7 @@ type FillupStore = {
   deliveryCountry: any;
   deliveryStates: any;
   selectedTankType: TankTypeDetails | null;
+  fillupRequestDetails: any;
 
   // loading states
   loaders: Loaders;
@@ -56,6 +58,7 @@ type AddressActions = {
   startLoader: (loaderType: LoaderTypes) => void;
   stopLoader: (loaderType: LoaderTypes) => void;
   setSelectedTankType: (tankType: TankTypeDetails | null) => void;
+  setFillupRequestDetails: (details: any) => void;
   resetFillupStore: () => void;
 };
 
@@ -71,9 +74,11 @@ const addressInitialState: FillupStore = {
   deliveryCountry: [],
   deliveryStates: [],
   selectedTankType: null,
+  fillupRequestDetails: null,
   loaders: {
     fetchAddresses: true,
     raiseFillupRequest: false,
+    fetchFillupRequestById: false,
   },
 };
 
@@ -96,6 +101,13 @@ const fillupStore = create<FillupStore & AddressActions>(set => ({
     set(state => ({
       ...state,
       selectedTankType: tankType,
+    })),
+
+  // fillup request details actions
+  setFillupRequestDetails: (details: any) =>
+    set(state => ({
+      ...state,
+      fillupRequestDetails: details,
     })),
 
   // reset address store

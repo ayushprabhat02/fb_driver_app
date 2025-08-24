@@ -1,0 +1,236 @@
+query fillupRequestById($id: uuid!) {
+  fillup_request_by_pk(id: $id) {
+    purchase_order_erp_code
+    purchase_invoice_erp_code
+    grn_erp_code
+    driver_vehicle_id
+    fuel_request_type
+    id
+    is_active
+    partner_order_id
+    category
+    partner_order {
+      affiliation_amount
+      amount
+      id
+      partner_user {
+        partner {
+          id
+          name
+          about
+          location
+        }
+      }
+      partner_order_items {
+        id
+        product_variation {
+          id
+          product {
+            name
+          }
+          variation {
+            variation_name
+          }
+        }
+      }
+      partner_address {
+        address_line1
+        address_line2
+        city_id
+        address_type
+        country_id
+        id
+        location
+        name
+        landMark
+        house_number
+        pincode
+        street_address
+      }
+      fillup_requests {
+        quantity_approved
+        state
+        vehicle_tank_type_product_variation {
+          product_variation {
+            expiry_date
+            id
+            is_active
+            product {
+              name
+              id
+              hsn_code
+              sku
+              product_type
+            }
+            variation {
+              id
+              pack_size
+            }
+          }
+          vehicle_tank_type {
+            tank_type {
+              id
+              name
+              slug
+            }
+            vehicle {
+              device_id
+              id
+              fuel_tank_capacity
+              insurance_expire_date
+              is_active
+              is_mothership
+              location
+              model
+              name
+            }
+          }
+        }
+        fuel_request_type
+        id
+        driver_vehicle_id
+      }
+    }
+    task {
+      category
+      partner_address {
+        id
+        pincode
+        address_type
+        name
+        landMark
+        city_id
+        country_id
+        location
+        address_line1
+        address_line2
+        street_address
+        house_number
+      }
+      fillup_requests {
+        driver_vehicle_id
+        fuel_request_type
+        id
+        is_active
+        product_variation_id
+        quantity_approved
+        state
+        task_id
+        unit
+        driver_vehicle {
+          driver_id
+          is_active
+          user {
+            first_name
+            last_name
+            license_number
+            middle_name
+            pan_number
+            phone_number
+            referral_code
+          }
+          vehicle {
+            created_at
+            category
+            id
+            insurance_expire_date
+            fuel_tank_capacity
+            model
+            name
+            partner_address_id
+            location
+            tanker_capacity
+            category
+            registration_number
+            rc_expire_date
+            rfid
+            tanker_compartment_number
+            year
+            device_id
+            description
+            partner_address {
+              address_line1
+              address_line2
+              address_type
+              city_id
+              country_id
+              house_number
+              id
+              location
+              name
+              pincode
+              street_address
+            }
+          }
+        }
+        vehicle_tank_type_product_variation {
+          vehicle_tank_type_id
+          vehicle_tank_type {
+            id
+            vehicle_id
+            vehicle {
+              category
+              description
+              device_id
+              fuel_tank_capacity
+              id
+              insurance_expire_date
+              is_active
+              is_mothership
+              name
+              model
+              location
+            }
+            tank_type {
+              description
+              id
+              is_active
+              name
+              slug
+            }
+          }
+          product_variation {
+            expiry_date
+            id
+            is_active
+            product {
+              name
+              id
+              hsn_code
+              sku
+              product_type
+            }
+            variation {
+              id
+              pack_size
+            }
+          }
+        }
+      }
+      customer_order_id
+      driver_vehicle {
+        driver_id
+        id
+        state
+        status
+        vehicle_id
+      }
+      id
+      is_active
+      is_done_locally
+      organization_address {
+        address_line1
+        address_line2
+        address_type
+        city_id
+        country {
+          alpha_code2
+          id
+          name
+        }
+      }
+    }
+    quantity_approved
+    state
+  }
+}

@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useState, useRef} from 'react';
-import {View, FlatList, Text, TouchableOpacity} from 'react-native';
+import {View, FlatList, TouchableOpacity} from 'react-native';
 import {ScaledSheet, ms} from 'react-native-size-matters';
 import {useFocusEffect} from '@react-navigation/native';
 import {BottomSheetModal, BottomSheetView} from '@gorhom/bottom-sheet';
@@ -12,10 +12,13 @@ import {
   FullScreenLoader,
   HeaderAvoidingContainer,
   SimpleBottomSheet,
+  Text,
 } from '@/components';
 import {
   CustomSelectInput,
   CustomBottomFormInput,
+  FillupHistoryCard,
+  FillupDetailsBottomSheet,
 } from '@/modules/fillupRequest/components';
 
 // store
@@ -40,68 +43,10 @@ import {
   Fuel_Request_Type_Enum,
   Order_Type_Enum,
 } from '@/generated/graphql';
-
-// FillupHistoryCard component
-const FillupHistoryCard = ({item}: {item: any}) => {
-  const getStatusColor = (state: string) => {
-    switch (state) {
-      case 'COMPLETE':
-        return '#4CAF50';
-      case 'REJECTED':
-        return '#F44336';
-      default:
-        return '#FF9800';
-    }
-  };
-
-  const getStatusText = (state: string) => {
-    switch (state) {
-      case 'COMPLETE':
-        return 'COMPLETE';
-      case 'REJECTED':
-        return 'REJECTED';
-      default:
-        return 'PENDING';
-    }
-  };
-
-  return (
-    <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <Text style={styles.stationTitle}>
-          {item.task?.category === 'FUEL_TANK'
-            ? 'FUEL TANK'
-            : 'SERVICE STATION'}
-        </Text>
-        <View
-          style={[
-            styles.statusBadge,
-            {backgroundColor: getStatusColor(item.state)},
-          ]}>
-          <Text style={styles.statusText}>{getStatusText(item.state)}</Text>
-        </View>
-      </View>
-      <View style={styles.cardContent}>
-        <Text style={styles.label}>
-          Fuel: <Text style={styles.value}>Diesel</Text>
-        </Text>
-        <Text style={styles.label}>
-          Qty: <Text style={styles.value}>{item.quantity}L</Text>
-        </Text>
-        <Text style={styles.label}>
-          Date:{' '}
-          <Text style={styles.value}>
-            {new Date().toLocaleDateString('en-GB')}
-          </Text>
-        </Text>
-      </View>
-      <Text style={styles.notAvailable}>Not Available</Text>
-    </View>
-  );
-};
+import {FBColors, FBBackground, FBColorPalette} from '@/types/styles';
 
 const FillupRequest: React.FC = () => {
-  const [refreshing, setRefreshing] = useState(false);
+  const [selectedFillupItem, setSelectedFillupItem] = useState<any>(null);
 
   // store
   const driverVehicleId = checkinStore.use.driverVehicleId();
@@ -125,6 +70,7 @@ const FillupRequest: React.FC = () => {
 
   // Modal and form handling
   const bottomSheetRef = useRef<BottomSheetModal>(null);
+  const fillupDetailsSheetRef = useRef<BottomSheetModal>(null);
   const {
     control,
     handleSubmit,
@@ -154,6 +100,22 @@ const FillupRequest: React.FC = () => {
   const closeModal = () => {
     bottomSheetRef.current?.close();
     reset();
+  };
+
+  const openFillupDetailsModal = async (item: any) => {
+    setSelectedFillupItem(item);
+    try {
+      await fillupService.fetchFillupRequestById({id: item.id});
+      fillupDetailsSheetRef.current?.present();
+    } catch (error) {
+      console.error('Error fetching fillup details:', error);
+      fillupDetailsSheetRef.current?.present();
+    }
+  };
+
+  const closeFillupDetailsModal = () => {
+    fillupDetailsSheetRef.current?.close();
+    setSelectedFillupItem(null);
   };
 
   const onSubmitFillupRequest = (data: any) => {
@@ -201,6 +163,7 @@ const FillupRequest: React.FC = () => {
       .finally(() => {
         stopFillupLoader('raiseFillupRequest');
         fetchFillupHistory();
+        closeModal();
       });
   };
 
@@ -231,7 +194,10 @@ const FillupRequest: React.FC = () => {
         {/* null check */}
         {!homeLoaders.fillupHistory &&
           (!fillupHistoryData || fillupHistoryData.length === 0) && (
-            <Text style={{paddingTop: 12, marginLeft: 8, fontSize: 14}}>
+            <Text
+              size="sm"
+              color="steelBlue"
+              style={{paddingTop: 12, marginLeft: 8}}>
               No fillup history found.
             </Text>
           )}
@@ -239,7 +205,10 @@ const FillupRequest: React.FC = () => {
           data={fillupHistoryData || []}
           keyExtractor={(item: any) => item.id}
           renderItem={({item}: {item: any}) => (
-            <FillupHistoryCard item={item} />
+            <FillupHistoryCard
+              item={item}
+              onGoToFillup={openFillupDetailsModal}
+            />
           )}
           windowSize={10}
           style={{
@@ -257,7 +226,9 @@ const FillupRequest: React.FC = () => {
 
       {/* Floating Action Button */}
       <TouchableOpacity style={styles.fab} onPress={openModal}>
-        <Text style={styles.fabText}>Request Fillup</Text>
+        <Text size="sm" weight="bold" color="white">
+          Request Fillup
+        </Text>
       </TouchableOpacity>
 
       {/* Modal for fillup request */}
@@ -266,7 +237,9 @@ const FillupRequest: React.FC = () => {
         snapPoints={['60%']}
         closeSheet={closeModal}>
         <BottomSheetView style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Enter fuel quantity</Text>
+          <Text size="lg" weight="bold" color="neutral">
+            Enter fuel quantity
+          </Text>
 
           <CustomSelectInput
             name="tankType"
@@ -302,7 +275,9 @@ const FillupRequest: React.FC = () => {
 
           <View style={styles.modalButtons}>
             <TouchableOpacity style={styles.cancelButton} onPress={closeModal}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <Text size="base" weight="bold" color="white">
+                Cancel
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[
@@ -310,7 +285,9 @@ const FillupRequest: React.FC = () => {
                 isFormValid ? styles.submitButtonActive : null,
               ]}
               onPress={handleSubmit(onSubmitFillupRequest)}>
-              <Text style={styles.submitButtonText}>Request Fillup</Text>
+              <Text size="base" weight="bold" color="white">
+                Request Fillup
+              </Text>
             </TouchableOpacity>
           </View>
         </BottomSheetView>
@@ -319,77 +296,17 @@ const FillupRequest: React.FC = () => {
         showLoader={fillupLoaders.raiseFillupRequest}
         loaderText="Raising fillup request"
       />
+
+      {/* Fillup Details Modal */}
+      <FillupDetailsBottomSheet
+        bottomSheetRef={fillupDetailsSheetRef}
+        onClose={closeFillupDetailsModal}
+      />
     </HeaderAvoidingContainer>
   );
 };
 
 const styles = ScaledSheet.create({
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: '6@s',
-    padding: '12@s',
-    marginVertical: '4@vs',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.08,
-    shadowRadius: 2,
-    elevation: 3,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '8@vs',
-  },
-  stationTitle: {
-    fontSize: '16@s',
-    fontWeight: 'bold',
-    color: '#666666',
-  },
-  statusBadge: {
-    paddingHorizontal: '6@s',
-    paddingVertical: '2@vs',
-    borderRadius: '3@s',
-  },
-  statusText: {
-    color: '#FFFFFF',
-    fontSize: '11@s',
-    fontWeight: 'bold',
-  },
-  cardContent: {
-    marginBottom: '8@vs',
-  },
-  label: {
-    fontSize: '13@s',
-    color: '#666666',
-    marginBottom: '2@vs',
-  },
-  value: {
-    color: '#333333',
-    fontWeight: '500',
-  },
-  notAvailable: {
-    fontSize: '13@s',
-    color: '#999999',
-    textAlign: 'center',
-    marginVertical: '6@vs',
-  },
-  requestButton: {
-    backgroundColor: '#2196F3',
-    paddingHorizontal: '12@s',
-    paddingVertical: '6@vs',
-    borderRadius: '16@s',
-    alignSelf: 'center',
-    marginTop: '6@vs',
-  },
-  requestButtonText: {
-    color: '#FFFFFF',
-    fontSize: '13@s',
-    fontWeight: 'bold',
-  },
   containerTop: {
     ...headerTransparentContainer,
   },
@@ -400,11 +317,11 @@ const styles = ScaledSheet.create({
     paddingHorizontal: '16@s',
     paddingVertical: '12@vs',
     borderRadius: '25@s',
-    backgroundColor: '#2196F3',
+    backgroundColor: FBColors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 8,
-    shadowColor: '#000',
+    shadowColor: FBColorPalette.black,
     shadowOffset: {
       width: 0,
       height: 4,
@@ -412,19 +329,12 @@ const styles = ScaledSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4.65,
   },
-  fabText: {
-    color: '#FFFFFF',
-    fontSize: '14@s',
-    fontWeight: 'bold',
-  },
+  fabText: {},
   modalContent: {
     padding: '20@s',
     paddingBottom: '30@vs',
   },
   modalTitle: {
-    fontSize: '18@s',
-    fontWeight: 'bold',
-    color: '#333333',
     marginBottom: '20@vs',
     textAlign: 'center',
   },
@@ -436,31 +346,23 @@ const styles = ScaledSheet.create({
   },
   cancelButton: {
     flex: 1,
-    backgroundColor: '#DC3545',
+    backgroundColor: FBColors.error,
     paddingVertical: '12@vs',
     borderRadius: '8@s',
     alignItems: 'center',
   },
-  cancelButtonText: {
-    color: '#FFFFFF',
-    fontSize: '16@s',
-    fontWeight: 'bold',
-  },
+  cancelButtonText: {},
   submitButton: {
     flex: 1,
-    backgroundColor: '#6C757D',
+    backgroundColor: FBColors.steelBlue,
     paddingVertical: '12@vs',
     borderRadius: '8@s',
     alignItems: 'center',
   },
   submitButtonActive: {
-    backgroundColor: '#28A745',
+    backgroundColor: FBColors.primary,
   },
-  submitButtonText: {
-    color: '#FFFFFF',
-    fontSize: '16@s',
-    fontWeight: 'bold',
-  },
+  submitButtonText: {},
 });
 
 export default FillupRequest;

@@ -1,8 +1,8 @@
 // dependencies
 import {ScrollView, View} from 'react-native';
-import React, {useEffect} from 'react';
+import React, {useCallback, useEffect} from 'react';
 import {ScaledSheet} from 'react-native-size-matters';
-import {useNavigation} from '@react-navigation/native';
+import {useFocusEffect, useNavigation} from '@react-navigation/native';
 
 // services
 import {signOut} from '@/modules/auth/services';
@@ -18,6 +18,7 @@ import {settingsOptions} from '../data/settings';
 // types
 import {FBBackground, FBBorders, FBColors} from '@/types/styles';
 import {UserService} from '@/services';
+import userService from '@/modules/user/services';
 
 const Settings: React.FC = () => {
   useEffect(() => {
@@ -43,6 +44,20 @@ const Settings: React.FC = () => {
     // @ts-ignore
     navigation.navigate(setting?.module);
   };
+
+  const fetchMyProfile = async () => {
+    try {
+      await userService.fetchMyProfile();
+    } catch (error) {
+      console.error('Failed to fetch profile:', error);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchMyProfile();
+    }, []),
+  );
 
   return (
     <HeaderAvoidingContainer>

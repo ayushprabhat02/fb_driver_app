@@ -11,30 +11,25 @@ import {Text} from '@/components';
 import {FBBackground, FBColorPalette} from '@/types/styles';
 
 // types
-import {FetchUserProfileQuery} from '@/generated/graphql';
 
 const SettingsHeader: React.FC = () => {
   const loggedInUser = userStore.use.loggedInUser();
   const driverVehicleDetails = checkinStore.use.driverVehicleDetails();
 
-  console.log('----driverVehicleDetails------', driverVehicleDetails);
-
   return (
     <View style={styles.headerContainer}>
       <View style={{flexDirection: 'row', columnGap: 12}}>
-        <SettingsAvatar
-          user={loggedInUser?.length ? loggedInUser[0] : undefined}
-        />
+        <SettingsAvatar user={loggedInUser} />
         <View>
           <Text color="white" weight="600" size="lg" lines={1}>
-            {loggedInUser?.length
-              ? `${loggedInUser[0].first_name} ${
-                  loggedInUser[0]?.last_name || ''
-                }`
+            {loggedInUser
+              ? `${loggedInUser.first_name || ''} ${
+                  loggedInUser.last_name || ''
+                }`.trim()
               : ''}
           </Text>
           <Text color="white" weight="600" size="sm" style={{marginTop: 8}}>
-            {loggedInUser?.length ? loggedInUser[0].phone_number : ''}
+            {driverVehicleDetails?.registration_number}
           </Text>
         </View>
       </View>
@@ -43,7 +38,7 @@ const SettingsHeader: React.FC = () => {
 };
 
 interface SettingsAvatarProps {
-  user: FetchUserProfileQuery['user'][0] | undefined;
+  user: any | undefined;
 }
 
 const SettingsAvatar: React.FC<SettingsAvatarProps> = ({user}) => {
