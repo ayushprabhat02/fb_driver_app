@@ -144,13 +144,13 @@ export const checkHasuraId = (token: FirebaseAuthTypes.IdTokenResult) => {
   console.log('---allowedRoles---', allowedRoles, 'defaultRole:', defaultRole);
 
   const isDriver = allowedRoles?.includes('driver');
-  const isCustomer = allowedRoles?.includes('customer');
+  const isTowerDriver = allowedRoles?.includes('tower_driver');
 
   // ✅ Only pass if both conditions met
-  if (isDriver && isCustomer) {
+  if (isDriver && isTowerDriver) {
     return {
       hasuraId,
-      role: 'customer', // force role to customer
+      role: 'tower_driver', // force role to customer
       isDriverAccount: true,
     };
   }

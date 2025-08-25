@@ -1,25 +1,18 @@
 //dependencies
-import {BottomSheetModal} from '@gorhom/bottom-sheet';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  RefreshControl,
-  ScrollView,
-  View,
-} from 'react-native';
+import {RefreshControl, ScrollView, View} from 'react-native';
 import {hasNotch} from 'react-native-device-info';
 import {ScaledSheet} from 'react-native-size-matters';
 
 //components
 import {
+  Button,
   Container,
   FocusAwareStatusBar,
   SwitchProfileHeader,
-  Button,
 } from '@/components';
-import {OrderListSkeleton} from '../components/SkeletonLoader';
 import CustomDateSelector from '../components/CustomDateSelector';
+import {OrderListSkeleton} from '../components/SkeletonLoader';
 
 // service
 import {requestAppPermissions} from '@/utils/general';
@@ -29,17 +22,17 @@ import {
   checkinStore,
   deliveryStore,
   homeStore,
-  userStore,
   orderStore,
+  userStore,
 } from '@/globalStore';
 
+import {Task_State_Enum} from '@/generated/graphql';
+import {OrderListCard} from '@/modules/order/delivery/components';
 import {UserService} from '@/services';
 import {FBBackground} from '@/types/styles';
 import {useFocusEffect} from '@react-navigation/native';
-import homeService from '../services';
-import {Task_State_Enum} from '@/generated/graphql';
 import OrderSummaryCard from '../components/delivery/OrderSummaryCard';
-import {OrderListCard} from '@/modules/order/delivery/components';
+import homeService from '../services';
 
 const HomeLandingPage: React.FC = () => {
   const [refreshing, setRefreshing] = React.useState(false);

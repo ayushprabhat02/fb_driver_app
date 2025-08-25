@@ -32,7 +32,7 @@ import {FocusAwareStatusBar} from '@/components';
 export type Props = StackScreenProps<AuthStackParamList, 'login'>;
 
 const Login: React.FC<Props> = ({navigation}: Props) => {
-  const resetAddressStore = addressStore.use.resetAddressStore();
+  const resetFillupStore = addressStore.use.resetFillupStore();
   const resetAuthStore = authStore.use.resetAuthStore();
   const resetAssetStore = assetStore.use.resetAssetStore();
   const resetBusinessStore = businessStore.use.resetBusinessStore();
@@ -45,7 +45,7 @@ const Login: React.FC<Props> = ({navigation}: Props) => {
   // import second from '@/assets/auth/login-banner.png'
   useEffect(() => {
     // need to reset all stores before user logs in
-    resetAddressStore();
+    resetFillupStore();
     resetAuthStore();
     resetAssetStore();
     resetBusinessStore();
