@@ -8,6 +8,7 @@ import {
   AddBillingAddress,
   FillupRequest as FillupRequestScreen,
 } from '@/modules/fillupRequest/screens';
+import {FillAsset} from '@/modules/order/screens';
 import {BackButtonArrow} from '@/components';
 
 // styles
@@ -18,6 +19,7 @@ export type FillupRequestParamList = {
   'add-billing-address': undefined;
   'fillup-request': undefined;
   'search-location': undefined;
+  'fill-asset': undefined;
 };
 
 const FillupRequestStack = createStackNavigator<FillupRequestParamList>();
@@ -44,6 +46,11 @@ const FillupRequestNavigator: React.FC = () => {
         name="add-billing-address"
         component={AddBillingAddress}
         options={{headerTitle: 'Add billing address'}}
+      />
+      <FillupRequestStack.Screen
+        name="fill-asset"
+        component={FillAsset}
+        options={{headerTitle: 'Fill Asset'}}
       />
     </FillupRequestStack.Navigator>
   );

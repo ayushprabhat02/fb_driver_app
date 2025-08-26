@@ -188,6 +188,8 @@ const FillupRequest: React.FC = () => {
     }, [driverVehicleId]),
   );
 
+  console.log('----fillupHistoryData----', fillupHistoryData);
+
   return (
     <HeaderAvoidingContainer>
       <View style={{flex: 1, padding: 8}}>

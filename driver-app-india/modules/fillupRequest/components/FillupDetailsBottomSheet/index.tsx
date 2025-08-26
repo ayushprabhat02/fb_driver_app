@@ -5,6 +5,7 @@ import {BottomSheetView} from '@gorhom/bottom-sheet';
 import {SimpleBottomSheet, Text} from '@/components';
 import {FBColors, FBBackground} from '@/types/styles';
 import fillupStore from '../../store';
+import {useNavigation} from '@react-navigation/native';
 
 interface FillupDetailsBottomSheetProps {
   bottomSheetRef: React.RefObject<any>;
@@ -16,23 +17,32 @@ const FillupDetailsBottomSheet: React.FC<FillupDetailsBottomSheetProps> = ({
   onClose,
 }) => {
   const fillupRequestDetails = fillupStore.use.fillupRequestDetails();
+  console.log('----fillupRequestDetails-----', fillupRequestDetails);
   const isLoading = fillupStore.use.loaders().fetchFillupRequestById;
+
+  const navigation = useNavigation();
   return (
     <SimpleBottomSheet
       ref={bottomSheetRef}
       snapPoints={['50%']}
       closeSheet={onClose}>
       <BottomSheetView style={styles.modalContent}>
-        <Text size="lg" weight="bold" color="neutral">Fillup Details</Text>
+        <Text size="lg" weight="bold" color="neutral">
+          Fillup Details
+        </Text>
 
         {isLoading ? (
           <View style={styles.loadingContainer}>
-            <Text size="base" color="steelBlue">Loading fillup details...</Text>
+            <Text size="base" color="steelBlue">
+              Loading fillup details...
+            </Text>
           </View>
         ) : fillupRequestDetails ? (
           <View style={styles.fillupDetailsContainer}>
             <View style={styles.detailRow}>
-              <Text size="base" color="neutral" weight="500">Name :</Text>
+              <Text size="base" color="neutral" weight="500">
+                Name :
+              </Text>
               <Text size="base" color="neutral">
                 {fillupRequestDetails?.partner_order?.partner_user?.partner
                   ?.name
@@ -60,7 +70,9 @@ const FillupDetailsBottomSheet: React.FC<FillupDetailsBottomSheetProps> = ({
 
             <View style={styles.detailsSection}>
               <View style={styles.detailColumn}>
-                <Text size="sm" color="steelBlue">Fuel Type</Text>
+                <Text size="sm" color="steelBlue">
+                  Fuel Type
+                </Text>
                 <Text size="base" color="neutral" weight="500">
                   {fillupRequestDetails?.task?.fillup_requests[0]
                     ?.vehicle_tank_type_product_variation?.product_variation
@@ -71,7 +83,9 @@ const FillupDetailsBottomSheet: React.FC<FillupDetailsBottomSheetProps> = ({
                 </Text>
               </View>
               <View style={styles.detailColumn}>
-                <Text size="sm" color="steelBlue">Approved Quantity</Text>
+                <Text size="sm" color="steelBlue">
+                  Approved Quantity
+                </Text>
                 <Text size="base" color="neutral" weight="500">
                   {fillupRequestDetails?.task?.fillup_requests[0]
                     ?.quantity_approved ||
@@ -83,7 +97,9 @@ const FillupDetailsBottomSheet: React.FC<FillupDetailsBottomSheetProps> = ({
             </View>
 
             <View style={styles.tankTypeSection}>
-              <Text size="sm" color="steelBlue">Tank Type</Text>
+              <Text size="sm" color="steelBlue">
+                Tank Type
+              </Text>
               <Text size="base" color="neutral" weight="500">
                 {fillupRequestDetails?.task?.fillup_requests[0]
                   ?.vehicle_tank_type_product_variation?.vehicle_tank_type
@@ -94,13 +110,21 @@ const FillupDetailsBottomSheet: React.FC<FillupDetailsBottomSheetProps> = ({
               </Text>
             </View>
 
-            <TouchableOpacity style={styles.navigateButton}>
-              <Text size="base" weight="bold" color="white">Navigate</Text>
+            <TouchableOpacity
+              style={styles.navigateButton}
+              onPress={() => {
+                navigation.navigate('home');
+              }}>
+              <Text size="base" weight="bold" color="white">
+                Navigate
+              </Text>
             </TouchableOpacity>
           </View>
         ) : (
           <View style={styles.errorContainer}>
-            <Text size="base" color="error">Unable to load fillup details</Text>
+            <Text size="base" color="error">
+              Unable to load fillup details
+            </Text>
           </View>
         )}
       </BottomSheetView>

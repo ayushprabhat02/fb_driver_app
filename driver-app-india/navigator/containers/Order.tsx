@@ -8,6 +8,7 @@ import {
   OrderDetails,
   OrderDetailsUpcoming,
 } from '@/modules/order/delivery/screens';
+import ChooseAsset from '@/modules/order/screens/ChooseAsset';
 import {BackButtonArrow} from '@/components';
 
 // styles
@@ -21,6 +22,7 @@ export type OrderStackParamList = {
   'order-details-upcoming': {
     orderId: string;
   };
+  'choose-asset': undefined;
 };
 
 const OrderStack = createStackNavigator<OrderStackParamList>();
@@ -50,6 +52,13 @@ const OrderNavigator: React.FC = () => {
         component={OrderDetailsUpcoming as React.ComponentType}
         options={{
           title: 'Order Details',
+        }}
+      />
+      <OrderStack.Screen
+        name="choose-asset"
+        component={ChooseAsset}
+        options={{
+          title: 'Choose Asset ',
         }}
       />
     </OrderStack.Navigator>

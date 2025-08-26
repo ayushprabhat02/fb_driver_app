@@ -92,7 +92,9 @@ type TankTypeOption = {
  * @param driverVehicleDetails - The driver vehicle details object
  * @returns Array of tank type options for the dropdown
  */
-export const extractTankTypeOptions = (driverVehicleDetails: any): TankTypeOption[] => {
+export const extractTankTypeOptions = (
+  driverVehicleDetails: any,
+): TankTypeOption[] => {
   if (!driverVehicleDetails?.vehicle_tank_types) {
     return [];
   }
@@ -105,7 +107,8 @@ export const extractTankTypeOptions = (driverVehicleDetails: any): TankTypeOptio
       name: tankType.tank_type.name,
       slug: tankType.tank_type.slug,
       tank_type_id: tankType.tank_type_id,
-      vehicle_tank_type_product_variations: tankType.vehicle_tank_type_product_variations,
+      vehicle_tank_type_product_variations:
+        tankType.vehicle_tank_type_product_variations,
     },
   }));
 };
@@ -117,13 +120,17 @@ export const extractTankTypeOptions = (driverVehicleDetails: any): TankTypeOptio
  * @param tankTypeId - The tank type ID to search for
  * @returns Tank type details or null if not found
  */
-export const findTankTypeById = (driverVehicleDetails: any, tankTypeId: string) => {
+export const findTankTypeById = (
+  driverVehicleDetails: any,
+  tankTypeId: string,
+) => {
   if (!driverVehicleDetails?.vehicle_tank_types) {
     return null;
   }
 
   const tankType = driverVehicleDetails.vehicle_tank_types.find(
-    (tank: any) => tank.tank_type.id === tankTypeId || tank.tank_type.slug === tankTypeId
+    (tank: any) =>
+      tank.tank_type.id === tankTypeId || tank.tank_type.slug === tankTypeId,
   );
 
   if (!tankType) {
@@ -135,7 +142,8 @@ export const findTankTypeById = (driverVehicleDetails: any, tankTypeId: string) 
     name: tankType.tank_type.name,
     slug: tankType.tank_type.slug,
     tank_type_id: tankType.tank_type_id,
-    vehicle_tank_type_product_variations: tankType.vehicle_tank_type_product_variations,
+    vehicle_tank_type_product_variations:
+      tankType.vehicle_tank_type_product_variations,
   };
 };
 
@@ -421,7 +429,9 @@ class FillupService {
           ...args,
         },
       });
-      fillupStore.getState().setFillupRequestDetails(response?.fillup_request_by_pk || null);
+      fillupStore
+        .getState()
+        .setFillupRequestDetails(response?.fillup_request_by_pk || null);
       fillupStore.getState().stopLoader('fetchFillupRequestById');
       return response;
     } catch (error) {

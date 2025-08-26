@@ -55,12 +55,14 @@ const FillupHistoryCard: React.FC<FillupHistoryCardProps> = ({
 
   const isApproved = item.state?.toLowerCase() === 'approved';
   const isStateAllowed = allowedStates.includes(item.state?.toUpperCase());
+  const isFillup = item?.category === 'FILL_UP';
+  console.log('-----isFillup-------', isFillup);
 
   return (
     <View style={[styles.card, !isStateAllowed && styles.disabledCard]}>
       <View style={styles.cardHeader}>
         <Text size="base" weight="bold" color="secondary">
-          FUEL TANK
+          {item?.fuel_request_type.split('_').join(' ')}
         </Text>
         <View
           style={[

@@ -30,11 +30,12 @@ import {Task_State_Enum} from '@/generated/graphql';
 import {OrderListCard} from '@/modules/order/delivery/components';
 import {UserService} from '@/services';
 import {FBBackground} from '@/types/styles';
-import {useFocusEffect} from '@react-navigation/native';
+import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import OrderSummaryCard from '../components/delivery/OrderSummaryCard';
 import homeService from '../services';
 
 const HomeLandingPage: React.FC = () => {
+  const navigation = useNavigation();
   const [refreshing, setRefreshing] = React.useState(false);
   const [checkBusinessLeadLoader, setCheckBusinessLeadLoader] =
     useState<boolean>(false);
@@ -47,11 +48,12 @@ const HomeLandingPage: React.FC = () => {
   const isLoadingFillupHistory = homeStore.use.loaders().fillupHistory;
   const selectedOrder = orderStore.use.selectedOrder();
 
-  console.log('----loggedInUser------', loggedInUser);
+  // console.log('----loggedInUser------', loggedInUser);
 
   const allFillupsCompleted = fillupHistory?.every(
     (item: any) => item.state === 'COMPLETE' || item.state === 'REJECTED',
   );
+
   const startLoader = homeStore.use.startLoader();
   const stopLoader = homeStore.use.stopLoader();
 
@@ -243,14 +245,24 @@ const HomeLandingPage: React.FC = () => {
             onDateChange={setSelectedDate}
             style={{marginHorizontal: 0}}
           />
-          <View
-            style={{
-              opacity: allFillupsCompleted ? 1 : 0.5,
-              pointerEvents: allFillupsCompleted ? 'auto' : 'none',
-            }}>
-            {driverOrders?.map((order, index) => (
-              <OrderListCard key={index} order={order} />
-            ))}
+          <View>
+            {driverOrders?.map((order, index) => {
+              const isFillupOrder =
+                (order as any)?.fillup_requests &&
+                (order as any)?.fillup_requests.length > 0;
+              const shouldDisable = !allFillupsCompleted && !isFillupOrder;
+
+              return (
+                <View
+                  key={index}
+                  style={{
+                    opacity: shouldDisable ? 0.5 : 1,
+                    pointerEvents: shouldDisable ? 'none' : 'auto',
+                  }}>
+                  <OrderListCard order={order} />
+                </View>
+              );
+            })}
           </View>
         </Container>
         {(isLoadingOrder || isLoadingFillupHistory) && (
@@ -259,28 +271,43 @@ const HomeLandingPage: React.FC = () => {
       </ScrollView>
 
       {/* Floating Buttons */}
-      {selectedOrder && allFillupsCompleted && (
-        <View style={styles.floatingButtonsContainer}>
-          <Button
-            variant="solid"
-            style={[styles.floatingButton, styles.navigationButton]}
-            onPress={() => {
-              // Handle navigation
-              console.log('Navigation pressed');
-            }}>
-            Navigation
-          </Button>
-          <Button
-            variant="solid"
-            style={[styles.floatingButton, styles.startTripButton]}
-            onPress={() => {
-              // Handle start trip
-              console.log('Start trip pressed');
-            }}>
-            Start Trip
-          </Button>
-        </View>
-      )}
+      {selectedOrder &&
+        (allFillupsCompleted ||
+          ((selectedOrder as any)?.fillup_requests &&
+            (selectedOrder as any)?.fillup_requests.length > 0)) && (
+          <View style={styles.floatingButtonsContainer}>
+            <Button
+              variant="solid"
+              style={[styles.floatingButton, styles.navigationButton]}
+              onPress={() => {
+                // Handle navigation
+                console.log('Navigation pressed');
+              }}>
+              Navigation
+            </Button>
+            <Button
+              variant="solid"
+              style={[styles.floatingButton, styles.startTripButton]}
+              onPress={() => {
+                const isFillupOrder = (selectedOrder as any)?.fillup_requests && 
+                  (selectedOrder as any)?.fillup_requests.length > 0;
+                
+                if (isFillupOrder) {
+                  // @ts-ignore
+                  navigation.navigate('address', {
+                    screen: 'fill-asset',
+                  });
+                } else {
+                  // @ts-ignore
+                  navigation.navigate('order', {
+                    screen: 'choose-asset',
+                  });
+                }
+              }}>
+              Start Trip
+            </Button>
+          </View>
+        )}
     </View>
   );
 };
