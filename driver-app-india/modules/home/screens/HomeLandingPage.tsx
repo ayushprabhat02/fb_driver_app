@@ -160,6 +160,12 @@ const HomeLandingPage: React.FC = () => {
 
   // fetch driver orders api
   const fetchCurrentOrder = async (date?: Date) => {
+    // Check if driverVehicleId is available before making API call
+    if (!driverVehicleId) {
+      console.warn('Driver vehicle ID not available, skipping order fetch');
+      return;
+    }
+
     const targetDate = date || selectedDate;
     const startDate = new Date(targetDate);
     startDate.setHours(0, 0, 0, 0);
@@ -190,6 +196,12 @@ const HomeLandingPage: React.FC = () => {
   };
 
   const fetchFillupHistory = async () => {
+    // Check if driverVehicleId is available before making API call
+    if (!driverVehicleId) {
+      console.warn('Driver vehicle ID not available, skipping fillup history fetch');
+      return;
+    }
+
     startLoader('fillupHistory');
     homeService
       .fetchFillupHistory({

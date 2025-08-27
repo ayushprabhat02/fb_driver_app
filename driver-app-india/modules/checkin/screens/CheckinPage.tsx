@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   Image,
 } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import {
   Button,
   Divider,
@@ -19,10 +20,16 @@ import {
   HeaderAvoidingContainer,
   Text,
 } from '@/components';
-import {FBBackground, FBColorPalette, FBColors} from '@/types/styles';
+import {
+  FBBackground,
+  FBBorders,
+  FBColorPalette,
+  FBColors,
+} from '@/types/styles';
 import {commonInputStyles} from '@/styles';
 import checkinService from '../services';
 import {checkinStore} from '@/globalStore';
+import {ImageContainer} from '../components';
 import {RNCamera} from 'react-native-camera';
 import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
 import supportService from '@/modules/support/services';
@@ -106,9 +113,7 @@ const CheckinPage: React.FC = () => {
       !selfieImageData ||
       !refuellerImageData ||
       !odometerImageData ||
-      !totalizerImageData ||
-      !odometerReading ||
-      !totalizerReading
+      !odometerReading
     ) {
       Alert.alert('Pls fill all details');
     } else {
@@ -225,17 +230,27 @@ const CheckinPage: React.FC = () => {
   };
 
   if (showCamera) {
+    const cameraType =
+      imageType === 'selfie'
+        ? RNCamera.Constants.Type.front
+        : RNCamera.Constants.Type.back;
+
     return (
       <View style={styles.cameraContainer}>
         <RNCamera
           ref={cameraRef}
           style={styles.preview}
-          type={RNCamera.Constants.Type.front}
+          type={cameraType}
           captureAudio={false}
         />
         <View style={styles.cameraButtonContainer}>
           <TouchableOpacity onPress={handleTakePhoto} style={styles.capture}>
             <Text style={styles.buttonText}>Take Photo</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setShowCamera(false)}
+            style={styles.capture}>
+            <Text style={styles.buttonText}>Cancel</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -250,10 +265,28 @@ const CheckinPage: React.FC = () => {
         showsVerticalScrollIndicator={false}
         onScroll={handleScroll}
         scrollEventThrottle={16}>
-        <Text>{driverVehicleDetails?.name}</Text>
-        <Text>{driverVehicleDetails?.registration_number}</Text>
-        <Divider height={10} />
-        <BouncyCheckbox
+        <View style={styles.vehicleDetailsContainer}>
+          <View style={styles.vehicleDetailsRow}>
+            <View style={styles.vehicleDetailItem}>
+              <Text size="xs" color="secondary" style={styles.vehicleLabel}>
+                Driver Name
+              </Text>
+              <Text size="base" weight="600" style={styles.vehicleValue}>
+                {driverVehicleDetails?.name || 'N/A'}
+              </Text>
+            </View>
+            <View style={styles.vehicleDetailItem}>
+              <Text size="xs" color="secondary" style={styles.vehicleLabel}>
+                Registration Number
+              </Text>
+              <Text size="base" weight="600" style={styles.vehicleValue}>
+                {driverVehicleDetails?.registration_number || 'N/A'}
+              </Text>
+            </View>
+          </View>
+        </View>
+        {/* <Divider height={10} /> */}
+        {/* <BouncyCheckbox
           size={25}
           fillColor={FBColors.primary}
           unfillColor="#FFFFFF"
@@ -268,119 +301,81 @@ const CheckinPage: React.FC = () => {
               isQuantityCheckEnabled: !state.isQuantityCheckEnabled,
             }));
           }}
-        />
+        /> */}
         <Divider height={10} />
         <Text size="base" weight="700" color="secondary">
           Please complete the following steps to check-in
         </Text>
 
-        <Divider height={20} />
-        <Text size="base" weight="700" color="secondary">
-          Upload Selfie
-        </Text>
-        <TouchableOpacity onPress={() => openCamera('selfie')}>
-          <View style={styles.placeholderView}>
-            {isSelfieImageUploading ? (
-              <FullScreenLoader
-                showLoader={true}
-                loaderText={'Uploading selfie...'}
-              />
-            ) : selfieImageData ? (
-              <Image source={{uri: selfieImageData}} style={styles.image} />
-            ) : (
-              <Text>Touch here to click your image</Text>
-            )}
-          </View>
-        </TouchableOpacity>
-        <Divider height={20} />
-        <Text size="base" weight="700" color="secondary">
-          Refueller details
-        </Text>
-        <TouchableOpacity onPress={() => openCamera('refueller')}>
-          <View style={styles.placeholderView}>
-            {isRefuellerImageUploading ? (
-              <FullScreenLoader
-                showLoader={true}
-                loaderText={'Uploading refueller image...'}
-              />
-            ) : refuellerImageData ? (
-              <Image source={{uri: refuellerImageData}} style={styles.image} />
-            ) : (
-              <Text>Touch here to click your image</Text>
-            )}
-          </View>
-        </TouchableOpacity>
-        <Divider height={20} />
-        <Text size="base" weight="700" color="secondary">
-          Odometer details
-        </Text>
-        <View
-          onLayout={event => {
-            odometerViewY.current = event.nativeEvent.layout.y;
-          }}>
-          <TouchableOpacity onPress={() => openCamera('odometer')}>
-            <View style={styles.placeholderView}>
-              {isOdometerImageUploading ? (
-                <FullScreenLoader
-                  showLoader={true}
-                  loaderText={'Uploading odometer image...'}
-                />
-              ) : odometerImageData ? (
-                <Image source={{uri: odometerImageData}} style={styles.image} />
-              ) : (
-                <Text>Touch here to click your image</Text>
-              )}
-            </View>
-          </TouchableOpacity>
+        <ImageContainer
+          label="Upload Selfie"
+          imageData={selfieImageData}
+          isUploading={isSelfieImageUploading}
+          onCameraPress={() => openCamera('selfie')}
+          uploadingText="Uploading Selfie image..."
+          required={true}
+        />
+        <ImageContainer
+          label="Refueller Details"
+          imageData={refuellerImageData}
+          isUploading={isRefuellerImageUploading}
+          onCameraPress={() => openCamera('refueller')}
+          uploadingText="Uploading refueller image..."
+          required={true}
+        />
+
+        <ImageContainer
+          label="Odometer Reading"
+          imageData={odometerImageData}
+          isUploading={isOdometerImageUploading}
+          onCameraPress={() => openCamera('odometer')}
+          uploadingText="Uploading odometer image..."
+          required={true}
+        />
+        <Divider height={10} />
+        <View>
+          <Text
+            size="base"
+            weight="normal"
+            color="secondary"
+            style={styles.requiredLabel}>
+            Enter Odometer Reading *
+          </Text>
+          <TextInput
+            editable={true}
+            keyboardType="numeric"
+            style={[
+              styles.inputStyle,
+              !odometerReading && styles.requiredInput,
+            ]}
+            placeholder="Enter odometer reading"
+            placeholderTextColor={FBColors.placeHolderPrimary}
+            value={odometerReading}
+            onChangeText={setOdometerReading}
+          />
         </View>
-        <Divider height={10} />
-        <TextInput
-          editable={true}
-          keyboardType="numeric"
-          style={styles.inputStyle}
-          placeholder="Enter odometer reading"
-          placeholderTextColor={FBColors.placeHolderPrimary}
-          value={odometerReading}
-          onChangeText={setOdometerReading}
-        />
-        <Divider height={20} />
-        <Text size="base" weight="700" color="secondary">
-          Totalizer
-        </Text>
-        <TouchableOpacity onPress={() => openCamera('totalizer')}>
-          <View style={styles.placeholderView}>
-            {isTotalizerImageUploading ? (
-              <FullScreenLoader
-                showLoader={true}
-                loaderText={'Uploading totalizer image...'}
-              />
-            ) : totalizerImageData ? (
-              <Image source={{uri: totalizerImageData}} style={styles.image} />
-            ) : (
-              <Text>Touch here to click your image</Text>
-            )}
-          </View>
-        </TouchableOpacity>
-        <Divider height={10} />
-        <TextInput
-          editable={true}
-          keyboardType="numeric"
-          style={styles.inputStyle}
-          placeholder="Enter Totalizer reading"
-          placeholderTextColor={FBColors.placeHolderPrimary}
-          value={totalizerReading}
-          onChangeText={setTotalizerReading}
-        />
       </ScrollView>
 
       <View style={styles.buttonContainer}>
         <Button
-          style={styles.button}
+          style={[
+            styles.button,
+            (!selfieImageData ||
+              !refuellerImageData ||
+              !odometerImageData ||
+              !odometerReading) &&
+              styles.disabledButton,
+          ]}
           variant="solid"
-          onPress={isSubmitState ? handleSubmit : handleNextPress}
+          onPress={handleSubmit}
           loading={false}
-          disabled={false}>
-          {isSubmitState ? 'Verify Location and Check-in' : 'Next'}
+          disabled={
+            !selfieImageData ||
+            !refuellerImageData ||
+            !odometerImageData ||
+            !odometerReading
+          }>
+          {'Verify Location and Check-in'}
         </Button>
       </View>
       <FullScreenLoader
@@ -396,8 +391,8 @@ export default CheckinPage;
 const styles = StyleSheet.create({
   scrollContent: {
     backgroundColor: FBBackground.white,
-    paddingHorizontal: 20,
-    paddingBottom: 100,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
   },
   placeholderView: {
     height: 200,
@@ -408,11 +403,11 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   buttonContainer: {
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
-    backgroundColor: 'transparent',
+    position: 'relative',
+    marginHorizontal: 20,
+    marginVertical: 20,
+
+    backgroundColor: FBBackground.white,
   },
   button: {
     width: '100%',
@@ -459,6 +454,102 @@ const styles = StyleSheet.create({
   },
   quantityCheckText: {
     textDecorationLine: 'none',
+    color: FBColors.darkGray,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  cameraIconButton: {
+    backgroundColor: FBBackground.softBlue,
+    borderRadius: 20,
+    padding: 8,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  imageOnlyView: {
+    height: 200,
+    backgroundColor: FBBackground.softBlue,
+    borderRadius: 8,
+    marginTop: 8,
+    overflow: 'hidden',
+  },
+  compactSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+    marginTop: 12,
+  },
+  minimalistCameraButton: {
+    backgroundColor: FBColors.primary,
+    borderRadius: 20,
+    padding: 8,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  compactLabel: {
+    marginBottom: 3,
+    marginTop: 12,
+  },
+  compactImageView: {
+    height: 140,
+    backgroundColor: FBBackground.softBlue,
+    borderRadius: 6,
+    overflow: 'hidden',
+    marginBottom: 6,
+  },
+  requiredLabel: {
+    marginBottom: 4,
+    marginTop: 8,
+  },
+  requiredInput: {
+    borderColor: FBBorders.primary,
+    borderWidth: 1,
+  },
+  disabledButton: {
+    opacity: 0.5,
+  },
+  selfieBoxContainer: {
+    backgroundColor: FBBackground.white,
+    borderWidth: 1,
+    borderColor: FBBorders.primary,
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 12,
+    marginBottom: 6,
+  },
+  vehicleDetailsContainer: {
+    backgroundColor: FBBackground.white,
+    borderWidth: 1,
+    borderColor: FBBorders.primary,
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 10,
+  },
+  vehicleDetailsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  vehicleDetailItem: {
+    flex: 1,
+    marginHorizontal: 4,
+  },
+  vehicleLabel: {
+    marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  vehicleValue: {
     color: FBColors.darkGray,
   },
 });

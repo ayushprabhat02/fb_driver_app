@@ -145,6 +145,12 @@ const FillupRequest: React.FC = () => {
       return;
     }
 
+    if (!driverVehicleId) {
+      console.warn('Driver vehicle ID not available, cannot raise fillup request');
+      stopFillupLoader('raiseFillupRequest');
+      return;
+    }
+
     fillupService
       .raiseFillupRequest({
         object: {
@@ -168,6 +174,11 @@ const FillupRequest: React.FC = () => {
   };
 
   const fetchFillupHistory = async () => {
+    if (!driverVehicleId) {
+      console.warn('Driver vehicle ID not available, cannot fetch fillup history');
+      return;
+    }
+
     startHomeLoader('fillupHistory');
     homeService
       .fetchFillupHistory({

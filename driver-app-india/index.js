@@ -8,6 +8,7 @@ import App from './App';
 import {name as appName} from './app.json';
 import {LogBox} from 'react-native';
 import {initializeAuthListener} from './services/authInitializer';
+import './utils/ignoreWarnings';
 
 // Suppress the warning in the UI
 LogBox.ignoreLogs([

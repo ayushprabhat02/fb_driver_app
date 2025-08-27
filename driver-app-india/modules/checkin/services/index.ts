@@ -7,6 +7,10 @@ import {
   GetDriverVehicleDetailsByIdDocument,
 } from './../../../generated/graphql';
 import {setDriverVehicleId, getDriverVehicleId} from '@/utils/localStorage';
+import {DateTime} from 'luxon';
+import {signOut} from '../../auth/services';
+import Toast from 'react-native-toast-message';
+import {Vehicle} from '../../../generated/graphql';
 /**
  * @module Checkin
  * @description This is the service file for the checkin module.
@@ -40,27 +44,58 @@ class CheckinService {
   }
 
   public async fetchDriverVehicleId(args: FetchDriverVehicleIdQueryVariables) {
-    // Try to get driverVehicleId from local storage first
-    const storedDriverVehicleId = getDriverVehicleId();
+    try {
+      // Try to get driverVehicleId from local storage first
+      const storedDriverVehicleId = getDriverVehicleId();
 
-    if (storedDriverVehicleId) {
-      // If found in local storage, update the store
-      checkinStore.setState(state => ({
-        ...state,
-        driverVehicleId: storedDriverVehicleId,
-      }));
-      return [{driver_vehicle_id: storedDriverVehicleId}];
-    }
+      if (storedDriverVehicleId) {
+        // If found in local storage, update the store
+        checkinStore.setState(state => ({
+          ...state,
+          driverVehicleId: storedDriverVehicleId,
+        }));
+        return [{driver_vehicle_id: storedDriverVehicleId}];
+      }
 
-    // If not found in local storage, fetch from API
-    const response: FetchDriverVehicleIdQuery = await callQuery({
-      queryDocument: FetchDriverVehicleIdDocument,
-      variables: {...args},
-    });
+      // If not found in local storage, fetch from API
+      const response: FetchDriverVehicleIdQuery = await callQuery({
+        queryDocument: FetchDriverVehicleIdDocument,
+        variables: {...args},
+      });
 
-    const driverVehicleId = response.shift_schedule[0]?.driver_vehicle_id;
+      const shiftSchedule = response.shift_schedule[0];
+      const driverVehicleId = shiftSchedule?.driver_vehicle_id;
+      const shiftEndTime = shiftSchedule?.end_time;
 
-    if (driverVehicleId) {
+      // Check for shift end conditions
+      if (!driverVehicleId || !shiftSchedule) {
+        // No active shift found - driver should be logged out
+        Toast.show({
+          type: 'info',
+          text1: 'Shift Ended',
+          text2: 'Your shift has ended. Please log in again.',
+        });
+        await this.handleShiftEndLogout();
+        return response.shift_schedule;
+      }
+
+      // Check if current time exceeds shift end time
+      if (shiftEndTime) {
+        const currentTime = DateTime.now();
+        const endTime = DateTime.fromISO(shiftEndTime);
+        
+        if (currentTime > endTime) {
+          // Shift has ended based on time - driver should be logged out
+          Toast.show({
+            type: 'info',
+            text1: 'Shift Time Expired',
+            text2: 'Your shift time has expired. Please log in again.',
+          });
+          await this.handleShiftEndLogout();
+          return response.shift_schedule;
+        }
+      }
+
       // Store in local storage
       setDriverVehicleId(driverVehicleId);
 
@@ -69,9 +104,35 @@ class CheckinService {
         ...state,
         driverVehicleId: driverVehicleId,
       }));
-    }
 
-    return response.shift_schedule;
+      return response.shift_schedule;
+    } catch (error) {
+      console.error('Error fetching driver vehicle ID:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Connection Error',
+        text2: 'Unable to verify shift status. Please check your connection.',
+      });
+      // Return empty array to prevent app crash
+      return [];
+    }
+  }
+
+  /**
+   * @method handleShiftEndLogout
+   * @description Handles automatic logout when shift ends
+   */
+  private async handleShiftEndLogout() {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error during automatic logout:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Logout Error',
+        text2: 'Please try logging out manually.',
+      });
+    }
   }
 
   public async fetchDriverVehicleDetailsById(
