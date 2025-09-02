@@ -9,10 +9,13 @@ import {
   OrderDetailsUpcoming,
 } from '@/modules/order/delivery/screens';
 import ChooseAsset from '@/modules/order/screens/ChooseAsset';
+import FillAsset from '@/modules/order/screens/FillAsset';
+import UploadImageAsset from '@/modules/order/screens/UploadImageAsset';
 import {BackButtonArrow} from '@/components';
 
 // styles
 import {commonHeaderStyles} from '@/styles';
+import {FBBackground} from '@/types/styles';
 
 export type OrderStackParamList = {
   'delivery-orders': undefined;
@@ -23,6 +26,8 @@ export type OrderStackParamList = {
     orderId: string;
   };
   'choose-asset': undefined;
+  'fill-asset': undefined;
+  'upload-image-asset': undefined;
 };
 
 const OrderStack = createStackNavigator<OrderStackParamList>();
@@ -59,6 +64,31 @@ const OrderNavigator: React.FC = () => {
         component={ChooseAsset}
         options={{
           title: 'Choose Asset ',
+          headerTransparent: false,
+          headerStyle: {
+            backgroundColor: FBBackground.white,
+          },
+        }}
+      />
+      <OrderStack.Screen
+        name="fill-asset"
+        component={FillAsset}
+        options={{
+          title: 'Fill Asset',
+          headerTransparent: false,
+          headerStyle: {
+            backgroundColor: 'white',
+            elevation: 0, // Remove shadow on Android
+            shadowOpacity: 0, // Remove shadow on iOS
+            borderBottomWidth: 0,
+          },
+        }}
+      />
+      <OrderStack.Screen
+        name="upload-image-asset"
+        component={UploadImageAsset}
+        options={{
+          title: 'Upload Fillup Images',
         }}
       />
     </OrderStack.Navigator>

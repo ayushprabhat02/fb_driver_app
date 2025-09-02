@@ -1,5 +1,12 @@
 import React from 'react';
-import {View, TouchableOpacity, ViewStyle, TextStyle} from 'react-native';
+import {
+  View,
+  TouchableOpacity,
+  ViewStyle,
+  TextStyle,
+  Image,
+  ImageStyle,
+} from 'react-native';
 import {ScaledSheet} from 'react-native-size-matters';
 import {Text} from '@/components';
 import {FBColors, FBBackground, FBBorders, FontSizeEnum} from '@/types/styles';
@@ -30,9 +37,11 @@ const AssetCard: React.FC<AssetCardProps> = ({
     <View style={styles.container as ViewStyle}>
       <View style={styles.assetInfo as ViewStyle}>
         <View style={styles.assetIcon as ViewStyle}>
-          <Text size="lg" weight="700" color="white">
-            {assetCode.substring(0, 2).toUpperCase()}
-          </Text>
+          <Image
+            source={require('@/assets/home/truck-fuelbuddy.png')}
+            style={styles.vehicleLogo as ImageStyle}
+            resizeMode="contain"
+          />
         </View>
 
         <View style={styles.assetDetails as ViewStyle}>
@@ -98,9 +107,9 @@ const AssetCard: React.FC<AssetCardProps> = ({
 const styles = ScaledSheet.create({
   container: {
     backgroundColor: FBBackground.white,
-    borderRadius: '12@s',
-    padding: '16@s',
-    marginBottom: '12@vs',
+    borderRadius: '8@s',
+    padding: '12@s',
+    marginBottom: '8@vs',
     borderWidth: 1,
     borderColor: FBBorders.primary,
     shadowColor: FBColors.lightGray,
@@ -115,16 +124,16 @@ const styles = ScaledSheet.create({
   assetInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: '12@vs',
+    marginBottom: '8@vs',
   },
   assetIcon: {
-    width: '40@s',
-    height: '40@s',
-    borderRadius: '8@s',
+    width: '32@s',
+    height: '32@s',
+    borderRadius: '6@s',
     backgroundColor: FBColors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: '12@s',
+    marginRight: '8@s',
   },
   assetDetails: {
     flex: 1,
@@ -133,22 +142,22 @@ const styles = ScaledSheet.create({
     marginTop: '2@vs',
   },
   quantityInfo: {
-    marginBottom: '16@vs',
+    marginBottom: '12@vs',
   },
   quantityRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '4@vs',
+    marginBottom: '2@vs',
   },
   quantityValue: {
     marginLeft: '8@s',
   },
   dispenseButton: {
     backgroundColor: FBColors.primary,
-    borderRadius: '8@s',
-    paddingVertical: '12@vs',
-    paddingHorizontal: '16@s',
+    borderRadius: '6@s',
+    paddingVertical: '8@vs',
+    paddingHorizontal: '12@s',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: FBColors.primary,
@@ -156,6 +165,10 @@ const styles = ScaledSheet.create({
   disabledButton: {
     backgroundColor: FBBackground.disabled,
     borderColor: FBBorders.disabledInputText,
+  },
+  vehicleLogo: {
+    width: '20@s',
+    height: '20@s',
   },
 });
 

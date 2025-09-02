@@ -1,0 +1,14 @@
+query fetchTaskValue($task_id: uuid) {
+  task_value(
+    where: { task_id: { _eq: $task_id } }
+    order_by: { created_at: asc }
+  ) {
+    customer_asset_id
+    id
+    key
+    quantity_dispensed
+    value
+    url
+    task_id
+  }
+}

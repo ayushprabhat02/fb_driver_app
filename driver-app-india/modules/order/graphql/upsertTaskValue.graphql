@@ -1,0 +1,19 @@
+mutation upsertTaskValue($object: upsertTaskValueInput!) {
+  upsertTaskValue(object: $object) {
+    id
+    is_updated
+    is_inserted
+  }
+}
+
+# Example usage:
+# {
+#   "object": {
+#     "key": "TOTALIZER_AFTER_READING",
+#     "value": "123.45",
+#     "url": "https://storage.googleapis.com/...",
+#     "quantity_dispensed": 20.5,
+#     "task_id": "uuid-of-task",
+#     "customer_asset_id": "uuid-of-customer-asset"
+#   }
+# }

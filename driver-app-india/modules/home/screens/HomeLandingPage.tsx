@@ -33,13 +33,14 @@ import {FBBackground} from '@/types/styles';
 import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import OrderSummaryCard from '../components/delivery/OrderSummaryCard';
 import homeService from '../services';
+import {updateOrderQuantity} from '@/utils/orderUtil';
 
 const HomeLandingPage: React.FC = () => {
   const navigation = useNavigation();
   const [refreshing, setRefreshing] = React.useState(false);
   const [checkBusinessLeadLoader, setCheckBusinessLeadLoader] =
     useState<boolean>(false);
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const selectedDate = homeStore.use.selectedDate();
   const loggedInUser = userStore.use.loggedInUser();
   const driverVehicleId = checkinStore.use.driverVehicleId();
   const driverOrders = homeStore.use.driverOrders();
@@ -47,8 +48,6 @@ const HomeLandingPage: React.FC = () => {
   const isLoadingOrder = homeStore.use.loaders().driverCurrentOrder;
   const isLoadingFillupHistory = homeStore.use.loaders().fillupHistory;
   const selectedOrder = orderStore.use.selectedOrder();
-
-  // console.log('----loggedInUser------', loggedInUser);
 
   const allFillupsCompleted = fillupHistory?.every(
     (item: any) => item.state === 'COMPLETE' || item.state === 'REJECTED',
@@ -198,7 +197,9 @@ const HomeLandingPage: React.FC = () => {
   const fetchFillupHistory = async () => {
     // Check if driverVehicleId is available before making API call
     if (!driverVehicleId) {
-      console.warn('Driver vehicle ID not available, skipping fillup history fetch');
+      console.warn(
+        'Driver vehicle ID not available, skipping fillup history fetch',
+      );
       return;
     }
 
@@ -254,7 +255,9 @@ const HomeLandingPage: React.FC = () => {
           <OrderSummaryCard />
           <CustomDateSelector
             selectedDate={selectedDate}
-            onDateChange={setSelectedDate}
+            onDateChange={(date: Date) =>
+              homeStore.setState(state => ({...state, selectedDate: date}))
+            }
             style={{marginHorizontal: 0}}
           />
           <View>
@@ -301,9 +304,11 @@ const HomeLandingPage: React.FC = () => {
               variant="solid"
               style={[styles.floatingButton, styles.startTripButton]}
               onPress={() => {
-                const isFillupOrder = (selectedOrder as any)?.fillup_requests && 
+                const isFillupOrder =
+                  (selectedOrder as any)?.fillup_requests &&
                   (selectedOrder as any)?.fillup_requests.length > 0;
-                
+                // update dispense quantity
+                updateOrderQuantity(selectedOrder);
                 if (isFillupOrder) {
                   // @ts-ignore
                   navigation.navigate('address', {
@@ -325,12 +330,7 @@ const HomeLandingPage: React.FC = () => {
 };
 
 const styles = ScaledSheet.create({
-  body: {
-    flex: '1@mvs',
-    width: '100%',
-    position: 'relative',
-    marginTop: hasNotch() ? 115 : 100,
-  },
+  body: {},
 
   headerContainer: {
     position: 'absolute',

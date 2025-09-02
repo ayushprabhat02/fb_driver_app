@@ -1,5 +1,5 @@
 // dependencies
-import {FetchOrderStatsForDriverQuery} from '@/generated/graphql';
+import {FetchOrderStatsForDriverMutation} from '@/generated/graphql';
 import {create} from 'zustand';
 
 // utils
@@ -31,13 +31,14 @@ type HomeStore = {
     | null;
 
   deliveryStats: DeliveryStat[];
-  driverOrderStats: FetchOrderStatsForDriverQuery['fetchOrderStatsForDriver'];
+  driverOrderStats: FetchOrderStatsForDriverMutation['fetchOrderStatsForDriver'];
   driverOrders: FetchOrderForDriverNew2Query['task'] | null;
   fillupHistory: any; // Assuming fillup history is also part of the home store
 
   userCoordinates: any;
   userLocationAddress: any;
   showRepeatOrder: boolean;
+  selectedDate: Date;
 
   // loading states
   loaders: Loaders;
@@ -63,6 +64,7 @@ const homeIntialState: HomeStore = {
   driverOrderStats: null,
   driverOrders: null,
   fillupHistory: null,
+  selectedDate: new Date(),
 
   loaders: {
     lastCustomerOrder: false,

@@ -61,21 +61,18 @@ const AssetActionButtons: React.FC<AssetActionButtonsProps> = ({
 
 const styles = ScaledSheet.create({
   container: {
-    paddingHorizontal: '16@s',
-    paddingVertical: '16@vs',
-    backgroundColor: FBBackground.white,
-    borderTopWidth: 1,
-    borderTopColor: FBBorders.primary,
+    flexDirection: 'row',
+    gap: '10@s',
   },
   buttonRow: {
     flexDirection: 'row',
-    gap: '12@s',
+    gap: '10@s',
   },
   proceedButton: {
     flex: 1,
     backgroundColor: FBColors.steelBlue,
-    borderRadius: '8@s',
-    paddingVertical: '14@vs',
+    borderRadius: '6@s',
+    paddingVertical: '10@vs',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: FBColors.steelBlue,
@@ -83,8 +80,8 @@ const styles = ScaledSheet.create({
   cancelButton: {
     flex: 1,
     backgroundColor: FBBackground.white,
-    borderRadius: '8@s',
-    paddingVertical: '14@vs',
+    borderRadius: '6@s',
+    paddingVertical: '10@vs',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: FBColors.error,

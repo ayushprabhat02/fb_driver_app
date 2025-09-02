@@ -15,6 +15,8 @@ import {
   FetchOrderItemStatusQuery,
   FetchOrganizationUpcomingOrdersQuery,
   VerifyPlacedOrderOtpQuery,
+  FetchOrderForDriverIncompleteQuery,
+  GetCustomerOrderedAssetsQuery,
 } from '@/generated/graphql';
 import {BottomSheetModal} from '@gorhom/bottom-sheet';
 
@@ -22,13 +24,19 @@ type LoaderTypes =
   | 'currentOrdersInView'
   | 'singleOrderDetails'
   | 'fetchInvoices'
-  | 'verifyPlacedOrderOtp';
+  | 'verifyPlacedOrderOtp'
+  | 'totalizerImage'
+  | 'quantityImage'
+  | 'orderAssets';
 
 type Loaders = {
   currentOrdersInView: boolean;
   singleOrderDetails: boolean;
   fetchInvoices: boolean;
   verifyPlacedOrderOtp: boolean;
+  totalizerImage: boolean;
+  quantityImage: boolean;
+  orderAssets: boolean;
 };
 
 type OrderStore = {
@@ -66,9 +74,20 @@ type OrderStore = {
 
   // bottom sheet
   bottomSheetRefOtp: React.RefObject<BottomSheetModal> | null;
-  
+
   // selected order
-  selectedOrder: FetchDeliveryOrderByStateQuery['customer_order'][0] | null;
+  selectedOrder: FetchDeliveryOrderByStateQuery['customer_order'][0] | FetchOrderForDriverIncompleteQuery['task'][0] | null;
+
+  currentDriverOrder: FetchOrderForDriverIncompleteQuery['task'] | null;
+
+  // fillup image data
+  totalizerImageData: string | null;
+  quantityImageData: string | null;
+  totalizerReading: string;
+  quantityDispensed: number;
+
+  // order assets
+  orderAssets: GetCustomerOrderedAssetsQuery['customer_order_customer_asset'];
 };
 
 type OrderActions = {
@@ -78,9 +97,6 @@ type OrderActions = {
   resetOrderPagination: () => void;
   // bottom sheet
   setBottomSheetRefOtp: (ref: React.RefObject<BottomSheetModal>) => void;
-  
-  // selected order
-  setSelectedOrder: (order: FetchDeliveryOrderByStateQuery['customer_order'][0] | null) => void;
 };
 
 /*
@@ -106,6 +122,9 @@ const orderInitialState: OrderStore = {
     singleOrderDetails: false,
     fetchInvoices: true,
     verifyPlacedOrderOtp: false,
+    totalizerImage: false,
+    quantityImage: false,
+    orderAssets: false,
   },
   currentOrderStatus: undefined,
   upcomingOrders: undefined,
@@ -115,6 +134,16 @@ const orderInitialState: OrderStore = {
   // bottom sheet
   bottomSheetRefOtp: null,
   selectedOrder: null,
+  currentDriverOrder: null,
+
+  // fillup image data initial state
+  totalizerImageData: null,
+  quantityImageData: null,
+  totalizerReading: '',
+  quantityDispensed: 0,
+
+  // order assets
+  orderAssets: [],
 };
 
 const orderPaginationInitialState = {
@@ -153,11 +182,7 @@ const orderStore = create<OrderStore & OrderActions>(set => ({
     set(() => ({
       bottomSheetRefOtp: ref,
     })),
-    
-  setSelectedOrder: order =>
-    set(() => ({
-      selectedOrder: order,
-    })),
+
 }));
 
 export default createSelectors(orderStore);

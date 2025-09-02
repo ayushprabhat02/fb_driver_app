@@ -1,48 +1,83 @@
-import React, {useState, useLayoutEffect} from 'react';
+import {OrderService} from '@/services';
+import {useNavigation} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import React, {useEffect, useLayoutEffect, useState} from 'react';
 import {
-  ScrollView,
-  View,
   Alert,
-  ViewStyle,
+  ScrollView,
+  TextStyle,
   TouchableOpacity,
+  View,
+  ViewStyle,
 } from 'react-native';
 import {ScaledSheet} from 'react-native-size-matters';
-import {useNavigation} from '@react-navigation/native';
 
 // components
-import {HeaderAvoidingContainer, FocusAwareStatusBar, Text} from '@/components';
-import {
-  AssetSummaryCard,
-  AssetSearchBar,
-  AssetCard,
-  AssetActionButtons,
-} from '../components';
+import {FocusAwareStatusBar, HeaderAvoidingContainer, Text} from '@/components';
+import {AssetCard} from '../components';
 
 // styles
+import {Task_State_Enum} from '@/generated/graphql';
+import {checkinStore, homeStore, orderStore} from '@/globalStore';
 import {FBBackground} from '@/types/styles';
 
-// Mock data - replace with actual data from your store/API
-const mockAssets = [
-  {
-    id: '1',
-    name: 'Test gender',
-    code: 'TestGenset',
-    requestedQuantity: 0,
-    filledQuantity: 0,
-  },
-  {
-    id: '2',
-    name: 'Generator Unit 2',
-    code: 'GenUnit2',
-    requestedQuantity: 50,
-    filledQuantity: 25,
-  },
-];
+type RootStackParamList = {
+  order: {
+    screen: string;
+  };
+};
+
+// Helper function to get asset data from currentDriverOrder
+const getAssetsFromOrder = (orderData: any): Asset[] => {
+  if (!orderData || !Array.isArray(orderData) || orderData.length === 0) {
+    return [];
+  }
+
+  const order = orderData[0];
+  if (!order.fillup_requests || !Array.isArray(order.fillup_requests)) {
+    return [];
+  }
+
+  return order.fillup_requests.map(
+    (request: any): Asset => ({
+      id: request.id,
+      name:
+        request.vehicle_tank_type_product_variation?.product_variation?.product
+          ?.name || 'Unknown Product',
+      code:
+        request.vehicle_tank_type_product_variation?.vehicle_tank_type
+          ?.tank_type?.name || 'Unknown Tank',
+      requestedQuantity: request.quantity || 0,
+      filledQuantity: 0, // This would come from actual fill data
+      unit: request.unit || 'liter',
+      state: request.state,
+      fuelRequestType: request.fuel_request_type,
+    }),
+  );
+};
+
+// Asset interface for component usage
+interface Asset {
+  id: string;
+  name: string;
+  code: string;
+  requestedQuantity: number;
+  filledQuantity: number;
+  unit: string;
+  state: string;
+  fuelRequestType: string;
+}
 
 const FillAsset: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [searchQuery, setSearchQuery] = useState('');
-  const [assets] = useState(mockAssets);
+  const driverVehicleId = checkinStore.use.driverVehicleId();
+  const selectedOrder = orderStore.use.selectedOrder();
+  const selectedDate = homeStore.use.selectedDate();
+  const currentDriverOrder = orderStore.use.currentDriverOrder();
+  const assets = getAssetsFromOrder(currentDriverOrder);
+
+  console.log('---currentDriverOrder---', JSON.stringify(currentDriverOrder));
 
   // Set navigation options
   useLayoutEffect(() => {
@@ -54,27 +89,28 @@ const FillAsset: React.FC = () => {
 
   // Filter assets based on search query
   const filteredAssets = assets.filter(
-    asset =>
+    (asset: Asset) =>
       asset.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       asset.code.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   // Calculate totals
   const totalQuantity = assets.reduce(
-    (sum, asset) => sum + asset.requestedQuantity,
+    (sum: number, asset: Asset) => sum + asset.requestedQuantity,
     0,
   );
   const filledQuantity = assets.reduce(
-    (sum, asset) => sum + asset.filledQuantity,
+    (sum: number, asset: Asset) => sum + asset.filledQuantity,
     0,
   );
   const pendingQuantity = totalQuantity - filledQuantity;
 
   const handleDispense = (assetId: string) => {
-    Alert.alert('Start Dispense', `Start dispensing for asset ${assetId}?`, [
-      {text: 'Cancel', style: 'cancel'},
-      {text: 'Start', onPress: () => console.log('Dispense started')},
-    ]);
+    // Navigate to upload image asset page
+    // @ts-ignore
+    navigation.navigate('order', {
+      screen: 'upload-image-asset',
+    });
   };
 
   const handleProceed = () => {
@@ -91,6 +127,31 @@ const FillAsset: React.FC = () => {
       ],
     );
   };
+
+  const fetchOrderForDriverIncompleteCurrent = async () => {
+    // Convert selected delivery date to start and end of day timestamps
+    const year = selectedDate.getFullYear();
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(selectedDate.getDate()).padStart(2, '0');
+    const startDateString = `${year}-${month}-${day}T00:00:00`;
+    const endDateString = `${year}-${month}-${day}T23:59:59`;
+    await OrderService.fetchOrderForDriverIncomplete({
+      limit: 1,
+      offset: 0,
+      state: [
+        Task_State_Enum.Dispensing,
+        Task_State_Enum.InTransit,
+        Task_State_Enum.Arrived,
+      ],
+      driver_vehicle_id: driverVehicleId,
+      start_date: startDateString,
+      end_date: endDateString,
+    });
+  };
+
+  useEffect(() => {
+    fetchOrderForDriverIncompleteCurrent();
+  }, []);
 
   return (
     <HeaderAvoidingContainer>
@@ -115,16 +176,45 @@ const FillAsset: React.FC = () => {
             onSearchChange={setSearchQuery}
           /> */}
 
-          {filteredAssets.map(asset => (
-            <AssetCard
-              key={asset.id}
-              assetName={asset.name}
-              assetCode={asset.code}
-              requestedQuantity={asset.requestedQuantity}
-              filledQuantity={asset.filledQuantity}
-              onDispense={() => handleDispense(asset.id)}
-            />
-          ))}
+          {assets.length === 0 ? (
+            <View style={styles.emptyState as ViewStyle}>
+              <Text
+                size="lg"
+                weight="600"
+                color="neutral"
+                style={styles.emptyStateTitle as TextStyle}>
+                No Assets Found
+              </Text>
+              <Text
+                size="base"
+                color="lightGray"
+                style={styles.emptyStateMessage as TextStyle}>
+                {currentDriverOrder
+                  ? 'No fillup requests available for this order.'
+                  : 'Loading order data...'}
+              </Text>
+              <TouchableOpacity
+                style={styles.retryButton as ViewStyle}
+                onPress={fetchOrderForDriverIncompleteCurrent}
+                activeOpacity={0.7}>
+                <Text size="base" weight="600" color="white">
+                  Retry
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            filteredAssets.map((asset: Asset) => (
+              <AssetCard
+                key={asset.id}
+                assetName={asset.name}
+                assetCode={asset.code}
+                requestedQuantity={asset.requestedQuantity}
+                filledQuantity={asset.filledQuantity}
+                unit={asset.unit}
+                onDispense={() => handleDispense(asset.id)}
+              />
+            ))
+          )}
         </ScrollView>
 
         <TouchableOpacity
@@ -163,6 +253,29 @@ const styles = ScaledSheet.create({
   disabledButton: {
     backgroundColor: '#CCCCCC',
     opacity: 0.6,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: '40@vs',
+    paddingHorizontal: '20@s',
+  },
+  emptyStateTitle: {
+    marginBottom: '8@vs',
+    textAlign: 'center',
+  },
+  emptyStateMessage: {
+    marginBottom: '24@vs',
+    textAlign: 'center',
+    lineHeight: '20@vs',
+  },
+  retryButton: {
+    backgroundColor: '#007AFF',
+    paddingVertical: '12@vs',
+    paddingHorizontal: '24@s',
+    borderRadius: '8@s',
+    alignItems: 'center',
   },
 });
 

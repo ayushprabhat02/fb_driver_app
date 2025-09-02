@@ -1,0 +1,34 @@
+query GetCustomerOrderedAssets(
+	$custOrderId: uuid
+	$searchKey: String
+) {
+	customer_order_customer_asset(
+		where: {
+			customer_order_id: { _eq: $custOrderId }
+			_or: [
+				{
+					customer_asset: {
+						_or: [
+							{ name: { _ilike: $searchKey } }
+							{ description: { _ilike: $searchKey } }
+						]
+					}
+				}
+			]
+		}
+	) {
+		customer_asset {
+			tag_id
+			asset_type_id
+			capacity
+			color
+			id
+			description
+			organization_user_id
+			name
+			registration_number
+		}
+		quantity_dispensed
+		quantity_requested
+	}
+}

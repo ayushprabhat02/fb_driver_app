@@ -13,6 +13,7 @@ import {
 } from './generated/graphql';
 import {AppState} from 'react-native';
 import './utils/ignoreWarnings';
+import {SafeAreaProvider, SafeAreaView} from 'react-native-safe-area-context';
 
 // navigator
 import {createStackNavigator} from '@react-navigation/stack';
@@ -143,7 +144,9 @@ function App(): React.JSX.Element {
   console.log('GraphQL Client:', graphqlClient);
 
   return (
-    <>
+    <SafeAreaProvider>
+      <SafeAreaView style={{flex: 1}}>
+
       <GestureHandlerRootView style={{flex: 1}}>
         <MenuProvider>
           <NavigationContainer>
@@ -173,7 +176,8 @@ function App(): React.JSX.Element {
       </GestureHandlerRootView>
 
       <Toast />
-    </>
+    </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 

@@ -2,6 +2,9 @@ import {
   FetchOrganizationUpcomingOrdersQueryVariables,
   FetchOrganizationUpcomingOrdersDocument,
   FetchOrganizationUpcomingOrdersQuery,
+  FetchOrderForDriverIncompleteQueryVariables,
+  FetchOrderForDriverIncompleteQuery,
+  FetchOrderForDriverIncompleteDocument,
 } from './../../../generated/graphql';
 /**
  * @module Order
@@ -57,6 +60,23 @@ import {
   FetchCustomerOrderDetailsByIdDocument,
   FetchCustomerOrderDetailsByIdQuery,
   FetchCustomerOrderDetailsByIdQueryVariables,
+
+  // fetch order for driver incomplete
+
+  // fetch task value
+  FetchTaskValueDocument,
+  FetchTaskValueQuery,
+  FetchTaskValueQueryVariables,
+
+  // upsert task value
+  UpsertTaskValueDocument,
+  UpsertTaskValueMutation,
+  UpsertTaskValueMutationVariables,
+
+  // customer ordered assets
+  GetCustomerOrderedAssetsDocument,
+  GetCustomerOrderedAssetsQuery,
+  GetCustomerOrderedAssetsQueryVariables,
 } from '@/generated/graphql';
 
 /**
@@ -309,6 +329,81 @@ class OrderService {
     }));
 
     return response.fetchCustomerOrderDetailsById?.data;
+  }
+
+  public async fetchOrderForDriverIncomplete(
+    args: FetchOrderForDriverIncompleteQueryVariables,
+  ) {
+    const response: FetchOrderForDriverIncompleteQuery = await callQuery({
+      queryDocument: FetchOrderForDriverIncompleteDocument,
+      variables: {...args},
+    });
+
+    orderStore.setState(state => ({
+      ...state,
+      currentDriverOrder: response.task,
+    }));
+  }
+
+  /**
+   * @method fetchTaskValue
+   * @description Fetches task values by task ID
+   * @args FetchTaskValueQueryVariables
+   */
+  public async fetchTaskValue(args: FetchTaskValueQueryVariables) {
+    const response: FetchTaskValueQuery = await callQuery({
+      queryDocument: FetchTaskValueDocument,
+      variables: {
+        ...args,
+      },
+    });
+    return response;
+  }
+
+  /**
+   * @method upsertTaskValue
+   * @description Upserts task values by task ID
+   * @args UpsertTaskValueMutationVariables
+   */
+  public async upsertTaskValue(args: UpsertTaskValueMutationVariables) {
+    const response: UpsertTaskValueMutation = await callMutation({
+      queryDocument: UpsertTaskValueDocument,
+      variables: {
+        ...args,
+      },
+    });
+
+    return response;
+  }
+
+  public async getAllCustomerOrderedAssets(
+    args: GetCustomerOrderedAssetsQueryVariables,
+  ) {
+    try {
+      const response: GetCustomerOrderedAssetsQuery = await callQuery({
+        queryDocument: GetCustomerOrderedAssetsDocument,
+        variables: {
+          ...args,
+        },
+      });
+
+      // we are doing sorting so that we can show filled asset on the top of the list
+      const sortedAssets = [...response.customer_order_customer_asset].sort(
+        (a, b) => {
+          return (
+            Number(b.quantity_dispensed) - Number(a.quantity_dispensed)
+          );
+        },
+      );
+
+      orderStore.setState({
+        orderAssets: sortedAssets,
+      });
+
+      return sortedAssets;
+    } catch (error) {
+      throw new Error("error fetching all customer assets");
+    }
   }
 }
 

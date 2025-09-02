@@ -1,24 +1,38 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {View} from 'react-native';
 import {ScaledSheet} from 'react-native-size-matters';
 import {Text} from '@/components';
 import {FBColors, FBBackground, FBBorders, FontSizeEnum} from '@/types/styles';
+import {orderStore} from '@/globalStore';
 
-interface AssetSummaryCardProps {
-  orderId: string;
-  totalQuantity: number;
-  filledQuantity: number;
-  pendingQuantity: number;
-  unit?: string;
-}
+const AssetSummaryCard: React.FC = ({}) => {
+  const orderAssets = orderStore.use.orderAssets();
+  const quantityToBeDispensed = orderStore.use.quantityDispensed();
 
-const AssetSummaryCard: React.FC<AssetSummaryCardProps> = ({
-  orderId,
-  totalQuantity,
-  filledQuantity,
-  pendingQuantity,
-  unit = 'L',
-}) => {
+  // Calculate total quantity from order assets
+  const totalQuantity = useMemo(() => {
+    return orderAssets?.reduce((total, asset) => {
+      return total + (asset.quantity_requested || 0);
+    }, 0) || quantityToBeDispensed || 0;
+  }, [orderAssets, quantityToBeDispensed]);
+
+  // Calculate dispensed quantity from order assets
+  const dispensedQuantity = useMemo(() => {
+    return orderAssets?.reduce((total, asset) => {
+      return total + (asset.quantity_dispensed || 0);
+    }, 0) || 0;
+  }, [orderAssets]);
+
+  // Calculate pending quantity
+  const pendingQuantity = useMemo(() => {
+    return totalQuantity - dispensedQuantity;
+  }, [totalQuantity, dispensedQuantity]);
+
+  // Calculate progress percentage
+  const progressPercentage = useMemo(() => {
+    if (totalQuantity === 0) return 0;
+    return Math.round((dispensedQuantity / totalQuantity) * 100);
+  }, [dispensedQuantity, totalQuantity]);
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -26,7 +40,7 @@ const AssetSummaryCard: React.FC<AssetSummaryCardProps> = ({
           Assets to be filled
         </Text>
         <Text size="sm" color="lightGray">
-          Order #{orderId}
+          Order Summary
         </Text>
       </View>
 
@@ -36,8 +50,7 @@ const AssetSummaryCard: React.FC<AssetSummaryCardProps> = ({
             Total:
           </Text>
           <Text size="base" weight="600" color="neutral">
-            {totalQuantity}
-            {unit}
+            {totalQuantity}L
           </Text>
         </View>
 
@@ -46,8 +59,7 @@ const AssetSummaryCard: React.FC<AssetSummaryCardProps> = ({
             Filled:
           </Text>
           <Text size="base" weight="600" color="primary">
-            {filledQuantity}
-            {unit}
+            {dispensedQuantity}L
           </Text>
         </View>
 
@@ -56,9 +68,20 @@ const AssetSummaryCard: React.FC<AssetSummaryCardProps> = ({
             Pending:
           </Text>
           <Text size="base" weight="600" color="error">
-            {pendingQuantity}
-            {unit}
+            {pendingQuantity}L
           </Text>
+        </View>
+      </View>
+      
+      {/* Progress Bar */}
+      <View style={styles.progressContainer}>
+        <View style={styles.progressBackground}>
+          <View 
+            style={[
+              styles.progressFill,
+              { width: `${progressPercentage}%` }
+            ]}
+          />
         </View>
       </View>
     </View>
@@ -68,9 +91,9 @@ const AssetSummaryCard: React.FC<AssetSummaryCardProps> = ({
 const styles = ScaledSheet.create({
   container: {
     backgroundColor: FBBackground.white,
-    borderRadius: '12@s',
-    padding: '16@s',
-    marginBottom: '16@vs',
+    borderRadius: '8@s',
+    padding: '12@s',
+    marginBottom: '12@vs',
     borderWidth: 1,
     borderColor: FBBorders.primary,
     shadowColor: FBColors.lightGray,
@@ -83,7 +106,7 @@ const styles = ScaledSheet.create({
     elevation: 3,
   },
   header: {
-    marginBottom: '12@vs',
+    marginBottom: '8@vs',
   },
   summaryRow: {
     flexDirection: 'row',
@@ -93,6 +116,20 @@ const styles = ScaledSheet.create({
   summaryItem: {
     alignItems: 'center',
     flex: 1,
+  },
+  progressContainer: {
+    marginTop: '12@vs',
+  },
+  progressBackground: {
+    backgroundColor: FBColors.lightGray,
+    borderRadius: '4@s',
+    height: '8@vs',
+    overflow: 'hidden',
+  },
+  progressFill: {
+    backgroundColor: FBColors.primary,
+    height: '100%',
+    borderRadius: '4@s',
   },
 });
 
