@@ -11,6 +11,7 @@ import {
 import ChooseAsset from '@/modules/order/screens/ChooseAsset';
 import FillAsset from '@/modules/order/screens/FillAsset';
 import UploadImageAsset from '@/modules/order/screens/UploadImageAsset';
+import LiveStreamScreen from '@/modules/order/screens/LiveStreamScreen';
 import {BackButtonArrow} from '@/components';
 
 // styles
@@ -28,6 +29,7 @@ export type OrderStackParamList = {
   'choose-asset': undefined;
   'fill-asset': undefined;
   'upload-image-asset': undefined;
+  'live-stream': undefined;
 };
 
 const OrderStack = createStackNavigator<OrderStackParamList>();
@@ -89,6 +91,17 @@ const OrderNavigator: React.FC = () => {
         component={UploadImageAsset}
         options={{
           title: 'Upload Fillup Images',
+        }}
+      />
+      <OrderStack.Screen
+        name="live-stream"
+        component={LiveStreamScreen}
+        options={{
+          title: 'Live Stream Recording',
+          headerTransparent: false,
+          headerStyle: {
+            backgroundColor: FBBackground.white,
+          },
         }}
       />
     </OrderStack.Navigator>

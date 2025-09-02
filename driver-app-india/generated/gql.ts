@@ -70,6 +70,8 @@ const documents = {
     "query fetchSalesInvoicePdf($object: salesInvoicePdfInput = {}) {\n  fetchSalesInvoicePdf(object: $object) {\n    data\n    message\n    error\n    code\n  }\n}": types.FetchSalesInvoicePdfDocument,
     "query fetchTaskValue($task_id: uuid) {\n  task_value(where: {task_id: {_eq: $task_id}}, order_by: {created_at: asc}) {\n    customer_asset_id\n    id\n    key\n    quantity_dispensed\n    value\n    url\n    task_id\n  }\n}": types.FetchTaskValueDocument,
     "query GetCustomerOrderedAssets($custOrderId: uuid, $searchKey: String) {\n  customer_order_customer_asset(\n    where: {customer_order_id: {_eq: $custOrderId}, _or: [{customer_asset: {_or: [{name: {_ilike: $searchKey}}, {description: {_ilike: $searchKey}}]}}]}\n  ) {\n    customer_asset {\n      tag_id\n      asset_type_id\n      capacity\n      color\n      id\n      description\n      organization_user_id\n      name\n      registration_number\n    }\n    quantity_dispensed\n    quantity_requested\n  }\n}": types.GetCustomerOrderedAssetsDocument,
+    "mutation MarkTaskLiveDispensing($id: uuid!, $is_live_dispensing: Boolean) {\n  update_task_by_pk(\n    pk_columns: {id: $id}\n    _set: {is_live_dispensing: $is_live_dispensing}\n  ) {\n    category\n    id\n    is_live_dispensing\n  }\n}": types.MarkTaskLiveDispensingDocument,
+    "mutation UpsertStepTaskAction($object: upsertTaskValueInput!) {\n  upsertTaskValue(object: $object) {\n    id\n    is_updated\n    is_inserted\n  }\n}": types.UpsertStepTaskActionDocument,
     "mutation upsertTaskValue($object: upsertTaskValueInput!) {\n  upsertTaskValue(object: $object) {\n    id\n    is_updated\n    is_inserted\n  }\n}": types.UpsertTaskValueDocument,
     "query verifyPlacedOrderOtp($customer_order_id: uuid = \"\", $otp: numeric = \"\") {\n  verifyPlacedOrderOtp(object: {customer_order_id: $customer_order_id, otp: $otp}) {\n    is_verified\n    customer_order_id\n  }\n}": types.VerifyPlacedOrderOtpDocument,
     "query fetchCustomerOrganizationOrders($object: fetchCustomerOrganizationOrdersInput!) {\n  fetchCustomerOrganizationOrders(object: $object) {\n    data\n  }\n}": types.FetchCustomerOrganizationOrdersDocument,
@@ -344,6 +346,14 @@ export function graphql(source: "query fetchTaskValue($task_id: uuid) {\n  task_
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "query GetCustomerOrderedAssets($custOrderId: uuid, $searchKey: String) {\n  customer_order_customer_asset(\n    where: {customer_order_id: {_eq: $custOrderId}, _or: [{customer_asset: {_or: [{name: {_ilike: $searchKey}}, {description: {_ilike: $searchKey}}]}}]}\n  ) {\n    customer_asset {\n      tag_id\n      asset_type_id\n      capacity\n      color\n      id\n      description\n      organization_user_id\n      name\n      registration_number\n    }\n    quantity_dispensed\n    quantity_requested\n  }\n}"): (typeof documents)["query GetCustomerOrderedAssets($custOrderId: uuid, $searchKey: String) {\n  customer_order_customer_asset(\n    where: {customer_order_id: {_eq: $custOrderId}, _or: [{customer_asset: {_or: [{name: {_ilike: $searchKey}}, {description: {_ilike: $searchKey}}]}}]}\n  ) {\n    customer_asset {\n      tag_id\n      asset_type_id\n      capacity\n      color\n      id\n      description\n      organization_user_id\n      name\n      registration_number\n    }\n    quantity_dispensed\n    quantity_requested\n  }\n}"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "mutation MarkTaskLiveDispensing($id: uuid!, $is_live_dispensing: Boolean) {\n  update_task_by_pk(\n    pk_columns: {id: $id}\n    _set: {is_live_dispensing: $is_live_dispensing}\n  ) {\n    category\n    id\n    is_live_dispensing\n  }\n}"): (typeof documents)["mutation MarkTaskLiveDispensing($id: uuid!, $is_live_dispensing: Boolean) {\n  update_task_by_pk(\n    pk_columns: {id: $id}\n    _set: {is_live_dispensing: $is_live_dispensing}\n  ) {\n    category\n    id\n    is_live_dispensing\n  }\n}"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "mutation UpsertStepTaskAction($object: upsertTaskValueInput!) {\n  upsertTaskValue(object: $object) {\n    id\n    is_updated\n    is_inserted\n  }\n}"): (typeof documents)["mutation UpsertStepTaskAction($object: upsertTaskValueInput!) {\n  upsertTaskValue(object: $object) {\n    id\n    is_updated\n    is_inserted\n  }\n}"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

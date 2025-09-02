@@ -47,7 +47,8 @@ const HomeLandingPage: React.FC = () => {
   const fillupHistory = homeStore.use.fillupHistory();
   const isLoadingOrder = homeStore.use.loaders().driverCurrentOrder;
   const isLoadingFillupHistory = homeStore.use.loaders().fillupHistory;
-  const selectedOrder = orderStore.use.selectedOrder();
+  const currentFillupOrder = orderStore.use.currentFillupOrder();
+  const currentCustomerOrder = orderStore.use.currentCustomerOrder();
 
   const allFillupsCompleted = fillupHistory?.every(
     (item: any) => item.state === 'COMPLETE' || item.state === 'REJECTED',
@@ -286,10 +287,10 @@ const HomeLandingPage: React.FC = () => {
       </ScrollView>
 
       {/* Floating Buttons */}
-      {selectedOrder &&
+      {(currentFillupOrder || currentCustomerOrder) &&
         (allFillupsCompleted ||
-          ((selectedOrder as any)?.fillup_requests &&
-            (selectedOrder as any)?.fillup_requests.length > 0)) && (
+          ((currentFillupOrder as any)?.fillup_requests &&
+            (currentFillupOrder as any)?.fillup_requests.length > 0)) && (
           <View style={styles.floatingButtonsContainer}>
             <Button
               variant="solid"
@@ -304,11 +305,12 @@ const HomeLandingPage: React.FC = () => {
               variant="solid"
               style={[styles.floatingButton, styles.startTripButton]}
               onPress={() => {
+                const currentOrder = currentFillupOrder || currentCustomerOrder;
                 const isFillupOrder =
-                  (selectedOrder as any)?.fillup_requests &&
-                  (selectedOrder as any)?.fillup_requests.length > 0;
+                  (currentFillupOrder as any)?.fillup_requests &&
+                  (currentFillupOrder as any)?.fillup_requests.length > 0;
                 // update dispense quantity
-                updateOrderQuantity(selectedOrder);
+                updateOrderQuantity(currentOrder);
                 if (isFillupOrder) {
                   // @ts-ignore
                   navigation.navigate('address', {

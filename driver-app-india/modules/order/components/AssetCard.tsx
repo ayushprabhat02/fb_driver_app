@@ -8,8 +8,10 @@ import {
   ImageStyle,
 } from 'react-native';
 import {ScaledSheet} from 'react-native-size-matters';
+import {useNavigation} from '@react-navigation/native';
 import {Text} from '@/components';
 import {FBColors, FBBackground, FBBorders, FontSizeEnum} from '@/types/styles';
+import {orderStore} from '@/globalStore';
 
 interface AssetCardProps {
   assetName: string;
@@ -19,6 +21,9 @@ interface AssetCardProps {
   unit?: string;
   onDispense: () => void;
   disabled?: boolean;
+  // Additional props for tower driver functionality
+  asset?: any; // The full asset object for tower driver features
+  onStartDispense?: (asset: any) => void;
 }
 
 const AssetCard: React.FC<AssetCardProps> = ({
@@ -29,9 +34,34 @@ const AssetCard: React.FC<AssetCardProps> = ({
   unit = 'Ltr',
   onDispense,
   disabled = false,
+  asset,
+  onStartDispense,
 }) => {
+  const navigation = useNavigation();
+  
   const remainingQuantity = requestedQuantity - filledQuantity;
   const isCompleted = remainingQuantity <= 0;
+  
+  const handleStartDispense = () => {
+    if (onStartDispense && asset) {
+      // Set current asset for dispense in store
+      orderStore.setState(state => ({
+        ...state,
+        currentAssetForDispense: asset,
+      }));
+      
+      // Call the onStartDispense callback
+      onStartDispense(asset);
+    } else {
+      // Fallback to regular dispense function
+      onDispense();
+    }
+  };
+  
+  const getButtonText = () => {
+    // Always show 'Start Dispense' for testing purposes
+    return 'Start Dispense';
+  };
 
   return (
     <View style={styles.container as ViewStyle}>
@@ -88,16 +118,16 @@ const AssetCard: React.FC<AssetCardProps> = ({
       <TouchableOpacity
         style={[
           styles.dispenseButton as ViewStyle,
-          (disabled || isCompleted) && (styles.disabledButton as ViewStyle),
+          disabled && (styles.disabledButton as ViewStyle), // Only disable if explicitly disabled prop is passed
         ]}
-        onPress={onDispense}
-        disabled={disabled || isCompleted}
+        onPress={handleStartDispense}
+        disabled={disabled} // Only disable if explicitly disabled prop is passed
         activeOpacity={0.7}>
         <Text
           size="sm"
           weight="600"
-          color={disabled || isCompleted ? 'disabledInputText' : 'white'}>
-          {isCompleted ? 'Completed' : 'Start dispense'}
+          color={disabled ? 'disabledInputText' : 'white'}> {/* Only show disabled color if explicitly disabled */}
+          {getButtonText()}
         </Text>
       </TouchableOpacity>
     </View>

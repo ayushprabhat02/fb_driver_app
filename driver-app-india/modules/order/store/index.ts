@@ -75,8 +75,9 @@ type OrderStore = {
   // bottom sheet
   bottomSheetRefOtp: React.RefObject<BottomSheetModal> | null;
 
-  // selected order
-  selectedOrder: FetchDeliveryOrderByStateQuery['customer_order'][0] | FetchOrderForDriverIncompleteQuery['task'][0] | null;
+  // selected orders - split by order type
+  currentFillupOrder: FetchOrderForDriverIncompleteQuery['task'][0] | null;
+  currentCustomerOrder: FetchDeliveryOrderByStateQuery['customer_order'][0] | null;
 
   currentDriverOrder: FetchOrderForDriverIncompleteQuery['task'] | null;
 
@@ -88,6 +89,9 @@ type OrderStore = {
 
   // order assets
   orderAssets: GetCustomerOrderedAssetsQuery['customer_order_customer_asset'];
+
+  // current asset for dispense (for tower driver streaming)
+  currentAssetForDispense: any | null;
 };
 
 type OrderActions = {
@@ -133,7 +137,8 @@ const orderInitialState: OrderStore = {
 
   // bottom sheet
   bottomSheetRefOtp: null,
-  selectedOrder: null,
+  currentFillupOrder: null,
+  currentCustomerOrder: null,
   currentDriverOrder: null,
 
   // fillup image data initial state
@@ -144,6 +149,9 @@ const orderInitialState: OrderStore = {
 
   // order assets
   orderAssets: [],
+
+  // current asset for dispense
+  currentAssetForDispense: null,
 };
 
 const orderPaginationInitialState = {

@@ -77,6 +77,14 @@ import {
   GetCustomerOrderedAssetsDocument,
   GetCustomerOrderedAssetsQuery,
   GetCustomerOrderedAssetsQueryVariables,
+
+  // streaming functionality  
+  UpsertStepTaskActionDocument,
+  UpsertStepTaskActionMutation,
+  UpsertStepTaskActionMutationVariables,
+  MarkTaskLiveDispensingDocument,
+  MarkTaskLiveDispensingMutation,
+  MarkTaskLiveDispensingMutationVariables,
 } from '@/generated/graphql';
 
 /**
@@ -404,6 +412,39 @@ class OrderService {
     } catch (error) {
       throw new Error("error fetching all customer assets");
     }
+  }
+
+  /**
+   * @method upsertStepTaskAction
+   * @description Upserts step task action for streaming functionality
+   * @args UpsertStepTaskActionMutationVariables
+   */
+  public async upsertStepTaskAction(args: UpsertStepTaskActionMutationVariables) {
+    const response: UpsertStepTaskActionMutation = await callMutation({
+      queryDocument: UpsertStepTaskActionDocument,
+      variables: {
+        ...args,
+      },
+    });
+
+    return response;
+  }
+
+  /**
+   * @method updateTaskLiveDispensingStatus
+   * @description Updates task live dispensing status
+   * @args MarkTaskLiveDispensingMutationVariables
+   */
+  public async updateTaskLiveDispensingStatus(args: {task_id: string; is_live_dispensing: boolean}) {
+    const response: MarkTaskLiveDispensingMutation = await callMutation({
+      queryDocument: MarkTaskLiveDispensingDocument,
+      variables: {
+        id: args.task_id, // Map task_id to id parameter
+        is_live_dispensing: args.is_live_dispensing,
+      },
+    });
+
+    return response;
   }
 }
 

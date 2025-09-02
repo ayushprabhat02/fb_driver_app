@@ -1,0 +1,7 @@
+mutation MarkTaskLiveDispensing($id: uuid!, $is_live_dispensing: Boolean) {
+  update_task_by_pk(pk_columns: {id: $id}, _set: {is_live_dispensing: $is_live_dispensing}) {
+    category
+    id
+    is_live_dispensing
+  }
+}

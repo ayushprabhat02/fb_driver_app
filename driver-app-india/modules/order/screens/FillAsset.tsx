@@ -72,7 +72,6 @@ const FillAsset: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [searchQuery, setSearchQuery] = useState('');
   const driverVehicleId = checkinStore.use.driverVehicleId();
-  const selectedOrder = orderStore.use.selectedOrder();
   const selectedDate = homeStore.use.selectedDate();
   const currentDriverOrder = orderStore.use.currentDriverOrder();
   const assets = getAssetsFromOrder(currentDriverOrder);

@@ -11,8 +11,8 @@ interface Props {
 }
 
 const FillupOrderCard: React.FC<Props> = ({order}) => {
-  const selectedOrder = orderStore.use.selectedOrder();
-  const isSelected = selectedOrder?.id === order?.id;
+  const currentFillupOrder = orderStore.use.currentFillupOrder();
+  const isSelected = currentFillupOrder?.id === order?.id;
 
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
@@ -23,12 +23,12 @@ const FillupOrderCard: React.FC<Props> = ({order}) => {
     if (isSelected) {
       orderStore.setState(state=>({
         ...state,
-        selectedOrder: null
+        currentFillupOrder: null
       }))
     } else {
         orderStore.setState(state=>({
         ...state,
-        selectedOrder: order
+        currentFillupOrder: order
       }))
     }
   };
