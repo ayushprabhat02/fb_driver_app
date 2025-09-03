@@ -77,7 +77,7 @@ type OrderStore = {
 
   // selected orders - split by order type
   currentFillupOrder: FetchOrderForDriverIncompleteQuery['task'][0] | null;
-  currentCustomerOrder: FetchDeliveryOrderByStateQuery['customer_order'][0] | null;
+  currentCustomerOrder: FetchOrderForDriverIncompleteQuery['task'][0] | null;
 
   currentDriverOrder: FetchOrderForDriverIncompleteQuery['task'] | null;
 

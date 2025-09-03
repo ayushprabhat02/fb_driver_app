@@ -54,8 +54,8 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
 
   // Store
   const currentCustomerOrder = orderStore.use.currentCustomerOrder();
-  const streamingDurationSeconds = 5 * 60; // 5 minutes
-  // const streamingDurationSeconds = 10; // 10 seconds
+  // const streamingDurationSeconds = 5 * 60; // 5 minutes
+  const streamingDurationSeconds = 10; // 10 seconds
 
   // Check permissions on component mount
   useEffect(() => {
@@ -302,7 +302,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   const handleRecordingFinished = async (data: any) => {
     try {
       // Get order code for filename
-      const orderCode = currentCustomerOrder?.order_code || 'unknown';
+      const orderCode = currentCustomerOrder?.customer_order?.order_code || 'unknown';
 
       // Create filename with proper extension
       const fileName = `Recording_${orderCode}.mp4`;

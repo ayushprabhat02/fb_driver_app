@@ -162,7 +162,7 @@ const SwitchProfileHeader: React.FC = () => {
 };
 
 const styles = ScaledSheet.create({
-  container: {paddingTop: hasNotch() ? 50 : 35, alignItems: 'flex-end'},
+  container: { alignItems: 'flex-end'},
 
   settingsBtn: {
     width: 56,

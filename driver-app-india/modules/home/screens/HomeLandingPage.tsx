@@ -335,13 +335,15 @@ const styles = ScaledSheet.create({
   body: {},
 
   headerContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    zIndex: 0,
-    width: '100%',
+    position: 'relative',
+    paddingHorizontal:20,
+    paddingTop:10,
+    // top: 0,
+    // left: 0,
+    // paddingHorizontal: 16,
+    // paddingTop: 10,
+    // zIndex: 0,
+    // width: '100%',
   },
   image: {
     width: '310@s',
