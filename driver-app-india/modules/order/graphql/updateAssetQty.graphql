@@ -1,0 +1,20 @@
+mutation updateAssetQty(
+  $customerAssetId: uuid
+  $customerOrderId: uuid
+  $qty: numeric
+) {
+  update_customer_order_customer_asset(
+    where: {
+      customer_asset_id: { _eq: $customerAssetId }
+      customer_order_id: { _eq: $customerOrderId }
+    }
+    _set: { quantity_dispensed: $qty }
+  ) {
+    returning {
+      customer_asset_id
+      id
+      is_active
+      quantity_dispensed
+    }
+  }
+}

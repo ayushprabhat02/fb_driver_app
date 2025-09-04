@@ -2,7 +2,7 @@ import React, {useState, useLayoutEffect, useEffect, useCallback} from 'react';
 import {useDebounce} from 'use-debounce';
 import {ScrollView, View, Alert, ViewStyle, FlatList} from 'react-native';
 import {ScaledSheet} from 'react-native-size-matters';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import type {StackNavigationProp} from '@react-navigation/stack';
 import type {OrderStackParamList} from '@/navigator/containers/Order';
 
@@ -25,7 +25,7 @@ import {FBBackground, FBColorPalette} from '@/types/styles';
 import orderService from '../services';
 import {orderStore} from '@/globalStore';
 
-const ChooseAsset: React.FC = () => {
+const ChooseAssetScreen: React.FC = () => {
   const navigation = useNavigation<StackNavigationProp<OrderStackParamList>>();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery] = useDebounce(searchQuery, 500);
@@ -46,15 +46,18 @@ const ChooseAsset: React.FC = () => {
   }, [navigation]);
 
   // Map orderAssets to the expected format for AssetCard
-  const mappedAssets = (orderAssets || []).map((orderAsset: any) => ({
-    id: orderAsset.customer_asset?.id || '',
-    name: orderAsset.customer_asset?.name || '',
-    code: orderAsset.customer_asset?.description,
-    requestedQuantity: orderAsset.quantity_requested || 0,
-    filledQuantity: orderAsset.quantity_dispensed || 0,
-  }));
+  // Use useMemo to ensure this recalculates when orderAssets changes
+  const mappedAssets = React.useMemo(() => {
+    return (orderAssets || []).map((orderAsset: any) => ({
+      id: orderAsset.customer_asset?.id || '',
+      name: orderAsset.customer_asset?.name || '',
+      code: orderAsset.customer_asset?.description,
+      requestedQuantity: orderAsset.quantity_requested || 0,
+      filledQuantity: orderAsset.quantity_dispensed || 0,
+    }));
+  }, [orderAssets]);
 
-  console.log('mappedAssets:', mappedAssets);
+
 
   // Calculate totals
   const totalQuantity = mappedAssets.reduce(
@@ -75,11 +78,8 @@ const ChooseAsset: React.FC = () => {
   };
   
   const handleStartDispense = (asset: any) => {
-    console.log('Starting dispense for asset:', JSON.stringify(asset, null, 2));
-    
     // Get the selected order (fillup order takes priority)
     const selectedOrder = currentFillupOrder || currentCustomerOrder;
-    console.log('Selected order:', selectedOrder);
     
     // Ensure the selectedOrder is available for the live stream screen
     if (!selectedOrder) {
@@ -97,12 +97,9 @@ const ChooseAsset: React.FC = () => {
     const assetId = asset.customer_asset?.id || asset.id || asset.customer_asset_id;
     
     if (!assetId) {
-      console.error('Asset ID not found in asset object:', asset);
       Alert.alert('Error', 'Asset ID is missing. Please try again.');
       return;
     }
-    
-    console.log('Using asset ID:', assetId);
     
     // Set the current asset for dispense in the store with proper structure
     const assetForDispense = {
@@ -116,14 +113,29 @@ const ChooseAsset: React.FC = () => {
       currentAssetForDispense: assetForDispense,
     }));
     
-    console.log('Set currentAssetForDispense:', assetForDispense);
-    
     // Navigate to live stream screen
     navigation.navigate('live-stream');
   };
 
   const handleProceed = () => {
-    Alert.alert('Proceed', 'Proceeding with the order...');
+    // Filter assets with dispensed fuel for the next step
+    const dispensedAssets = orderAssets?.filter((asset: any) => (asset.quantity_dispensed || 0) > 0) || [];
+    
+    if (dispensedAssets.length === 0) {
+      Alert.alert(
+        'No Fuel Dispensed',
+        'Please dispense fuel to at least one asset before proceeding.',
+      );
+      return;
+    }
+    
+    // Store dispensed assets in the order store for the delivery challan
+    orderStore.setState(state => ({
+      ...state,
+      dispenseCompletedAssets: dispensedAssets,
+    }));
+
+    navigation.navigate('delivery-challan');
   };
 
   const handleCancel = () => {
@@ -137,7 +149,7 @@ const ChooseAsset: React.FC = () => {
     );
   };
 
-  console.log('------selectedOrder-----', JSON.stringify(currentFillupOrder || currentCustomerOrder));
+
 
   const getCustomerOrderAssets = useCallback(async () => {
     // Get the selected order (fillup order takes priority)
@@ -145,7 +157,6 @@ const ChooseAsset: React.FC = () => {
     
     // Check if selectedOrder is available before making API call
     if (!selectedOrder) {
-      console.warn('No selectedOrder available for fetching assets');
       return;
     }
 
@@ -158,13 +169,11 @@ const ChooseAsset: React.FC = () => {
         : selectedOrder.id;
 
     if (!customerOrderId) {
-      console.warn('No customer order ID available for fetching assets');
       return;
     }
 
     // Use search query or default to '%%' for all results
     const searchKey = debouncedSearchQuery ? `%${debouncedSearchQuery}%` : '%%';
-    console.log('Searching with key:', searchKey);
 
     startLoader('orderAssets');
     try {
@@ -183,6 +192,32 @@ const ChooseAsset: React.FC = () => {
     getCustomerOrderAssets();
   }, [getCustomerOrderAssets]);
 
+  // Refresh data when screen comes into focus (e.g., after navigation from LiveStream)
+  useFocusEffect(
+    useCallback(() => {
+      getCustomerOrderAssets();
+    }, [getCustomerOrderAssets])
+  );
+
+  // Memoize the renderItem function to prevent unnecessary re-renders
+  const renderAssetItem = React.useCallback(({item, index}: {item: any, index: number}) => {
+    // Find the original asset data
+    const originalAsset = orderAssets?.[index];
+    if (!originalAsset) return null;
+    
+    return (
+      <AssetCard
+        assetName={item.name}
+        assetCode={item.code}
+        requestedQuantity={item.requestedQuantity}
+        filledQuantity={item.filledQuantity}
+        onDispense={() => handleDispense(item.id)}
+        asset={originalAsset} // Pass the full asset object
+        onStartDispense={() => handleStartDispense(originalAsset)} // Pass the original asset with full data
+      />
+    );
+  }, [orderAssets]);
+
   return (
     <View style={{flex: 1}}>
       <FocusAwareStatusBar
@@ -200,23 +235,10 @@ const ChooseAsset: React.FC = () => {
 
         <FlatList
           data={mappedAssets}
-          keyExtractor={item => item.id.toString()}
-          renderItem={({item, index}) => {
-            // Find the original asset data
-            const originalAsset = orderAssets[index];
-            return (
-              <AssetCard
-                assetName={item.name}
-                assetCode={item.code}
-                requestedQuantity={item.requestedQuantity}
-                filledQuantity={item.filledQuantity}
-                onDispense={() => handleDispense(item.id)}
-                asset={originalAsset} // Pass the full asset object
-                onStartDispense={() => handleStartDispense(originalAsset)} // Pass the original asset with full data
-              />
-            );
-          }}
+          keyExtractor={(item, index) => `${item.id}-${item.filledQuantity}-${index}`} // Include filledQuantity in key to force re-render
+          renderItem={renderAssetItem}
           contentContainerStyle={{paddingBottom: 100}} // 👈 ensures space for buttons
+          extraData={orderAssets} // Force re-render when orderAssets changes
         />
       </View>
 
@@ -269,4 +291,4 @@ const styles = ScaledSheet.create({
   },
 });
 
-export default ChooseAsset;
+export default ChooseAssetScreen;

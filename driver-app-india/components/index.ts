@@ -21,3 +21,5 @@ export {default as ShippingAddressHeader} from './ShippingAddressHeader';
 export {default as BackButtonArrow} from './BackButtonArrow';
 export {default as FullScreenLoader} from './FullScreenLoader';
 export {default as SucessAnimation} from './SucessAnimation/index';
+export {default as ImageUploader} from './ImageUploader';
+export {default as QuantityBottomSheet} from './QuantityBottomSheet';

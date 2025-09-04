@@ -1,2 +1,2 @@
-export {default as ChooseAsset} from './ChooseAsset';
+export {default as ChooseAssetScreen} from './ChooseAssetScreen';
 export {default as FillAsset} from './FillAsset';

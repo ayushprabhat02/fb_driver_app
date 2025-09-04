@@ -8,12 +8,13 @@ import {
 } from 'react-native';
 import {RNCamera} from 'react-native-camera';
 import {useNavigation} from '@react-navigation/native';
+import {StackNavigationProp} from '@react-navigation/stack';
 import {request, PERMISSIONS, RESULTS, check} from 'react-native-permissions';
 import Toast from 'react-native-toast-message';
 import {ScaledSheet} from 'react-native-size-matters';
 
 // Components
-import {Container, Text} from '@/components';
+import {Container, Text, CardElevated, QuantityBottomSheet} from '@/components';
 import PermissionScreen from '../components/PermissionScreen';
 import CameraOverlay from '../components/CameraOverlay';
 import StreamControls from '../components/StreamControls';
@@ -27,13 +28,19 @@ import supportService from '@/modules/support/services';
 
 // Types
 import {FBColors, FBBackground} from '@/types/styles';
+import {OrderStackParamList} from '@/navigator/containers/Order';
+
+type LiveStreamNavigationProp = StackNavigationProp<
+  OrderStackParamList,
+  'live-stream'
+>;
 
 interface LiveStreamScreenProps {
   route?: any;
 }
 
 const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<LiveStreamNavigationProp>();
   const cameraRef = useRef<RNCamera | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -51,11 +58,30 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   const [streamingState, setStreamingState] = useState<
     'not_started' | 'started' | 'stopped'
   >('not_started');
+  const [showQuantityBottomSheet, setShowQuantityBottomSheet] = useState(false);
 
   // Store
   const currentCustomerOrder = orderStore.use.currentCustomerOrder();
+  const currentDriverOrder = orderStore.use.currentDriverOrder();
+  const orderAssets = orderStore.use.orderAssets();
+  // Use currentDriverOrder as single source of truth (following project specification)
+  const selectedOrder = currentDriverOrder || currentCustomerOrder;
   // const streamingDurationSeconds = 5 * 60; // 5 minutes
   const streamingDurationSeconds = 10; // 10 seconds
+
+  // Get current asset's filled quantity
+  const getCurrentAssetFilledQuantity = () => {
+    const currentAssetId = orderStore.getState().currentAssetForDispense?.id;
+    if (!currentAssetId || !orderAssets) return 0;
+
+    const currentAsset = orderAssets.find((asset: any) => {
+      const assetId =
+        asset.customer_asset?.id || asset.id || asset.customer_asset_id;
+      return assetId === currentAssetId;
+    });
+
+    return currentAsset?.quantity_dispensed || 0;
+  };
 
   // Check permissions on component mount
   useEffect(() => {
@@ -172,7 +198,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       setStreamingState('started');
 
       // Validate required data
-      if (!currentCustomerOrder?.id) {
+      if (!selectedOrder?.id) {
         throw new Error('Order data is missing');
       }
 
@@ -196,13 +222,13 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           key: 'STREAM_STARTED',
           url: '',
           value: new Date().toISOString(),
-          task_id: currentCustomerOrder?.id,
+          task_id: selectedOrder?.id,
           customer_asset_id: currentAssetId,
         },
       });
 
       await orderService.updateTaskLiveDispensingStatus({
-        task_id: currentCustomerOrder?.id,
+        task_id: selectedOrder?.id,
         is_live_dispensing: true,
       });
 
@@ -260,14 +286,14 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           key: 'STREAM_STOPPED',
           url: '',
           value: new Date().toISOString(),
-          task_id: currentCustomerOrder?.id || '',
+          task_id: selectedOrder?.id || '',
           customer_asset_id:
             orderStore.getState().currentAssetForDispense?.id || '',
         },
       });
 
       await orderService.updateTaskLiveDispensingStatus({
-        task_id: currentCustomerOrder?.id || '',
+        task_id: selectedOrder?.id || '',
         is_live_dispensing: false,
       });
 
@@ -302,7 +328,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   const handleRecordingFinished = async (data: any) => {
     try {
       // Get order code for filename
-      const orderCode = currentCustomerOrder?.customer_order?.order_code || 'unknown';
+      const orderCode = selectedOrder?.customer_order?.order_code || 'unknown';
 
       // Create filename with proper extension
       const fileName = `Recording_${orderCode}.mp4`;
@@ -339,7 +365,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           key: 'LIVE_STREAM_RECORDING',
           url: uploadedUrl,
           value: fileName,
-          task_id: currentCustomerOrder?.id || '',
+          task_id: selectedOrder?.id || '',
           customer_asset_id:
             orderStore.getState().currentAssetForDispense?.id || '',
           quantity_dispensed: 0,
@@ -375,8 +401,110 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       return;
     }
 
+    // Reset streaming state
     setStreamingState('not_started');
-    navigation.goBack();
+    setHasStreamedOnce(false);
+    setRecordingDuration(0);
+    setCanStopStream(false);
+
+    // Show quantity bottom sheet for tower drivers
+    setShowQuantityBottomSheet(true);
+  };
+
+  const handleQuantityProceed = async (quantity: number) => {
+    try {
+      setIsLoading(true);
+      setShowQuantityBottomSheet(false);
+
+      const currentAssetId = orderStore.getState().currentAssetForDispense?.id;
+      if (
+        !currentAssetId ||
+        !selectedOrder?.customer_order?.id ||
+        !selectedOrder?.id
+      ) {
+        throw new Error('Missing asset or order data');
+      }
+
+      // Get current location for task action
+      const getCurrentLocation = (): Promise<{
+        latitude: number;
+        longitude: number;
+      }> => {
+        return new Promise(resolve => {
+          // Use fallback coordinates for now (actual implementation would use proper geolocation)
+          resolve({
+            latitude: 28.626330828,
+            longitude: 77.218499126,
+          });
+        });
+      };
+
+      const coordinates = await getCurrentLocation();
+
+      // Create step task action for quantity dispensed (similar to TOTALIZER_AFTER_READING in Vue.js)
+      await orderService.upsertStepTaskAction({
+        object: {
+          key: 'QUANTITY_DISPENSED',
+          url: '', // No image URL for now
+          value: '0.0',
+          quantity_dispensed: quantity,
+          task_id: selectedOrder.id,
+          customer_asset_id: currentAssetId,
+          location: {
+            type: 'Point',
+            coordinates: [coordinates.longitude, coordinates.latitude],
+          },
+        },
+      });
+
+      // Update asset quantity
+      await orderService.updateAssetQty({
+        customerAssetId: currentAssetId,
+        customerOrderId: selectedOrder.customer_order.id,
+        qty: quantity,
+      });
+
+      // Update the local store to reflect the change immediately
+      const updatedAssets = orderStore
+        .getState()
+        .orderAssets?.map((asset: any) => {
+          const assetId =
+            asset.customer_asset?.id || asset.id || asset.customer_asset_id;
+          if (assetId === currentAssetId) {
+            return {...asset, quantity_dispensed: quantity};
+          }
+          return asset;
+        });
+
+      orderStore.setState(state => ({
+        ...state,
+        orderAssets: updatedAssets,
+      }));
+
+      // Mark order as dispensing if it's currently in ARRIVED state
+      if (selectedOrder.state === 'ARRIVED') {
+        await orderService.markOrderDispensing({
+          task_id: selectedOrder.id,
+        });
+      }
+
+      Toast.show({
+        type: 'success',
+        text1: 'Quantity Updated',
+        text2: `${quantity}L has been dispensed`,
+      });
+
+      // Navigate to choose asset page (following Vue.js flow)
+      navigation.navigate('choose-asset');
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Update Failed',
+        text2: 'Failed to update quantity. Please try again.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Loading state
@@ -408,6 +536,63 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   // Main camera interface
   return (
     <Container style={styles.container}>
+      {/* Order Details Card */}
+      <View style={styles.orderDetailsCard}>
+        <Text
+          weight="700"
+          size="lg"
+          color="neutral"
+          style={StyleSheet.flatten(styles.cardTitle)}>
+          Order Details
+        </Text>
+        <View style={styles.orderInfoRow}>
+          <Text weight="600" size="sm" color="neutral">
+            Order Code:
+          </Text>
+          <Text
+            size="sm"
+            color="primary"
+            style={StyleSheet.flatten(styles.orderValue)}>
+            #{selectedOrder?.customer_order?.order_code || 'N/A'}
+          </Text>
+        </View>
+        <View style={styles.orderInfoRow}>
+          <Text weight="600" size="sm" color="neutral">
+            Order ID:
+          </Text>
+          <Text
+            size="sm"
+            color="lightGray"
+            style={StyleSheet.flatten(styles.orderValue)}>
+            {selectedOrder?.customer_order?.id?.substring(0, 8) || 'N/A'}...
+          </Text>
+        </View>
+        <View style={styles.orderInfoRow}>
+          <Text weight="600" size="sm" color="neutral">
+            Task ID:
+          </Text>
+          <Text
+            size="sm"
+            color="lightGray"
+            style={StyleSheet.flatten(styles.orderValue)}>
+            {selectedOrder?.id?.substring(0, 8) || 'N/A'}...
+          </Text>
+        </View>
+        {selectedOrder?.customer_order?.customer_order_items?.[0] && (
+          <View style={styles.orderInfoRow}>
+            <Text weight="600" size="sm" color="neutral">
+              Quantity:
+            </Text>
+            <Text
+              size="sm"
+              color="secondary"
+              style={StyleSheet.flatten(styles.orderValue)}>
+              {selectedOrder.customer_order.customer_order_items[0].qty || 0}L
+            </Text>
+          </View>
+        )}
+      </View>
+
       <View style={styles.cameraContainer}>
         <RNCamera
           ref={cameraRef}
@@ -446,6 +631,17 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         onStopRecording={stopRecording}
         onNext={goNext}
       />
+
+      {/* Quantity Bottom Sheet */}
+      <QuantityBottomSheet
+        visible={showQuantityBottomSheet}
+        onClose={() => setShowQuantityBottomSheet(false)}
+        onProceed={handleQuantityProceed}
+        orderQuantity={
+          selectedOrder?.customer_order?.customer_order_items?.[0]?.qty || 0
+        }
+        filledQuantity={getCurrentAssetFilledQuantity()}
+      />
     </Container>
   );
 };
@@ -466,6 +662,25 @@ const styles = ScaledSheet.create({
     fontSize: '16@ms',
     color: FBColors.neutral,
     textAlign: 'center',
+  },
+  orderDetailsCard: {
+    margin: '16@s',
+    padding: '16@s',
+    backgroundColor: FBBackground.white,
+  },
+  cardTitle: {
+    marginBottom: '12@vs',
+  },
+  orderInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '8@vs',
+  },
+  orderValue: {
+    flex: 1,
+    textAlign: 'right',
+    marginLeft: '8@s',
   },
   cameraContainer: {
     flex: 1,

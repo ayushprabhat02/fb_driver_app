@@ -12,6 +12,8 @@ import ChooseAsset from '@/modules/order/screens/ChooseAsset';
 import FillAsset from '@/modules/order/screens/FillAsset';
 import UploadImageAsset from '@/modules/order/screens/UploadImageAsset';
 import LiveStreamScreen from '@/modules/order/screens/LiveStreamScreen';
+import ChooseAssetScreen from '@/modules/order/screens/ChooseAssetScreen';
+import DeliveryChallanScreen from '@/modules/order/screens/DeliveryChallanScreen';
 import {BackButtonArrow} from '@/components';
 
 // styles
@@ -30,6 +32,7 @@ export type OrderStackParamList = {
   'fill-asset': undefined;
   'upload-image-asset': undefined;
   'live-stream': undefined;
+  'delivery-challan': undefined;
 };
 
 const OrderStack = createStackNavigator<OrderStackParamList>();
@@ -63,9 +66,9 @@ const OrderNavigator: React.FC = () => {
       />
       <OrderStack.Screen
         name="choose-asset"
-        component={ChooseAsset}
+        component={ChooseAssetScreen}
         options={{
-          title: 'Choose Asset ',
+          title: 'Choose Asset',
           headerTransparent: false,
           headerStyle: {
             backgroundColor: FBBackground.white,
@@ -98,6 +101,17 @@ const OrderNavigator: React.FC = () => {
         component={LiveStreamScreen}
         options={{
           title: 'Live Stream Recording',
+          headerTransparent: false,
+          headerStyle: {
+            backgroundColor: FBBackground.white,
+          },
+        }}
+      />
+      <OrderStack.Screen
+        name="delivery-challan"
+        component={DeliveryChallanScreen}
+        options={{
+          title: 'Delivery Challan',
           headerTransparent: false,
           headerStyle: {
             backgroundColor: FBBackground.white,

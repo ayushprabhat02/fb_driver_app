@@ -1,0 +1,13 @@
+mutation updateTotalizerReading(
+  $totalizer_reading: numeric!
+  $vehicle_id: uuid!
+) {
+  update_vehicle(
+    where: { id: { _eq: $vehicle_id } }
+    _set: { totalizer_reading: $totalizer_reading }
+  ) {
+    returning {
+      totalizer_reading
+    }
+  }
+}

@@ -79,19 +79,26 @@ type OrderStore = {
   currentFillupOrder: FetchOrderForDriverIncompleteQuery['task'][0] | null;
   currentCustomerOrder: FetchOrderForDriverIncompleteQuery['task'][0] | null;
 
-  currentDriverOrder: FetchOrderForDriverIncompleteQuery['task'] | null;
+  currentDriverOrder: FetchOrderForDriverIncompleteQuery['task'][0] | null;
 
   // fillup image data
   totalizerImageData: string | null;
   quantityImageData: string | null;
   totalizerReading: string;
   quantityDispensed: number;
+  
+  // totalizer readings
+  totalizerBeforeReading: number;
+  totalizerAfterReading: number;
 
   // order assets
   orderAssets: GetCustomerOrderedAssetsQuery['customer_order_customer_asset'];
 
   // current asset for dispense (for tower driver streaming)
   currentAssetForDispense: any | null;
+
+  // completed dispensed assets for delivery challan
+  dispenseCompletedAssets: any[] | null;
 };
 
 type OrderActions = {
@@ -146,12 +153,19 @@ const orderInitialState: OrderStore = {
   quantityImageData: null,
   totalizerReading: '',
   quantityDispensed: 0,
+  
+  // totalizer readings initial state
+  totalizerBeforeReading: 0,
+  totalizerAfterReading: 0,
 
   // order assets
   orderAssets: [],
 
   // current asset for dispense
   currentAssetForDispense: null,
+
+  // dispensed assets for delivery challan
+  dispenseCompletedAssets: null,
 };
 
 const orderPaginationInitialState = {
