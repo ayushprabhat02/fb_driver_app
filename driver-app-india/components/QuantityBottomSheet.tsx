@@ -10,13 +10,14 @@ import {
 
 import {Input, Button, SimpleBottomSheet, Text, Divider} from '@/components';
 import {FBBackground, FBColors, FBBorders} from '@/types/styles';
+import { orderStore } from '@/globalStore';
 
 interface QuantityBottomSheetProps {
   visible: boolean;
   onClose: () => void;
   onProceed: (quantity: number) => Promise<void> | void;
   orderQuantity?: number;
-  filledQuantity?: number;
+  existingQuantity?: number;
 }
 
 const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
@@ -24,23 +25,26 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
   onClose,
   onProceed,
   orderQuantity = 0,
-  filledQuantity = 0,
+  existingQuantity = 0,
 }) => {
   const [quantity, setQuantity] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
+  const pendingQuantity = orderStore.use.pendingQuantity();
+
+  console.log("-------pendingQuantity-------",pendingQuantity)
 
   const bottomSheetRef = useRef<BottomSheetModal>(null);
 
   useEffect(() => {
     if (visible) {
       setIsComplete(false);
-      setQuantity(filledQuantity > 0 ? filledQuantity.toString() : '');
+      setQuantity(existingQuantity > 0 ? existingQuantity.toString() : '');
       bottomSheetRef.current?.present();
     } else {
       bottomSheetRef.current?.close();
     }
-  }, [visible, filledQuantity]);
+  }, [visible, existingQuantity]);
 
   const handleClose = () => {
     setQuantity('');
@@ -81,19 +85,7 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
       return;
     }
 
-    // Calculate pending quantity
-    const pendingQuantity = orderQuantity - filledQuantity;
-
     // Check if entered quantity exceeds pending quantity
-    if (pendingQuantity <= 0) {
-      Toast.show({
-        type: 'error',
-        text1: 'No Pending Quantity',
-        text2: 'This order has already been fully filled',
-      });
-      return;
-    }
-
     if (quantityNum > pendingQuantity) {
       Toast.show({
         type: 'error',
@@ -103,29 +95,14 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
       return;
     }
 
-    if (quantityNum > orderQuantity && orderQuantity > 0) {
-      // Show confirmation dialog when exceeding order quantity
-      const proceed = await new Promise<boolean>(resolve => {
-        Alert.alert(
-          'Quantity Exceeds Order',
-          `You are trying to fill ${quantityNum}L but the order quantity is ${orderQuantity}L. Do you want to proceed?`,
-          [
-            {
-              text: 'Cancel',
-              style: 'cancel',
-              onPress: () => resolve(false),
-            },
-            {
-              text: 'Proceed',
-              style: 'default',
-              onPress: () => resolve(true),
-            },
-          ],
-          {cancelable: false},
-        );
+    // Hard validation to prevent total dispensed quantity from exceeding order quantity
+    if (orderQuantity > 0 && quantityNum > orderQuantity) {
+      Toast.show({
+        type: 'error',
+        text1: 'Quantity Exceeds Order',
+        text2: `You cannot dispense more than the order quantity of ${orderQuantity}L`,
       });
-
-      if (!proceed) return;
+      return;
     }
 
     await proceedWithQuantity(quantityNum);
@@ -134,9 +111,10 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
   return (
     <SimpleBottomSheet
       ref={bottomSheetRef}
-      closeSheet={handleClose}
+      // Use close() method instead of dismiss() for proper functionality
+      closeSheet={() => bottomSheetRef.current?.close()}
       onDismiss={handleClose}
-      snapPoints={['40%']}
+      snapPoints={['50%']}
       showCloseBtn>
       <BottomSheetView style={styles.bottomSheetView}>
         <View style={styles.container}>
@@ -155,6 +133,17 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
                   </Text>
                   <Text size="base" color="primary" weight="700">
                     {orderQuantity}L
+                  </Text>
+                </View>
+              ) : null}
+              
+              {pendingQuantity > 0 ? (
+                <View style={styles.orderInfo}>
+                  <Text size="sm" color="darkGray" weight="500">
+                    Pending Quantity
+                  </Text>
+                  <Text size="base" color="primary" weight="700">
+                    {pendingQuantity}L
                   </Text>
                 </View>
               ) : null}

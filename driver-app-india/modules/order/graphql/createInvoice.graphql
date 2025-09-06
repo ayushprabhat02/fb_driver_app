@@ -1,0 +1,36 @@
+mutation createInvoice($object: invoice_insert_input!) {
+  insert_invoice_one(object: $object) {
+    id
+  }
+}
+
+#example
+# {
+# "object": {
+  #    "customer_order_id": "c268e5ac-aaf0-43e8-ac77-c1a55bc240d8",
+  #    "delivery_fee": "99.00",
+  #    "invoice_date": "2022-10-12T00:00:00",
+  #    "is_active": true,
+  #    "service_charges": "0.00",
+  #      "amount": 1099,
+  #    "invoiced_items":
+  #   {
+  #     "data":
+  #     [{
+  #       "actual_amount": 1000, #to be actually paid
+  #       "actual_qty": "100.00", #dispensed qty
+  #       "amount": 1000, #ordered amt
+  #       "customer_asset_id": "b3867c4e-6e9d-4fb0-9a50-1139f587fad2",
+  #       "discount": 0.00,
+  #       "is_active": true,
+  #       "order_item_id": "c7363fe2-f936-4524-a91e-5d669d4c4e58",
+  #       "product_variation_id": "104a0ee4-c17a-4ba6-a1ca-b026b9977262",
+  #       "qty": "100.00", #ordered qty
+  #       "service_tax": 0,
+  #       "state": "DELIVERD",
+  #       "tax": 0.00,
+  #       "unit": "LTRS"
+  #     }]
+  #     }
+  # }
+# }

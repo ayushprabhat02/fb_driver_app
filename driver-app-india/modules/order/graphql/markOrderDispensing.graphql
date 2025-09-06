@@ -1,8 +1,5 @@
 mutation markOrderDispensing($task_id: uuid!) {
-  update_task_by_pk(
-    pk_columns: { id: $task_id }
-    _set: { state: DISPENSING }
-  ) {
+  update_task_by_pk(pk_columns: {id: $task_id}, _set: {state: DISPENSING}) {
     id
     state
   }

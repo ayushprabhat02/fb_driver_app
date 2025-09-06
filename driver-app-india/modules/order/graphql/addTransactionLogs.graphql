@@ -1,0 +1,15 @@
+mutation addingVehicleInventoryTransactionLogs(
+	$object: vehicle_inventory_transaction_logs_insert_input!
+) {
+	insert_vehicle_inventory_transaction_logs_one(object: $object) {
+		id
+		fillup_request_id
+		customer_order_id
+		is_active
+		product_variation_id
+		quantity
+		transaction_type
+		unit
+		vehicle_id
+	}
+}

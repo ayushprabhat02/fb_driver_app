@@ -25,7 +25,12 @@ const AssetSummaryCard: React.FC = ({}) => {
 
   // Calculate pending quantity
   const pendingQuantity = useMemo(() => {
-    return totalQuantity - dispensedQuantity;
+    const pQuantity =  totalQuantity - dispensedQuantity;
+    orderStore.setState(state => ({
+      ...state,
+      pendingQuantity:pQuantity
+    }))
+    return pQuantity
   }, [totalQuantity, dispensedQuantity]);
 
   // Calculate progress percentage

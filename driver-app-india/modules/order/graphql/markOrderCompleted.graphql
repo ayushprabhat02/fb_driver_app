@@ -1,0 +1,13 @@
+mutation markOrderCompleted(
+  $id: uuid!
+  $state: task_state_enum
+) {
+  update_task_by_pk(
+    pk_columns: { id: $id }
+    _set: { state: $state }
+  ) {
+    id
+    state
+    category
+  }
+}

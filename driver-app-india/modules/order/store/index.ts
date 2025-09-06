@@ -99,6 +99,8 @@ type OrderStore = {
 
   // completed dispensed assets for delivery challan
   dispenseCompletedAssets: any[] | null;
+
+  pendingQuantity: number;
 };
 
 type OrderActions = {
@@ -166,6 +168,7 @@ const orderInitialState: OrderStore = {
 
   // dispensed assets for delivery challan
   dispenseCompletedAssets: null,
+  pendingQuantity:0
 };
 
 const orderPaginationInitialState = {

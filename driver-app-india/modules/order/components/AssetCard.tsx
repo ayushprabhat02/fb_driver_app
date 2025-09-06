@@ -42,9 +42,6 @@ const AssetCard: React.FC<AssetCardProps> = ({
   const navigation = useNavigation();
   const [showQuantityBottomSheet, setShowQuantityBottomSheet] = useState(false);
   
-  const remainingQuantity = requestedQuantity - filledQuantity;
-  const isCompleted = remainingQuantity <= 0;
-  
   const handleStartDispense = () => {
     if (onStartDispense && asset) {
       // Set current asset for dispense in store
@@ -110,15 +107,19 @@ const AssetCard: React.FC<AssetCardProps> = ({
   };
   
   const getButtonText = () => {
+    // If no quantity has been dispensed yet, show Start Dispense
+    if (filledQuantity === 0) {
+      return 'Start Dispense';
+    }
     // If dispensing is complete (filled quantity >= requested quantity), show Complete
     if (filledQuantity >= requestedQuantity) {
       return 'Complete';
     }
-    // If partially filled, show Complete
-    if (filledQuantity > 0) {
+    // If partially filled (filledQuantity > 0 but < requestedQuantity), show Complete
+    if (filledQuantity > 0 && filledQuantity < requestedQuantity) {
       return 'Complete';
     }
-    // Otherwise show Start Dispense
+    // Default fallback
     return 'Start Dispense';
   };
 
@@ -171,6 +172,7 @@ const AssetCard: React.FC<AssetCardProps> = ({
           <TouchableOpacity 
             onPress={handleFilledQuantityPress}
             style={styles.editableQuantity as ViewStyle}
+            disabled={filledQuantity === 0} // Disable press when quantity is zero
           >
             <Text
               size="sm"
@@ -179,9 +181,12 @@ const AssetCard: React.FC<AssetCardProps> = ({
               style={styles.quantityValue as TextStyle}>
               {filledQuantity} {unit}
             </Text>
-            <Text size="xs" color="lightGray" style={styles.editHint as TextStyle}>
-              (tap to edit)
-            </Text>
+            {/* Show "(tap to edit)" only when filled quantity is greater than 0 */}
+            {filledQuantity > 0 && (
+              <Text size="xs" color="lightGray" style={styles.editHint as TextStyle}>
+                (tap to edit)
+              </Text>
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -189,15 +194,15 @@ const AssetCard: React.FC<AssetCardProps> = ({
       <TouchableOpacity
         style={[
           styles.dispenseButton as ViewStyle,
-          (disabled || filledQuantity >= requestedQuantity) && (styles.disabledButton as ViewStyle), // Disable if explicitly disabled OR if dispensing is complete
+          (disabled || (filledQuantity >= requestedQuantity && filledQuantity > 0)) && (styles.disabledButton as ViewStyle), // Only disable if explicitly disabled OR if dispensing is complete AND not zero
         ]}
         onPress={handleStartDispense}
-        disabled={disabled || filledQuantity >= requestedQuantity} // Disable if explicitly disabled OR if dispensing is complete
+        disabled={disabled || (filledQuantity >= requestedQuantity && filledQuantity > 0)} // Only disable if explicitly disabled OR if dispensing is complete AND not zero
         activeOpacity={0.7}>
         <Text
           size="sm"
           weight="600"
-          color={(disabled || filledQuantity >= requestedQuantity) ? 'disabledInputText' : 'white'}> {/* Show disabled color if disabled OR dispensing is complete */}
+          color={(disabled || (filledQuantity >= requestedQuantity && filledQuantity > 0)) ? 'disabledInputText' : 'white'}> {/* Show disabled color if disabled OR dispensing is complete AND not zero */}
           {getButtonText()}
         </Text>
       </TouchableOpacity>
@@ -208,7 +213,7 @@ const AssetCard: React.FC<AssetCardProps> = ({
         onClose={() => setShowQuantityBottomSheet(false)}
         onProceed={handleQuantityUpdate}
         orderQuantity={requestedQuantity}
-        filledQuantity={filledQuantity}
+        existingQuantity={filledQuantity}
       />
     </View>
   );

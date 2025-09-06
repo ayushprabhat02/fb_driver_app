@@ -1,0 +1,11 @@
+mutation driverDeliveryFees($object: deliveryFeesDriverAppInput = {customer_order_id: "", total_dispensed_qty: ""}) {
+  deliveryFeesDriverApp(object: $object) {
+    code
+    delivery_fees
+    discount
+    delivery_fees_no_tax
+    total_tax
+    error
+    message
+  }
+}
