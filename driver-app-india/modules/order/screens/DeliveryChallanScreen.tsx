@@ -62,10 +62,8 @@ const DeliveryChallanScreen: React.FC = () => {
   });
 
   // Store
-  const currentDriverOrder = orderStore.use.currentDriverOrder();
-  const currentCustomerOrder = orderStore.use.currentCustomerOrder();
+  const selectedOrder = orderStore.use.currentDriverOrder();
   const dispenseCompletedAssets = orderStore.use.dispenseCompletedAssets();
-  const selectedOrder = currentDriverOrder || currentCustomerOrder;
 
   // Dropdown options for fuel delivery
   const fuelDeliveryOptions: DropdownOption[] = [

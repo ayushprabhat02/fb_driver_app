@@ -127,30 +127,30 @@ const FillAsset: React.FC = () => {
     );
   };
 
-  const fetchOrderForDriverIncompleteCurrent = async () => {
-    // Convert selected delivery date to start and end of day timestamps
-    const year = selectedDate.getFullYear();
-    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-    const day = String(selectedDate.getDate()).padStart(2, '0');
-    const startDateString = `${year}-${month}-${day}T00:00:00`;
-    const endDateString = `${year}-${month}-${day}T23:59:59`;
-    await OrderService.fetchOrderForDriverIncomplete({
-      limit: 1,
-      offset: 0,
-      state: [
-        Task_State_Enum.Dispensing,
-        Task_State_Enum.InTransit,
-        Task_State_Enum.Arrived,
-      ],
-      driver_vehicle_id: driverVehicleId,
-      start_date: startDateString,
-      end_date: endDateString,
-    });
-  };
+  // const fetchOrderForDriverIncompleteCurrent = async () => {
+  //   // Convert selected delivery date to start and end of day timestamps
+  //   const year = selectedDate.getFullYear();
+  //   const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+  //   const day = String(selectedDate.getDate()).padStart(2, '0');
+  //   const startDateString = `${year}-${month}-${day}T00:00:00`;
+  //   const endDateString = `${year}-${month}-${day}T23:59:59`;
+  //   await OrderService.fetchOrderForDriverIncomplete({
+  //     limit: 1,
+  //     offset: 0,
+  //     state: [
+  //       Task_State_Enum.Dispensing,
+  //       Task_State_Enum.InTransit,
+  //       Task_State_Enum.Arrived,
+  //     ],
+  //     driver_vehicle_id: driverVehicleId,
+  //     start_date: startDateString,
+  //     end_date: endDateString,
+  //   });
+  // };
 
-  useEffect(() => {
-    fetchOrderForDriverIncompleteCurrent();
-  }, []);
+  // useEffect(() => {
+  //   fetchOrderForDriverIncompleteCurrent();
+  // }, []);
 
   return (
     <HeaderAvoidingContainer>

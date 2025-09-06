@@ -30,7 +30,7 @@ const ChooseAssetScreen: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery] = useDebounce(searchQuery, 500);
   const currentFillupOrder = orderStore.use.currentFillupOrder();
-  const currentCustomerOrder = orderStore.use.currentCustomerOrder();
+  const currentDriverOrder = orderStore.use.currentDriverOrder();
   const orderAssets = orderStore.use.orderAssets();
 
   const stopLoader = orderStore.use.stopLoader();
@@ -79,7 +79,7 @@ const ChooseAssetScreen: React.FC = () => {
   
   const handleStartDispense = (asset: any) => {
     // Get the selected order (fillup order takes priority)
-    const selectedOrder = currentFillupOrder || currentCustomerOrder;
+    const selectedOrder = currentFillupOrder || currentDriverOrder;
     
     // Ensure the selectedOrder is available for the live stream screen
     if (!selectedOrder) {
@@ -153,7 +153,7 @@ const ChooseAssetScreen: React.FC = () => {
 
   const getCustomerOrderAssets = useCallback(async () => {
     // Get the selected order (fillup order takes priority)
-    const selectedOrder = currentFillupOrder || currentCustomerOrder;
+    const selectedOrder = currentFillupOrder || currentDriverOrder;
     
     // Check if selectedOrder is available before making API call
     if (!selectedOrder) {
@@ -186,7 +186,7 @@ const ChooseAssetScreen: React.FC = () => {
     } finally {
       stopLoader('orderAssets');
     }
-  }, [currentFillupOrder, currentCustomerOrder, debouncedSearchQuery, startLoader, stopLoader]);
+  }, [currentFillupOrder, currentDriverOrder, debouncedSearchQuery, startLoader, stopLoader]);
 
   useEffect(() => {
     getCustomerOrderAssets();

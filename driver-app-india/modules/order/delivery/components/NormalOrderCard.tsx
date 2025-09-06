@@ -11,8 +11,8 @@ interface Props {
 }
 
 const NormalOrderCard: React.FC<Props> = ({order}) => {
-  const currentCustomerOrder = orderStore.use.currentCustomerOrder();
-  const isSelected = currentCustomerOrder?.id === order?.id;
+  const currentDriverOrder = orderStore.use.currentDriverOrder();
+  const isSelected = currentDriverOrder?.id === order?.id;
 
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
@@ -23,12 +23,12 @@ const NormalOrderCard: React.FC<Props> = ({order}) => {
     if (isSelected) {
          orderStore.setState(state=>({
            ...state,
-           currentCustomerOrder: null
+           currentDriverOrder: null
          }))
        } else {
            orderStore.setState(state=>({
            ...state,
-           currentCustomerOrder: order
+           currentDriverOrder: order
          }))
        }
   };

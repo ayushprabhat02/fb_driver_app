@@ -48,7 +48,7 @@ const HomeLandingPage: React.FC = () => {
   const isLoadingOrder = homeStore.use.loaders().driverCurrentOrder;
   const isLoadingFillupHistory = homeStore.use.loaders().fillupHistory;
   const currentFillupOrder = orderStore.use.currentFillupOrder();
-  const currentCustomerOrder = orderStore.use.currentCustomerOrder();
+  const currentDriverOrder = orderStore.use.currentDriverOrder();
 
   const allFillupsCompleted = fillupHistory?.every(
     (item: any) => item.state === 'COMPLETE' || item.state === 'REJECTED',
@@ -287,7 +287,7 @@ const HomeLandingPage: React.FC = () => {
       </ScrollView>
 
       {/* Floating Buttons */}
-      {(currentFillupOrder || currentCustomerOrder) &&
+      {(currentFillupOrder || currentDriverOrder) &&
         (allFillupsCompleted ||
           ((currentFillupOrder as any)?.fillup_requests &&
             (currentFillupOrder as any)?.fillup_requests.length > 0)) && (
@@ -305,7 +305,7 @@ const HomeLandingPage: React.FC = () => {
               variant="solid"
               style={[styles.floatingButton, styles.startTripButton]}
               onPress={() => {
-                const currentOrder = currentFillupOrder || currentCustomerOrder;
+                const currentOrder = currentFillupOrder || currentDriverOrder;
                 const isFillupOrder =
                   (currentFillupOrder as any)?.fillup_requests &&
                   (currentFillupOrder as any)?.fillup_requests.length > 0;

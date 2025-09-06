@@ -339,18 +339,18 @@ class OrderService {
     return response.fetchCustomerOrderDetailsById?.data;
   }
 
-  public async fetchOrderForDriverIncomplete(
-    args: FetchOrderForDriverIncompleteQueryVariables,
-  ) {
-    const response: FetchOrderForDriverIncompleteQuery = await callQuery({
-      queryDocument: FetchOrderForDriverIncompleteDocument,
-      variables: {...args},
-    });
+  // public async fetchOrderForDriverIncomplete(
+  //   args: FetchOrderForDriverIncompleteQueryVariables,
+  // ) {
+  //   const response: FetchOrderForDriverIncompleteQuery = await callQuery({
+  //     queryDocument: FetchOrderForDriverIncompleteDocument,
+  //     variables: {...args},
+  //   });
 
-    orderStore.setState({
-      currentDriverOrder: response.task[0],
-    });
-  }
+  //   orderStore.setState({
+  //     incompleteDriverOrders: response.task[0],
+  //   });
+  // }
 
   /**
    * @method fetchTaskValue

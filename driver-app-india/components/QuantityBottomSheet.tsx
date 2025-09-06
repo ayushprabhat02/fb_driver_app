@@ -32,8 +32,6 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
   const [isComplete, setIsComplete] = useState(false);
   const pendingQuantity = orderStore.use.pendingQuantity();
 
-  console.log("-------pendingQuantity-------",pendingQuantity)
-
   const bottomSheetRef = useRef<BottomSheetModal>(null);
 
   useEffect(() => {

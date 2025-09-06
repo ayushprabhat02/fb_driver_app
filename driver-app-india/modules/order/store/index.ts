@@ -17,6 +17,7 @@ import {
   VerifyPlacedOrderOtpQuery,
   FetchOrderForDriverIncompleteQuery,
   GetCustomerOrderedAssetsQuery,
+  FetchOrderForDriverNew2Query,
 } from '@/generated/graphql';
 import {BottomSheetModal} from '@gorhom/bottom-sheet';
 
@@ -76,10 +77,8 @@ type OrderStore = {
   bottomSheetRefOtp: React.RefObject<BottomSheetModal> | null;
 
   // selected orders - split by order type
-  currentFillupOrder: FetchOrderForDriverIncompleteQuery['task'][0] | null;
-  currentCustomerOrder: FetchOrderForDriverIncompleteQuery['task'][0] | null;
-
-  currentDriverOrder: FetchOrderForDriverIncompleteQuery['task'][0] | null;
+  currentFillupOrder: FetchOrderForDriverNew2Query['task'][0] | null;
+  currentDriverOrder: FetchOrderForDriverNew2Query['task'][0] | null;
 
   // fillup image data
   totalizerImageData: string | null;
@@ -147,7 +146,6 @@ const orderInitialState: OrderStore = {
   // bottom sheet
   bottomSheetRefOtp: null,
   currentFillupOrder: null,
-  currentCustomerOrder: null,
   currentDriverOrder: null,
 
   // fillup image data initial state

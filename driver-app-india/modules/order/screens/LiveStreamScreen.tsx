@@ -55,17 +55,18 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [canStopStream, setCanStopStream] = useState(false);
   const [hasStreamedOnce, setHasStreamedOnce] = useState(false);
+  const [isStreamUploaded, setIsStreamUploaded] = useState(false);
   const [streamingState, setStreamingState] = useState<
     'not_started' | 'started' | 'stopped'
   >('not_started');
   const [showQuantityBottomSheet, setShowQuantityBottomSheet] = useState(false);
 
   // Store
-  const currentCustomerOrder = orderStore.use.currentCustomerOrder();
   const currentDriverOrder = orderStore.use.currentDriverOrder();
   const orderAssets = orderStore.use.orderAssets();
-  // Use currentDriverOrder as single source of truth (following project specification)
-  const selectedOrder = currentDriverOrder || currentCustomerOrder;
+
+  console.log("--currentDriverOrder---",currentDriverOrder)
+
   // const streamingDurationSeconds = 5 * 60; // 5 minutes
   const streamingDurationSeconds = 10; // 10 seconds
 
@@ -198,7 +199,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       setStreamingState('started');
 
       // Validate required data
-      if (!selectedOrder?.id) {
+      if (!currentDriverOrder?.customer_order?.id) {
         throw new Error('Order data is missing');
       }
 
@@ -222,13 +223,13 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           key: 'STREAM_STARTED',
           url: '',
           value: new Date().toISOString(),
-          task_id: selectedOrder?.id,
+          task_id: currentDriverOrder?.id,
           customer_asset_id: currentAssetId,
         },
       });
 
       await orderService.updateTaskLiveDispensingStatus({
-        task_id: selectedOrder?.id,
+        task_id:currentDriverOrder?.customer_order?.id,
         is_live_dispensing: true,
       });
 
@@ -286,14 +287,14 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           key: 'STREAM_STOPPED',
           url: '',
           value: new Date().toISOString(),
-          task_id: selectedOrder?.id || '',
+          task_id: currentDriverOrder?.id || '',
           customer_asset_id:
             orderStore.getState().currentAssetForDispense?.id || '',
         },
       });
 
       await orderService.updateTaskLiveDispensingStatus({
-        task_id: selectedOrder?.id || '',
+        task_id: currentDriverOrder?.customer_order?.id || '',
         is_live_dispensing: false,
       });
 
@@ -328,7 +329,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   const handleRecordingFinished = async (data: any) => {
     try {
       // Get order code for filename
-      const orderCode = selectedOrder?.customer_order?.order_code || 'unknown';
+      const orderCode = currentDriverOrder?.customer_order?.order_code || 'unknown';
 
       // Create filename with proper extension
       const fileName = `Recording_${orderCode}.mp4`;
@@ -353,6 +354,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         if (uploadResult.storeUrl) {
           uploadedUrl = uploadResult.storeUrl;
           uploadSuccess = true;
+          setIsStreamUploaded(true);
         }
       } catch (uploadError) {
         console.warn('Cloud upload failed, using local file:', uploadError);
@@ -365,7 +367,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           key: 'LIVE_STREAM_RECORDING',
           url: uploadedUrl,
           value: fileName,
-          task_id: selectedOrder?.id || '',
+          task_id: currentDriverOrder?.customer_order?.id || '',
           customer_asset_id:
             orderStore.getState().currentAssetForDispense?.id || '',
           quantity_dispensed: 0,
@@ -417,13 +419,6 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       setShowQuantityBottomSheet(false);
 
       const currentAssetId = orderStore.getState().currentAssetForDispense?.id;
-      if (
-        !currentAssetId ||
-        !selectedOrder?.customer_order?.id ||
-        !selectedOrder?.id
-      ) {
-        throw new Error('Missing asset or order data');
-      }
 
       // Get current location for task action
       const getCurrentLocation = (): Promise<{
@@ -448,7 +443,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           url: '', // No image URL for now
           value: '0.0',
           quantity_dispensed: quantity,
-          task_id: selectedOrder.id,
+          task_id: currentDriverOrder?.customer_order?.id,
           customer_asset_id: currentAssetId,
           location: {
             type: 'Point',
@@ -460,7 +455,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       // Update asset quantity
       await orderService.updateAssetQty({
         customerAssetId: currentAssetId,
-        customerOrderId: selectedOrder.customer_order.id,
+        customerOrderId: currentDriverOrder?.customer_order?.id,
         qty: quantity,
       });
 
@@ -482,9 +477,9 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       }));
 
       // Mark order as dispensing if it's currently in ARRIVED state
-      if (selectedOrder.state === 'ARRIVED') {
+      if (currentDriverOrder?.state === 'ARRIVED') {
         await orderService.markOrderDispensing({
-          task_id: selectedOrder.id,
+          task_id: currentDriverOrder.id,
         });
       }
 
@@ -543,54 +538,10 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           size="lg"
           color="neutral"
           style={StyleSheet.flatten(styles.cardTitle)}>
-          Order Details
+          {currentDriverOrder?.customer_order?.name ||
+            `Order #${currentDriverOrder?.customer_order?.name}` ||
+            'Order Details'}
         </Text>
-        <View style={styles.orderInfoRow}>
-          <Text weight="600" size="sm" color="neutral">
-            Order Code:
-          </Text>
-          <Text
-            size="sm"
-            color="primary"
-            style={StyleSheet.flatten(styles.orderValue)}>
-            #{selectedOrder?.customer_order?.order_code || 'N/A'}
-          </Text>
-        </View>
-        <View style={styles.orderInfoRow}>
-          <Text weight="600" size="sm" color="neutral">
-            Order ID:
-          </Text>
-          <Text
-            size="sm"
-            color="lightGray"
-            style={StyleSheet.flatten(styles.orderValue)}>
-            {selectedOrder?.customer_order?.id?.substring(0, 8) || 'N/A'}...
-          </Text>
-        </View>
-        <View style={styles.orderInfoRow}>
-          <Text weight="600" size="sm" color="neutral">
-            Task ID:
-          </Text>
-          <Text
-            size="sm"
-            color="lightGray"
-            style={StyleSheet.flatten(styles.orderValue)}>
-            {selectedOrder?.id?.substring(0, 8) || 'N/A'}...
-          </Text>
-        </View>
-        {selectedOrder?.customer_order?.customer_order_items?.[0] && (
-          <View style={styles.orderInfoRow}>
-            <Text weight="600" size="sm" color="neutral">
-              Quantity:
-            </Text>
-            <Text
-              size="sm"
-              color="secondary"
-              style={StyleSheet.flatten(styles.orderValue)}>
-              {selectedOrder.customer_order.customer_order_items[0].qty || 0}L
-            </Text>
-          </View>
-        )}
       </View>
 
       <View style={styles.cameraContainer}>
@@ -638,7 +589,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         onClose={() => setShowQuantityBottomSheet(false)}
         onProceed={handleQuantityProceed}
         orderQuantity={
-          selectedOrder?.customer_order?.customer_order_items?.[0]?.qty || 0
+          currentDriverOrder?.customer_order?.customer_order_items?.[0]?.qty || 0
         }
         filledQuantity={getCurrentAssetFilledQuantity()}
       />
@@ -667,9 +618,11 @@ const styles = ScaledSheet.create({
     margin: '16@s',
     padding: '16@s',
     backgroundColor: FBBackground.white,
+    alignItems: 'center',
   },
   cardTitle: {
     marginBottom: '12@vs',
+    textAlign: 'center',
   },
   orderInfoRow: {
     flexDirection: 'row',

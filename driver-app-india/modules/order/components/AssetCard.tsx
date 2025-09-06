@@ -65,9 +65,7 @@ const AssetCard: React.FC<AssetCardProps> = ({
     }
 
     try {
-      const currentDriverOrder = orderStore.getState().currentDriverOrder;
-      const currentCustomerOrder = orderStore.getState().currentCustomerOrder;
-      const selectedOrder = currentDriverOrder || currentCustomerOrder;
+      const selectedOrder = orderStore.getState().currentDriverOrder;
 
       if (!selectedOrder?.customer_order?.id) {
         Alert.alert('Error', 'Order data is missing');
