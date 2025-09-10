@@ -1,17 +1,12 @@
 import React, {useState, useEffect, useRef} from 'react';
-import {
-  View,
-  ScrollView,
-  Alert,
-  TouchableOpacity,
-} from 'react-native';
+import {View, ScrollView, TouchableOpacity} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import Toast from 'react-native-toast-message';
 import {ScaledSheet} from 'react-native-size-matters';
 
 // Components
-import {Button, Divider, HeaderAvoidingContainer, Text} from '@/components';
+import {Button, Divider, Text} from '@/components';
 import {ImageContainer} from '@/modules/checkin/components';
 
 // Camera
@@ -19,14 +14,17 @@ import {RNCamera} from 'react-native-camera';
 import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
 
 // Store
-import {orderStore} from '@/globalStore';
+import {checkinStore, orderStore} from '@/globalStore';
 
 // Services
 import orderService from '../services';
 import supportService from '@/modules/support/services';
 
+// Utils
+import {getCurrentLocation} from '@/utils/location';
+
 // Types
-import {FBColors, FBBackground} from '@/types/styles';
+import {FBBackground} from '@/types/styles';
 import {OrderStackParamList} from '@/navigator/containers/Order';
 
 type BuddyChallanNavigationProp = StackNavigationProp<
@@ -51,12 +49,13 @@ const BuddyChallanScreen: React.FC = () => {
   const dispenseCompletedAssets = orderStore.use.dispenseCompletedAssets();
   const challanImageData = orderStore.use.challanImageData();
   const technicianImageData = orderStore.use.technicianImageData();
+  const challanUploadedUrl = orderStore.use.challanUploadedUrl();
+  const technicianUploadedUrl = orderStore.use.technicianUploadedUrl();
   const challanImageUploading = orderStore.use.loaders().challanImage;
   const technicianImageUploading = orderStore.use.loaders().technicianImage;
 
   // Rate state for invoice calculations
   const [rate, setRate] = useState<number>(0);
-  const [finalAmount, setFinalAmount] = useState<number>(0);
   const [dispensedQuantity, setDispensedQuantity] = useState<number>(0);
 
   useEffect(() => {
@@ -66,10 +65,17 @@ const BuddyChallanScreen: React.FC = () => {
   const initializePage = async () => {
     try {
       // Calculate rate similar to Vue.js onMounted logic
-      if (currentDriverOrder?.customer_order?.organization_user?.organization?.is_credit_available) {
+      if (
+        currentDriverOrder?.customer_order?.organization_user?.organization
+          ?.is_credit_available
+      ) {
         // For credit available orders (postpaid), fetch rate from serviceability
-        const locationString = currentDriverOrder.customer_order?.organizationAddressByShippingAddressId?.location;
-        const coordinatesMatch = locationString?.match(/\((-?\d+\.\d+),(-?\d+\.\d+)\)/);
+        const locationString =
+          currentDriverOrder.customer_order
+            ?.organizationAddressByShippingAddressId?.location;
+        const coordinatesMatch = locationString?.match(
+          /\((-?\d+\.\d+),(-?\d+\.\d+)\)/,
+        );
 
         if (coordinatesMatch) {
           const latitude = parseFloat(coordinatesMatch[2]);
@@ -81,20 +87,23 @@ const BuddyChallanScreen: React.FC = () => {
           });
 
           const priceData = await orderService.fetchDeliveryProductsWithPrices({
-            id: franchise?.partner_localities?.[0]?.product_partner_localities_prices?.[0]?.parent_id,
+            id: franchise?.partner_localities?.[0]
+              ?.product_partner_localities_prices?.[0]?.parent_id,
           });
 
           setRate(priceData?.[0]?.sale_price || 0);
         }
       } else {
         // For prepaid orders, use unit price from order items
-        setRate(currentDriverOrder?.customer_order?.customer_order_items?.[0]?.unit_price || 0);
+        setRate(
+          currentDriverOrder?.customer_order?.customer_order_items?.[0]
+            ?.unit_price || 0,
+        );
       }
 
       // Calculate dispensed quantity
       const totalDispensed = getTotalDispensed();
       setDispensedQuantity(totalDispensed);
-      setFinalAmount(totalDispensed * rate);
     } catch (error) {
       console.error('Error initializing buddy challan:', error);
       Toast.show({
@@ -106,10 +115,12 @@ const BuddyChallanScreen: React.FC = () => {
   };
 
   const getTotalDispensed = (): number => {
-    return dispenseCompletedAssets?.reduce(
-      (total: number, asset: any) => total + (asset.quantity_dispensed || 0),
-      0
-    ) || 0;
+    return (
+      dispenseCompletedAssets?.reduce(
+        (total: number, asset: any) => total + (asset.quantity_dispensed || 0),
+        0,
+      ) || 0
+    );
   };
 
   const validateForm = (): boolean => {
@@ -152,7 +163,7 @@ const BuddyChallanScreen: React.FC = () => {
       const options = {quality: 0.5, base64: true};
       const data = await cameraRef.current.takePictureAsync(options);
       setShowCamera(false);
-      
+
       let loaderType: LoaderTypes | null = null;
       switch (imageType) {
         case 'challan':
@@ -185,21 +196,23 @@ const BuddyChallanScreen: React.FC = () => {
   ) => {
     try {
       const blob = await (await fetch(uri)).blob();
-      const fileName = `BuddyChallan_${type}_${currentDriverOrder?.customer_order?.order_code}_${Date.now()}.jpg`;
-      
+      const fileName = `BuddyChallan_${type}_${
+        currentDriverOrder?.customer_order?.order_code
+      }_${Date.now()}.jpg`;
+
       const {src, storeUrl} = await supportService.uploadFile({
         fileName,
         contentType: 'image/jpeg',
         fileData: blob,
       });
-      
-      // Update the store with the uploaded URL
+
+      // Store the upload URL for API calls but keep the local URI for display
       if (type === 'challan') {
-        orderStore.setState({ challanImageData: storeUrl || src });
+        orderStore.setState({challanUploadedUrl: storeUrl || src});
       } else if (type === 'technician') {
-        orderStore.setState({ technicianImageData: storeUrl || src });
+        orderStore.setState({technicianUploadedUrl: storeUrl || src});
       }
-      
+
       console.log('Image uploaded:', {src, storeUrl});
     } catch (error) {
       console.error('Upload error:', error);
@@ -208,6 +221,12 @@ const BuddyChallanScreen: React.FC = () => {
         text1: 'Upload Error',
         text2: `Failed to upload ${type} image`,
       });
+      // Reset the local image on upload failure
+      if (type === 'challan') {
+        orderStore.setState({challanImageData: null});
+      } else if (type === 'technician') {
+        orderStore.setState({technicianImageData: null});
+      }
     } finally {
       orderStore.getState().stopLoader(loaderType);
     }
@@ -216,33 +235,49 @@ const BuddyChallanScreen: React.FC = () => {
   const createInvoice = async () => {
     try {
       // Create invoice items from dispensed assets
-      const assetsToBeInvoiced = currentDriverOrder?.customer_order?.customer_order_customer_assets
-        ?.filter((asset: any) => asset.quantity_dispensed && !isNaN(asset.quantity_dispensed))
-        ?.map((item: any) => ({
-          unit_price: rate,
-          actual_amount: (item.quantity_dispensed || 0) * rate,
-          actual_qty: item.quantity_dispensed || 0,
-          amount: (item.quantity_dispensed || 0) * rate,
-          customer_asset_id: item?.customer_asset?.id,
-          discount: 0.0,
-          is_active: true,
-          order_item_id: currentDriverOrder?.customer_order?.customer_order_items?.[0]?.id,
-          product_variation_id: currentDriverOrder?.customer_order?.customer_order_items?.[0]?.product_variation_id,
-          qty: item.quantity_dispensed || 0,
-          service_tax: currentDriverOrder?.customer_order?.customer_order_items?.[0]?.service_tax || 0,
-          state: 'DELIVERED' as const,
-          tax: 0.0,
-          unit: 'LTRS',
-        })) || [];
+      const assetsToBeInvoiced =
+        currentDriverOrder?.customer_order?.customer_order_customer_assets
+          ?.filter(
+            (asset: any) =>
+              asset.quantity_dispensed && !isNaN(asset.quantity_dispensed),
+          )
+          ?.map((item: any) => ({
+            unit_price: rate,
+            actual_amount: (item.quantity_dispensed || 0) * rate,
+            actual_qty: item.quantity_dispensed || 0,
+            amount: (item.quantity_dispensed || 0) * rate,
+            customer_asset_id: item?.customer_asset?.id,
+            discount: 0.0,
+            is_active: true,
+            order_item_id:
+              currentDriverOrder?.customer_order?.customer_order_items?.[0]?.id,
+            product_variation_id:
+              currentDriverOrder?.customer_order?.customer_order_items?.[0]
+                ?.product_variation_id,
+            qty: item.quantity_dispensed || 0,
+            service_tax:
+              currentDriverOrder?.customer_order?.customer_order_items?.[0]
+                ?.service_tax || 0,
+            state: 'DELIVERED' as const,
+            tax: 0.0,
+            unit: 'LTRS',
+          })) || [];
 
       // Fetch delivery fee
       const deliveryFeeData = await orderService.fetchDeliveryFee({
-        customer_order_id: currentDriverOrder?.customer_order?.id || '',
+        customer_order_id: currentDriverOrder?.customer_order?.id,
         total_dispensed_qty: dispensedQuantity,
       });
 
-      const totalAmount = dispensedQuantity * rate;
-      const calculatedFinalAmount = totalAmount + (deliveryFeeData?.delivery_fees || 0) - (deliveryFeeData?.discount || 0);
+      const totalQuantityDispensed = assetsToBeInvoiced.reduce(
+        (acc: number, item: any) => acc + (item.actual_qty || 0),
+        0,
+      );
+
+      const totalAmount = totalQuantityDispensed * rate;
+      const deliveryFee = parseFloat(deliveryFeeData?.delivery_fees || '0');
+      const discount = parseFloat(deliveryFeeData?.discount || '0');
+      const calculatedFinalAmount = totalAmount + deliveryFee - discount;
 
       // Create invoice
       await orderService.createInvoice({
@@ -250,9 +285,11 @@ const BuddyChallanScreen: React.FC = () => {
         actual_amount: String(calculatedFinalAmount),
         dispensedQty: String(dispensedQuantity),
         invoiced_items: assetsToBeInvoiced,
-        charges: deliveryFeeData?.delivery_fees_no_tax || 0,
-        tax: deliveryFeeData?.total_tax || 0,
-        discount: deliveryFeeData?.discount || 0,
+        charges: parseFloat(
+          (deliveryFeeData as any)?.delivery_fees_no_tax || '0',
+        ),
+        tax: parseFloat((deliveryFeeData as any)?.total_tax || '0'),
+        discount: discount,
         customer_order_id: currentDriverOrder?.customer_order?.id || '',
       });
     } catch (error) {
@@ -262,38 +299,14 @@ const BuddyChallanScreen: React.FC = () => {
 
   const createChallanTask = async () => {
     try {
-      const getCurrentLocation = (): Promise<{latitude: number; longitude: number}> => {
-        return new Promise((resolve) => {
-          navigator.geolocation?.getCurrentPosition(
-            (position) => {
-              resolve({
-                latitude: position.coords.latitude,
-                longitude: position.coords.longitude,
-              });
-            },
-            () => {
-              // Fallback coordinates
-              resolve({
-                latitude: 28.626330828,
-                longitude: 77.218499126,
-              });
-            },
-            {
-              enableHighAccuracy: false,
-              timeout: 10000,
-              maximumAge: 60000,
-            }
-          );
-        });
-      };
-
       const coordinates = await getCurrentLocation();
+      console.log('-----coordinates-------', getCurrentLocation);
 
       // Create challan task
       await orderService.upsertStepTaskAction({
         object: {
           key: 'CHALLAN',
-          url: challanImageData || '',
+          url: challanUploadedUrl || challanImageData || '',
           value: '0.0',
           quantity_dispensed: dispensedQuantity,
           task_id: currentDriverOrder?.id || '',
@@ -308,7 +321,7 @@ const BuddyChallanScreen: React.FC = () => {
       await orderService.upsertStepTaskAction({
         object: {
           key: 'TECHNICIAN',
-          url: technicianImageData || '',
+          url: technicianUploadedUrl || technicianImageData || '',
           value: '0.0',
           task_id: currentDriverOrder?.id || '',
         },
@@ -322,15 +335,17 @@ const BuddyChallanScreen: React.FC = () => {
     try {
       // Note: This requires vehicle details. In Vue.js version, they filter for "browser-tank"
       // For now, we'll use the product variation ID from the order
-      const productVarId = currentDriverOrder?.customer_order?.customer_order_items?.[0]?.product_variation_id;
-      
+      const productVarId =
+        currentDriverOrder?.customer_order?.customer_order_items?.[0]
+          ?.product_variation_id;
+
       if (productVarId) {
         await orderService.addTransactionLogs({
           quantity: dispensedQuantity,
           product_var_id: productVarId,
           fillup_request_id: null,
           customer_order_id: currentDriverOrder?.customer_order?.id || '',
-          vehicle_id: null, // This would need to be fetched from driver vehicle details
+          vehicle_id: checkinStore.getState().driverVehicleDetails?.id, // This would need to be fetched from driver vehicle details
           transaction_type: 'OUT',
         });
       }
@@ -396,9 +411,8 @@ const BuddyChallanScreen: React.FC = () => {
       // Navigate back to dashboard or orders list
       navigation.reset({
         index: 0,
-        routes: [{ name: 'delivery-orders' }],
+        routes: [{name: 'delivery-orders'}],
       });
-
     } catch (error) {
       console.error('Error completing buddy challan:', error);
       Toast.show({
@@ -446,12 +460,16 @@ const BuddyChallanScreen: React.FC = () => {
         />
         <View style={styles.cameraButtonContainer}>
           <TouchableOpacity onPress={handleTakePhoto} style={styles.capture}>
-            <Text style={styles.buttonText}>Take Photo</Text>
+            <Text size="sm" color="neutral">
+              Take Photo
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => setShowCamera(false)}
             style={styles.capture}>
-            <Text style={styles.buttonText}>Cancel</Text>
+            <Text size="sm" color="neutral">
+              Cancel
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -460,10 +478,9 @@ const BuddyChallanScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+        showsVerticalScrollIndicator={false}>
         <Divider height={10} />
 
         {/* Order Summary */}
@@ -471,18 +488,22 @@ const BuddyChallanScreen: React.FC = () => {
           <Text weight="600" size="lg" color="neutral">
             Delivery Summary
           </Text>
-          
+
           <Divider height={8} />
-          
+
           <View style={styles.summaryRow}>
-            <Text size="sm" color="darkGray">Order Code:</Text>
+            <Text size="sm" color="darkGray">
+              Order Code:
+            </Text>
             <Text size="sm" color="primary" weight="600">
               #{currentDriverOrder?.customer_order?.order_code || 'N/A'}
             </Text>
           </View>
 
           <View style={styles.summaryRow}>
-            <Text size="sm" color="darkGray">Total Dispensed:</Text>
+            <Text size="sm" color="darkGray">
+              Total Dispensed:
+            </Text>
             <Text size="base" color="primary" weight="700">
               {dispensedQuantity}L
             </Text>
@@ -490,7 +511,9 @@ const BuddyChallanScreen: React.FC = () => {
 
           {rate > 0 && (
             <View style={styles.summaryRow}>
-              <Text size="sm" color="darkGray">Rate per Liter:</Text>
+              <Text size="sm" color="darkGray">
+                Rate per Liter:
+              </Text>
               <Text size="sm" color="neutral" weight="600">
                 ₹{rate.toFixed(2)}
               </Text>
@@ -520,7 +543,7 @@ const BuddyChallanScreen: React.FC = () => {
           uploadingText="Uploading challan image..."
           required={true}
         />
-        
+
         <Divider height={10} />
 
         {/* Technician Image */}
@@ -539,23 +562,23 @@ const BuddyChallanScreen: React.FC = () => {
         <Button
           style={[
             styles.button,
-            (!challanImageData || !technicianImageData) && styles.disabledButton,
+            (!challanImageData || !technicianImageData) &&
+              styles.disabledButton,
           ]}
           variant="solid"
           onPress={handleSubmit}
           loading={loading}
-          disabled={!challanImageData || !technicianImageData}
-        >
+          disabled={!challanImageData || !technicianImageData}>
           Mark Order Complete
         </Button>
       </View>
-      </View>
+    </View>
   );
 };
 
 const styles = ScaledSheet.create({
-  container:{
-    flex:1,
+  container: {
+    flex: 1,
     backgroundColor: FBBackground.white,
   },
   scrollContent: {
@@ -623,9 +646,6 @@ const styles = ScaledSheet.create({
     paddingHorizontal: '20@s',
     alignSelf: 'center',
     margin: '20@s',
-  },
-  buttonText: {
-    fontSize: '14@s',
   },
 });
 

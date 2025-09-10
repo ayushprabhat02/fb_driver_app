@@ -93,6 +93,8 @@ type OrderStore = {
   // buddy challan image data
   challanImageData: string | null;
   technicianImageData: string | null;
+  challanUploadedUrl: string | null;
+  technicianUploadedUrl: string | null;
   
   // totalizer readings
   totalizerBeforeReading: number;
@@ -179,6 +181,8 @@ const orderInitialState: OrderStore = {
   // buddy challan image data initial state
   challanImageData: null,
   technicianImageData: null,
+  challanUploadedUrl: null,
+  technicianUploadedUrl: null,
   
   // totalizer readings initial state
   totalizerBeforeReading: 0,

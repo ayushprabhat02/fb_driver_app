@@ -1,4 +1,9 @@
-mutation driverDeliveryFees($object: deliveryFeesDriverAppInput = {customer_order_id: "", total_dispensed_qty: ""}) {
+mutation driverDeliveryFees(
+  $object: deliveryFeesDriverAppInput = {
+    customer_order_id: ""
+    total_dispensed_qty: ""
+  }
+) {
   deliveryFeesDriverApp(object: $object) {
     code
     delivery_fees
@@ -9,3 +14,10 @@ mutation driverDeliveryFees($object: deliveryFeesDriverAppInput = {customer_orde
     message
   }
 }
+
+#{
+#  "object": {
+#    "customer_order_id": "54f3b69d-2236-4ac2-8df7-e2df7f51b606",
+#    "total_dispensed_qty": 10
+#  }
+#}

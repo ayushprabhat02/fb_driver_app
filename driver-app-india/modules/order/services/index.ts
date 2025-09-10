@@ -78,7 +78,7 @@ import {
   GetCustomerOrderedAssetsQuery,
   GetCustomerOrderedAssetsQueryVariables,
 
-  // streaming functionality  
+  // streaming functionality
   UpsertStepTaskActionDocument,
   UpsertStepTaskActionMutation,
   UpsertStepTaskActionMutationVariables,
@@ -102,15 +102,15 @@ import {
   AddingVehicleInventoryTransactionLogsDocument,
   AddingVehicleInventoryTransactionLogsMutation,
   AddingVehicleInventoryTransactionLogsMutationVariables,
-  FetchDeliveryFeesDocument,
-  FetchDeliveryFeesQuery,
-  FetchDeliveryFeesQueryVariables,
   CheckServiceAblilityDocument,
   CheckServiceAblilityQuery,
   CheckServiceAblilityQueryVariables,
   FetchProductPartnerLocalitiesPriceDocument,
   FetchProductPartnerLocalitiesPriceQuery,
   FetchProductPartnerLocalitiesPriceQueryVariables,
+  DriverDeliveryFeesMutation,
+  DriverDeliveryFeesDocument,
+  DriverDeliveryFeesMutationVariables,
 } from '@/generated/graphql';
 
 /**
@@ -423,9 +423,7 @@ class OrderService {
       // we are doing sorting so that we can show filled asset on the top of the list
       const sortedAssets = [...response.customer_order_customer_asset].sort(
         (a, b) => {
-          return (
-            Number(b.quantity_dispensed) - Number(a.quantity_dispensed)
-          );
+          return Number(b.quantity_dispensed) - Number(a.quantity_dispensed);
         },
       );
 
@@ -435,7 +433,7 @@ class OrderService {
 
       return sortedAssets;
     } catch (error) {
-      throw new Error("error fetching all customer assets");
+      throw new Error('error fetching all customer assets');
     }
   }
 
@@ -447,7 +445,7 @@ class OrderService {
   public async upsertStepTaskAction(args: {object: any}) {
     try {
       console.log('UpsertStepTaskAction API call:', args);
-      
+
       // Use imported GraphQL document
       const response: UpsertTaskValueMutation = await callMutation({
         queryDocument: UpsertTaskValueDocument,
@@ -468,7 +466,10 @@ class OrderService {
    * @description Updates task live dispensing status
    * @args MarkTaskLiveDispensingMutationVariables
    */
-  public async updateTaskLiveDispensingStatus(args: {task_id: string; is_live_dispensing: boolean}) {
+  public async updateTaskLiveDispensingStatus(args: {
+    task_id: string;
+    is_live_dispensing: boolean;
+  }) {
     const response: MarkTaskLiveDispensingMutation = await callMutation({
       queryDocument: MarkTaskLiveDispensingDocument,
       variables: {
@@ -493,7 +494,7 @@ class OrderService {
     try {
       // Log the API call for debugging
       console.log('UpdateAssetQty API call:', args);
-      
+
       // Use imported GraphQL document
       const response: UpdateAssetQtyMutation = await callMutation({
         queryDocument: UpdateAssetQtyDocument,
@@ -503,7 +504,7 @@ class OrderService {
           qty: args.qty,
         },
       });
-      
+
       return response.update_customer_order_customer_asset?.returning[0];
     } catch (error) {
       console.error('Error updating asset quantity:', error);
@@ -523,11 +524,11 @@ class OrderService {
     try {
       // Log the API call for debugging
       console.log('UpdateTotalizerReading API call:', args);
-      
+
       // TODO: Implement when GraphQL types are available and generated
       // For now, return mock response
       console.log('UpdateTotalizerReading - using mock response');
-      
+
       // Return mock response for now - will be replaced with actual API call
       return {
         totalizer_reading: args.totalizer_reading,
@@ -546,7 +547,7 @@ class OrderService {
   public async markOrderDispensing(args: {task_id: string}) {
     try {
       console.log('MarkOrderDispensing API call:', args);
-      
+
       // Use imported GraphQL document
       const response: MarkOrderDispensingMutation = await callMutation({
         queryDocument: MarkOrderDispensingDocument,
@@ -554,7 +555,7 @@ class OrderService {
           task_id: args.task_id,
         },
       });
-      
+
       return response.update_task_by_pk;
     } catch (error) {
       console.error('Error marking order as dispensing:', error);
@@ -570,7 +571,7 @@ class OrderService {
   public async markOrderCompleted(args: {task_id: string}) {
     try {
       console.log('MarkOrderCompleted API call:', args);
-      
+
       const response: MarkOrderCompletedMutation = await callMutation({
         queryDocument: MarkOrderCompletedDocument,
         variables: {
@@ -578,7 +579,7 @@ class OrderService {
           state: 'DELIVERED',
         },
       });
-      
+
       return response.update_task_by_pk;
     } catch (error) {
       console.error('Error marking order as completed:', error);
@@ -603,7 +604,7 @@ class OrderService {
   }) {
     try {
       console.log('CreateInvoice API call:', args);
-      
+
       const response: CreateInvoiceMutation = await callMutation({
         queryDocument: CreateInvoiceDocument,
         variables: {
@@ -622,7 +623,7 @@ class OrderService {
           },
         },
       });
-      
+
       return response.insert_invoice_one;
     } catch (error) {
       console.error('Error creating invoice:', error);
@@ -645,23 +646,24 @@ class OrderService {
   }) {
     try {
       console.log('AddTransactionLogs API call:', args);
-      
-      const response: AddingVehicleInventoryTransactionLogsMutation = await callMutation({
-        queryDocument: AddingVehicleInventoryTransactionLogsDocument,
-        variables: {
-          object: {
-            customer_order_id: args.customer_order_id,
-            fillup_request_id: args.fillup_request_id,
-            product_variation_id: args.product_var_id,
-            quantity: args.quantity,
-            unit: 'LTRS',
-            vehicle_id: args.vehicle_id,
-            transaction_type: args.transaction_type,
-            is_active: true,
+
+      const response: AddingVehicleInventoryTransactionLogsMutation =
+        await callMutation({
+          queryDocument: AddingVehicleInventoryTransactionLogsDocument,
+          variables: {
+            object: {
+              customer_order_id: args.customer_order_id,
+              fillup_request_id: args.fillup_request_id,
+              product_variation_id: args.product_var_id,
+              quantity: args.quantity,
+              unit: 'LTRS',
+              vehicle_id: args.vehicle_id,
+              transaction_type: args.transaction_type,
+              is_active: true,
+            },
           },
-        },
-      });
-      
+        });
+
       return response.insert_vehicle_inventory_transaction_logs_one;
     } catch (error) {
       console.error('Error adding transaction logs:', error);
@@ -671,32 +673,28 @@ class OrderService {
 
   /**
    * @method fetchDeliveryFee
-   * @description Fetches delivery fee for an order
+   * @description Fetches delivery fee for an order using driver app mutation
    * @args {customer_order_id: string, total_dispensed_qty: number}
    */
+
   public async fetchDeliveryFee(args: {
     customer_order_id: string;
     total_dispensed_qty: number;
   }) {
     try {
-      console.log('FetchDeliveryFee API call:', args);
-      
-      const response: FetchDeliveryFeesQuery = await callQuery({
-        queryDocument: FetchDeliveryFeesDocument,
+      const response: DriverDeliveryFeesMutation = await callMutation({
+        queryDocument: DriverDeliveryFeesDocument,
         variables: {
           object: {
-            organization_user_id: '',
-            product_variation_id: '',
-            qty: String(args.total_dispensed_qty),
-            shipping_address_id: '',
+            customer_order_id: args.customer_order_id,
+            total_dispensed_qty: args.total_dispensed_qty,
           },
         },
       });
-      
-      return response.fetchDeliveryFees;
+
+      return response.deliveryFeesDriverApp;
     } catch (error) {
-      console.error('Error fetching delivery fee:', error);
-      throw new Error('Failed to fetch delivery fee');
+      throw new Error('error fetching all customer assets');
     }
   }
 
@@ -708,7 +706,7 @@ class OrderService {
   public async checkServiceability(args: {lat: number; lng: number}) {
     try {
       console.log('CheckServiceability API call:', args);
-      
+
       const response: CheckServiceAblilityQuery = await callQuery({
         queryDocument: CheckServiceAblilityDocument,
         variables: {
@@ -716,7 +714,7 @@ class OrderService {
           longitude: args.lng,
         },
       });
-      
+
       return response.partner?.[0];
     } catch (error) {
       console.error('Error checking serviceability:', error);
@@ -732,14 +730,16 @@ class OrderService {
   public async fetchDeliveryProductsWithPrices(args: {id: string}) {
     try {
       console.log('FetchDeliveryProductsWithPrices API call:', args);
-      
-      const response: FetchProductPartnerLocalitiesPriceQuery = await callQuery({
-        queryDocument: FetchProductPartnerLocalitiesPriceDocument,
-        variables: {
-          id: args.id,
+
+      const response: FetchProductPartnerLocalitiesPriceQuery = await callQuery(
+        {
+          queryDocument: FetchProductPartnerLocalitiesPriceDocument,
+          variables: {
+            id: args.id,
+          },
         },
-      });
-      
+      );
+
       return response.product_partner_localities_price;
     } catch (error) {
       console.error('Error fetching delivery products with prices:', error);
