@@ -10,7 +10,7 @@ import {
 
 import {Input, Button, SimpleBottomSheet, Text, Divider} from '@/components';
 import {FBBackground, FBColors, FBBorders} from '@/types/styles';
-import { orderStore } from '@/globalStore';
+import {orderStore} from '@/globalStore';
 
 interface QuantityBottomSheetProps {
   visible: boolean;
@@ -18,6 +18,7 @@ interface QuantityBottomSheetProps {
   onProceed: (quantity: number) => Promise<void> | void;
   orderQuantity?: number;
   existingQuantity?: number;
+  isFillingRemaining?: boolean; // New prop to indicate if this is for filling remaining quantity
 }
 
 const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
@@ -26,6 +27,7 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
   onProceed,
   orderQuantity = 0,
   existingQuantity = 0,
+  isFillingRemaining = false,
 }) => {
   const [quantity, setQuantity] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -37,12 +39,13 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
   useEffect(() => {
     if (visible) {
       setIsComplete(false);
-      setQuantity(existingQuantity > 0 ? existingQuantity.toString() : '');
+      // For filling remaining, don't prefill with existing quantity to allow adding more
+      setQuantity(isFillingRemaining ? '' : (existingQuantity > 0 ? existingQuantity.toString() : ''));
       bottomSheetRef.current?.present();
     } else {
       bottomSheetRef.current?.close();
     }
-  }, [visible, existingQuantity]);
+  }, [visible, existingQuantity, isFillingRemaining]);
 
   const handleClose = () => {
     setQuantity('');
@@ -72,7 +75,7 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
   };
 
   const handleProceed = async () => {
-    const quantityNum = parseFloat(quantity);
+    let quantityNum = parseFloat(quantity);
 
     if (!quantity || isNaN(quantityNum) || quantityNum <= 0) {
       Toast.show({
@@ -83,8 +86,13 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
       return;
     }
 
-    // Check if entered quantity exceeds pending quantity
-    if (quantityNum > pendingQuantity) {
+    // If filling remaining, add to existing quantity
+    if (isFillingRemaining) {
+      quantityNum = existingQuantity + quantityNum;
+    }
+
+    // Check if entered quantity exceeds pending quantity (only if not filling remaining)
+    if (!isFillingRemaining && quantityNum > pendingQuantity) {
       Toast.show({
         type: 'error',
         text1: 'Quantity Exceeds Pending',
@@ -117,25 +125,33 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
       <BottomSheetView style={styles.bottomSheetView}>
         <View style={styles.container}>
           <Text size="lg" weight="700" color="secondary">
-            {isComplete ? 'Dispensing Complete' : 'Enter Quantity Dispensed'}
+            {isComplete ? 'Dispensing Complete' : (isFillingRemaining ? 'Enter Additional Quantity' : 'Enter Quantity Dispensed')}
           </Text>
 
           <Divider height={16} />
 
           {!isComplete ? (
             <>
-              {orderQuantity > 0 ? (
-                <View style={styles.orderInfo}>
-                  <Text size="sm" color="darkGray" weight="500">
-                    Order Quantity
-                  </Text>
-                  <Text size="base" color="primary" weight="700">
-                    {orderQuantity}L
-                  </Text>
-                </View>
-              ) : null}
-              
-              {pendingQuantity > 0 ? (
+              {isFillingRemaining && orderQuantity > 0 ? (
+                <>
+                  <View style={styles.orderInfo}>
+                    <Text size="sm" color="darkGray" weight="500">
+                      Already Filled
+                    </Text>
+                    <Text size="base" color="primary" weight="700">
+                      {existingQuantity}L
+                    </Text>
+                  </View>
+                  <View style={styles.orderInfo}>
+                    <Text size="sm" color="darkGray" weight="500">
+                      Remaining Quantity
+                    </Text>
+                    <Text size="base" color="error" weight="700">
+                      {Math.max(0, orderQuantity - existingQuantity)}L
+                    </Text>
+                  </View>
+                </>
+              ) : pendingQuantity > 0 ? (
                 <View style={styles.orderInfo}>
                   <Text size="sm" color="darkGray" weight="500">
                     Pending Quantity
@@ -148,7 +164,7 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
 
               <View style={styles.inputContainer}>
                 <Text size="sm" weight="500" color="neutral">
-                  Quantity Dispensed (Liters)
+                  {isFillingRemaining ? 'Additional Quantity (Liters)' : 'Quantity Dispensed (Liters)'}
                 </Text>
                 <BottomSheetTextInput
                   style={styles.textInput}

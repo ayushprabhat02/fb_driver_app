@@ -14,7 +14,12 @@ import Toast from 'react-native-toast-message';
 import {ScaledSheet} from 'react-native-size-matters';
 
 // Components
-import {Container, Text, CardElevated, QuantityBottomSheet} from '@/components';
+import {
+  Text,
+  CardElevated,
+  QuantityBottomSheet,
+  Divider,
+} from '@/components';
 import PermissionScreen from '../components/PermissionScreen';
 import CameraOverlay from '../components/CameraOverlay';
 import StreamControls from '../components/StreamControls';
@@ -64,8 +69,12 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   // Store
   const currentDriverOrder = orderStore.use.currentDriverOrder();
   const orderAssets = orderStore.use.orderAssets();
+  const addPartiallyFilledAsset = orderStore.use.addPartiallyFilledAsset();
+  const removePartiallyFilledAsset = orderStore.use.removePartiallyFilledAsset();
+  const addAssetWithUploadedVideo = orderStore.use.addAssetWithUploadedVideo();
+  const removeAssetWithUploadedVideo = orderStore.use.removeAssetWithUploadedVideo();
 
-  console.log("--currentDriverOrder---",currentDriverOrder)
+  console.log('--currentDriverOrder---', currentDriverOrder);
 
   // const streamingDurationSeconds = 5 * 60; // 5 minutes
   const streamingDurationSeconds = 10; // 10 seconds
@@ -229,7 +238,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       });
 
       await orderService.updateTaskLiveDispensingStatus({
-        task_id:currentDriverOrder?.customer_order?.id,
+        task_id: currentDriverOrder?.id,
         is_live_dispensing: true,
       });
 
@@ -287,14 +296,13 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           key: 'STREAM_STOPPED',
           url: '',
           value: new Date().toISOString(),
-          task_id: currentDriverOrder?.id || '',
-          customer_asset_id:
-            orderStore.getState().currentAssetForDispense?.id || '',
+          task_id: currentDriverOrder?.id,
+          customer_asset_id: orderStore.getState().currentAssetForDispense?.id,
         },
       });
 
       await orderService.updateTaskLiveDispensingStatus({
-        task_id: currentDriverOrder?.customer_order?.id || '',
+        task_id: currentDriverOrder?.id || '',
         is_live_dispensing: false,
       });
 
@@ -328,11 +336,8 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
 
   const handleRecordingFinished = async (data: any) => {
     try {
-      // Get order code for filename
-      const orderCode = currentDriverOrder?.customer_order?.order_code || 'unknown';
-
-      // Create filename with proper extension
-      const fileName = `Recording_${orderCode}.mp4`;
+      // filename
+      const fileName = `Recording_${currentDriverOrder?.customer_order?.order_code}.mp4`;
 
       let uploadedUrl = data.uri || ''; // Fallback to local URI
       let uploadSuccess = false;
@@ -367,12 +372,17 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           key: 'LIVE_STREAM_RECORDING',
           url: uploadedUrl,
           value: fileName,
-          task_id: currentDriverOrder?.customer_order?.id || '',
-          customer_asset_id:
-            orderStore.getState().currentAssetForDispense?.id || '',
           quantity_dispensed: 0,
+          task_id: currentDriverOrder?.id,
+          customer_asset_id: orderStore.getState().currentAssetForDispense?.id,
         },
       });
+
+      // Mark asset as having uploaded video
+      const currentAssetId = orderStore.getState().currentAssetForDispense?.id;
+      if (currentAssetId && uploadSuccess) {
+        addAssetWithUploadedVideo(currentAssetId);
+      }
 
       Toast.show({
         type: 'success',
@@ -383,6 +393,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       });
     } catch (error) {
       console.error('Process recording error:', error);
+      setIsStreamUploaded(false);
       Toast.show({
         type: 'error',
         text1: 'Processing Failed',
@@ -411,6 +422,21 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
 
     // Show quantity bottom sheet for tower drivers
     setShowQuantityBottomSheet(true);
+  };
+
+  const handleSkipQuantityAndGoBack = () => {
+    // If video was uploaded but user doesn't want to enter quantity now,
+    // mark asset as partially filled so they can fill it later
+    const currentAssetId = orderStore.getState().currentAssetForDispense?.id;
+    const assetsWithUploadedVideos = orderStore.getState().assetsWithUploadedVideos;
+    
+    if (currentAssetId && assetsWithUploadedVideos.includes(currentAssetId)) {
+      // Asset has uploaded video but no quantity dispensed, mark as partially filled
+      addPartiallyFilledAsset(currentAssetId);
+    }
+
+    // Navigate back to choose asset screen
+    navigation.navigate('choose-asset');
   };
 
   const handleQuantityProceed = async (quantity: number) => {
@@ -476,6 +502,26 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         orderAssets: updatedAssets,
       }));
 
+      // Get requested quantity for this asset to determine if it's partially filled
+      const currentAsset = updatedAssets?.find((asset: any) => {
+        const assetId = asset.customer_asset?.id || asset.id || asset.customer_asset_id;
+        return assetId === currentAssetId;
+      });
+
+      const requestedQuantity = currentAsset?.quantity_requested || 0;
+
+      // Remove from uploaded videos array since quantity is now entered
+      removeAssetWithUploadedVideo(currentAssetId);
+
+      // Update partially filled assets array based on the dispensed quantity
+      if (quantity > 0 && quantity < requestedQuantity) {
+        // Asset is now partially filled
+        addPartiallyFilledAsset(currentAssetId);
+      } else if (quantity >= requestedQuantity) {
+        // Asset is now complete, remove from partially filled array
+        removePartiallyFilledAsset(currentAssetId);
+      }
+
       // Mark order as dispensing if it's currently in ARRIVED state
       if (currentDriverOrder?.state === 'ARRIVED') {
         await orderService.markOrderDispensing({
@@ -505,14 +551,14 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   // Loading state
   if (hasPermission === null) {
     return (
-      <Container style={styles.container}>
+      <View style={styles.container}>
         <View style={styles.centerContent}>
           <ActivityIndicator size="large" color={FBColors.primary} />
           <Text style={StyleSheet.flatten(styles.loadingText)}>
             Checking permissions...
           </Text>
         </View>
-      </Container>
+      </View>
     );
   }
 
@@ -530,19 +576,60 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
 
   // Main camera interface
   return (
-    <Container style={styles.container}>
+    <View style={styles.container}>
       {/* Order Details Card */}
-      <View style={styles.orderDetailsCard}>
-        <Text
-          weight="700"
-          size="lg"
-          color="neutral"
-          style={StyleSheet.flatten(styles.cardTitle)}>
-          {currentDriverOrder?.customer_order?.name ||
-            `Order #${currentDriverOrder?.customer_order?.name}` ||
-            'Order Details'}
-        </Text>
-      </View>
+      <CardElevated
+        cardStyle={{
+          // marginBottom: 16,
+          padding: 16,
+        }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 8,
+          }}>
+          <Text weight="bold" size="lg" color="primary">
+            Order Details
+          </Text>
+        </View>
+
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+          }}>
+          <Text weight="600" size="sm" color="neutral">
+            Customer Name:
+          </Text>
+          <Text weight="400" size="sm" style={{flex: 1, textAlign: 'right'}}>
+            {`${
+              currentDriverOrder?.customer_order?.organization_user?.user
+                ?.first_name || ''
+            } ${
+              currentDriverOrder?.customer_order?.organization_user?.user
+                ?.last_name || ''
+            }`.trim() || 'N/A'}
+          </Text>
+        </View>
+
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            marginBottom: 4,
+          }}>
+          <Text weight="600" size="sm" color="neutral">
+            Order Code:
+          </Text>
+          <Text weight="400" size="sm" style={{flex: 1, textAlign: 'right'}}>
+            {currentDriverOrder?.customer_order?.order_code || 'N/A'}
+          </Text>
+        </View>
+      </CardElevated>
+
+      <Divider height={50} />
 
       <View style={styles.cameraContainer}>
         <RNCamera
@@ -572,12 +659,15 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         />
       </View>
 
+      <Divider height={10} />
+
       <StreamControls
         isRecording={isRecording}
         isLoading={isLoading}
         canStopStream={canStopStream}
         hasStreamedOnce={hasStreamedOnce}
         streamingState={streamingState}
+        isStreamUploaded={isStreamUploaded}
         onStartRecording={startRecording}
         onStopRecording={stopRecording}
         onNext={goNext}
@@ -586,61 +676,78 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       {/* Quantity Bottom Sheet */}
       <QuantityBottomSheet
         visible={showQuantityBottomSheet}
-        onClose={() => setShowQuantityBottomSheet(false)}
+        onClose={() => {
+          setShowQuantityBottomSheet(false);
+          handleSkipQuantityAndGoBack();
+        }}
         onProceed={handleQuantityProceed}
         orderQuantity={
-          currentDriverOrder?.customer_order?.customer_order_items?.[0]?.qty || 0
+          currentDriverOrder?.customer_order?.customer_order_items?.[0]?.qty ||
+          0
         }
-        filledQuantity={getCurrentAssetFilledQuantity()}
+        existingQuantity={getCurrentAssetFilledQuantity()}
       />
-    </Container>
+    </View>
   );
 };
 
 const styles = ScaledSheet.create({
   container: {
     flex: 1,
-    backgroundColor: FBBackground.white,
+    backgroundColor: FBColors.white,
+    paddingHorizontal: 16,
   },
   centerContent: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: '20@s',
+    padding: 20,
   },
   loadingText: {
-    marginTop: '16@vs',
-    fontSize: '16@ms',
+    marginTop: 16,
+    fontSize: 16,
     color: FBColors.neutral,
     textAlign: 'center',
   },
+  orderDetailsSection: {
+    paddingTop: 16,
+  },
   orderDetailsCard: {
-    margin: '16@s',
-    padding: '16@s',
+    padding: 16,
     backgroundColor: FBBackground.white,
-    alignItems: 'center',
   },
   cardTitle: {
-    marginBottom: '12@vs',
-    textAlign: 'center',
+    marginBottom: 0,
   },
   orderInfoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '8@vs',
   },
   orderValue: {
     flex: 1,
     textAlign: 'right',
-    marginLeft: '8@s',
+    marginLeft: 8,
   },
   cameraContainer: {
     flex: 1,
-    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 400,
   },
   camera: {
     flex: 1,
+    width: '100%',
+  },
+  controlsContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    minHeight: 80,
   },
 });
 

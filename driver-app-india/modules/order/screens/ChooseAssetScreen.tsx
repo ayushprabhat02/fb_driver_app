@@ -135,7 +135,12 @@ const ChooseAssetScreen: React.FC = () => {
       dispenseCompletedAssets: dispensedAssets,
     }));
 
-    navigation.navigate('delivery-challan');
+    // Check if buddy challan flow is enabled
+    if (currentDriverOrder?.is_enable_buddycan_flow) {
+      navigation.navigate('buddy-challan');
+    } else {
+      navigation.navigate('delivery-challan');
+    }
   };
 
   const handleCancel = () => {

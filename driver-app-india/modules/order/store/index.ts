@@ -28,6 +28,8 @@ type LoaderTypes =
   | 'verifyPlacedOrderOtp'
   | 'totalizerImage'
   | 'quantityImage'
+  | 'challanImage'
+  | 'technicianImage'
   | 'orderAssets';
 
 type Loaders = {
@@ -37,6 +39,8 @@ type Loaders = {
   verifyPlacedOrderOtp: boolean;
   totalizerImage: boolean;
   quantityImage: boolean;
+  challanImage: boolean;
+  technicianImage: boolean;
   orderAssets: boolean;
 };
 
@@ -86,6 +90,10 @@ type OrderStore = {
   totalizerReading: string;
   quantityDispensed: number;
   
+  // buddy challan image data
+  challanImageData: string | null;
+  technicianImageData: string | null;
+  
   // totalizer readings
   totalizerBeforeReading: number;
   totalizerAfterReading: number;
@@ -99,6 +107,12 @@ type OrderStore = {
   // completed dispensed assets for delivery challan
   dispenseCompletedAssets: any[] | null;
 
+  // partially filled assets array to track assets that have some quantity dispensed but not completed
+  partiallyFilledAssetsArray: string[];
+
+  // assets with uploaded videos but no quantity dispensed yet
+  assetsWithUploadedVideos: string[];
+
   pendingQuantity: number;
 };
 
@@ -109,6 +123,12 @@ type OrderActions = {
   resetOrderPagination: () => void;
   // bottom sheet
   setBottomSheetRefOtp: (ref: React.RefObject<BottomSheetModal>) => void;
+  // partially filled assets management
+  addPartiallyFilledAsset: (assetId: string) => void;
+  removePartiallyFilledAsset: (assetId: string) => void;
+  // video upload status management
+  addAssetWithUploadedVideo: (assetId: string) => void;
+  removeAssetWithUploadedVideo: (assetId: string) => void;
 };
 
 /*
@@ -136,6 +156,8 @@ const orderInitialState: OrderStore = {
     verifyPlacedOrderOtp: false,
     totalizerImage: false,
     quantityImage: false,
+    challanImage: false,
+    technicianImage: false,
     orderAssets: false,
   },
   currentOrderStatus: undefined,
@@ -154,6 +176,10 @@ const orderInitialState: OrderStore = {
   totalizerReading: '',
   quantityDispensed: 0,
   
+  // buddy challan image data initial state
+  challanImageData: null,
+  technicianImageData: null,
+  
   // totalizer readings initial state
   totalizerBeforeReading: 0,
   totalizerAfterReading: 0,
@@ -166,6 +192,13 @@ const orderInitialState: OrderStore = {
 
   // dispensed assets for delivery challan
   dispenseCompletedAssets: null,
+  
+  // partially filled assets array initial state
+  partiallyFilledAssetsArray: [],
+  
+  // assets with uploaded videos initial state
+  assetsWithUploadedVideos: [],
+  
   pendingQuantity:0
 };
 
@@ -191,7 +224,7 @@ const orderStore = create<OrderStore & OrderActions>(set => ({
     }),
 
   // reset order store
-  resetOrderStore: () => set(orderInitialState),
+  resetOrderStore: () => set({...orderInitialState, partiallyFilledAssetsArray: [], assetsWithUploadedVideos: []}),
 
   // reset pagination
   resetOrderPagination: () =>
@@ -204,6 +237,36 @@ const orderStore = create<OrderStore & OrderActions>(set => ({
   setBottomSheetRefOtp: ref =>
     set(() => ({
       bottomSheetRefOtp: ref,
+    })),
+
+  // partially filled assets management
+  addPartiallyFilledAsset: (assetId: string) =>
+    set(state => ({
+      ...state,
+      partiallyFilledAssetsArray: state.partiallyFilledAssetsArray.includes(assetId)
+        ? state.partiallyFilledAssetsArray
+        : [...state.partiallyFilledAssetsArray, assetId],
+    })),
+
+  removePartiallyFilledAsset: (assetId: string) =>
+    set(state => ({
+      ...state,
+      partiallyFilledAssetsArray: state.partiallyFilledAssetsArray.filter(id => id !== assetId),
+    })),
+
+  // video upload status management
+  addAssetWithUploadedVideo: (assetId: string) =>
+    set(state => ({
+      ...state,
+      assetsWithUploadedVideos: state.assetsWithUploadedVideos.includes(assetId)
+        ? state.assetsWithUploadedVideos
+        : [...state.assetsWithUploadedVideos, assetId],
+    })),
+
+  removeAssetWithUploadedVideo: (assetId: string) =>
+    set(state => ({
+      ...state,
+      assetsWithUploadedVideos: state.assetsWithUploadedVideos.filter(id => id !== assetId),
     })),
 
 }));

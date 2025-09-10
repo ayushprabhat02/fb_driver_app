@@ -85,6 +85,32 @@ import {
   MarkTaskLiveDispensingDocument,
   MarkTaskLiveDispensingMutation,
   MarkTaskLiveDispensingMutationVariables,
+
+  // inline mutations to import
+  UpdateAssetQtyDocument,
+  UpdateAssetQtyMutation,
+  UpdateAssetQtyMutationVariables,
+  MarkOrderDispensingDocument,
+  MarkOrderDispensingMutation,
+  MarkOrderDispensingMutationVariables,
+  MarkOrderCompletedDocument,
+  MarkOrderCompletedMutation,
+  MarkOrderCompletedMutationVariables,
+  CreateInvoiceDocument,
+  CreateInvoiceMutation,
+  CreateInvoiceMutationVariables,
+  AddingVehicleInventoryTransactionLogsDocument,
+  AddingVehicleInventoryTransactionLogsMutation,
+  AddingVehicleInventoryTransactionLogsMutationVariables,
+  FetchDeliveryFeesDocument,
+  FetchDeliveryFeesQuery,
+  FetchDeliveryFeesQueryVariables,
+  CheckServiceAblilityDocument,
+  CheckServiceAblilityQuery,
+  CheckServiceAblilityQueryVariables,
+  FetchProductPartnerLocalitiesPriceDocument,
+  FetchProductPartnerLocalitiesPriceQuery,
+  FetchProductPartnerLocalitiesPriceQueryVariables,
 } from '@/generated/graphql';
 
 /**
@@ -422,17 +448,9 @@ class OrderService {
     try {
       console.log('UpsertStepTaskAction API call:', args);
       
-      // Use raw GraphQL mutation call 
-      const response = await callMutation({
-        queryDocument: `
-          mutation upsertTaskValue($object: upsertTaskValueInput!) {
-            upsertTaskValue(object: $object) {
-              id
-              is_updated
-              is_inserted
-            }
-          }
-        ` as any,
+      // Use imported GraphQL document
+      const response: UpsertTaskValueMutation = await callMutation({
+        queryDocument: UpsertTaskValueDocument,
         variables: {
           object: args.object,
         },
@@ -476,30 +494,9 @@ class OrderService {
       // Log the API call for debugging
       console.log('UpdateAssetQty API call:', args);
       
-      // Use raw GraphQL mutation call since types may not be generated yet
-      const response = await callMutation({
-        queryDocument: `
-          mutation updateAssetQty(
-            $customerAssetId: uuid
-            $customerOrderId: uuid
-            $qty: numeric
-          ) {
-            update_customer_order_customer_asset(
-              where: {
-                customer_asset_id: { _eq: $customerAssetId }
-                customer_order_id: { _eq: $customerOrderId }
-              }
-              _set: { quantity_dispensed: $qty }
-            ) {
-              returning {
-                customer_asset_id
-                id
-                is_active
-                quantity_dispensed
-              }
-            }
-          }
-        ` as any,
+      // Use imported GraphQL document
+      const response: UpdateAssetQtyMutation = await callMutation({
+        queryDocument: UpdateAssetQtyDocument,
         variables: {
           customerAssetId: args.customerAssetId,
           customerOrderId: args.customerOrderId,
@@ -550,26 +547,11 @@ class OrderService {
     try {
       console.log('MarkOrderDispensing API call:', args);
       
-      // Use raw GraphQL mutation call
-      const response = await callMutation({
-        queryDocument: `
-          mutation markOrderDispensing(
-            $id: uuid!
-            $state: task_state_enum
-          ) {
-            update_task_by_pk(
-              pk_columns: { id: $id }
-              _set: { state: $state }
-            ) {
-              id
-              state
-              category
-            }
-          }
-        ` as any,
+      // Use imported GraphQL document
+      const response: MarkOrderDispensingMutation = await callMutation({
+        queryDocument: MarkOrderDispensingDocument,
         variables: {
-          id: args.task_id,
-          state: 'DISPENSING',
+          task_id: args.task_id,
         },
       });
       
@@ -589,22 +571,8 @@ class OrderService {
     try {
       console.log('MarkOrderCompleted API call:', args);
       
-      const response = await callMutation({
-        queryDocument: `
-          mutation markOrderCompleted(
-            $id: uuid!
-            $state: task_state_enum
-          ) {
-            update_task_by_pk(
-              pk_columns: { id: $id }
-              _set: { state: $state }
-            ) {
-              id
-              state
-              category
-            }
-          }
-        ` as any,
+      const response: MarkOrderCompletedMutation = await callMutation({
+        queryDocument: MarkOrderCompletedDocument,
         variables: {
           id: args.task_id,
           state: 'DELIVERED',
@@ -636,18 +604,8 @@ class OrderService {
     try {
       console.log('CreateInvoice API call:', args);
       
-      const response = await callMutation({
-        queryDocument: `
-          mutation createInvoice($object: invoice_insert_input!) {
-            insert_invoice_one(object: $object) {
-              id
-              customer_order_id
-              amount
-              delivery_fee
-              is_active
-            }
-          }
-        ` as any,
+      const response: CreateInvoiceMutation = await callMutation({
+        queryDocument: CreateInvoiceDocument,
         variables: {
           object: {
             customer_order_id: args.customer_order_id,
@@ -688,26 +646,15 @@ class OrderService {
     try {
       console.log('AddTransactionLogs API call:', args);
       
-      const response = await callMutation({
-        queryDocument: `
-          mutation addTransactionLogs($object: vehicle_inventory_transaction_log_insert_input!) {
-            insert_vehicle_inventory_transaction_log_one(object: $object) {
-              id
-              quantity
-              unit
-              transaction_type
-              vehicle_id
-              customer_order_id
-            }
-          }
-        ` as any,
+      const response: AddingVehicleInventoryTransactionLogsMutation = await callMutation({
+        queryDocument: AddingVehicleInventoryTransactionLogsDocument,
         variables: {
           object: {
             customer_order_id: args.customer_order_id,
             fillup_request_id: args.fillup_request_id,
             product_variation_id: args.product_var_id,
             quantity: args.quantity,
-            unit: 'liters',
+            unit: 'LTRS',
             vehicle_id: args.vehicle_id,
             transaction_type: args.transaction_type,
             is_active: true,
@@ -715,7 +662,7 @@ class OrderService {
         },
       });
       
-      return response.insert_vehicle_inventory_transaction_log_one;
+      return response.insert_vehicle_inventory_transaction_logs_one;
     } catch (error) {
       console.error('Error adding transaction logs:', error);
       throw new Error('Failed to add transaction logs');
@@ -734,30 +681,19 @@ class OrderService {
     try {
       console.log('FetchDeliveryFee API call:', args);
       
-      const response = await callQuery({
-        queryDocument: `
-          query fetchDeliveryFee(
-            $customer_order_id: uuid!
-            $total_dispensed_qty: numeric!
-          ) {
-            fetchDeliveryFee(
-              customer_order_id: $customer_order_id
-              total_dispensed_qty: $total_dispensed_qty
-            ) {
-              delivery_fees
-              delivery_fees_no_tax
-              total_tax
-              discount
-            }
-          }
-        ` as any,
+      const response: FetchDeliveryFeesQuery = await callQuery({
+        queryDocument: FetchDeliveryFeesDocument,
         variables: {
-          customer_order_id: args.customer_order_id,
-          total_dispensed_qty: args.total_dispensed_qty,
+          object: {
+            organization_user_id: '',
+            product_variation_id: '',
+            qty: String(args.total_dispensed_qty),
+            shipping_address_id: '',
+          },
         },
       });
       
-      return response.fetchDeliveryFee;
+      return response.fetchDeliveryFees;
     } catch (error) {
       console.error('Error fetching delivery fee:', error);
       throw new Error('Failed to fetch delivery fee');
@@ -773,37 +709,15 @@ class OrderService {
     try {
       console.log('CheckServiceability API call:', args);
       
-      const response = await callQuery({
-        queryDocument: `
-          query checkServiceability(
-            $latitude: numeric!
-            $longitude: numeric!
-          ) {
-            checkServiceAblility(
-              latitude: $latitude
-              longitude: $longitude
-            ) {
-              partner {
-                id
-                name
-                partner_localities {
-                  id
-                  product_partner_localities_prices {
-                    parent_id
-                    sale_price
-                  }
-                }
-              }
-            }
-          }
-        ` as any,
+      const response: CheckServiceAblilityQuery = await callQuery({
+        queryDocument: CheckServiceAblilityDocument,
         variables: {
           latitude: args.lat,
           longitude: args.lng,
         },
       });
       
-      return response.checkServiceAblility?.partner?.[0];
+      return response.partner?.[0];
     } catch (error) {
       console.error('Error checking serviceability:', error);
       throw new Error('Failed to check serviceability');
@@ -819,16 +733,8 @@ class OrderService {
     try {
       console.log('FetchDeliveryProductsWithPrices API call:', args);
       
-      const response = await callQuery({
-        queryDocument: `
-          query fetchProductPartnerLocalitiesPrice($id: uuid!) {
-            product_partner_localities_price(where: { id: { _eq: $id } }) {
-              id
-              sale_price
-              unit_price
-            }
-          }
-        ` as any,
+      const response: FetchProductPartnerLocalitiesPriceQuery = await callQuery({
+        queryDocument: FetchProductPartnerLocalitiesPriceDocument,
         variables: {
           id: args.id,
         },

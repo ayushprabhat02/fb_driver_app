@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import {View} from 'react-native';
 import {ScaledSheet} from 'react-native-size-matters';
 import {Text} from '@/components';
@@ -25,13 +25,16 @@ const AssetSummaryCard: React.FC = ({}) => {
 
   // Calculate pending quantity
   const pendingQuantity = useMemo(() => {
-    const pQuantity =  totalQuantity - dispensedQuantity;
+    return totalQuantity - dispensedQuantity;
+  }, [totalQuantity, dispensedQuantity]);
+
+  // Update store with pending quantity
+  useEffect(() => {
     orderStore.setState(state => ({
       ...state,
-      pendingQuantity:pQuantity
-    }))
-    return pQuantity
-  }, [totalQuantity, dispensedQuantity]);
+      pendingQuantity
+    }));
+  }, [pendingQuantity]);
 
   // Calculate progress percentage
   const progressPercentage = useMemo(() => {

@@ -10,6 +10,7 @@ interface StreamControlsProps {
   canStopStream: boolean;
   hasStreamedOnce: boolean;
   streamingState: 'not_started' | 'started' | 'stopped';
+  isStreamUploaded: boolean;
   onStartRecording: () => void;
   onStopRecording: () => void;
   onNext: () => void;
@@ -21,6 +22,7 @@ const StreamControls: React.FC<StreamControlsProps> = ({
   canStopStream,
   hasStreamedOnce,
   streamingState,
+  isStreamUploaded,
   onStartRecording,
   onStopRecording,
   onNext,
@@ -39,28 +41,34 @@ const StreamControls: React.FC<StreamControlsProps> = ({
 
   return (
     <View style={styles.controlsContainer}>
-      {!isRecording ? (
-        <Button
-          variant="solid"
-          onPress={onStartRecording}
-          disabled={isLoading}
-          style={[styles.button, styles.recordButton]}>
-          {isLoading ? 'Starting...' : 'Start Recording'}
-        </Button>
-      ) : (
-        <Button
-          variant="solid"
-          onPress={onStopRecording}
-          disabled={!canStopStream || isLoading}
-          style={[
-            styles.button,
-            styles.stopButton,
-            (!canStopStream || isLoading) && styles.disabledButton,
-          ]}>
-          {isLoading ? 'Stopping...' : 'Stop Recording'}
-        </Button>
-      )}
+      {/* Recording Button Container - Fixed Height */}
+      <View style={styles.recordingButtonContainer}>
+        {!isRecording ? (
+          !isStreamUploaded && (
+            <Button
+              variant="solid"
+              onPress={onStartRecording}
+              disabled={isLoading}
+              style={[styles.button, styles.recordButton]}>
+              {isLoading ? 'Starting...' : 'Start Recording'}
+            </Button>
+          )
+        ) : (
+          <Button
+            variant="solid"
+            onPress={onStopRecording}
+            disabled={!canStopStream || isLoading}
+            style={[
+              styles.button,
+              styles.stopButton,
+              (!canStopStream || isLoading) && styles.disabledButton,
+            ]}>
+            {isLoading ? 'Stopping...' : 'Stop Recording'}
+          </Button>
+        )}
+      </View>
 
+      {/* Next Button - Always Present */}
       <Button
         variant="outlined"
         onPress={onNext}
@@ -74,9 +82,16 @@ const StreamControls: React.FC<StreamControlsProps> = ({
 
 const styles = ScaledSheet.create({
   controlsContainer: {
-    padding: '20@s',
     backgroundColor: FBBackground.white,
-    gap: '12@vs',
+    paddingTop: 10,
+    paddingHorizontal: 16,
+    paddingBottom: 20,
+    gap: 10,
+    minHeight: 120, // Fixed minimum height
+  },
+  recordingButtonContainer: {
+    minHeight: 48, // Fixed height for recording button area
+    justifyContent: 'center',
   },
   button: {
     marginVertical: '4@vs',
