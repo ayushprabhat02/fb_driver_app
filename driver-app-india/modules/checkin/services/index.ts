@@ -5,6 +5,15 @@ import {
   GetDriverVehicleDetailsByIdQueryVariables,
   GetDriverVehicleDetailsByIdQuery,
   GetDriverVehicleDetailsByIdDocument,
+  DriverCheckInDocument,
+  DriverCheckInMutation,
+  DriverCheckInMutationVariables,
+  UpdateDriverVehicleStateByIdDocument,
+  UpdateDriverVehicleStateByIdMutation,
+  UpdateDriverVehicleStateByIdMutationVariables,
+  Login_Type_Enum,
+  Partner_Vehicle_State_Enum,
+  Photo_Type_Enum,
 } from './../../../generated/graphql';
 import {setDriverVehicleId, getDriverVehicleId} from '@/utils/localStorage';
 import {DateTime} from 'luxon';
@@ -17,7 +26,7 @@ import {Vehicle} from '../../../generated/graphql';
  */
 
 // dependencies
-import {callQuery} from '@/utils/client';
+import {callQuery, callMutation} from '@/utils/client';
 
 // store
 import {checkinStore, orderStore} from '@/globalStore';
@@ -83,7 +92,7 @@ class CheckinService {
       if (shiftEndTime) {
         const currentTime = DateTime.now();
         const endTime = DateTime.fromISO(shiftEndTime);
-        
+
         if (currentTime > endTime) {
           // Shift has ended based on time - driver should be logged out
           Toast.show({
@@ -153,6 +162,174 @@ class CheckinService {
     }));
 
     return response.driver_vehicle_by_pk;
+  }
+
+  /**
+   * @method driverCheckIn
+   * @description Creates a driver duty log entry for check-in with photos
+   */
+  public async driverCheckIn(args: DriverCheckInMutationVariables) {
+    try {
+      console.log(
+        'Calling driverCheckIn API with variables:',
+        JSON.stringify(args, null, 2),
+      );
+
+      // Check if GraphQL client is available
+      const {authStore} = await import('@/globalStore');
+      const graphQLClient = authStore.getState().graphQLClient;
+      if (!graphQLClient) {
+        throw new Error(
+          'GraphQL client is not initialized. Please ensure you are logged in.',
+        );
+      }
+
+      const response: DriverCheckInMutation = await callMutation({
+        queryDocument: DriverCheckInDocument,
+        variables: {...args},
+      });
+
+      if (response && response.insert_driver_duty_log_one) {
+        console.log(
+          'Driver check-in successful:',
+          response.insert_driver_duty_log_one,
+        );
+        return response;
+      }
+
+      throw new Error('Failed to create driver duty log - no response data');
+    } catch (error) {
+      console.error('Error during driver check-in:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Check-in Failed',
+        text2: `Unable to complete check-in: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * @method updateDriverVehicleStateById
+   * @description Updates driver vehicle state and status
+   */
+  public async updateDriverVehicleStateById(
+    args: UpdateDriverVehicleStateByIdMutationVariables,
+  ) {
+    try {
+      console.log(
+        'Calling updateDriverVehicleStateById API with variables:',
+        args,
+      );
+
+      const response: UpdateDriverVehicleStateByIdMutation = await callMutation(
+        {
+          queryDocument: UpdateDriverVehicleStateByIdDocument,
+          variables: {...args},
+        },
+      );
+
+      console.log(
+        'Driver vehicle state updated:',
+        response.update_driver_vehicle_by_pk,
+      );
+      return response.update_driver_vehicle_by_pk;
+    } catch (error) {
+      console.error('Error updating driver vehicle state:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'State Update Failed',
+        text2: 'Unable to update vehicle status.',
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * @method completeCheckIn
+   * @description Complete check-in process with selfie store URL and location - Following fuelbuddy-driver flow
+   */
+  public async completeCheckIn(checkInData: {
+    selfieStoreUrl: string;
+    location: {lat: number; lng: number};
+    driverVehicleId: string;
+  }) {
+    try {
+      const {selfieStoreUrl, location, driverVehicleId} = checkInData;
+
+      console.log('Starting check-in process with data:', checkInData);
+
+      // Step 1: Prepare check-in data object following fuelbuddy-driver pattern
+      // Use fallback coordinates if location is 0,0 (GPS failed)
+      // Format: (lng,lat) - exactly as in FuelBuddy Vue project line 404
+      const locationPoint =
+        location.lat === 0 && location.lng === 0
+          ? '(77.5946,12.9716)' // Bangalore coordinates as fallback
+          : `(${location.lng},${location.lat})`;
+
+      const checkInObject = {
+        is_active: true,
+        location: locationPoint,
+        name: 'Driver Check-in',
+        odometer: '0', // Default for simplified flow
+        totallizer: '0', // Default for simplified flow
+        category: Login_Type_Enum.CheckIn, // Maps to 'CHECK_IN' as in Vue project
+        driver_vehicle_id: driverVehicleId,
+        driver_duty_photos: {
+          data: [
+            {
+              category: Photo_Type_Enum.SelfieStart, // As in Vue project line 424
+              is_active: true,
+              url: selfieStoreUrl,
+            },
+          ],
+        },
+      };
+
+      // Step 2: Execute driverCheckIn API call
+      console.log('Calling driverCheckIn API...');
+      const checkInResponse = await this.driverCheckIn({
+        object: checkInObject,
+      });
+
+      if (checkInResponse.insert_driver_duty_log_one) {
+        // Step 3: Update driver vehicle state to checked-in and idle
+        console.log('Updating driver vehicle state...');
+        await this.updateDriverVehicleStateById({
+          id: driverVehicleId,
+          state: Login_Type_Enum.CheckIn,
+          status: Partner_Vehicle_State_Enum.Idle,
+        });
+
+        // Step 4: Update local state to mark as checked-in
+        checkinStore.setState(state => ({
+          ...state,
+          isCheckedIn: true,
+        }));
+
+        console.log('Check-in process completed successfully');
+
+        Toast.show({
+          type: 'success',
+          text1: 'Check-in Successful',
+          text2: 'You have successfully checked in.',
+        });
+
+        return checkInResponse;
+      }
+
+      throw new Error('Check-in response invalid');
+    } catch (error) {
+      console.error('Error completing check-in process:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Check-in Failed',
+        text2: 'Unable to complete check-in. Please try again.',
+      });
+      throw error;
+    }
   }
 }
 

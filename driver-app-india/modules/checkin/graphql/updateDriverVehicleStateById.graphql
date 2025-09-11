@@ -1,0 +1,8 @@
+mutation updateDriverVehicleStateById($id: uuid!, $state: login_type_enum, $status: partner_vehicle_state_enum) {
+  update_driver_vehicle_by_pk(pk_columns: {id: $id}, _set: {state: $state, status: $status}) {
+    status
+    id
+    driver_id
+    state
+  }
+}

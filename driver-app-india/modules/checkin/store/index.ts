@@ -14,7 +14,8 @@ export type LoaderTypes =
   | 'isSelfieImageUploading'
   | 'isRefuellerImageUploading'
   | 'isOdometerImageUploading'
-  | 'isTotalizerImageUploading';
+  | 'isTotalizerImageUploading'
+  | 'isCheckingIn';
 
 type Loaders = {
   isDriverVehicleIdLoading: boolean;
@@ -22,12 +23,14 @@ type Loaders = {
   isRefuellerImageUploading: boolean;
   isOdometerImageUploading: boolean;
   isTotalizerImageUploading: boolean;
+  isCheckingIn: boolean;
 };
 
 type CheckinStore = {
   driverVehicleId: string | null;
   driverVehicleDetails: Vehicle | null;
   selfieImageData: string | null;
+  selfieStoreUrl: string | null; // Store the uploaded image URL
   refuellerImageData: string | null;
   odometerImageData: string | null;
   totalizerImageData: string | null;
@@ -52,6 +55,7 @@ const checkinInitialState: CheckinStore = {
   driverVehicleId: null,
   driverVehicleDetails: null,
   selfieImageData: null,
+  selfieStoreUrl: null,
   refuellerImageData: null,
   isQuantityCheckEnabled: false,
   odometerImageData: null,
@@ -64,6 +68,7 @@ const checkinInitialState: CheckinStore = {
     isRefuellerImageUploading: false,
     isOdometerImageUploading: false,
     isTotalizerImageUploading: false,
+    isCheckingIn: false,
   },
 };
 

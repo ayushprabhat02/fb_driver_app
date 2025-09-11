@@ -1,18 +1,5 @@
 // CheckinPage.tsx
 
-import React, {useEffect, useRef, useState} from 'react';
-import {
-  ScrollView,
-  StyleSheet,
-  View,
-  Alert,
-  NativeSyntheticEvent,
-  NativeScrollEvent,
-  TextInput,
-  TouchableOpacity,
-  Image,
-} from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
 import {
   Button,
   Divider,
@@ -20,23 +7,28 @@ import {
   HeaderAvoidingContainer,
   Text,
 } from '@/components';
-import {
-  FBBackground,
-  FBBorders,
-  FBColorPalette,
-  FBColors,
-} from '@/types/styles';
-import {commonInputStyles} from '@/styles';
-import checkinService from '../services';
 import {checkinStore} from '@/globalStore';
-import {ImageContainer} from '../components';
-import {RNCamera} from 'react-native-camera';
-import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
 import supportService from '@/modules/support/services';
-import {LoaderTypes} from '../store';
+import {commonInputStyles} from '@/styles';
+import {FBBackground, FBBorders, FBColors} from '@/types/styles';
+import {getCurrentLocation} from '@/utils/location';
 import {useNavigation} from '@react-navigation/native';
-import BouncyCheckbox from 'react-native-bouncy-checkbox';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import React, {useEffect, useRef, useState} from 'react';
+import {
+  Alert,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import {RNCamera} from 'react-native-camera';
+import {check, PERMISSIONS, request, RESULTS} from 'react-native-permissions';
+import {ImageContainer} from '../components';
+import checkinService from '../services';
+import {LoaderTypes} from '../store';
 
 type RootStackParamList = {
   home: undefined;
@@ -62,22 +54,27 @@ const CheckinPage: React.FC = () => {
   type ImageCaptureType = 'selfie' | 'refueller' | 'odometer' | 'totalizer';
 
   const [imageType, setImageType] = useState<ImageCaptureType | null>(null);
-  const [odometerReading, setOdometerReading] = useState('');
-  const [totalizerReading, setTotalizerReading] = useState('');
+  // Commented out for simplified flow
+  // const [odometerReading, setOdometerReading] = useState('');
+  // const [totalizerReading, setTotalizerReading] = useState('');
 
   const selfieImageData = checkinStore.use.selfieImageData();
-  const refuellerImageData = checkinStore.use.refuellerImageData();
-  const odometerImageData = checkinStore.use.odometerImageData();
-  const totalizerImageData = checkinStore.use.totalizerImageData();
+  const selfieStoreUrl = checkinStore.use.selfieStoreUrl();
+  // Commented out for simplified flow
+  // const refuellerImageData = checkinStore.use.refuellerImageData();
+  // const odometerImageData = checkinStore.use.odometerImageData();
+  // const totalizerImageData = checkinStore.use.totalizerImageData();
 
   const isSelfieImageUploading =
     checkinStore.use.loaders().isSelfieImageUploading;
-  const isRefuellerImageUploading =
-    checkinStore.use.loaders().isRefuellerImageUploading;
-  const isOdometerImageUploading =
-    checkinStore.use.loaders().isOdometerImageUploading;
-  const isTotalizerImageUploading =
-    checkinStore.use.loaders().isTotalizerImageUploading;
+  const isCheckingIn = checkinStore.use.loaders().isCheckingIn;
+  // Commented out for simplified flow
+  // const isRefuellerImageUploading =
+  //   checkinStore.use.loaders().isRefuellerImageUploading;
+  // const isOdometerImageUploading =
+  //   checkinStore.use.loaders().isOdometerImageUploading;
+  // const isTotalizerImageUploading =
+  //   checkinStore.use.loaders().isTotalizerImageUploading;
 
   const driverVehicleDetails = checkinStore.use.driverVehicleDetails();
 
@@ -98,28 +95,68 @@ const CheckinPage: React.FC = () => {
     }
   };
 
-  const handleNextPress = () => {
-    scrollViewRef.current?.scrollTo({
-      y: odometerViewY.current,
-      animated: true,
-    });
-    if (!isSubmitState) {
-      setIsSubmitState(true);
-    }
-  };
+  // Simplified flow - no need for next/scroll functionality
+  // const handleNextPress = () => {
+  //   scrollViewRef.current?.scrollTo({
+  //     y: odometerViewY.current,
+  //     animated: true,
+  //   });
+  //   if (!isSubmitState) {
+  //     setIsSubmitState(true);
+  //   }
+  // };
 
-  const handleSubmit = () => {
-    if (
-      !selfieImageData ||
-      !refuellerImageData ||
-      !odometerImageData ||
-      !odometerReading
-    ) {
-      Alert.alert('Pls fill all details');
-    } else {
-      // Mark check-in as completed explicitly
-      checkinStore.setState(state => ({...state, isCheckedIn: true}));
+  const handleSubmit = async () => {
+    if (!selfieStoreUrl) {
+      Alert.alert(
+        'Required Image',
+        'Please upload and wait for selfie image to be processed before proceeding',
+      );
+      return;
+    }
+
+    if (!driverVehicleId) {
+      Alert.alert(
+        'Vehicle Error',
+        'Driver vehicle ID not found. Please restart the app.',
+      );
+      return;
+    }
+
+    try {
+      console.log('Starting check-in process...');
+      startLoader('isCheckingIn');
+
+      // Get current location
+      console.log('Getting current location...');
+      const locationCoords = await getCurrentLocation();
+      const location = {
+        lat: locationCoords.latitude,
+        lng: locationCoords.longitude,
+      };
+      console.log('Location obtained:', location);
+
+      // Complete check-in process
+      console.log('Calling completeCheckIn service...');
+      await checkinService.completeCheckIn({
+        selfieStoreUrl: selfieStoreUrl,
+        location,
+        driverVehicleId,
+      });
+
+      console.log('Check-in successful, navigating to home...');
+      // Navigate to home after successful check-in
       navigation.navigate('home');
+    } catch (error) {
+      console.error('Check-in failed:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error occurred';
+      Alert.alert(
+        'Check-in Failed',
+        `Error: ${errorMessage}\n\nPlease try again.`,
+      );
+    } finally {
+      stopLoader('isCheckingIn');
     }
   };
 
@@ -209,6 +246,14 @@ const CheckinPage: React.FC = () => {
     }
   };
 
+  const handleRemoveSelfie = () => {
+    checkinStore.setState(state => ({
+      ...state,
+      selfieImageData: null,
+      selfieStoreUrl: null,
+    }));
+  };
+
   const uploadImage = async (
     uri: string,
     type: string,
@@ -222,6 +267,14 @@ const CheckinPage: React.FC = () => {
         fileData: blob,
       });
       console.log('Image uploaded:', {src, storeUrl});
+
+      // Store the uploaded URL in the store based on image type
+      if (type === 'selfie' && storeUrl) {
+        checkinStore.setState(state => ({
+          ...state,
+          selfieStoreUrl: storeUrl,
+        }));
+      }
     } catch (error) {
       console.error('Upload error:', error);
     } finally {
@@ -312,27 +365,13 @@ const CheckinPage: React.FC = () => {
           imageData={selfieImageData}
           isUploading={isSelfieImageUploading}
           onCameraPress={() => openCamera('selfie')}
+          onRemovePhoto={handleRemoveSelfie}
           uploadingText="Uploading Selfie image..."
           required={true}
         />
-        <ImageContainer
-          label="Refueller Details"
-          imageData={refuellerImageData}
-          isUploading={isRefuellerImageUploading}
-          onCameraPress={() => openCamera('refueller')}
-          uploadingText="Uploading refueller image..."
-          required={true}
-        />
-
-        <ImageContainer
-          label="Odometer Reading"
-          imageData={odometerImageData}
-          isUploading={isOdometerImageUploading}
-          onCameraPress={() => openCamera('odometer')}
-          uploadingText="Uploading odometer image..."
-          required={true}
-        />
-        <Divider height={10} />
+        {/* Refueller and Odometer sections commented out for simplified check-in flow */}
+        {/* Commented out for simplified check-in flow */}
+        {/* <Divider height={10} />
         <View>
           <Text
             size="base"
@@ -346,36 +385,23 @@ const CheckinPage: React.FC = () => {
             keyboardType="numeric"
             style={[
               styles.inputStyle,
-              !odometerReading && styles.requiredInput,
+              // !odometerReading && styles.requiredInput,
             ]}
             placeholder="Enter odometer reading"
             placeholderTextColor={FBColors.placeHolderPrimary}
-            value={odometerReading}
-            onChangeText={setOdometerReading}
-          />
-        </View>
+            // value={odometerReading}
+            // onChangeText={setOdometerReading}
+          */}
       </ScrollView>
 
       <View style={styles.buttonContainer}>
         <Button
-          style={[
-            styles.button,
-            (!selfieImageData ||
-              !refuellerImageData ||
-              !odometerImageData ||
-              !odometerReading) &&
-              styles.disabledButton,
-          ]}
+          style={[styles.button, !selfieStoreUrl && styles.disabledButton]}
           variant="solid"
           onPress={handleSubmit}
-          loading={false}
-          disabled={
-            !selfieImageData ||
-            !refuellerImageData ||
-            !odometerImageData ||
-            !odometerReading
-          }>
-          {'Verify Location and Check-in'}
+          loading={isCheckingIn}
+          disabled={!selfieStoreUrl}>
+          {isCheckingIn ? 'Checking in...' : 'Check-in'}
         </Button>
       </View>
       <FullScreenLoader

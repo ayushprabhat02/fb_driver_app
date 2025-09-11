@@ -9,6 +9,7 @@ interface ImageContainerProps {
   imageData?: string | null;
   isUploading: boolean;
   onCameraPress: () => void;
+  onRemovePhoto?: () => void;
   uploadingText: string;
   required?: boolean;
 }
@@ -18,6 +19,7 @@ const ImageContainer: React.FC<ImageContainerProps> = ({
   imageData,
   isUploading,
   onCameraPress,
+  onRemovePhoto,
   uploadingText,
   required = false,
 }) => {
@@ -48,6 +50,13 @@ const ImageContainer: React.FC<ImageContainerProps> = ({
           <View style={styles.compactImageView}>
             <Image source={{uri: imageData}} style={styles.image} />
           </View>
+          {onRemovePhoto && (
+            <TouchableOpacity
+              onPress={onRemovePhoto}
+              style={styles.crossButton}>
+              <Icon name="close" size={16} color={FBColors.white} />
+            </TouchableOpacity>
+          )}
         </>
       )}
       {isUploading && (
@@ -94,6 +103,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     overflow: 'hidden',
     marginBottom: 6,
+    position: 'relative',
   },
   image: {
     width: '100%',
@@ -103,5 +113,21 @@ const styles = StyleSheet.create({
   },
   asterisk: {
     color: FBColors.error,
+  },
+  crossButton: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderRadius: 12,
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
   },
 });

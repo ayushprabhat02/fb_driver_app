@@ -1,0 +1,20 @@
+mutation driverCheckIn($object: driver_duty_log_insert_input!) {
+  insert_driver_duty_log_one(object: $object) {
+    driver_duty_photos {
+      id
+      is_active
+      driver_duty_log_id
+      category
+      url
+    }
+    id
+    is_active
+    location
+    loginTime
+    name
+    odometer
+    category
+    totallizer
+    driver_vehicle_id
+  }
+}
