@@ -195,19 +195,6 @@ const AssetCard: React.FC<AssetCardProps> = ({
       <View style={styles.quantityInfo as ViewStyle}>
         <View style={styles.quantityRow as ViewStyle}>
           <Text size="sm" color="lightGray">
-            Requested Qty:
-          </Text>
-          <Text
-            size="sm"
-            weight="600"
-            color="neutral"
-            style={styles.quantityValue as TextStyle}>
-            {requestedQuantity} {unit}
-          </Text>
-        </View>
-
-        <View style={styles.quantityRow as ViewStyle}>
-          <Text size="sm" color="lightGray">
             Filled Qty:
           </Text>
           <TouchableOpacity 
