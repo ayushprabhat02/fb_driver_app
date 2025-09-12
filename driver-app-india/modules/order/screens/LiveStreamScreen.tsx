@@ -5,6 +5,7 @@ import {
   ActivityIndicator,
   Platform,
   StyleSheet,
+  TouchableOpacity,
 } from 'react-native';
 import {RNCamera} from 'react-native-camera';
 import {useNavigation} from '@react-navigation/native';
@@ -12,9 +13,11 @@ import {StackNavigationProp} from '@react-navigation/stack';
 import {request, PERMISSIONS, RESULTS, check} from 'react-native-permissions';
 import Toast from 'react-native-toast-message';
 import {ScaledSheet} from 'react-native-size-matters';
+import RNFS from 'react-native-fs';
+import DocumentPicker from 'react-native-document-picker';
 
 // Components
-import {Text, CardElevated, QuantityBottomSheet, Divider} from '@/components';
+import {Text, CardElevated, QuantityBottomSheet, Divider, Button} from '@/components';
 import PermissionScreen from '../components/PermissionScreen';
 import CameraOverlay from '../components/CameraOverlay';
 import StreamControls from '../components/StreamControls';
@@ -61,6 +64,11 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
     'not_started' | 'started' | 'stopped'
   >('not_started');
   const [showQuantityBottomSheet, setShowQuantityBottomSheet] = useState(false);
+  const [uploadError, setUploadError] = useState(false);
+  const [recordedVideoFile, setRecordedVideoFile] = useState<string | null>(null);
+  const [isManualUploading, setIsManualUploading] = useState(false);
+  const [showUploadOptions, setShowUploadOptions] = useState(false);
+  const [isUploadingFromDevice, setIsUploadingFromDevice] = useState(false);
 
   // Store
   const currentDriverOrder = orderStore.use.currentDriverOrder();
@@ -332,6 +340,48 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
     }
   };
 
+  const saveVideoToDevice = async (sourceUri: string, fileName: string): Promise<string | null> => {
+    try {
+      // Create a unique file path in the Documents directory
+      const documentsPath = RNFS.DocumentDirectoryPath;
+      const videoPath = `${documentsPath}/${fileName}`;
+      
+      // Also try to save to external storage (Downloads folder) for easier access
+      let externalPath = null;
+      if (Platform.OS === 'android') {
+        try {
+          const downloadsPath = RNFS.DownloadDirectoryPath;
+          externalPath = `${downloadsPath}/${fileName}`;
+          await RNFS.copyFile(sourceUri, externalPath);
+          console.log(`Video also saved to Downloads: ${externalPath}`);
+        } catch (externalError) {
+          console.warn('Failed to save to Downloads folder:', externalError);
+        }
+      }
+      
+      // Copy the video file to Documents directory
+      await RNFS.copyFile(sourceUri, videoPath);
+      
+      console.log(`Video saved locally at: ${videoPath}`);
+      console.log(`Documents path: ${documentsPath}`);
+      
+      // Show more detailed information about where the file is saved
+      Toast.show({
+        type: 'info',
+        text1: 'Video Saved Locally',
+        text2: Platform.OS === 'android' && externalPath 
+          ? 'Check Downloads folder or app documents'
+          : 'Saved in app documents folder',
+        visibilityTime: 4000,
+      });
+      
+      return externalPath || videoPath;
+    } catch (error) {
+      console.error('Failed to save video locally:', error);
+      return null;
+    }
+  };
+
   const handleRecordingFinished = async (data: any) => {
     try {
       // filename
@@ -339,6 +389,13 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
 
       let uploadedUrl = data.uri || ''; // Fallback to local URI
       let uploadSuccess = false;
+      let localVideoPath: string | null = null;
+
+      // Always save video locally first
+      localVideoPath = await saveVideoToDevice(data.uri, fileName);
+      if (localVideoPath) {
+        setRecordedVideoFile(localVideoPath);
+      }
 
       try {
         // Convert video URI to blob for upload
@@ -358,9 +415,12 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           uploadedUrl = uploadResult.storeUrl;
           uploadSuccess = true;
           setIsStreamUploaded(true);
+          setUploadError(false);
         }
       } catch (uploadError) {
-        console.warn('Cloud upload failed, using local file:', uploadError);
+        console.warn('Cloud upload failed, video saved locally:', uploadError);
+        setUploadError(true);
+        uploadSuccess = false;
         // Continue with local URI as fallback
       }
 
@@ -383,15 +443,16 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       }
 
       Toast.show({
-        type: 'success',
-        text1: uploadSuccess ? 'Recording Uploaded' : 'Recording Saved',
+        type: uploadSuccess ? 'success' : 'info',
+        text1: uploadSuccess ? 'Recording Uploaded' : 'Recording Saved Locally',
         text2: uploadSuccess
           ? 'Successfully uploaded to cloud storage'
-          : 'Saved locally - will sync when connection improves',
+          : 'Video saved to device - you can retry upload manually',
       });
     } catch (error) {
       console.error('Process recording error:', error);
       setIsStreamUploaded(false);
+      setUploadError(true);
       Toast.show({
         type: 'error',
         text1: 'Processing Failed',
@@ -402,12 +463,13 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
 
   const goNext = () => {
     const canProceed =
-      !isRecording && hasStreamedOnce && streamingState === 'stopped';
+      (!isRecording && hasStreamedOnce && streamingState === 'stopped') ||
+      (!isRecording && hasStreamedOnce && isStreamUploaded); // Allow if video was uploaded from device
 
     if (!canProceed) {
       Alert.alert(
-        'Complete Streaming',
-        'Please complete streaming before proceeding to the next step.',
+        'Complete Video Upload',
+        'Please complete video recording/upload before proceeding to the next step.',
       );
       return;
     }
@@ -420,6 +482,250 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
 
     // Show quantity bottom sheet for tower drivers
     setShowQuantityBottomSheet(true);
+  };
+
+  const showVideoLocation = async () => {
+    if (!recordedVideoFile) {
+      Toast.show({
+        type: 'info',
+        text1: 'No Video File',
+        text2: 'No video file recorded yet',
+      });
+      return;
+    }
+
+    // Check if file exists
+    const fileExists = await RNFS.exists(recordedVideoFile);
+    
+    Alert.alert(
+      'Video File Location',
+      `File Path: ${recordedVideoFile}\n\nFile Exists: ${fileExists ? 'Yes' : 'No'}\n\nFor Android Emulator:\n1. Use Device File Explorer in Android Studio\n2. Navigate to: /data/data/com.customer_app_in/files/\n3. Or check Downloads folder\n\nFor iOS Simulator:\n1. Simulator → Device → Photos\n2. Or check app sandbox in Finder`,
+      [
+        {
+          text: 'Copy Path',
+          onPress: () => {
+            // You can implement clipboard copy here if needed
+            console.log('File path:', recordedVideoFile);
+          },
+        },
+        { text: 'OK' },
+      ],
+    );
+  };
+
+  
+
+  const uploadVideoFromDevice = async () => {
+    try {
+      setIsUploadingFromDevice(true);
+      
+      // Open document picker to select video file
+      const result = await DocumentPicker.pick({
+        type: [DocumentPicker.types.video],
+        allowMultiSelection: false,
+      });
+
+      if (result && result.length > 0) {
+        const selectedFile = result[0];
+        
+        // Validate file size (limit to 100MB)
+        const maxSizeInBytes = 100 * 1024 * 1024; // 100MB
+        if (selectedFile.size && selectedFile.size > maxSizeInBytes) {
+          Toast.show({
+            type: 'error',
+            text1: 'File Too Large',
+            text2: 'Please select a video file smaller than 100MB',
+          });
+          return;
+        }
+
+        // Validate file type
+        if (!selectedFile.type?.includes('video/')) {
+          Toast.show({
+            type: 'error',
+            text1: 'Invalid File Type',
+            text2: 'Please select a valid video file',
+          });
+          return;
+        }
+
+        // Show confirmation dialog
+        Alert.alert(
+          'Upload Video',
+          `Are you sure you want to upload this video?\n\nFile: ${selectedFile.name}\nSize: ${((selectedFile.size || 0) / 1024 / 1024).toFixed(2)}MB`,
+          [
+            {
+              text: 'Cancel',
+              style: 'cancel',
+            },
+            {
+              text: 'Upload',
+              onPress: () => processSelectedVideo(selectedFile),
+            },
+          ],
+        );
+      }
+    } catch (error) {
+      if (DocumentPicker.isCancel(error)) {
+        // User cancelled the picker
+        console.log('User cancelled video selection');
+      } else {
+        console.error('Error picking video:', error);
+        Toast.show({
+          type: 'error',
+          text1: 'Selection Failed',
+          text2: 'Failed to select video file',
+        });
+      }
+    } finally {
+      setIsUploadingFromDevice(false);
+    }
+  };
+
+  const processSelectedVideo = async (selectedFile: any) => {
+    try {
+      setIsUploadingFromDevice(true);
+      
+      const fileName = `Upload_${currentDriverOrder?.customer_order?.order_code}_${Date.now()}.mp4`;
+      
+      // Try to upload the file directly using the file object
+      // Many upload services can handle the file object with uri, type, and name
+      const fileData = {
+        uri: selectedFile.uri,
+        type: selectedFile.type || 'video/mp4',
+        name: fileName,
+      };
+
+      console.log(`Selected video size: ${((selectedFile.size || 0) / 1024 / 1024).toFixed(2)} MB`);
+
+      // Upload video to Google Cloud Storage
+      const uploadResult = await supportService.uploadFile({
+        fileName: fileName,
+        contentType: selectedFile.type || 'video/mp4',
+        fileData: fileData, // Pass the file object directly
+      });
+
+      if (uploadResult.storeUrl) {
+        // Save the task action with uploaded video URL
+        await orderService.upsertStepTaskAction({
+          object: {
+            key: 'LIVE_STREAM_RECORDING',
+            url: uploadResult.storeUrl,
+            value: fileName,
+            quantity_dispensed: 0,
+            task_id: currentDriverOrder?.id,
+            customer_asset_id: orderStore.getState().currentAssetForDispense?.id,
+          },
+        });
+
+        // Mark asset as having uploaded video
+        const currentAssetId = orderStore.getState().currentAssetForDispense?.id;
+        if (currentAssetId) {
+          addAssetWithUploadedVideo(currentAssetId);
+        }
+
+        // Mark as streamed and completed
+        setHasStreamedOnce(true);
+        setStreamingState('stopped');
+        setIsStreamUploaded(true);
+        setUploadError(false); // Clear any previous upload errors
+        
+        // Clear any recorded video file since we uploaded from device
+        setRecordedVideoFile(null);
+        
+        Toast.show({
+          type: 'success',
+          text1: 'Upload Successful',
+          text2: 'Video has been uploaded successfully',
+        });
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Upload Failed',
+        text2: error instanceof Error ? error.message : 'Failed to upload selected video. Please try again.',
+      });
+    } finally {
+      setIsUploadingFromDevice(false);
+    }
+  };
+
+  const handleManualUpload = async () => {
+    if (!recordedVideoFile) {
+      Toast.show({
+        type: 'error',
+        text1: 'No Recording Found',
+        text2: 'No video file available for upload',
+      });
+      return;
+    }
+
+    try {
+      setIsManualUploading(true);
+      
+      const fileName = `Recording_${currentDriverOrder?.customer_order?.order_code}.mp4`;
+      
+      // Create file object for upload
+      const fileData = {
+        uri: recordedVideoFile,
+        type: 'video/mp4',
+        name: fileName,
+      };
+      
+      // Upload video to Google Cloud Storage
+      const uploadResult = await supportService.uploadFile({
+        fileName: fileName,
+        contentType: 'video/mp4',
+        fileData: fileData,
+      });
+
+      if (uploadResult.storeUrl) {
+        // Update the task action with the new URL
+        await orderService.upsertStepTaskAction({
+          object: {
+            key: 'LIVE_STREAM_RECORDING',
+            url: uploadResult.storeUrl,
+            value: fileName,
+            quantity_dispensed: 0,
+            task_id: currentDriverOrder?.id,
+            customer_asset_id: orderStore.getState().currentAssetForDispense?.id,
+          },
+        });
+
+        // Mark asset as having uploaded video
+        const currentAssetId = orderStore.getState().currentAssetForDispense?.id;
+        if (currentAssetId) {
+          addAssetWithUploadedVideo(currentAssetId);
+        }
+
+        setUploadError(false);
+        setIsStreamUploaded(true);
+        
+        Toast.show({
+          type: 'success',
+          text1: 'Upload Successful',
+          text2: 'Video has been uploaded to cloud storage',
+        });
+        
+        // Clean up local file after successful upload (optional - keep for backup)
+        // try {
+        //   await RNFS.unlink(recordedVideoFile);
+        //   setRecordedVideoFile(null);
+        // } catch (cleanupError) {
+        //   console.warn('Failed to delete local file:', cleanupError);
+        // }
+      }
+    } catch (error) {
+      console.error('Manual upload error:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Upload Failed',
+        text2: error instanceof Error ? error.message : 'Failed to upload video. Please try again later.',
+      });
+    } finally {
+      setIsManualUploading(false);
+    }
   };
 
   const handleSkipQuantityAndGoBack = () => {
@@ -578,101 +884,159 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   // Main camera interface
   return (
     <View style={styles.container}>
-      {/* Order Details Card */}
-      <CardElevated
-        cardStyle={{
-          // marginBottom: 16,
-          padding: 16,
-        }}>
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 8,
-          }}>
-          <Text weight="bold" size="lg" color="primary">
-            Order Details
-          </Text>
-        </View>
+      {/* Header Section - Fixed height */}
+      <View style={styles.headerSection}>
+        <CardElevated cardStyle={styles.orderDetailsCard}>
+          <View style={styles.orderDetailsHeader}>
+            <Text weight="bold" size="lg" color="primary">
+              Order Details
+            </Text>
+          </View>
 
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-          }}>
-          <Text weight="600" size="sm" color="neutral">
-            Customer Name:
-          </Text>
-          <Text weight="400" size="sm" style={{flex: 1, textAlign: 'right'}}>
-            {`${
-              currentDriverOrder?.customer_order?.organization_user?.user
-                ?.first_name || ''
-            } ${
-              currentDriverOrder?.customer_order?.organization_user?.user
-                ?.last_name || ''
-            }`.trim() || 'N/A'}
-          </Text>
-        </View>
+          <View style={styles.orderDetailsRow}>
+            <Text weight="600" size="sm" color="neutral">
+              Customer Name:
+            </Text>
+            <Text weight="400" size="sm" style={styles.orderValue}>
+              {`${
+                currentDriverOrder?.customer_order?.organization_user?.user
+                  ?.first_name || ''
+              } ${
+                currentDriverOrder?.customer_order?.organization_user?.user
+                  ?.last_name || ''
+              }`.trim() || 'N/A'}
+            </Text>
+          </View>
 
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            marginBottom: 4,
-          }}>
-          <Text weight="600" size="sm" color="neutral">
-            Order Code:
-          </Text>
-          <Text weight="400" size="sm" style={{flex: 1, textAlign: 'right'}}>
-            {currentDriverOrder?.customer_order?.order_code || 'N/A'}
-          </Text>
-        </View>
-      </CardElevated>
-
-      <Divider height={50} />
-
-      <View style={styles.cameraContainer}>
-        <RNCamera
-          ref={cameraRef}
-          style={styles.camera}
-          type={RNCamera.Constants.Type.back}
-          flashMode={RNCamera.Constants.FlashMode.off}
-          androidCameraPermissionOptions={{
-            title: 'Camera Permission',
-            message: 'We need camera access for live streaming',
-            buttonPositive: 'Ok',
-            buttonNegative: 'Cancel',
-          }}
-          androidRecordAudioPermissionOptions={{
-            title: 'Audio Permission',
-            message: 'We need microphone access for live streaming',
-            buttonPositive: 'Ok',
-            buttonNegative: 'Cancel',
-          }}
-        />
-
-        <CameraOverlay
-          isRecording={isRecording}
-          recordingDuration={recordingDuration}
-          canStopStream={canStopStream}
-          streamingDurationSeconds={streamingDurationSeconds}
-        />
+          <View style={styles.orderDetailsRow}>
+            <Text weight="600" size="sm" color="neutral">
+              Order Code:
+            </Text>
+            <Text weight="400" size="sm" style={styles.orderValue}>
+              {currentDriverOrder?.customer_order?.order_code || 'N/A'}
+            </Text>
+          </View>
+        </CardElevated>
       </View>
 
-      <Divider height={10} />
+      {/* Camera Section - Flexible area that takes remaining space */}
+      <View style={styles.cameraSection}>
+        <View style={styles.cameraContainer}>
+          <RNCamera
+            ref={cameraRef}
+            style={styles.camera}
+            type={RNCamera.Constants.Type.back}
+            flashMode={RNCamera.Constants.FlashMode.off}
+            androidCameraPermissionOptions={{
+              title: 'Camera Permission',
+              message: 'We need camera access for live streaming',
+              buttonPositive: 'Ok',
+              buttonNegative: 'Cancel',
+            }}
+            androidRecordAudioPermissionOptions={{
+              title: 'Audio Permission',
+              message: 'We need microphone access for live streaming',
+              buttonPositive: 'Ok',
+              buttonNegative: 'Cancel',
+            }}
+          />
 
-      <StreamControls
-        isRecording={isRecording}
-        isLoading={isLoading}
-        canStopStream={canStopStream}
-        hasStreamedOnce={hasStreamedOnce}
-        streamingState={streamingState}
-        isStreamUploaded={isStreamUploaded}
-        onStartRecording={startRecording}
-        onStopRecording={stopRecording}
-        onNext={goNext}
-      />
+          {/* Upload from device overlay - ONLY show after upload failure */}
+          {!isRecording && hasStreamedOnce && uploadError && !isStreamUploaded && (
+            <View style={styles.uploadOverlay}>
+              <TouchableOpacity
+                onPress={uploadVideoFromDevice}
+                disabled={isUploadingFromDevice}
+                style={styles.uploadButton}>
+                <Text
+                  size="sm"
+                  weight="600"
+                  style={styles.uploadButtonText as any}>
+                  {isUploadingFromDevice ? 'Uploading...' : '📁 Upload Video'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          <CameraOverlay
+            isRecording={isRecording}
+            recordingDuration={recordingDuration}
+            canStopStream={canStopStream}
+            streamingDurationSeconds={streamingDurationSeconds}
+          />
+        </View>
+      </View>
+
+      {/* Controls Section - Fixed height at bottom */}
+      <View style={styles.controlsSection}>
+        <StreamControls
+          isRecording={isRecording}
+          isLoading={isLoading}
+          canStopStream={canStopStream}
+          hasStreamedOnce={hasStreamedOnce}
+          streamingState={streamingState}
+          isStreamUploaded={isStreamUploaded}
+          onStartRecording={startRecording}
+          onStopRecording={stopRecording}
+          onNext={goNext}
+        />
+
+        {/* Upload Error Section - Show within controls area when error occurs */}
+        {uploadError && hasStreamedOnce && !isStreamUploaded && (
+          <CardElevated
+            cardStyle={styles.uploadErrorCard}>
+            <View style={styles.uploadErrorContent}>
+              <Text
+                size="base"
+                weight="600"
+                style={styles.uploadErrorTitle as any}>
+                Live Stream Upload Failed
+              </Text>
+              <Text
+                size="sm"
+                style={styles.uploadErrorMessage as any}>
+                {recordedVideoFile 
+                  ? 'Your recorded video was saved locally. You can retry uploading it or upload a different video from your device'
+                  : 'Live stream upload failed. You can upload a video from your device to continue'}
+              </Text>
+              <View style={styles.uploadErrorActions}>
+                {recordedVideoFile && (
+                  <Button
+                    variant="solid"
+                    onPress={handleManualUpload}
+                    disabled={isManualUploading}
+                    loading={isManualUploading}
+                    style={styles.retryButton}>
+                    {isManualUploading ? 'Retrying...' : 'Retry Recorded'}
+                  </Button>
+                )}
+                <Button
+                  variant={recordedVideoFile ? "outlined" : "solid"}
+                  onPress={uploadVideoFromDevice}
+                  disabled={isUploadingFromDevice}
+                  loading={isUploadingFromDevice}
+                  style={[
+                    styles.uploadVideoButton,
+                    !recordedVideoFile && styles.uploadVideoButtonSolid
+                  ]}>
+                  <Text size="sm" style={styles.uploadVideoButtonText as any}>
+                    {isUploadingFromDevice ? 'Uploading...' : 'Upload Video'}
+                  </Text>
+                </Button>
+                {recordedVideoFile && (
+                  <Button
+                    variant="outlined"
+                    onPress={showVideoLocation}
+                    style={styles.showPathButton}>
+                    <Text size="sm" style={styles.showPathButtonText as any}>Show Path</Text>
+                  </Button>
+                )}
+              </View>
+            </View>
+          </CardElevated>
+        )}
+      </View>
+
 
       {/* Quantity Bottom Sheet */}
       <QuantityBottomSheet
@@ -710,12 +1074,129 @@ const styles = ScaledSheet.create({
     color: FBColors.neutral,
     textAlign: 'center',
   },
-  orderDetailsSection: {
+  // Header Section - Fixed height
+  headerSection: {
     paddingTop: 16,
+    paddingBottom: 12,
   },
   orderDetailsCard: {
     padding: 16,
     backgroundColor: FBBackground.white,
+  },
+  orderDetailsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  orderDetailsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  orderValue: {
+    flex: 1,
+    textAlign: 'right',
+    marginLeft: 8,
+  },
+  // Camera Section - Flexible area
+  cameraSection: {
+    flex: 1,
+    minHeight: 300, // Minimum height to ensure camera is usable
+    marginVertical: 8,
+  },
+  cameraContainer: {
+    flex: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#000000',
+    elevation: 4,
+    shadowColor: '#000000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  camera: {
+    flex: 1,
+  },
+  uploadOverlay: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderRadius: 8,
+    padding: 12,
+    zIndex: 10,
+  },
+  uploadButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  uploadButtonText: {
+    color: 'white',
+  },
+  // Controls Section - Fixed height at bottom
+  controlsSection: {
+    paddingVertical: 12,
+    backgroundColor: FBColors.white,
+  },
+  // Upload Error Styles
+  uploadErrorCard: {
+    marginTop: 16,
+    padding: 16,
+    backgroundColor: '#FEF3C7', // Light amber background
+    borderColor: '#F59E0B', // Amber border
+    borderWidth: 1,
+  },
+  uploadErrorContent: {
+    alignItems: 'center',
+  },
+  uploadErrorTitle: {
+    textAlign: 'center',
+    marginBottom: 8,
+    color: '#92400E', // Dark amber text
+  },
+  uploadErrorMessage: {
+    textAlign: 'center',
+    marginBottom: 16,
+    color: '#92400E',
+  },
+  uploadErrorActions: {
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+  retryButton: {
+    backgroundColor: '#F59E0B',
+    borderColor: '#F59E0B',
+    minWidth: 110,
+  },
+  uploadVideoButton: {
+    borderColor: '#F59E0B',
+    minWidth: 110,
+  },
+  uploadVideoButtonSolid: {
+    backgroundColor: '#F59E0B',
+  },
+  uploadVideoButtonText: {
+    color: '#F59E0B',
+  },
+  showPathButton: {
+    borderColor: '#F59E0B',
+    minWidth: 90,
+  },
+  showPathButtonText: {
+    color: '#F59E0B',
+  },
+  // Legacy styles kept for backward compatibility
+  orderDetailsSection: {
+    paddingTop: 16,
   },
   cardTitle: {
     marginBottom: 0,
@@ -724,21 +1205,6 @@ const styles = ScaledSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  orderValue: {
-    flex: 1,
-    textAlign: 'right',
-    marginLeft: 8,
-  },
-  cameraContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: 400,
-  },
-  camera: {
-    flex: 1,
-    width: '100%',
   },
   controlsContainer: {
     position: 'absolute',
