@@ -13,7 +13,14 @@ import Toast from 'react-native-toast-message';
 import {ScaledSheet} from 'react-native-size-matters';
 
 // Components
-import {Container, Text, Button, CardElevated, Input, ImageUploader} from '@/components';
+import {
+  Container,
+  Text,
+  Button,
+  CardElevated,
+  Input,
+  ImageUploader,
+} from '@/components';
 
 // Store
 import {orderStore} from '@/globalStore';
@@ -67,9 +74,9 @@ const DeliveryChallanScreen: React.FC = () => {
 
   // Dropdown options for fuel delivery
   const fuelDeliveryOptions: DropdownOption[] = [
-    { label: 'Jerry Can', value: 'jerry_can' },
-    { label: 'Tank', value: 'tank' },
-    { label: 'Other', value: 'other' },
+    {label: 'Jerry Can', value: 'jerry_can'},
+    {label: 'Tank', value: 'tank'},
+    {label: 'Other', value: 'other'},
   ];
 
   const validateForm = (): boolean => {
@@ -139,10 +146,13 @@ const DeliveryChallanScreen: React.FC = () => {
       setLoading(true);
 
       const totalDispensed = getTotalDispensed();
-      
+
       // Get current location for task actions
-      const getCurrentLocation = (): Promise<{latitude: number; longitude: number}> => {
-        return new Promise((resolve) => {
+      const getCurrentLocation = (): Promise<{
+        latitude: number;
+        longitude: number;
+      }> => {
+        return new Promise(resolve => {
           // Use fallback coordinates for now (actual implementation would use proper geolocation)
           resolve({
             latitude: 28.626330828,
@@ -192,41 +202,57 @@ const DeliveryChallanScreen: React.FC = () => {
       try {
         // Calculate rate and invoice items
         let rate = 0;
-        if (selectedOrder.customer_order?.organization_user?.organization?.is_credit_available) {
+        if (
+          selectedOrder.customer_order?.organization_user?.organization
+            ?.is_credit_available
+        ) {
           // For postpaid orders, fetch rate from serviceability check
           const franchise = await orderService.checkServiceability({
             lat: coordinates.latitude,
             lng: coordinates.longitude,
           });
-          
-          if (franchise?.partner_localities?.[0]?.product_partner_localities_prices?.[0]?.parent_id) {
-            const priceData = await orderService.fetchDeliveryProductsWithPrices({
-              id: franchise.partner_localities[0].product_partner_localities_prices[0].parent_id,
-            });
+
+          if (
+            franchise?.partner_localities?.[0]
+              ?.product_partner_localities_prices?.[0]?.parent_id
+          ) {
+            const priceData =
+              await orderService.fetchDeliveryProductsWithPrices({
+                id: franchise.partner_localities[0]
+                  .product_partner_localities_prices[0].parent_id,
+              });
             rate = priceData[0]?.sale_price || 0;
           }
         } else {
           // For prepaid orders, use unit price from order items
-          rate = selectedOrder.customer_order?.customer_order_items?.[0]?.unit_price || 0;
+          rate =
+            selectedOrder.customer_order?.customer_order_items?.[0]
+              ?.unit_price || 0;
         }
 
         // Create invoice items from dispensed assets
-        const invoicedItems = dispenseCompletedAssets?.map((asset: any) => ({
-          unit_price: rate,
-          actual_amount: (asset.quantity_dispensed || 0) * rate,
-          actual_qty: asset.quantity_dispensed || 0,
-          amount: (asset.quantity_dispensed || 0) * rate,
-          customer_asset_id: asset.customer_asset?.id,
-          discount: 0.0,
-          is_active: true,
-          order_item_id: selectedOrder.customer_order?.customer_order_items?.[0]?.id,
-          product_variation_id: selectedOrder.customer_order?.customer_order_items?.[0]?.product_variation_id,
-          qty: asset.quantity_dispensed || 0,
-          service_tax: selectedOrder.customer_order?.customer_order_items?.[0]?.service_tax || 0,
-          state: 'DELIVERED',
-          tax: 0.0,
-          unit: 'LTRS',
-        })) || [];
+        const invoicedItems =
+          dispenseCompletedAssets?.map((asset: any) => ({
+            unit_price: rate,
+            actual_amount: (asset.quantity_dispensed || 0) * rate,
+            actual_qty: asset.quantity_dispensed || 0,
+            amount: (asset.quantity_dispensed || 0) * rate,
+            customer_asset_id: asset.customer_asset?.id,
+            discount: 0.0,
+            is_active: true,
+            order_item_id:
+              selectedOrder.customer_order?.customer_order_items?.[0]?.id,
+            product_variation_id:
+              selectedOrder.customer_order?.customer_order_items?.[0]
+                ?.product_variation_id,
+            qty: asset.quantity_dispensed || 0,
+            service_tax:
+              selectedOrder.customer_order?.customer_order_items?.[0]
+                ?.service_tax || 0,
+            state: 'DELIVERED',
+            tax: 0.0,
+            unit: 'LTRS',
+          })) || [];
 
         const totalAmount = totalDispensed * rate;
 
@@ -236,7 +262,10 @@ const DeliveryChallanScreen: React.FC = () => {
           total_dispensed_qty: totalDispensed,
         });
 
-        const finalAmount = totalAmount + (deliveryFeeData?.delivery_fees || 0) - (deliveryFeeData?.discount || 0);
+        const finalAmount =
+          totalAmount +
+          (deliveryFeeData?.delivery_fees || 0) -
+          (deliveryFeeData?.discount || 0);
 
         // Create invoice
         await orderService.createInvoice({
@@ -250,7 +279,10 @@ const DeliveryChallanScreen: React.FC = () => {
           customer_order_id: selectedOrder.customer_order.id,
         });
       } catch (invoiceError) {
-        console.warn('Invoice creation failed, continuing with order completion:', invoiceError);
+        console.warn(
+          'Invoice creation failed, continuing with order completion:',
+          invoiceError,
+        );
       }
 
       // Step 5: Add transaction logs (if vehicle details are available)
@@ -262,7 +294,9 @@ const DeliveryChallanScreen: React.FC = () => {
         if (vehicleId && dispenseCompletedAssets?.[0]) {
           await orderService.addTransactionLogs({
             quantity: totalDispensed,
-            product_var_id: selectedOrder.customer_order.customer_order_items?.[0]?.product_variation_id || '',
+            product_var_id:
+              selectedOrder.customer_order.customer_order_items?.[0]
+                ?.product_variation_id || '',
             fillup_request_id: null,
             customer_order_id: selectedOrder.customer_order.id,
             vehicle_id: vehicleId,
@@ -270,12 +304,15 @@ const DeliveryChallanScreen: React.FC = () => {
           });
         }
       } catch (transactionError) {
-        console.warn('Transaction logs creation failed, continuing with order completion:', transactionError);
+        console.warn(
+          'Transaction logs creation failed, continuing with order completion:',
+          transactionError,
+        );
       }
 
       // Step 6: Mark order as completed
       await orderService.markOrderCompleted({
-        task_id: selectedOrder.id,
+        id: selectedOrder.id,
       });
 
       Toast.show({
@@ -287,9 +324,8 @@ const DeliveryChallanScreen: React.FC = () => {
       // Navigate back to orders list or dashboard
       navigation.reset({
         index: 0,
-        routes: [{ name: 'delivery-orders' }],
+        routes: [{name: 'delivery-orders'}],
       });
-
     } catch (error) {
       console.error('Error submitting challan:', error);
       Toast.show({
@@ -303,17 +339,19 @@ const DeliveryChallanScreen: React.FC = () => {
   };
 
   const getTotalDispensed = (): number => {
-    return dispenseCompletedAssets?.reduce(
-      (total: number, asset: any) => total + (asset.quantity_dispensed || 0),
-      0
-    ) || 0;
+    return (
+      dispenseCompletedAssets?.reduce(
+        (total: number, asset: any) => total + (asset.quantity_dispensed || 0),
+        0,
+      ) || 0
+    );
   };
 
-  const renderDropdownOption = ({ item }: { item: DropdownOption }) => (
+  const renderDropdownOption = ({item}: {item: DropdownOption}) => (
     <TouchableOpacity
       style={styles.dropdownOption}
       onPress={() => {
-        setFormData(prev => ({ ...prev, fuelDeliveredTo: item.value }));
+        setFormData(prev => ({...prev, fuelDeliveredTo: item.value}));
         setShowDropdown(false);
       }}>
       <Text size="lg" color="neutral">
@@ -344,7 +382,9 @@ const DeliveryChallanScreen: React.FC = () => {
   };
 
   const getSelectedDeliveryLabel = () => {
-    const option = fuelDeliveryOptions.find(opt => opt.value === formData.fuelDeliveredTo);
+    const option = fuelDeliveryOptions.find(
+      opt => opt.value === formData.fuelDeliveredTo,
+    );
     return option?.label || 'Select delivery method';
   };
 
@@ -356,23 +396,27 @@ const DeliveryChallanScreen: React.FC = () => {
           <Text weight="700" size="lg" color="neutral">
             Delivery Summary
           </Text>
-          
+
           <View style={styles.summaryRow}>
-            <Text size="sm" color="lightGray">Order Code:</Text>
+            <Text size="sm" color="lightGray">
+              Order Code:
+            </Text>
             <Text size="sm" color="primary" weight="600">
               #{selectedOrder?.customer_order?.order_code || 'N/A'}
             </Text>
           </View>
 
           <View style={styles.summaryRow}>
-            <Text size="sm" color="lightGray">Total Dispensed:</Text>
+            <Text size="sm" color="lightGray">
+              Total Dispensed:
+            </Text>
             <Text size="lg" color="primary" weight="700">
               {getTotalDispensed()}L
             </Text>
           </View>
 
           <View style={styles.separator} />
-          
+
           <Text weight="600" size="sm" color="neutral">
             Dispensed Assets:
           </Text>
@@ -391,13 +435,14 @@ const DeliveryChallanScreen: React.FC = () => {
             <TouchableOpacity
               style={styles.dropdownTrigger}
               onPress={() => setShowDropdown(true)}>
-              <Text 
-                size="lg" 
-                color={formData.fuelDeliveredTo ? "neutral" : "lightGray"}
-              >
+              <Text
+                size="lg"
+                color={formData.fuelDeliveredTo ? 'neutral' : 'lightGray'}>
                 {getSelectedDeliveryLabel()}
               </Text>
-              <Text size="lg" color="lightGray">▼</Text>
+              <Text size="lg" color="lightGray">
+                ▼
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -406,7 +451,9 @@ const DeliveryChallanScreen: React.FC = () => {
             <Text>Challan Number *</Text>
             <Input
               value={formData.challanNumber}
-              onChangeText={(text) => setFormData(prev => ({ ...prev, challanNumber: text }))}
+              onChangeText={text =>
+                setFormData(prev => ({...prev, challanNumber: text}))
+              }
               placeholder="Enter challan number"
             />
           </View>
@@ -416,7 +463,9 @@ const DeliveryChallanScreen: React.FC = () => {
             <Text>Technician Name *</Text>
             <Input
               value={formData.technicianName}
-              onChangeText={(text) => setFormData(prev => ({ ...prev, technicianName: text }))}
+              onChangeText={text =>
+                setFormData(prev => ({...prev, technicianName: text}))
+              }
               placeholder="Enter technician name"
             />
           </View>
@@ -425,7 +474,9 @@ const DeliveryChallanScreen: React.FC = () => {
             <Text>Technician Phone</Text>
             <Input
               value={formData.technicianPhone}
-              onChangeText={(text) => setFormData(prev => ({ ...prev, technicianPhone: text }))}
+              onChangeText={text =>
+                setFormData(prev => ({...prev, technicianPhone: text}))
+              }
               placeholder="Enter technician phone"
               type="phone-pad"
             />
@@ -436,7 +487,9 @@ const DeliveryChallanScreen: React.FC = () => {
             <Text>Remarks</Text>
             <Input
               value={formData.remarks}
-              onChangeText={(text) => setFormData(prev => ({ ...prev, remarks: text }))}
+              onChangeText={text =>
+                setFormData(prev => ({...prev, remarks: text}))
+              }
               placeholder="Enter any remarks"
               style={{}}
             />
@@ -452,19 +505,29 @@ const DeliveryChallanScreen: React.FC = () => {
           {/* Challan Image */}
           <View style={styles.imageContainer}>
             <Text>Challan Image *</Text>
-            <View style={{ height: 100, backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center' }}>
+            <View
+              style={{
+                height: 100,
+                backgroundColor: '#f0f0f0',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}>
               <Text>Image Upload Placeholder - Challan</Text>
             </View>
-
           </View>
 
           {/* Technician Image */}
           <View style={styles.imageContainer}>
             <Text>Technician Image *</Text>
-            <View style={{ height: 100, backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center' }}>
+            <View
+              style={{
+                height: 100,
+                backgroundColor: '#f0f0f0',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}>
               <Text>Image Upload Placeholder - Technician</Text>
             </View>
-
           </View>
         </CardElevated>
       </ScrollView>
@@ -475,8 +538,7 @@ const DeliveryChallanScreen: React.FC = () => {
           variant="solid"
           onPress={handleSubmit}
           loading={loading}
-          style={styles.submitButton}
-        >
+          style={styles.submitButton}>
           Complete Order
         </Button>
       </View>
@@ -487,7 +549,7 @@ const DeliveryChallanScreen: React.FC = () => {
         transparent
         animationType="fade"
         onRequestClose={() => setShowDropdown(false)}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.modalOverlay}
           activeOpacity={1}
           onPress={() => setShowDropdown(false)}>
@@ -498,7 +560,7 @@ const DeliveryChallanScreen: React.FC = () => {
             <FlatList
               data={fuelDeliveryOptions}
               renderItem={renderDropdownOption}
-              keyExtractor={(item) => item.value}
+              keyExtractor={item => item.value}
               style={styles.dropdownList}
             />
           </View>

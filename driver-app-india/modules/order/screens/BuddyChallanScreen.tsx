@@ -358,7 +358,7 @@ const BuddyChallanScreen: React.FC = () => {
   const markOrderCompleted = async () => {
     try {
       await orderService.markOrderCompleted({
-        task_id: currentDriverOrder?.id || '',
+        id: currentDriverOrder?.id || '',
       });
     } catch (error) {
       throw new Error('Error marking order as completed');

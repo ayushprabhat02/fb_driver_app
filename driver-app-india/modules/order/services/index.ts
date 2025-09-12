@@ -51,6 +51,12 @@ import {
   FetchCustomerOrderDetailsByCodeQuery,
   FetchCustomerOrderDetailsByCodeQueryVariables,
 
+  // change task state (matching Vue.js implementation)
+  ChangeTaskStateDocument,
+  ChangeTaskStateMutation,
+  ChangeTaskStateMutationVariables,
+  Task_State_Enum,
+
   // verify order
   VerifyPlacedOrderOtpDocument,
   VerifyPlacedOrderOtpQuery,
@@ -541,18 +547,19 @@ class OrderService {
 
   /**
    * @method markOrderDispensing
-   * @description Marks an order as dispensing
+   * @description Marks an order as dispensing using changeTaskState mutation (matching Vue.js implementation)
    * @args {task_id: string}
    */
-  public async markOrderDispensing(args: {task_id: string}) {
+  public async markOrderDispensing(args: {id: string}) {
     try {
       console.log('MarkOrderDispensing API call:', args);
 
-      // Use imported GraphQL document
-      const response: MarkOrderDispensingMutation = await callMutation({
-        queryDocument: MarkOrderDispensingDocument,
+      // Use changeTaskState mutation (same as Vue.js) instead of specific markOrderDispensing
+      const response: ChangeTaskStateMutation = await callMutation({
+        queryDocument: ChangeTaskStateDocument,
         variables: {
-          task_id: args.task_id,
+          id: args.id,
+          state: Task_State_Enum.Dispensing,
         },
       });
 
@@ -568,15 +575,15 @@ class OrderService {
    * @description Marks an order as completed/delivered
    * @args {task_id: string}
    */
-  public async markOrderCompleted(args: {task_id: string}) {
+  public async markOrderCompleted(args: {id: string}) {
     try {
       console.log('MarkOrderCompleted API call:', args);
 
-      const response: MarkOrderCompletedMutation = await callMutation({
-        queryDocument: MarkOrderCompletedDocument,
+      const response: ChangeTaskStateMutation = await callMutation({
+        queryDocument: ChangeTaskStateDocument,
         variables: {
-          id: args.task_id,
-          state: 'DELIVERED',
+          id: args.id,
+          state: Task_State_Enum.Delivered,
         },
       });
 

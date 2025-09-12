@@ -14,12 +14,7 @@ import Toast from 'react-native-toast-message';
 import {ScaledSheet} from 'react-native-size-matters';
 
 // Components
-import {
-  Text,
-  CardElevated,
-  QuantityBottomSheet,
-  Divider,
-} from '@/components';
+import {Text, CardElevated, QuantityBottomSheet, Divider} from '@/components';
 import PermissionScreen from '../components/PermissionScreen';
 import CameraOverlay from '../components/CameraOverlay';
 import StreamControls from '../components/StreamControls';
@@ -34,6 +29,7 @@ import supportService from '@/modules/support/services';
 // Types
 import {FBColors, FBBackground} from '@/types/styles';
 import {OrderStackParamList} from '@/navigator/containers/Order';
+import {getCurrentLocation} from '@/utils/location';
 
 type LiveStreamNavigationProp = StackNavigationProp<
   OrderStackParamList,
@@ -70,9 +66,11 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   const currentDriverOrder = orderStore.use.currentDriverOrder();
   const orderAssets = orderStore.use.orderAssets();
   const addPartiallyFilledAsset = orderStore.use.addPartiallyFilledAsset();
-  const removePartiallyFilledAsset = orderStore.use.removePartiallyFilledAsset();
+  const removePartiallyFilledAsset =
+    orderStore.use.removePartiallyFilledAsset();
   const addAssetWithUploadedVideo = orderStore.use.addAssetWithUploadedVideo();
-  const removeAssetWithUploadedVideo = orderStore.use.removeAssetWithUploadedVideo();
+  const removeAssetWithUploadedVideo =
+    orderStore.use.removeAssetWithUploadedVideo();
 
   console.log('--currentDriverOrder---', currentDriverOrder);
 
@@ -428,8 +426,9 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
     // If video was uploaded but user doesn't want to enter quantity now,
     // mark asset as partially filled so they can fill it later
     const currentAssetId = orderStore.getState().currentAssetForDispense?.id;
-    const assetsWithUploadedVideos = orderStore.getState().assetsWithUploadedVideos;
-    
+    const assetsWithUploadedVideos =
+      orderStore.getState().assetsWithUploadedVideos;
+
     if (currentAssetId && assetsWithUploadedVideos.includes(currentAssetId)) {
       // Asset has uploaded video but no quantity dispensed, mark as partially filled
       addPartiallyFilledAsset(currentAssetId);
@@ -446,30 +445,22 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
 
       const currentAssetId = orderStore.getState().currentAssetForDispense?.id;
 
-      // Get current location for task action
-      const getCurrentLocation = (): Promise<{
-        latitude: number;
-        longitude: number;
-      }> => {
-        return new Promise(resolve => {
-          // Use fallback coordinates for now (actual implementation would use proper geolocation)
-          resolve({
-            latitude: 28.626330828,
-            longitude: 77.218499126,
-          });
-        });
-      };
+      // Validate required data
+      if (!currentDriverOrder?.id || !currentAssetId) {
+        throw new Error('Missing required order or asset data');
+      }
 
+      // Get current location for task action
       const coordinates = await getCurrentLocation();
 
-      // Create step task action for quantity dispensed (similar to TOTALIZER_AFTER_READING in Vue.js)
-      await orderService.upsertStepTaskAction({
+      // First, create step task action (following Vue.js pattern with TOTALIZER_AFTER_READING)
+      const taskActionResponse = await orderService.upsertStepTaskAction({
         object: {
-          key: 'QUANTITY_DISPENSED',
-          url: '', // No image URL for now
+          key: 'TOTALIZER_AFTER_READING',
+          url: '', // No image URL for livestream flow
           value: '0.0',
           quantity_dispensed: quantity,
-          task_id: currentDriverOrder?.customer_order?.id,
+          task_id: currentDriverOrder?.id, // Use task_id not customer_order.id
           customer_asset_id: currentAssetId,
           location: {
             type: 'Point',
@@ -478,12 +469,24 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         },
       });
 
-      // Update asset quantity
+      // Check if taskAction was successful (following Vue.js error handling)
+      if (typeof taskActionResponse === 'string') {
+        throw new Error(taskActionResponse);
+      }
+
+      // Update asset quantity (using correct parameters matching Vue.js)
       await orderService.updateAssetQty({
         customerAssetId: currentAssetId,
         customerOrderId: currentDriverOrder?.customer_order?.id,
         qty: quantity,
       });
+
+      // Mark order as dispensing ONLY if it's currently in ARRIVED state (following Vue.js pattern)
+      if (currentDriverOrder?.state === 'ARRIVED') {
+        await orderService.markOrderDispensing({
+          id: currentDriverOrder.id,
+        });
+      }
 
       // Update the local store to reflect the change immediately
       const updatedAssets = orderStore
@@ -504,7 +507,8 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
 
       // Get requested quantity for this asset to determine if it's partially filled
       const currentAsset = updatedAssets?.find((asset: any) => {
-        const assetId = asset.customer_asset?.id || asset.id || asset.customer_asset_id;
+        const assetId =
+          asset.customer_asset?.id || asset.id || asset.customer_asset_id;
         return assetId === currentAssetId;
       });
 
@@ -522,13 +526,6 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         removePartiallyFilledAsset(currentAssetId);
       }
 
-      // Mark order as dispensing if it's currently in ARRIVED state
-      if (currentDriverOrder?.state === 'ARRIVED') {
-        await orderService.markOrderDispensing({
-          task_id: currentDriverOrder.id,
-        });
-      }
-
       Toast.show({
         type: 'success',
         text1: 'Quantity Updated',
@@ -538,10 +535,14 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       // Navigate to choose asset page (following Vue.js flow)
       navigation.navigate('choose-asset');
     } catch (error) {
+      console.error('Error in handleQuantityProceed:', error);
       Toast.show({
         type: 'error',
         text1: 'Update Failed',
-        text2: 'Failed to update quantity. Please try again.',
+        text2:
+          error instanceof Error
+            ? error.message
+            : 'Failed to update quantity. Please try again.',
       });
     } finally {
       setIsLoading(false);
