@@ -203,6 +203,10 @@ const orderInitialState: OrderStore = {
   // assets with uploaded videos initial state
   assetsWithUploadedVideos: [],
   
+  // missing properties initial values
+  fuelDispensedTillNow: 0,
+  driverVehicleDetails: null,
+  
   pendingQuantity:0
 };
 
@@ -271,6 +275,19 @@ const orderStore = create<OrderStore & OrderActions>(set => ({
     set(state => ({
       ...state,
       assetsWithUploadedVideos: state.assetsWithUploadedVideos.filter(id => id !== assetId),
+    })),
+
+  // missing actions from Vue.js implementation
+  setFuelDispensedTillNow: (quantity: number) =>
+    set(state => ({
+      ...state,
+      fuelDispensedTillNow: quantity,
+    })),
+
+  setDriverVehicleDetails: (details: any) =>
+    set(state => ({
+      ...state,
+      driverVehicleDetails: details,
     })),
 
 }));

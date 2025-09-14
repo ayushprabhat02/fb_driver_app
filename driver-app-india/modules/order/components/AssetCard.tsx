@@ -41,26 +41,34 @@ const AssetCard: React.FC<AssetCardProps> = ({
 }) => {
   const navigation = useNavigation();
   const [showQuantityBottomSheet, setShowQuantityBottomSheet] = useState(false);
-  
+
   // Get partially filled assets from store
-  const partiallyFilledAssetsArray = orderStore.use.partiallyFilledAssetsArray();
+  const partiallyFilledAssetsArray =
+    orderStore.use.partiallyFilledAssetsArray();
   const addPartiallyFilledAsset = orderStore.use.addPartiallyFilledAsset();
-  const removePartiallyFilledAsset = orderStore.use.removePartiallyFilledAsset();
+  const removePartiallyFilledAsset =
+    orderStore.use.removePartiallyFilledAsset();
   // Get assets with uploaded videos
   const assetsWithUploadedVideos = orderStore.use.assetsWithUploadedVideos();
-  const removeAssetWithUploadedVideo = orderStore.use.removeAssetWithUploadedVideo();
-  
+  const removeAssetWithUploadedVideo =
+    orderStore.use.removeAssetWithUploadedVideo();
+
   // Helper function to get asset ID
   const getAssetId = () => {
-    return asset?.customer_asset?.id || asset?.id || asset?.customer_asset_id || '';
+    return (
+      asset?.customer_asset?.id || asset?.id || asset?.customer_asset_id || ''
+    );
   };
-  
+
   // Helper function to check if asset is partially filled
   const isAssetPartiallyFilled = () => {
     const assetId = getAssetId();
-    return partiallyFilledAssetsArray.includes(assetId) || assetsWithUploadedVideos.includes(assetId);
+    return (
+      partiallyFilledAssetsArray.includes(assetId) ||
+      assetsWithUploadedVideos.includes(assetId)
+    );
   };
-  
+
   const handleStartDispense = () => {
     if (onStartDispense && asset) {
       // Set current asset for dispense in store
@@ -68,7 +76,7 @@ const AssetCard: React.FC<AssetCardProps> = ({
         ...state,
         currentAssetForDispense: asset,
       }));
-      
+
       // Call the onStartDispense callback
       onStartDispense(asset);
     } else {
@@ -91,7 +99,8 @@ const AssetCard: React.FC<AssetCardProps> = ({
         return;
       }
 
-      const assetId = asset.customer_asset?.id || asset.id || asset.customer_asset_id;
+      const assetId =
+        asset.customer_asset?.id || asset.id || asset.customer_asset_id;
       if (!assetId) {
         Alert.alert('Error', 'Asset ID is missing');
         return;
@@ -107,7 +116,7 @@ const AssetCard: React.FC<AssetCardProps> = ({
       // Update the asset in the store
       const updatedAssets = orderStore.getState().orderAssets?.map((a: any) => {
         if ((a.customer_asset?.id || a.id) === assetId) {
-          return { ...a, quantity_dispensed: quantity };
+          return {...a, quantity_dispensed: quantity};
         }
         return a;
       });
@@ -134,32 +143,32 @@ const AssetCard: React.FC<AssetCardProps> = ({
       Alert.alert('Error', 'Failed to update quantity. Please try again.');
     }
   };
-  
+
   const getButtonText = () => {
     const assetId = getAssetId();
     const hasUploadedVideo = assetsWithUploadedVideos.includes(assetId);
     const isInPartiallyFilled = partiallyFilledAssetsArray.includes(assetId);
-    
+
     // Priority 1: If streaming done but no quantity OR partially filled with quantity, show Fill Remaining
     if (hasUploadedVideo || isInPartiallyFilled) {
       return 'Fill Remaining';
     }
-    
+
     // Priority 2: If dispensing is complete (filled quantity >= requested quantity), show Complete
     if (filledQuantity >= requestedQuantity && filledQuantity > 0) {
       return 'Complete';
     }
-    
+
     // Priority 3: If no streaming done and no quantity, show Start Dispense
     if (filledQuantity === 0 && !hasUploadedVideo) {
       return 'Start Dispense';
     }
-    
+
     // Priority 4: If some quantity but no streaming recorded and not marked as partially filled, show Complete
     if (filledQuantity > 0 && !hasUploadedVideo && !isInPartiallyFilled) {
       return 'Complete';
     }
-    
+
     // Default fallback
     return 'Start Dispense';
   };
@@ -197,7 +206,7 @@ const AssetCard: React.FC<AssetCardProps> = ({
           <Text size="sm" color="lightGray">
             Filled Qty:
           </Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={handleFilledQuantityPress}
             style={styles.editableQuantity as ViewStyle}
             disabled={filledQuantity === 0} // Disable press when quantity is zero
@@ -205,13 +214,16 @@ const AssetCard: React.FC<AssetCardProps> = ({
             <Text
               size="sm"
               weight="600"
-              color={filledQuantity > 0 ? "primary" : "neutral"}
+              color={filledQuantity > 0 ? 'primary' : 'neutral'}
               style={styles.quantityValue as TextStyle}>
               {filledQuantity} {unit}
             </Text>
             {/* Show "(tap to edit)" only when filled quantity is greater than 0 */}
             {filledQuantity > 0 && (
-              <Text size="xs" color="lightGray" style={styles.editHint as TextStyle}>
+              <Text
+                size="xs"
+                color="lightGray"
+                style={styles.editHint as TextStyle}>
                 (tap to edit)
               </Text>
             )}
@@ -222,16 +234,26 @@ const AssetCard: React.FC<AssetCardProps> = ({
       <TouchableOpacity
         style={[
           styles.dispenseButton as ViewStyle,
-          getButtonText() === 'Fill Remaining' && (styles.fillRemainingButton as ViewStyle),
-          (disabled || getButtonText() === 'Complete') && (styles.disabledButton as ViewStyle),
+          getButtonText() === 'Fill Remaining' &&
+            (styles.fillRemainingButton as ViewStyle),
+          (disabled || getButtonText() === 'Complete') &&
+            (styles.disabledButton as ViewStyle),
         ]}
-        onPress={isAssetPartiallyFilled() ? handleFilledQuantityPress : handleStartDispense}
+        onPress={
+          isAssetPartiallyFilled()
+            ? handleFilledQuantityPress
+            : handleStartDispense
+        }
         disabled={disabled || getButtonText() === 'Complete'}
         activeOpacity={0.7}>
         <Text
           size="sm"
           weight="600"
-          color={(disabled || getButtonText() === 'Complete') ? 'disabledInputText' : 'white'}>
+          color={
+            disabled || getButtonText() === 'Complete'
+              ? 'disabledInputText'
+              : 'white'
+          }>
           {getButtonText()}
         </Text>
       </TouchableOpacity>
