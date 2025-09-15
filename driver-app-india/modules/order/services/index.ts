@@ -117,6 +117,11 @@ import {
   DriverDeliveryFeesMutation,
   DriverDeliveryFeesDocument,
   DriverDeliveryFeesMutationVariables,
+
+  // fuel delivery to
+  FuelDeliveryToMutation,
+  FuelDeliveryToDocument,
+  FuelDeliveryToMutationVariables,
 } from '@/generated/graphql';
 
 /**
@@ -752,6 +757,17 @@ class OrderService {
       console.error('Error fetching delivery products with prices:', error);
       throw new Error('Failed to fetch delivery products with prices');
     }
+  }
+
+  public async createFuelDeliveryTo(args: FuelDeliveryToMutationVariables) {
+    const response: FuelDeliveryToMutation = await callMutation({
+      queryDocument: FuelDeliveryToDocument,
+      variables: {
+        ...args,
+      },
+    });
+
+    return response.insert_fuel_delivery_one;
   }
 }
 

@@ -1,5 +1,5 @@
 import React, {useState, useEffect, useRef} from 'react';
-import {View, ScrollView, TouchableOpacity} from 'react-native';
+import {View, ScrollView, TouchableOpacity, TextInput} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import Toast from 'react-native-toast-message';
@@ -24,8 +24,13 @@ import supportService from '@/modules/support/services';
 import {getCurrentLocation} from '@/utils/location';
 
 // Types
-import {FBBackground} from '@/types/styles';
+import {FBBackground, FBColors, FBBorders} from '@/types/styles';
 import {OrderStackParamList} from '@/navigator/containers/Order';
+import {
+  Delivered_To_Enum,
+  FuelDeliveryToMutationVariables,
+} from '@/generated/graphql';
+import {OrderSuccess} from '@/modules/home/components';
 
 type BuddyChallanNavigationProp = StackNavigationProp<
   OrderStackParamList,
@@ -43,6 +48,7 @@ const BuddyChallanScreen: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [imageType, setImageType] = useState<ImageCaptureType | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   // Store
   const currentDriverOrder = orderStore.use.currentDriverOrder();
@@ -57,6 +63,19 @@ const BuddyChallanScreen: React.FC = () => {
   // Rate state for invoice calculations
   const [rate, setRate] = useState<number>(0);
   const [dispensedQuantity, setDispensedQuantity] = useState<number>(0);
+
+  // Delivered In dropdown state
+  const [selectedDeliveryTo, setSelectedDeliveryTo] = useState<string>('');
+  const [otherReason, setOtherReason] = useState<string>('');
+  const [showDropdown, setShowDropdown] = useState<boolean>(false);
+
+  const deliveryOptions = [
+    {value: Delivered_To_Enum.Jerrycan, label: 'Jerry Can'},
+    {value: Delivered_To_Enum.Tank, label: 'Tank'},
+    {value: Delivered_To_Enum.OwnerTank, label: 'Owner Tank'},
+    {value: Delivered_To_Enum.Technician, label: 'Given To Technician'},
+    {value: Delivered_To_Enum.Other, label: 'Other'},
+  ];
 
   useEffect(() => {
     initializePage();
@@ -138,6 +157,24 @@ const BuddyChallanScreen: React.FC = () => {
         type: 'error',
         text1: 'Validation Error',
         text2: 'Please upload technician image',
+      });
+      return false;
+    }
+
+    if (!selectedDeliveryTo) {
+      Toast.show({
+        type: 'error',
+        text1: 'Validation Error',
+        text2: 'Please select delivery destination',
+      });
+      return false;
+    }
+
+    if (selectedDeliveryTo === Delivered_To_Enum.Other && !otherReason.trim()) {
+      Toast.show({
+        type: 'error',
+        text1: 'Validation Error',
+        text2: 'Please specify the delivery destination',
       });
       return false;
     }
@@ -232,6 +269,21 @@ const BuddyChallanScreen: React.FC = () => {
     }
   };
 
+  const createFuelDeliveryRecord = async () => {
+    try {
+      await orderService.createFuelDeliveryTo({
+        delivered_to: selectedDeliveryTo as Delivered_To_Enum,
+        other_reason:
+          selectedDeliveryTo === Delivered_To_Enum.Other ? otherReason : '',
+        quantity: dispensedQuantity,
+        task_id: currentDriverOrder?.id || '',
+      } as FuelDeliveryToMutationVariables);
+    } catch (error) {
+      console.warn('Error creating fuel delivery record:', error);
+      // Don't throw - this is not critical for order completion
+    }
+  };
+
   const createInvoice = async () => {
     try {
       // Create invoice items from dispensed assets
@@ -300,8 +352,6 @@ const BuddyChallanScreen: React.FC = () => {
   const createChallanTask = async () => {
     try {
       const coordinates = await getCurrentLocation();
-      console.log('-----coordinates-------', getCurrentLocation);
-
       // Create challan task
       await orderService.upsertStepTaskAction({
         object: {
@@ -388,13 +438,16 @@ const BuddyChallanScreen: React.FC = () => {
       // Step 2: Create challan and technician tasks
       await createChallanTask();
 
-      // Step 3: Add transaction logs (optional)
+      // Step 3: Create fuel delivery record
+      await createFuelDeliveryRecord();
+
+      // Step 4: Add transaction logs (optional)
       await addTransactionLogs();
 
-      // Step 4: Mark order as completed
+      // Step 5: Mark order as completed
       await markOrderCompleted();
 
-      // Reset states and navigate
+      // Reset states
       orderStore.setState(state => ({
         ...state,
         dispenseCompletedAssets: [],
@@ -402,17 +455,8 @@ const BuddyChallanScreen: React.FC = () => {
         assetsWithUploadedVideos: [],
       }));
 
-      Toast.show({
-        type: 'success',
-        text1: 'Order Completed',
-        text2: 'Buddy challan has been submitted successfully',
-      });
-
-      // Navigate back to dashboard or orders list
-      navigation.reset({
-        index: 0,
-        routes: [{name: 'delivery-orders'}],
-      });
+      // Show success screen
+      setShowSuccess(true);
     } catch (error) {
       console.error('Error completing buddy challan:', error);
       Toast.show({
@@ -445,6 +489,11 @@ const BuddyChallanScreen: React.FC = () => {
       </View>
     ));
   };
+
+  // Success view
+  if (showSuccess) {
+    return <OrderSuccess />;
+  }
 
   // Camera view
   if (showCamera) {
@@ -534,6 +583,68 @@ const BuddyChallanScreen: React.FC = () => {
 
         <Divider height={10} />
 
+        {/* Delivered In Dropdown */}
+        <View style={styles.vehicleDetailsContainer}>
+          <Text weight="600" size="sm" color="neutral">
+            Delivered In <Text color="error">*</Text>
+          </Text>
+          <Divider height={8} />
+          <TouchableOpacity
+            style={[
+              styles.dropdownContainer,
+              !selectedDeliveryTo && styles.placeholderContainer,
+            ]}
+            onPress={() => setShowDropdown(!showDropdown)}>
+            <Text
+              size="sm"
+              color={selectedDeliveryTo ? 'neutral' : 'lightGray'}>
+              {selectedDeliveryTo
+                ? deliveryOptions.find(opt => opt.value === selectedDeliveryTo)
+                    ?.label
+                : 'Choose where fuel is delivered...'}
+            </Text>
+          </TouchableOpacity>
+
+          {showDropdown && (
+            <View style={styles.dropdownList}>
+              {deliveryOptions.map(option => (
+                <TouchableOpacity
+                  key={option.value}
+                  style={styles.dropdownItem}
+                  onPress={() => {
+                    setSelectedDeliveryTo(option.value);
+                    setShowDropdown(false);
+                    if (option.value !== Delivered_To_Enum.Other) {
+                      setOtherReason('');
+                    }
+                  }}>
+                  <Text size="sm" color="neutral">
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+
+          {selectedDeliveryTo === Delivered_To_Enum.Other && (
+            <>
+              <Divider height={8} />
+              <TextInput
+                style={styles.textInput}
+                value={otherReason}
+                onChangeText={setOtherReason}
+                placeholder="Please specify the delivery destination..."
+                placeholderTextColor={FBColors.lightGray}
+                maxLength={60}
+                multiline
+                numberOfLines={3}
+              />
+            </>
+          )}
+        </View>
+
+        <Divider height={10} />
+
         {/* Challan Image */}
         <ImageContainer
           label="Challan"
@@ -562,13 +673,17 @@ const BuddyChallanScreen: React.FC = () => {
         <Button
           style={[
             styles.button,
-            (!challanImageData || !technicianImageData) &&
+            (!challanImageData ||
+              !technicianImageData ||
+              !selectedDeliveryTo) &&
               styles.disabledButton,
           ]}
           variant="solid"
           onPress={handleSubmit}
           loading={loading}
-          disabled={!challanImageData || !technicianImageData}>
+          disabled={
+            !challanImageData || !technicianImageData || !selectedDeliveryTo
+          }>
           Mark Order Complete
         </Button>
       </View>
@@ -646,6 +761,43 @@ const styles = ScaledSheet.create({
     paddingHorizontal: '20@s',
     alignSelf: 'center',
     margin: '20@s',
+  },
+  // Dropdown styles
+  dropdownContainer: {
+    borderWidth: 1,
+    borderColor: FBBorders.input,
+    borderRadius: '8@s',
+    padding: '12@s',
+    backgroundColor: FBBackground.white,
+    justifyContent: 'center',
+    minHeight: '40@vs',
+  },
+  placeholderContainer: {
+    borderColor: '#E0E0E0',
+  },
+  dropdownList: {
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: '8@s',
+    backgroundColor: FBBackground.white,
+    marginTop: '4@vs',
+    maxHeight: '200@vs',
+  },
+  dropdownItem: {
+    padding: '12@s',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F5F5F5',
+  },
+  textInput: {
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: '8@s',
+    padding: '12@s',
+    backgroundColor: FBBackground.white,
+    fontSize: '14@ms',
+    color: FBColors.neutral,
+    textAlignVertical: 'top',
+    minHeight: '80@vs',
   },
 });
 

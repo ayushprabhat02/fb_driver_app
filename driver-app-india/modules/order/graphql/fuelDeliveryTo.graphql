@@ -1,0 +1,20 @@
+mutation fuelDeliveryTo(
+  $delivered_to: delivered_to_enum = JERRYCAN
+  $other_reason: String = ""
+  $quantity: numeric = ""
+  $task_id: uuid = ""
+) {
+  insert_fuel_delivery_one(
+    object: {
+      other_reason: $other_reason
+      quantity: $quantity
+      task_id: $task_id
+      delivered_to: $delivered_to
+      is_active: true
+    }
+  ) {
+    id
+    is_active
+    delivered_to
+  }
+}

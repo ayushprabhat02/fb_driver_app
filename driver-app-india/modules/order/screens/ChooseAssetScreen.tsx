@@ -1,6 +1,6 @@
 import React, {useState, useLayoutEffect, useEffect, useCallback} from 'react';
 import {useDebounce} from 'use-debounce';
-import {ScrollView, View, Alert, ViewStyle, FlatList} from 'react-native';
+import {View, Alert, ViewStyle, FlatList} from 'react-native';
 import {ScaledSheet} from 'react-native-size-matters';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import type {StackNavigationProp} from '@react-navigation/stack';
@@ -8,7 +8,6 @@ import type {OrderStackParamList} from '@/navigator/containers/Order';
 
 // components
 import {
-  HeaderAvoidingContainer,
   FocusAwareStatusBar,
   FullScreenLoader,
   Button,
@@ -17,7 +16,6 @@ import {
   AssetSummaryCard,
   AssetSearchBar,
   AssetCard,
-  AssetActionButtons,
 } from '../components';
 
 // styles
@@ -36,6 +34,10 @@ const ChooseAssetScreen: React.FC = () => {
   const stopLoader = orderStore.use.stopLoader();
   const startLoader = orderStore.use.startLoader();
   const orderLoader = orderStore.use.loaders();
+
+  // Get partially filled assets and assets with uploaded videos from store
+  const partiallyFilledAssetsArray = orderStore.use.partiallyFilledAssetsArray();
+  const assetsWithUploadedVideos = orderStore.use.assetsWithUploadedVideos();
 
   // Set navigation options
   useLayoutEffect(() => {
@@ -204,12 +206,38 @@ const ChooseAssetScreen: React.FC = () => {
     }, [getCustomerOrderAssets])
   );
 
+  // Function to check if any asset has fill remaining status
+  const getAssetIdFromAsset = (asset: any) => {
+    return asset?.customer_asset?.id || asset?.id || asset?.customer_asset_id || '';
+  };
+
+  const hasAnyAssetWithFillRemaining = React.useMemo(() => {
+    if (!orderAssets) return false;
+
+    return orderAssets.some((asset: any) => {
+      const assetId = getAssetIdFromAsset(asset);
+      return partiallyFilledAssetsArray.includes(assetId) || assetsWithUploadedVideos.includes(assetId);
+    });
+  }, [orderAssets, partiallyFilledAssetsArray, assetsWithUploadedVideos]);
+
+  // Function to check if a specific asset has fill remaining (for current asset exclusion)
+  const assetHasFillRemaining = React.useCallback((asset: any) => {
+    const assetId = getAssetIdFromAsset(asset);
+    return partiallyFilledAssetsArray.includes(assetId) || assetsWithUploadedVideos.includes(assetId);
+  }, [partiallyFilledAssetsArray, assetsWithUploadedVideos]);
+
   // Memoize the renderItem function to prevent unnecessary re-renders
   const renderAssetItem = React.useCallback(({item, index}: {item: any, index: number}) => {
     // Find the original asset data
     const originalAsset = orderAssets?.[index];
     if (!originalAsset) return null;
-    
+
+    // Check if this specific asset has fill remaining status
+    const currentAssetHasFillRemaining = assetHasFillRemaining(originalAsset);
+
+    // Determine if other assets have fill remaining (exclude current asset)
+    const hasOtherAssetWithFillRemaining = hasAnyAssetWithFillRemaining && !currentAssetHasFillRemaining;
+
     return (
       <AssetCard
         assetName={item.name}
@@ -219,9 +247,10 @@ const ChooseAssetScreen: React.FC = () => {
         onDispense={() => handleDispense(item.id)}
         asset={originalAsset} // Pass the full asset object
         onStartDispense={() => handleStartDispense(originalAsset)} // Pass the original asset with full data
+        hasOtherFillRemaining={hasOtherAssetWithFillRemaining} // Pass the new prop
       />
     );
-  }, [orderAssets]);
+  }, [orderAssets, hasAnyAssetWithFillRemaining, assetHasFillRemaining]);
 
   return (
     <View style={{flex: 1}}>

@@ -1,340 +1,130 @@
-import React, {useState, useEffect} from 'react';
-import {
-  View,
-  ScrollView,
-  Alert,
-  TouchableOpacity,
-  Modal,
-  FlatList,
-} from 'react-native';
+import React, {useState, useEffect, useRef} from 'react';
+import {View, ScrollView, TouchableOpacity, TextInput} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import Toast from 'react-native-toast-message';
 import {ScaledSheet} from 'react-native-size-matters';
 
 // Components
-import {
-  Container,
-  Text,
-  Button,
-  CardElevated,
-  Input,
-  ImageUploader,
-} from '@/components';
+import {Button, Divider, Text} from '@/components';
+import {ImageContainer} from '@/modules/checkin/components';
+
+// Camera
+import {RNCamera} from 'react-native-camera';
+import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
 
 // Store
-import {orderStore} from '@/globalStore';
+import {checkinStore, orderStore} from '@/globalStore';
 
 // Services
 import orderService from '../services';
+import supportService from '@/modules/support/services';
+
+// Utils
+import {getCurrentLocation} from '@/utils/location';
 
 // Types
-import {FBColors, FBBackground} from '@/types/styles';
+import {FBBackground, FBColors, FBBorders} from '@/types/styles';
 import {OrderStackParamList} from '@/navigator/containers/Order';
+import {
+  Delivered_To_Enum,
+  FuelDeliveryToMutationVariables,
+} from '@/generated/graphql';
 
 type DeliveryChallanNavigationProp = StackNavigationProp<
   OrderStackParamList,
   'delivery-challan'
 >;
 
-interface DropdownOption {
-  label: string;
-  value: string;
-}
-
-interface ChallanFormData {
-  fuelDeliveredTo: string;
-  challanNumber: string;
-  technicianName: string;
-  technicianPhone: string;
-  remarks: string;
-  challanImage: string;
-  technicianImage: string;
-}
+type ImageCaptureType = 'challan';
+type LoaderTypes = 'challanImage';
 
 const DeliveryChallanScreen: React.FC = () => {
   const navigation = useNavigation<DeliveryChallanNavigationProp>();
+  const cameraRef = useRef<RNCamera | null>(null);
 
   // State
   const [loading, setLoading] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [formData, setFormData] = useState<ChallanFormData>({
-    fuelDeliveredTo: '',
-    challanNumber: '',
-    technicianName: '',
-    technicianPhone: '',
-    remarks: '',
-    challanImage: '',
-    technicianImage: '',
-  });
+  const [showCamera, setShowCamera] = useState(false);
+  const [imageType, setImageType] = useState<ImageCaptureType | null>(null);
 
   // Store
-  const selectedOrder = orderStore.use.currentDriverOrder();
+  const currentDriverOrder = orderStore.use.currentDriverOrder();
   const dispenseCompletedAssets = orderStore.use.dispenseCompletedAssets();
+  const challanImageData = orderStore.use.challanImageData();
+  const challanUploadedUrl = orderStore.use.challanUploadedUrl();
+  const challanImageUploading = orderStore.use.loaders().challanImage;
 
-  // Dropdown options for fuel delivery
-  const fuelDeliveryOptions: DropdownOption[] = [
-    {label: 'Jerry Can', value: 'jerry_can'},
-    {label: 'Tank', value: 'tank'},
-    {label: 'Other', value: 'other'},
+  // Rate state for invoice calculations
+  const [rate, setRate] = useState<number>(0);
+  const [dispensedQuantity, setDispensedQuantity] = useState<number>(0);
+
+  // Delivered In dropdown state
+  const [selectedDeliveryTo, setSelectedDeliveryTo] = useState<string>('');
+  const [otherReason, setOtherReason] = useState<string>('');
+  const [showDropdown, setShowDropdown] = useState<boolean>(false);
+
+  const deliveryOptions = [
+    {value: Delivered_To_Enum.Jerrycan, label: 'Jerry Can'},
+    {value: Delivered_To_Enum.Tank, label: 'Tank'},
+    {value: Delivered_To_Enum.OwnerTank, label: 'Owner Tank'},
+    {value: Delivered_To_Enum.Technician, label: 'Given To Technician'},
+    {value: Delivered_To_Enum.Other, label: 'Other'},
   ];
 
-  const validateForm = (): boolean => {
-    if (!formData.fuelDeliveredTo) {
-      Toast.show({
-        type: 'error',
-        text1: 'Validation Error',
-        text2: 'Please select fuel delivery method',
-      });
-      return false;
-    }
+  useEffect(() => {
+    initializePage();
+  }, []);
 
-    if (!formData.challanNumber.trim()) {
-      Toast.show({
-        type: 'error',
-        text1: 'Validation Error',
-        text2: 'Please enter challan number',
-      });
-      return false;
-    }
-
-    if (!formData.technicianName.trim()) {
-      Toast.show({
-        type: 'error',
-        text1: 'Validation Error',
-        text2: 'Please enter technician name',
-      });
-      return false;
-    }
-
-    if (!formData.challanImage) {
-      Toast.show({
-        type: 'error',
-        text1: 'Validation Error',
-        text2: 'Please upload challan image',
-      });
-      return false;
-    }
-
-    if (!formData.technicianImage) {
-      Toast.show({
-        type: 'error',
-        text1: 'Validation Error',
-        text2: 'Please upload technician image',
-      });
-      return false;
-    }
-
-    return true;
-  };
-
-  const handleSubmit = async () => {
-    if (!validateForm()) {
-      return;
-    }
-
-    if (!selectedOrder?.id || !selectedOrder?.customer_order?.id) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Order data is missing',
-      });
-      return;
-    }
-
+  const initializePage = async () => {
     try {
-      setLoading(true);
+      // Calculate rate similar to Vue.js onMounted logic
+      if (
+        currentDriverOrder?.customer_order?.organization_user?.organization
+          ?.is_credit_available
+      ) {
+        // For credit available orders (postpaid), fetch rate from serviceability
+        const locationString =
+          currentDriverOrder.customer_order
+            ?.organizationAddressByShippingAddressId?.location;
+        const coordinatesMatch = locationString?.match(
+          /\((-?\d+\.\d+),(-?\d+\.\d+)\)/,
+        );
 
-      const totalDispensed = getTotalDispensed();
+        if (coordinatesMatch) {
+          const latitude = parseFloat(coordinatesMatch[2]);
+          const longitude = parseFloat(coordinatesMatch[1]);
 
-      // Get current location for task actions
-      const getCurrentLocation = (): Promise<{
-        latitude: number;
-        longitude: number;
-      }> => {
-        return new Promise(resolve => {
-          // Use fallback coordinates for now (actual implementation would use proper geolocation)
-          resolve({
-            latitude: 28.626330828,
-            longitude: 77.218499126,
-          });
-        });
-      };
-
-      const coordinates = await getCurrentLocation();
-
-      // Step 1: Upload images and create challan task with location
-      await orderService.upsertStepTaskAction({
-        object: {
-          key: 'CHALLAN',
-          url: formData.challanImage,
-          value: formData.challanNumber,
-          quantity_dispensed: totalDispensed,
-          task_id: selectedOrder.id,
-          location: {
-            type: 'Point',
-            coordinates: [coordinates.longitude, coordinates.latitude],
-          },
-        },
-      });
-
-      // Step 2: Create technician task
-      await orderService.upsertStepTaskAction({
-        object: {
-          key: 'TECHNICIAN',
-          url: formData.technicianImage,
-          value: formData.technicianName,
-          task_id: selectedOrder.id,
-        },
-      });
-
-      // Step 3: Create delivery method task
-      await orderService.upsertStepTaskAction({
-        object: {
-          key: 'FUEL_DELIVERY_METHOD',
-          url: '',
-          value: formData.fuelDeliveredTo,
-          task_id: selectedOrder.id,
-        },
-      });
-
-      // Step 4: Create invoice (following Vue.js pattern)
-      try {
-        // Calculate rate and invoice items
-        let rate = 0;
-        if (
-          selectedOrder.customer_order?.organization_user?.organization
-            ?.is_credit_available
-        ) {
-          // For postpaid orders, fetch rate from serviceability check
           const franchise = await orderService.checkServiceability({
-            lat: coordinates.latitude,
-            lng: coordinates.longitude,
+            lat: latitude,
+            lng: longitude,
           });
 
-          if (
-            franchise?.partner_localities?.[0]
-              ?.product_partner_localities_prices?.[0]?.parent_id
-          ) {
-            const priceData =
-              await orderService.fetchDeliveryProductsWithPrices({
-                id: franchise.partner_localities[0]
-                  .product_partner_localities_prices[0].parent_id,
-              });
-            rate = priceData[0]?.sale_price || 0;
-          }
-        } else {
-          // For prepaid orders, use unit price from order items
-          rate =
-            selectedOrder.customer_order?.customer_order_items?.[0]
-              ?.unit_price || 0;
+          const priceData = await orderService.fetchDeliveryProductsWithPrices({
+            id: franchise?.partner_localities?.[0]
+              ?.product_partner_localities_prices?.[0]?.parent_id,
+          });
+
+          setRate(priceData?.[0]?.sale_price || 0);
         }
-
-        // Create invoice items from dispensed assets
-        const invoicedItems =
-          dispenseCompletedAssets?.map((asset: any) => ({
-            unit_price: rate,
-            actual_amount: (asset.quantity_dispensed || 0) * rate,
-            actual_qty: asset.quantity_dispensed || 0,
-            amount: (asset.quantity_dispensed || 0) * rate,
-            customer_asset_id: asset.customer_asset?.id,
-            discount: 0.0,
-            is_active: true,
-            order_item_id:
-              selectedOrder.customer_order?.customer_order_items?.[0]?.id,
-            product_variation_id:
-              selectedOrder.customer_order?.customer_order_items?.[0]
-                ?.product_variation_id,
-            qty: asset.quantity_dispensed || 0,
-            service_tax:
-              selectedOrder.customer_order?.customer_order_items?.[0]
-                ?.service_tax || 0,
-            state: 'DELIVERED',
-            tax: 0.0,
-            unit: 'LTRS',
-          })) || [];
-
-        const totalAmount = totalDispensed * rate;
-
-        // Fetch delivery fee
-        const deliveryFeeData = await orderService.fetchDeliveryFee({
-          customer_order_id: selectedOrder.customer_order.id,
-          total_dispensed_qty: totalDispensed,
-        });
-
-        const finalAmount =
-          totalAmount +
-          (deliveryFeeData?.delivery_fees || 0) -
-          (deliveryFeeData?.discount || 0);
-
-        // Create invoice
-        await orderService.createInvoice({
-          delivery_fee: String(deliveryFeeData?.delivery_fees || 0),
-          actual_amount: String(finalAmount),
-          dispensedQty: String(totalDispensed),
-          invoiced_items: invoicedItems,
-          charges: deliveryFeeData?.delivery_fees_no_tax || 0,
-          tax: deliveryFeeData?.total_tax || 0,
-          discount: deliveryFeeData?.discount || 0,
-          customer_order_id: selectedOrder.customer_order.id,
-        });
-      } catch (invoiceError) {
-        console.warn(
-          'Invoice creation failed, continuing with order completion:',
-          invoiceError,
+      } else {
+        // For prepaid orders, use unit price from order items
+        setRate(
+          currentDriverOrder?.customer_order?.customer_order_items?.[0]
+            ?.unit_price || 0,
         );
       }
 
-      // Step 5: Add transaction logs (if vehicle details are available)
-      try {
-        // Note: This requires vehicle details which may not be available in current context
-        // In a real implementation, you would get vehicle info from driver store or API
-        // For now, we'll skip this step if vehicle info is not available
-        const vehicleId = null; // orderStore.getState().driverVehicleDetails?.id;
-        if (vehicleId && dispenseCompletedAssets?.[0]) {
-          await orderService.addTransactionLogs({
-            quantity: totalDispensed,
-            product_var_id:
-              selectedOrder.customer_order.customer_order_items?.[0]
-                ?.product_variation_id || '',
-            fillup_request_id: null,
-            customer_order_id: selectedOrder.customer_order.id,
-            vehicle_id: vehicleId,
-            transaction_type: 'OUT',
-          });
-        }
-      } catch (transactionError) {
-        console.warn(
-          'Transaction logs creation failed, continuing with order completion:',
-          transactionError,
-        );
-      }
-
-      // Step 6: Mark order as completed
-      await orderService.markOrderCompleted({
-        id: selectedOrder.id,
-      });
-
-      Toast.show({
-        type: 'success',
-        text1: 'Order Completed',
-        text2: 'Delivery challan has been submitted successfully',
-      });
-
-      // Navigate back to orders list or dashboard
-      navigation.reset({
-        index: 0,
-        routes: [{name: 'delivery-orders'}],
-      });
+      // Calculate dispensed quantity
+      const totalDispensed = getTotalDispensed();
+      setDispensedQuantity(totalDispensed);
     } catch (error) {
-      console.error('Error submitting challan:', error);
+      console.error('Error initializing delivery challan:', error);
       Toast.show({
         type: 'error',
-        text1: 'Submission Failed',
-        text2: 'Failed to submit delivery challan. Please try again.',
+        text1: 'Initialization Error',
+        text2: 'Failed to load challan data',
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -347,18 +137,327 @@ const DeliveryChallanScreen: React.FC = () => {
     );
   };
 
-  const renderDropdownOption = ({item}: {item: DropdownOption}) => (
-    <TouchableOpacity
-      style={styles.dropdownOption}
-      onPress={() => {
-        setFormData(prev => ({...prev, fuelDeliveredTo: item.value}));
-        setShowDropdown(false);
-      }}>
-      <Text size="lg" color="neutral">
-        {item.label}
-      </Text>
-    </TouchableOpacity>
-  );
+  const validateForm = (): boolean => {
+    if (!challanImageData) {
+      Toast.show({
+        type: 'error',
+        text1: 'Validation Error',
+        text2: 'Please upload challan image',
+      });
+      return false;
+    }
+
+    if (!selectedDeliveryTo) {
+      Toast.show({
+        type: 'error',
+        text1: 'Validation Error',
+        text2: 'Please select delivery destination',
+      });
+      return false;
+    }
+
+    if (selectedDeliveryTo === Delivered_To_Enum.Other && !otherReason.trim()) {
+      Toast.show({
+        type: 'error',
+        text1: 'Validation Error',
+        text2: 'Please specify the delivery destination',
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const openCamera = async (type: ImageCaptureType) => {
+    const cameraPermission = await check(PERMISSIONS.ANDROID.CAMERA);
+    if (cameraPermission === RESULTS.DENIED) {
+      const result = await request(PERMISSIONS.ANDROID.CAMERA);
+      if (result !== RESULTS.GRANTED) {
+        console.log('Camera permission denied');
+        return;
+      }
+    }
+    setImageType(type);
+    setShowCamera(true);
+  };
+
+  const handleTakePhoto = async () => {
+    if (cameraRef.current && imageType) {
+      const options = {quality: 0.5, base64: true};
+      const data = await cameraRef.current.takePictureAsync(options);
+      setShowCamera(false);
+
+      let loaderType: LoaderTypes | null = null;
+      switch (imageType) {
+        case 'challan':
+          loaderType = 'challanImage';
+          orderStore.setState({
+            challanImageData: data.uri,
+          });
+          break;
+        default:
+          break;
+      }
+
+      if (loaderType !== null) {
+        orderStore.getState().startLoader(loaderType);
+        await uploadImage(data.uri, imageType, loaderType);
+      }
+    }
+  };
+
+  const uploadImage = async (
+    uri: string,
+    type: string,
+    loaderType: LoaderTypes,
+  ) => {
+    try {
+      const blob = await (await fetch(uri)).blob();
+      const fileName = `DeliveryChallan_${type}_${
+        currentDriverOrder?.customer_order?.order_code
+      }_${Date.now()}.jpg`;
+
+      const {src, storeUrl} = await supportService.uploadFile({
+        fileName,
+        contentType: 'image/jpeg',
+        fileData: blob,
+      });
+
+      // Store the upload URL for API calls but keep the local URI for display
+      if (type === 'challan') {
+        orderStore.setState({challanUploadedUrl: storeUrl || src});
+      }
+
+      console.log('Image uploaded:', {src, storeUrl});
+    } catch (error) {
+      console.error('Upload error:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Upload Error',
+        text2: `Failed to upload ${type} image`,
+      });
+      // Reset the local image on upload failure
+      if (type === 'challan') {
+        orderStore.setState({challanImageData: null});
+      }
+    } finally {
+      orderStore.getState().stopLoader(loaderType);
+    }
+  };
+
+  const createFuelDeliveryRecord = async () => {
+    try {
+      await orderService.createFuelDeliveryTo({
+        delivered_to: selectedDeliveryTo as Delivered_To_Enum,
+        other_reason:
+          selectedDeliveryTo === Delivered_To_Enum.Other ? otherReason : '',
+        quantity: dispensedQuantity,
+        task_id: currentDriverOrder?.id || '',
+      } as FuelDeliveryToMutationVariables);
+    } catch (error) {
+      console.warn('Error creating fuel delivery record:', error);
+      // Don't throw - this is not critical for order completion
+    }
+  };
+
+  const createInvoice = async () => {
+    try {
+      // Create invoice items from dispensed assets (following Vue.js pattern)
+      const assetsToBeInvoiced =
+        currentDriverOrder?.customer_order?.customer_order_customer_assets
+          ?.filter(
+            (asset: any) =>
+              asset.quantity_dispensed && !isNaN(asset.quantity_dispensed),
+          )
+          ?.map((item: any) => ({
+            unit_price: rate,
+            actual_amount: (item.quantity_dispensed || 0) * rate,
+            actual_qty: item.quantity_dispensed || 0,
+            amount: (item.quantity_dispensed || 0) * rate,
+            customer_asset_id: item?.customer_asset?.id,
+            discount: 0.0,
+            is_active: true,
+            order_item_id:
+              currentDriverOrder?.customer_order?.customer_order_items?.[0]?.id,
+            product_variation_id:
+              currentDriverOrder?.customer_order?.customer_order_items?.[0]
+                ?.product_variation_id,
+            qty: item.quantity_dispensed || 0,
+            service_tax:
+              currentDriverOrder?.customer_order?.customer_order_items?.[0]
+                ?.service_tax || 0,
+            state: 'DELIVERED' as const,
+            tax: 0.0,
+            unit: 'LTRS',
+          })) || [];
+
+      // Fetch delivery fee
+      const deliveryFeeData = await orderService.fetchDeliveryFee({
+        customer_order_id: currentDriverOrder?.customer_order?.id,
+        total_dispensed_qty: dispensedQuantity,
+      });
+
+      const totalQuantityDispensed = assetsToBeInvoiced.reduce(
+        (acc: number, item: any) => acc + (item.actual_qty || 0),
+        0,
+      );
+
+      const totalAmount = totalQuantityDispensed * rate;
+      const deliveryFee = parseFloat(deliveryFeeData?.delivery_fees || '0');
+      const discount = parseFloat(deliveryFeeData?.discount || '0');
+      const calculatedFinalAmount = totalAmount + deliveryFee - discount;
+
+      // Create invoice (following Vue.js pattern)
+      await orderService.createInvoice({
+        delivery_fee: String(deliveryFeeData?.delivery_fees || 0),
+        actual_amount: String(calculatedFinalAmount),
+        dispensedQty: String(dispensedQuantity),
+        invoiced_items: assetsToBeInvoiced,
+        charges: parseFloat(
+          (deliveryFeeData as any)?.delivery_fees_no_tax || '0',
+        ),
+        tax: parseFloat((deliveryFeeData as any)?.total_tax || '0'),
+        discount: discount,
+        customer_order_id: currentDriverOrder?.customer_order?.id || '',
+      });
+    } catch (error) {
+      throw new Error('Error creating invoice');
+    }
+  };
+
+  const createChallanTask = async () => {
+    try {
+      const coordinates = await getCurrentLocation();
+
+      // Create challan task (following Vue.js pattern)
+      await orderService.upsertStepTaskAction({
+        object: {
+          key: 'CHALLAN',
+          url: challanUploadedUrl || challanImageData || '',
+          value: '0.0',
+          quantity_dispensed: dispensedQuantity,
+          task_id: currentDriverOrder?.id || '',
+          location: {
+            type: 'Point',
+            coordinates: [coordinates.longitude, coordinates.latitude],
+          },
+        },
+      });
+    } catch (error) {
+      throw new Error('Error creating challan task');
+    }
+  };
+
+  const addTransactionLogs = async () => {
+    try {
+      // Get vehicle details from checkin store (following Vue.js pattern)
+      const vehicleDetails = checkinStore.getState().driverVehicleDetails;
+
+      // Filter for browser-tank product variation (following Vue.js pattern)
+      const filteredTankProductVarId = vehicleDetails?.vehicle_tank_types
+        ?.filter((tank: any) => tank.tank_type.slug === 'browser-tank')
+        ?.map(
+          (tank: any) =>
+            tank.vehicle_tank_type_product_variations?.[0]?.product_variation
+              ?.id,
+        );
+
+      const productVarId =
+        filteredTankProductVarId?.[0] ||
+        currentDriverOrder?.customer_order?.customer_order_items?.[0]
+          ?.product_variation_id;
+
+      if (productVarId) {
+        await orderService.addTransactionLogs({
+          quantity: dispensedQuantity,
+          product_var_id: productVarId,
+          fillup_request_id: null,
+          customer_order_id: currentDriverOrder?.customer_order?.id || '',
+          vehicle_id: vehicleDetails?.id,
+          transaction_type: 'OUT',
+        });
+      }
+    } catch (error) {
+      // Log but don't throw - transaction logs are not critical
+      console.warn('Error adding transaction logs:', error);
+    }
+  };
+
+  const markOrderCompleted = async () => {
+    try {
+      await orderService.markOrderCompleted({
+        id: currentDriverOrder?.id || '',
+      });
+    } catch (error) {
+      throw new Error('Error marking order as completed');
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    if (!currentDriverOrder?.id || !currentDriverOrder?.customer_order?.id) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Order data is missing',
+      });
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Step 1: Create invoice
+      await createInvoice();
+
+      // Step 2: Create challan task
+      await createChallanTask();
+
+      // Step 3: Create fuel delivery record
+      await createFuelDeliveryRecord();
+
+      // Step 4: Add transaction logs (optional)
+      await addTransactionLogs();
+
+      // Step 5: Mark order as completed
+      await markOrderCompleted();
+
+      // Reset states (following Vue.js pattern)
+      orderStore.setState(state => ({
+        ...state,
+        dispenseCompletedAssets: [],
+        partiallyFilledAssetsArray: [],
+        assetsWithUploadedVideos: [],
+        challanImageData: null,
+        challanUploadedUrl: null,
+      }));
+
+      // Navigate to success screen
+      setTimeout(() => {
+        navigation.navigate('OrderSuccess' as any);
+      }, 500);
+    } catch (error) {
+      console.error('Error completing delivery challan:', error);
+
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Failed to complete order. Please try again.';
+
+      // Navigate to failure screen
+      setTimeout(() => {
+        navigation.navigate('OrderFailure' as any, {
+          errorMessage,
+          canRetry: true,
+        });
+      }, 500);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const renderDispensedAssets = () => {
     if (!dispenseCompletedAssets || dispenseCompletedAssets.length === 0) {
@@ -381,192 +480,182 @@ const DeliveryChallanScreen: React.FC = () => {
     ));
   };
 
-  const getSelectedDeliveryLabel = () => {
-    const option = fuelDeliveryOptions.find(
-      opt => opt.value === formData.fuelDeliveredTo,
+  // Camera view
+  if (showCamera) {
+    const cameraType = RNCamera.Constants.Type.back;
+
+    return (
+      <View style={styles.cameraContainer}>
+        <RNCamera
+          ref={cameraRef}
+          style={styles.preview}
+          type={cameraType}
+          captureAudio={false}
+        />
+        <View style={styles.cameraButtonContainer}>
+          <TouchableOpacity onPress={handleTakePhoto} style={styles.capture}>
+            <Text size="sm" color="neutral">
+              Take Photo
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setShowCamera(false)}
+            style={styles.capture}>
+            <Text size="sm" color="neutral">
+              Cancel
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     );
-    return option?.label || 'Select delivery method';
-  };
+  }
 
   return (
-    <Container style={styles.container}>
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+    <View style={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}>
+        <Divider height={10} />
+
         {/* Order Summary */}
-        <CardElevated>
-          <Text weight="700" size="lg" color="neutral">
+        <View style={styles.vehicleDetailsContainer}>
+          <Text weight="600" size="lg" color="neutral">
             Delivery Summary
           </Text>
 
+          <Divider height={8} />
+
           <View style={styles.summaryRow}>
-            <Text size="sm" color="lightGray">
+            <Text size="sm" color="darkGray">
               Order Code:
             </Text>
             <Text size="sm" color="primary" weight="600">
-              #{selectedOrder?.customer_order?.order_code || 'N/A'}
+              #{currentDriverOrder?.customer_order?.order_code || 'N/A'}
             </Text>
           </View>
 
           <View style={styles.summaryRow}>
-            <Text size="sm" color="lightGray">
+            <Text size="sm" color="darkGray">
               Total Dispensed:
             </Text>
-            <Text size="lg" color="primary" weight="700">
-              {getTotalDispensed()}L
+            <Text size="base" color="primary" weight="700">
+              {dispensedQuantity}L
             </Text>
           </View>
 
-          <View style={styles.separator} />
+          {rate > 0 && (
+            <View style={styles.summaryRow}>
+              <Text size="sm" color="darkGray">
+                Rate per Liter:
+              </Text>
+              <Text size="sm" color="neutral" weight="600">
+                ₹{rate.toFixed(2)}
+              </Text>
+            </View>
+          )}
+        </View>
 
+        <Divider height={10} />
+
+        {/* Dispensed Assets */}
+        <View style={styles.vehicleDetailsContainer}>
           <Text weight="600" size="sm" color="neutral">
             Dispensed Assets:
           </Text>
+          <Divider height={8} />
           {renderDispensedAssets()}
-        </CardElevated>
+        </View>
 
-        {/* Delivery Challan Form */}
-        <CardElevated>
-          <Text weight="700" size="lg" color="neutral">
-            Delivery Challan Details
+        <Divider height={10} />
+
+        {/* Delivered In Dropdown */}
+        <View style={styles.vehicleDetailsContainer}>
+          <Text weight="600" size="sm" color="neutral">
+            Delivered In <Text color="error">*</Text>
           </Text>
+          <Divider height={8} />
+          <TouchableOpacity
+            style={[
+              styles.dropdownContainer,
+              !selectedDeliveryTo && styles.placeholderContainer,
+            ]}
+            onPress={() => setShowDropdown(!showDropdown)}>
+            <Text
+              size="sm"
+              color={selectedDeliveryTo ? 'neutral' : 'lightGray'}>
+              {selectedDeliveryTo
+                ? deliveryOptions.find(opt => opt.value === selectedDeliveryTo)
+                    ?.label
+                : 'Choose where fuel is delivered...'}
+            </Text>
+          </TouchableOpacity>
 
-          {/* Fuel Delivered To Dropdown */}
-          <View style={styles.fieldContainer}>
-            <Text>Fuel Delivered To *</Text>
-            <TouchableOpacity
-              style={styles.dropdownTrigger}
-              onPress={() => setShowDropdown(true)}>
-              <Text
-                size="lg"
-                color={formData.fuelDeliveredTo ? 'neutral' : 'lightGray'}>
-                {getSelectedDeliveryLabel()}
-              </Text>
-              <Text size="lg" color="lightGray">
-                ▼
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Challan Number */}
-          <View style={styles.fieldContainer}>
-            <Text>Challan Number *</Text>
-            <Input
-              value={formData.challanNumber}
-              onChangeText={text =>
-                setFormData(prev => ({...prev, challanNumber: text}))
-              }
-              placeholder="Enter challan number"
-            />
-          </View>
-
-          {/* Technician Details */}
-          <View style={styles.fieldContainer}>
-            <Text>Technician Name *</Text>
-            <Input
-              value={formData.technicianName}
-              onChangeText={text =>
-                setFormData(prev => ({...prev, technicianName: text}))
-              }
-              placeholder="Enter technician name"
-            />
-          </View>
-
-          <View style={styles.fieldContainer}>
-            <Text>Technician Phone</Text>
-            <Input
-              value={formData.technicianPhone}
-              onChangeText={text =>
-                setFormData(prev => ({...prev, technicianPhone: text}))
-              }
-              placeholder="Enter technician phone"
-              type="phone-pad"
-            />
-          </View>
-
-          {/* Remarks */}
-          <View style={styles.fieldContainer}>
-            <Text>Remarks</Text>
-            <Input
-              value={formData.remarks}
-              onChangeText={text =>
-                setFormData(prev => ({...prev, remarks: text}))
-              }
-              placeholder="Enter any remarks"
-              style={{}}
-            />
-          </View>
-        </CardElevated>
-
-        {/* Image Uploads */}
-        <CardElevated>
-          <Text weight="700" size="lg" color="neutral">
-            Upload Images
-          </Text>
-
-          {/* Challan Image */}
-          <View style={styles.imageContainer}>
-            <Text>Challan Image *</Text>
-            <View
-              style={{
-                height: 100,
-                backgroundColor: '#f0f0f0',
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}>
-              <Text>Image Upload Placeholder - Challan</Text>
+          {showDropdown && (
+            <View style={styles.dropdownList}>
+              {deliveryOptions.map(option => (
+                <TouchableOpacity
+                  key={option.value}
+                  style={styles.dropdownItem}
+                  onPress={() => {
+                    setSelectedDeliveryTo(option.value);
+                    setShowDropdown(false);
+                    if (option.value !== Delivered_To_Enum.Other) {
+                      setOtherReason('');
+                    }
+                  }}>
+                  <Text size="sm" color="neutral">
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
-          </View>
+          )}
 
-          {/* Technician Image */}
-          <View style={styles.imageContainer}>
-            <Text>Technician Image *</Text>
-            <View
-              style={{
-                height: 100,
-                backgroundColor: '#f0f0f0',
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}>
-              <Text>Image Upload Placeholder - Technician</Text>
-            </View>
-          </View>
-        </CardElevated>
+          {selectedDeliveryTo === Delivered_To_Enum.Other && (
+            <>
+              <Divider height={8} />
+              <TextInput
+                style={styles.textInput}
+                value={otherReason}
+                onChangeText={setOtherReason}
+                placeholder="Please specify the delivery destination..."
+                placeholderTextColor={FBColors.lightGray}
+                maxLength={60}
+                multiline
+                numberOfLines={3}
+              />
+            </>
+          )}
+        </View>
+
+        <Divider height={10} />
+
+        {/* Challan Image */}
+        <ImageContainer
+          label="Challan"
+          imageData={challanImageData}
+          isUploading={challanImageUploading}
+          onCameraPress={() => openCamera('challan')}
+          uploadingText="Uploading challan image..."
+          required={true}
+        />
       </ScrollView>
 
       {/* Submit Button */}
-      <View style={styles.footer}>
+      <View style={styles.buttonContainer}>
         <Button
+          style={[
+            styles.button,
+            (!challanImageData || !selectedDeliveryTo) && styles.disabledButton,
+          ]}
           variant="solid"
           onPress={handleSubmit}
           loading={loading}
-          style={styles.submitButton}>
-          Complete Order
+          disabled={!challanImageData || !selectedDeliveryTo}>
+          Mark Order Complete
         </Button>
       </View>
-
-      {/* Dropdown Modal */}
-      <Modal
-        visible={showDropdown}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowDropdown(false)}>
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setShowDropdown(false)}>
-          <View style={styles.dropdownModal}>
-            <Text weight="600" size="lg" color="neutral">
-              Select Fuel Delivery Method
-            </Text>
-            <FlatList
-              data={fuelDeliveryOptions}
-              renderItem={renderDropdownOption}
-              keyExtractor={item => item.value}
-              style={styles.dropdownList}
-            />
-          </View>
-        </TouchableOpacity>
-      </Modal>
-    </Container>
+    </View>
   );
 };
 
@@ -575,39 +664,20 @@ const styles = ScaledSheet.create({
     flex: 1,
     backgroundColor: FBBackground.white,
   },
-  content: {
-    flex: 1,
+  scrollContent: {
+    backgroundColor: FBBackground.white,
+    paddingHorizontal: '16@s',
+    paddingBottom: '16@vs',
   },
-  summaryCard: {
-    margin: '16@s',
-    padding: '16@s',
-  },
-  formCard: {
-    marginHorizontal: '16@s',
-    marginBottom: '16@vs',
-    padding: '16@s',
-  },
-  imageCard: {
-    marginHorizontal: '16@s',
-    marginBottom: '16@vs',
-    padding: '16@s',
-  },
-  cardTitle: {
-    marginBottom: '16@vs',
+  titleContainer: {
+    alignItems: 'center',
+    paddingVertical: '16@vs',
   },
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '8@vs',
-  },
-  separator: {
-    height: 1,
-    backgroundColor: FBColors.lightGray,
-    marginVertical: '12@vs',
-  },
-  assetsTitle: {
-    marginBottom: '8@vs',
+    marginBottom: '4@vs',
   },
   assetRow: {
     flexDirection: 'row',
@@ -615,84 +685,87 @@ const styles = ScaledSheet.create({
     alignItems: 'center',
     marginBottom: '4@vs',
   },
-  noAssetsText: {
-    textAlign: 'center',
-    fontStyle: 'italic',
-  },
-  fieldContainer: {
-    marginBottom: '16@vs',
-  },
-  fieldLabel: {
-    fontSize: '14@s',
-    fontWeight: '600',
-    color: FBColors.neutral,
-    marginBottom: '8@vs',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: FBColors.lightGray,
-    borderRadius: '8@s',
-    paddingHorizontal: '12@s',
-    paddingVertical: '12@vs',
-    fontSize: '16@s',
-  },
-  textArea: {
-    borderWidth: 1,
-    borderColor: FBColors.lightGray,
-    borderRadius: '8@s',
-    paddingHorizontal: '12@s',
-    paddingVertical: '12@vs',
-    fontSize: '16@s',
-    minHeight: '80@vs',
-    textAlignVertical: 'top',
-  },
-  dropdownTrigger: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: FBColors.lightGray,
-    borderRadius: '8@s',
-    paddingHorizontal: '12@s',
-    paddingVertical: '12@vs',
-  },
-  imageContainer: {
-    marginBottom: '16@vs',
-  },
-  footer: {
-    padding: '16@s',
+  vehicleDetailsContainer: {
     backgroundColor: FBBackground.white,
-    borderTopWidth: 1,
-    borderTopColor: FBColors.lightGray,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: '8@s',
+    padding: '16@s',
+    marginBottom: '10@vs',
   },
-  submitButton: {
+  buttonContainer: {
+    position: 'relative',
+    marginHorizontal: '20@s',
+    marginVertical: '20@vs',
+    backgroundColor: FBBackground.white,
+  },
+  button: {
     width: '100%',
   },
-  modalOverlay: {
+  disabledButton: {
+    opacity: 0.5,
+  },
+  // Camera styles
+  cameraContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
+    flexDirection: 'column',
+    backgroundColor: 'black',
+  },
+  preview: {
+    flex: 1,
+    justifyContent: 'flex-end',
     alignItems: 'center',
   },
-  dropdownModal: {
-    backgroundColor: FBBackground.white,
-    borderRadius: '12@s',
-    padding: '20@s',
-    minWidth: '280@s',
-    maxHeight: '300@vs',
+  cameraButtonContainer: {
+    flex: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
   },
-  dropdownTitle: {
-    marginBottom: '16@vs',
-    textAlign: 'center',
+  capture: {
+    flex: 0,
+    backgroundColor: '#fff',
+    borderRadius: '5@s',
+    padding: '15@s',
+    paddingHorizontal: '20@s',
+    alignSelf: 'center',
+    margin: '20@s',
+  },
+  // Dropdown styles
+  dropdownContainer: {
+    borderWidth: 1,
+    borderColor: FBBorders.input,
+    borderRadius: '8@s',
+    padding: '12@s',
+    backgroundColor: FBBackground.white,
+    justifyContent: 'center',
+    minHeight: '40@vs',
+  },
+  placeholderContainer: {
+    borderColor: '#E0E0E0',
   },
   dropdownList: {
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: '8@s',
+    backgroundColor: FBBackground.white,
+    marginTop: '4@vs',
     maxHeight: '200@vs',
   },
-  dropdownOption: {
-    paddingVertical: '12@vs',
-    paddingHorizontal: '16@s',
+  dropdownItem: {
+    padding: '12@s',
     borderBottomWidth: 1,
-    borderBottomColor: FBColors.lightGray,
+    borderBottomColor: '#F5F5F5',
+  },
+  textInput: {
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: '8@s',
+    padding: '12@s',
+    backgroundColor: FBBackground.white,
+    fontSize: '14@ms',
+    color: FBColors.neutral,
+    textAlignVertical: 'top',
+    minHeight: '80@vs',
   },
 });
 

@@ -336,8 +336,8 @@ const styles = ScaledSheet.create({
 
   headerContainer: {
     position: 'relative',
-    paddingHorizontal:20,
-    paddingTop:10,
+    paddingHorizontal: 20,
+    paddingTop: 10,
     // top: 0,
     // left: 0,
     // paddingHorizontal: 16,

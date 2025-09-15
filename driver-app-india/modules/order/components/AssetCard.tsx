@@ -26,6 +26,8 @@ interface AssetCardProps {
   // Additional props for tower driver functionality
   asset?: any; // The full asset object for tower driver features
   onStartDispense?: (asset: any) => void;
+  // New prop to check if any other asset has fill remaining status
+  hasOtherFillRemaining?: boolean;
 }
 
 const AssetCard: React.FC<AssetCardProps> = ({
@@ -38,6 +40,7 @@ const AssetCard: React.FC<AssetCardProps> = ({
   disabled = false,
   asset,
   onStartDispense,
+  hasOtherFillRemaining = false,
 }) => {
   const navigation = useNavigation();
   const [showQuantityBottomSheet, setShowQuantityBottomSheet] = useState(false);
@@ -144,6 +147,8 @@ const AssetCard: React.FC<AssetCardProps> = ({
     }
   };
 
+  console.log('---assetsWithUploadedVideos-----', assetsWithUploadedVideos);
+
   const getButtonText = () => {
     const assetId = getAssetId();
     const hasUploadedVideo = assetsWithUploadedVideos.includes(assetId);
@@ -171,6 +176,23 @@ const AssetCard: React.FC<AssetCardProps> = ({
 
     // Default fallback
     return 'Start Dispense';
+  };
+
+  // Check if this asset should be disabled due to other asset having fill remaining
+  const isDisabledDueToOtherFillRemaining = () => {
+    const assetId = getAssetId();
+    const hasUploadedVideo = assetsWithUploadedVideos.includes(assetId);
+    const isInPartiallyFilled = partiallyFilledAssetsArray.includes(assetId);
+    const currentAssetHasFillRemaining =
+      hasUploadedVideo || isInPartiallyFilled;
+
+    // If this asset has fill remaining, it should not be disabled
+    if (currentAssetHasFillRemaining) {
+      return false;
+    }
+
+    // If any other asset has fill remaining and this one doesn't, disable it
+    return hasOtherFillRemaining;
   };
 
   const handleFilledQuantityPress = () => {
@@ -236,7 +258,9 @@ const AssetCard: React.FC<AssetCardProps> = ({
           styles.dispenseButton as ViewStyle,
           getButtonText() === 'Fill Remaining' &&
             (styles.fillRemainingButton as ViewStyle),
-          (disabled || getButtonText() === 'Complete') &&
+          (disabled ||
+            getButtonText() === 'Complete' ||
+            isDisabledDueToOtherFillRemaining()) &&
             (styles.disabledButton as ViewStyle),
         ]}
         onPress={
@@ -244,17 +268,25 @@ const AssetCard: React.FC<AssetCardProps> = ({
             ? handleFilledQuantityPress
             : handleStartDispense
         }
-        disabled={disabled || getButtonText() === 'Complete'}
+        disabled={
+          disabled ||
+          getButtonText() === 'Complete' ||
+          isDisabledDueToOtherFillRemaining()
+        }
         activeOpacity={0.7}>
         <Text
           size="sm"
           weight="600"
           color={
-            disabled || getButtonText() === 'Complete'
+            disabled ||
+            getButtonText() === 'Complete' ||
+            isDisabledDueToOtherFillRemaining()
               ? 'disabledInputText'
               : 'white'
           }>
-          {getButtonText()}
+          {isDisabledDueToOtherFillRemaining()
+            ? 'Fill Other Asset First'
+            : getButtonText()}
         </Text>
       </TouchableOpacity>
 

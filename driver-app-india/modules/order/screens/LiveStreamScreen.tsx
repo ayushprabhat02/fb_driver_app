@@ -17,13 +17,19 @@ import RNFS from 'react-native-fs';
 import DocumentPicker from 'react-native-document-picker';
 
 // Components
-import {Text, CardElevated, QuantityBottomSheet, Divider, Button} from '@/components';
+import {
+  Text,
+  CardElevated,
+  QuantityBottomSheet,
+  Divider,
+  Button,
+} from '@/components';
 import PermissionScreen from '../components/PermissionScreen';
 import CameraOverlay from '../components/CameraOverlay';
 import StreamControls from '../components/StreamControls';
 
 // Store
-import {orderStore} from '@/globalStore';
+import {checkinStore, orderStore} from '@/globalStore';
 
 // Services
 import orderService from '../services';
@@ -65,7 +71,9 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   >('not_started');
   const [showQuantityBottomSheet, setShowQuantityBottomSheet] = useState(false);
   const [uploadError, setUploadError] = useState(false);
-  const [recordedVideoFile, setRecordedVideoFile] = useState<string | null>(null);
+  const [recordedVideoFile, setRecordedVideoFile] = useState<string | null>(
+    null,
+  );
   const [isManualUploading, setIsManualUploading] = useState(false);
   const [showUploadOptions, setShowUploadOptions] = useState(false);
   const [isUploadingFromDevice, setIsUploadingFromDevice] = useState(false);
@@ -340,12 +348,15 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
     }
   };
 
-  const saveVideoToDevice = async (sourceUri: string, fileName: string): Promise<string | null> => {
+  const saveVideoToDevice = async (
+    sourceUri: string,
+    fileName: string,
+  ): Promise<string | null> => {
     try {
       // Create a unique file path in the Documents directory
       const documentsPath = RNFS.DocumentDirectoryPath;
       const videoPath = `${documentsPath}/${fileName}`;
-      
+
       // Also try to save to external storage (Downloads folder) for easier access
       let externalPath = null;
       if (Platform.OS === 'android') {
@@ -358,23 +369,24 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           console.warn('Failed to save to Downloads folder:', externalError);
         }
       }
-      
+
       // Copy the video file to Documents directory
       await RNFS.copyFile(sourceUri, videoPath);
-      
+
       console.log(`Video saved locally at: ${videoPath}`);
       console.log(`Documents path: ${documentsPath}`);
-      
+
       // Show more detailed information about where the file is saved
       Toast.show({
         type: 'info',
         text1: 'Video Saved Locally',
-        text2: Platform.OS === 'android' && externalPath 
-          ? 'Check Downloads folder or app documents'
-          : 'Saved in app documents folder',
+        text2:
+          Platform.OS === 'android' && externalPath
+            ? 'Check Downloads folder or app documents'
+            : 'Saved in app documents folder',
         visibilityTime: 4000,
       });
-      
+
       return externalPath || videoPath;
     } catch (error) {
       console.error('Failed to save video locally:', error);
@@ -496,10 +508,12 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
 
     // Check if file exists
     const fileExists = await RNFS.exists(recordedVideoFile);
-    
+
     Alert.alert(
       'Video File Location',
-      `File Path: ${recordedVideoFile}\n\nFile Exists: ${fileExists ? 'Yes' : 'No'}\n\nFor Android Emulator:\n1. Use Device File Explorer in Android Studio\n2. Navigate to: /data/data/com.customer_app_in/files/\n3. Or check Downloads folder\n\nFor iOS Simulator:\n1. Simulator → Device → Photos\n2. Or check app sandbox in Finder`,
+      `File Path: ${recordedVideoFile}\n\nFile Exists: ${
+        fileExists ? 'Yes' : 'No'
+      }\n\nFor Android Emulator:\n1. Use Device File Explorer in Android Studio\n2. Navigate to: /data/data/com.customer_app_in/files/\n3. Or check Downloads folder\n\nFor iOS Simulator:\n1. Simulator → Device → Photos\n2. Or check app sandbox in Finder`,
       [
         {
           text: 'Copy Path',
@@ -508,17 +522,15 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
             console.log('File path:', recordedVideoFile);
           },
         },
-        { text: 'OK' },
+        {text: 'OK'},
       ],
     );
   };
 
-  
-
   const uploadVideoFromDevice = async () => {
     try {
       setIsUploadingFromDevice(true);
-      
+
       // Open document picker to select video file
       const result = await DocumentPicker.pick({
         type: [DocumentPicker.types.video],
@@ -527,7 +539,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
 
       if (result && result.length > 0) {
         const selectedFile = result[0];
-        
+
         // Validate file size (limit to 100MB)
         const maxSizeInBytes = 100 * 1024 * 1024; // 100MB
         if (selectedFile.size && selectedFile.size > maxSizeInBytes) {
@@ -552,7 +564,9 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         // Show confirmation dialog
         Alert.alert(
           'Upload Video',
-          `Are you sure you want to upload this video?\n\nFile: ${selectedFile.name}\nSize: ${((selectedFile.size || 0) / 1024 / 1024).toFixed(2)}MB`,
+          `Are you sure you want to upload this video?\n\nFile: ${
+            selectedFile.name
+          }\nSize: ${((selectedFile.size || 0) / 1024 / 1024).toFixed(2)}MB`,
           [
             {
               text: 'Cancel',
@@ -585,9 +599,11 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   const processSelectedVideo = async (selectedFile: any) => {
     try {
       setIsUploadingFromDevice(true);
-      
-      const fileName = `Upload_${currentDriverOrder?.customer_order?.order_code}_${Date.now()}.mp4`;
-      
+
+      const fileName = `Upload_${
+        currentDriverOrder?.customer_order?.order_code
+      }_${Date.now()}.mp4`;
+
       // Try to upload the file directly using the file object
       // Many upload services can handle the file object with uri, type, and name
       const fileData = {
@@ -596,7 +612,13 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         name: fileName,
       };
 
-      console.log(`Selected video size: ${((selectedFile.size || 0) / 1024 / 1024).toFixed(2)} MB`);
+      console.log(
+        `Selected video size: ${(
+          (selectedFile.size || 0) /
+          1024 /
+          1024
+        ).toFixed(2)} MB`,
+      );
 
       // Upload video to Google Cloud Storage
       const uploadResult = await supportService.uploadFile({
@@ -614,12 +636,14 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
             value: fileName,
             quantity_dispensed: 0,
             task_id: currentDriverOrder?.id,
-            customer_asset_id: orderStore.getState().currentAssetForDispense?.id,
+            customer_asset_id:
+              orderStore.getState().currentAssetForDispense?.id,
           },
         });
 
         // Mark asset as having uploaded video
-        const currentAssetId = orderStore.getState().currentAssetForDispense?.id;
+        const currentAssetId =
+          orderStore.getState().currentAssetForDispense?.id;
         if (currentAssetId) {
           addAssetWithUploadedVideo(currentAssetId);
         }
@@ -629,10 +653,10 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         setStreamingState('stopped');
         setIsStreamUploaded(true);
         setUploadError(false); // Clear any previous upload errors
-        
+
         // Clear any recorded video file since we uploaded from device
         setRecordedVideoFile(null);
-        
+
         Toast.show({
           type: 'success',
           text1: 'Upload Successful',
@@ -644,7 +668,10 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       Toast.show({
         type: 'error',
         text1: 'Upload Failed',
-        text2: error instanceof Error ? error.message : 'Failed to upload selected video. Please try again.',
+        text2:
+          error instanceof Error
+            ? error.message
+            : 'Failed to upload selected video. Please try again.',
       });
     } finally {
       setIsUploadingFromDevice(false);
@@ -663,16 +690,16 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
 
     try {
       setIsManualUploading(true);
-      
+
       const fileName = `Recording_${currentDriverOrder?.customer_order?.order_code}.mp4`;
-      
+
       // Create file object for upload
       const fileData = {
         uri: recordedVideoFile,
         type: 'video/mp4',
         name: fileName,
       };
-      
+
       // Upload video to Google Cloud Storage
       const uploadResult = await supportService.uploadFile({
         fileName: fileName,
@@ -689,25 +716,27 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
             value: fileName,
             quantity_dispensed: 0,
             task_id: currentDriverOrder?.id,
-            customer_asset_id: orderStore.getState().currentAssetForDispense?.id,
+            customer_asset_id:
+              orderStore.getState().currentAssetForDispense?.id,
           },
         });
 
         // Mark asset as having uploaded video
-        const currentAssetId = orderStore.getState().currentAssetForDispense?.id;
+        const currentAssetId =
+          orderStore.getState().currentAssetForDispense?.id;
         if (currentAssetId) {
           addAssetWithUploadedVideo(currentAssetId);
         }
 
         setUploadError(false);
         setIsStreamUploaded(true);
-        
+
         Toast.show({
           type: 'success',
           text1: 'Upload Successful',
           text2: 'Video has been uploaded to cloud storage',
         });
-        
+
         // Clean up local file after successful upload (optional - keep for backup)
         // try {
         //   await RNFS.unlink(recordedVideoFile);
@@ -721,7 +750,10 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       Toast.show({
         type: 'error',
         text1: 'Upload Failed',
-        text2: error instanceof Error ? error.message : 'Failed to upload video. Please try again later.',
+        text2:
+          error instanceof Error
+            ? error.message
+            : 'Failed to upload video. Please try again later.',
       });
     } finally {
       setIsManualUploading(false);
@@ -744,7 +776,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
     navigation.navigate('choose-asset');
   };
 
-  const handleQuantityProceed = async (quantity: number) => {
+  const handleQuantityProceedBuddyCan = async (quantity: number) => {
     try {
       setIsLoading(true);
       setShowQuantityBottomSheet(false);
@@ -841,7 +873,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       // Navigate to choose asset page (following Vue.js flow)
       navigation.navigate('choose-asset');
     } catch (error) {
-      console.error('Error in handleQuantityProceed:', error);
+      console.error('Error in handleQuantityProceedBuddyCan:', error);
       Toast.show({
         type: 'error',
         text1: 'Update Failed',
@@ -852,6 +884,156 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleQuantityProceedBowser = async (quantity: number) => {
+    try {
+      setIsLoading(true);
+      setShowQuantityBottomSheet(false);
+
+      const currentAssetId = orderStore.getState().currentAssetForDispense?.id;
+      const driverVehicleId = currentDriverOrder?.driver_vehicle_id;
+
+      // Validate required data for bowser (FILL_UP)
+      if (!currentDriverOrder?.id || (!currentAssetId && !driverVehicleId)) {
+        throw new Error('Missing required order or vehicle data for bowser');
+      }
+
+      // Get current location for task action
+      const coordinates = await getCurrentLocation();
+
+      // Create step task action for bowser (similar to Vue totalizer after manual)
+      const taskActionResponse = await orderService.upsertStepTaskAction({
+        object: {
+          key: 'TOTALIZER_AFTER_READING',
+          url: '', // No image URL for livestream flow
+          value: '0.0', // This would be totalizer reading + before reading in Vue
+          quantity_dispensed: quantity,
+          task_id: currentDriverOrder?.id,
+          ...(orderStore.getState().currentDriverOrder?.category === 'DELIVERY'
+            ? {customer_asset_id: `${currentAssetId}`}
+            : {
+                vehicle_id:
+                  currentAssetId ||
+                  checkinStore.getState().driverVehicleDetails?.id,
+              }),
+          location: {
+            type: 'Point',
+            coordinates: [coordinates.longitude, coordinates.latitude],
+          },
+        },
+      });
+
+      // Check if taskAction was successful
+      if (typeof taskActionResponse === 'string') {
+        throw new Error(taskActionResponse);
+      }
+
+      // Update asset quantity (using correct parameters matching Vue.js)
+      if (orderStore.getState().currentDriverOrder?.category === 'DELIVERY') {
+        await orderService.updateAssetQty({
+          customerAssetId: currentAssetId,
+          customerOrderId: currentDriverOrder?.customer_order?.id,
+          qty: quantity,
+        });
+      }
+
+      // For bowser, no asset quantity update needed as it's vehicle-to-vehicle transfer
+      // Mark order as dispensing if in ARRIVED state
+      if (currentDriverOrder?.state === 'ARRIVED') {
+        await orderService.markOrderDispensing({
+          id: currentDriverOrder.id,
+        });
+      }
+
+      // Update the local store to reflect the change immediately
+      const updatedAssets = orderStore
+        .getState()
+        .orderAssets?.map((asset: any) => {
+          const assetId =
+            asset.customer_asset?.id || asset.id || asset.customer_asset_id;
+          if (assetId === currentAssetId) {
+            return {...asset, quantity_dispensed: quantity};
+          }
+          return asset;
+        });
+
+      // Get requested quantity for this asset to determine if it's partially filled
+      const currentAsset = updatedAssets?.find((asset: any) => {
+        const assetId =
+          asset.customer_asset?.id || asset.id || asset.customer_asset_id;
+        return assetId === currentAssetId;
+      });
+
+      // Update both orderAssets and quantityDispensed in store for bowser
+      console.log('=== BOWSER QUANTITY UPDATE DEBUG ===');
+      console.log('currentAssetId:', currentAssetId);
+      console.log('quantity:', quantity);
+      console.log('updatedAssets:', JSON.stringify(updatedAssets?.map(a => ({
+        id: a.customer_asset?.id || a.id,
+        quantity_dispensed: a.quantity_dispensed
+      })), null, 2));
+      console.log('currentAsset found:', currentAsset);
+
+      orderStore.setState(state => ({
+        ...state,
+        orderAssets: updatedAssets,
+        quantityDispensed: quantity,
+      }));
+
+      const requestedQuantity = currentAsset?.quantity_requested || 0;
+
+      // Remove from uploaded videos array since quantity is now entered (only if currentAssetId exists)
+      if (currentAssetId) {
+        removeAssetWithUploadedVideo(currentAssetId);
+
+        // Update partially filled assets array based on the dispensed quantity
+        if (quantity > 0 && quantity < requestedQuantity) {
+          // Asset is now partially filled
+          addPartiallyFilledAsset(currentAssetId);
+        } else if (quantity >= requestedQuantity) {
+          // Asset is now complete, remove from partially filled array
+          removePartiallyFilledAsset(currentAssetId);
+        }
+      }
+
+      Toast.show({
+        type: 'success',
+        text1: 'Quantity Updated',
+        text2: `${quantity}L has been dispensed to bowser`,
+      });
+
+      // For bowser flow, navigate back or to completion screen
+      navigation.navigate('choose-asset');
+    } catch (error) {
+      console.error('Error in handleQuantityProceedBowser:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Update Failed',
+        text2:
+          error instanceof Error
+            ? error.message
+            : 'Failed to update bowser quantity. Please try again.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleQuantityProceed = async (quantity: number) => {
+    // Route to appropriate handler based on order category
+    if (orderStore.getState().currentDriverOrder?.is_enable_buddycan_flow) {
+      // Buddy can flow
+      await handleQuantityProceedBuddyCan(quantity);
+    } else if (orderStore.getState().currentDriverOrder?.is_done_locally) {
+      // Bowser flow
+      await handleQuantityProceedBowser(quantity);
+    } else {
+      Alert.alert(
+        'Unknown Order Type',
+        'This order is for automation. Please raise cancel request',
+      );
     }
   };
 
@@ -897,7 +1079,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
             <Text weight="600" size="sm" color="neutral">
               Customer Name:
             </Text>
-            <Text weight="400" size="sm" style={styles.orderValue}>
+            <Text weight="400" size="sm" style={styles.orderValue as any}>
               {`${
                 currentDriverOrder?.customer_order?.organization_user?.user
                   ?.first_name || ''
@@ -912,7 +1094,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
             <Text weight="600" size="sm" color="neutral">
               Order Code:
             </Text>
-            <Text weight="400" size="sm" style={styles.orderValue}>
+            <Text weight="400" size="sm" style={styles.orderValue as any}>
               {currentDriverOrder?.customer_order?.order_code || 'N/A'}
             </Text>
           </View>
@@ -942,21 +1124,24 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           />
 
           {/* Upload from device overlay - ONLY show after upload failure */}
-          {!isRecording && hasStreamedOnce && uploadError && !isStreamUploaded && (
-            <View style={styles.uploadOverlay}>
-              <TouchableOpacity
-                onPress={uploadVideoFromDevice}
-                disabled={isUploadingFromDevice}
-                style={styles.uploadButton}>
-                <Text
-                  size="sm"
-                  weight="600"
-                  style={styles.uploadButtonText as any}>
-                  {isUploadingFromDevice ? 'Uploading...' : '📁 Upload Video'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
+          {!isRecording &&
+            hasStreamedOnce &&
+            uploadError &&
+            !isStreamUploaded && (
+              <View style={styles.uploadOverlay}>
+                <TouchableOpacity
+                  onPress={uploadVideoFromDevice}
+                  disabled={isUploadingFromDevice}
+                  style={styles.uploadButton}>
+                  <Text
+                    size="sm"
+                    weight="600"
+                    style={styles.uploadButtonText as any}>
+                    {isUploadingFromDevice ? 'Uploading...' : '📁 Upload Video'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
 
           <CameraOverlay
             isRecording={isRecording}
@@ -983,8 +1168,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
 
         {/* Upload Error Section - Show within controls area when error occurs */}
         {uploadError && hasStreamedOnce && !isStreamUploaded && (
-          <CardElevated
-            cardStyle={styles.uploadErrorCard}>
+          <CardElevated cardStyle={styles.uploadErrorCard}>
             <View style={styles.uploadErrorContent}>
               <Text
                 size="base"
@@ -992,10 +1176,8 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
                 style={styles.uploadErrorTitle as any}>
                 Live Stream Upload Failed
               </Text>
-              <Text
-                size="sm"
-                style={styles.uploadErrorMessage as any}>
-                {recordedVideoFile 
+              <Text size="sm" style={styles.uploadErrorMessage as any}>
+                {recordedVideoFile
                   ? 'Your recorded video was saved locally. You can retry uploading it or upload a different video from your device'
                   : 'Live stream upload failed. You can upload a video from your device to continue'}
               </Text>
@@ -1011,13 +1193,13 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
                   </Button>
                 )}
                 <Button
-                  variant={recordedVideoFile ? "outlined" : "solid"}
+                  variant={recordedVideoFile ? 'outlined' : 'solid'}
                   onPress={uploadVideoFromDevice}
                   disabled={isUploadingFromDevice}
                   loading={isUploadingFromDevice}
                   style={[
                     styles.uploadVideoButton,
-                    !recordedVideoFile && styles.uploadVideoButtonSolid
+                    !recordedVideoFile && styles.uploadVideoButtonSolid,
                   ]}>
                   <Text size="sm" style={styles.uploadVideoButtonText as any}>
                     {isUploadingFromDevice ? 'Uploading...' : 'Upload Video'}
@@ -1028,7 +1210,9 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
                     variant="outlined"
                     onPress={showVideoLocation}
                     style={styles.showPathButton}>
-                    <Text size="sm" style={styles.showPathButtonText as any}>Show Path</Text>
+                    <Text size="sm" style={styles.showPathButtonText as any}>
+                      Show Path
+                    </Text>
                   </Button>
                 )}
               </View>
@@ -1036,7 +1220,6 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           </CardElevated>
         )}
       </View>
-
 
       {/* Quantity Bottom Sheet */}
       <QuantityBottomSheet
