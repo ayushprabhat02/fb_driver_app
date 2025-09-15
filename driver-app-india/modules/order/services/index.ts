@@ -57,6 +57,11 @@ import {
   ChangeTaskStateMutationVariables,
   Task_State_Enum,
 
+  // add task cancellation reason (matching Vue.js implementation)
+  AddTaskCancellationReasonDocument,
+  AddTaskCancellationReasonMutation,
+  AddTaskCancellationReasonMutationVariables,
+
   // verify order
   VerifyPlacedOrderOtpDocument,
   VerifyPlacedOrderOtpQuery,
@@ -596,6 +601,57 @@ class OrderService {
     } catch (error) {
       console.error('Error marking order as completed:', error);
       throw new Error('Failed to mark order as completed');
+    }
+  }
+
+  /**
+   * @method markOrderCancel
+   * @description Marks an order as completed/delivered
+   * @args {task_id: string}
+   */
+  public async markOrderCancel(args: {id: string}) {
+    try {
+      console.log('MarkOrderCancel API call:', args);
+
+      const response: ChangeTaskStateMutation = await callMutation({
+        queryDocument: ChangeTaskStateDocument,
+        variables: {
+          id: args.id,
+          state: Task_State_Enum.CancellationRequested,
+        },
+      });
+
+      return response.update_task_by_pk;
+    } catch (error) {
+      console.error('Error marking order as completed:', error);
+      throw new Error('Failed to mark order as completed');
+    }
+  }
+
+  /**
+   * @method addTaskCancellationReason
+   * @description Adds cancellation reason for a task (matching Vue.js implementation)
+   * @args {task_id: string, reason: string}
+   */
+  public async addTaskCancellationReason(args: {id: string; reason: string}) {
+    try {
+      console.log('AddTaskCancellationReason API call:', args);
+
+      const response: AddTaskCancellationReasonMutation = await callMutation({
+        queryDocument: AddTaskCancellationReasonDocument,
+        variables: {
+          object: {
+            task_id: args.id,
+            reason: args.reason,
+            is_active: true,
+          },
+        },
+      });
+
+      return response.insert_task_cancellation_reasons_one;
+    } catch (error) {
+      console.error('Error adding task cancellation reason:', error);
+      throw new Error('Failed to add task cancellation reason');
     }
   }
 

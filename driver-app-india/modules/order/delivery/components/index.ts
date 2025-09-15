@@ -10,5 +10,4 @@ export {default as OrderListCardSkeleton} from './OrderListCardSkeleton';
 export {default as OrderStatusSteps} from './OrderStatusSteps';
 export {default as ShareOrderIdCard} from './ShareOrderIdCard';
 export {default as SupportCancelButton} from './SupportCancelButton';
-export {default as CancellationReasonList} from './CancellationReasonList';
 export {default as OrderSearchBar} from './OrderSearchBar';

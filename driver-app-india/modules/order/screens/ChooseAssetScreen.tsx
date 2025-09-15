@@ -7,16 +7,13 @@ import type {StackNavigationProp} from '@react-navigation/stack';
 import type {OrderStackParamList} from '@/navigator/containers/Order';
 
 // components
-import {
-  FocusAwareStatusBar,
-  FullScreenLoader,
-  Button,
-} from '@/components';
+import {FocusAwareStatusBar, FullScreenLoader, Button} from '@/components';
 import {
   AssetSummaryCard,
   AssetSearchBar,
   AssetCard,
 } from '../components';
+import OrderCancellationRequest from '../components/OrderCancellationRequest';
 
 // styles
 import {FBBackground, FBColorPalette} from '@/types/styles';
@@ -36,7 +33,8 @@ const ChooseAssetScreen: React.FC = () => {
   const orderLoader = orderStore.use.loaders();
 
   // Get partially filled assets and assets with uploaded videos from store
-  const partiallyFilledAssetsArray = orderStore.use.partiallyFilledAssetsArray();
+  const partiallyFilledAssetsArray =
+    orderStore.use.partiallyFilledAssetsArray();
   const assetsWithUploadedVideos = orderStore.use.assetsWithUploadedVideos();
 
   // Set navigation options
@@ -59,8 +57,6 @@ const ChooseAssetScreen: React.FC = () => {
     }));
   }, [orderAssets]);
 
-
-
   // Calculate totals
   const totalQuantity = mappedAssets.reduce(
     (sum, asset) => sum + asset.requestedQuantity,
@@ -78,51 +74,55 @@ const ChooseAssetScreen: React.FC = () => {
       {text: 'Start', onPress: () => console.log('Dispense started')},
     ]);
   };
-  
+
   const handleStartDispense = (asset: any) => {
     // Get the selected order (fillup order takes priority)
     const selectedOrder = currentFillupOrder || currentDriverOrder;
-    
+
     // Ensure the selectedOrder is available for the live stream screen
     if (!selectedOrder) {
       Alert.alert('Error', 'No order selected. Please try again.');
       return;
     }
-    
+
     // Ensure asset has the required data
     if (!asset) {
       Alert.alert('Error', 'No asset data available. Please try again.');
       return;
     }
-    
+
     // Extract the asset ID - check multiple possible locations
-    const assetId = asset.customer_asset?.id || asset.id || asset.customer_asset_id;
-    
+    const assetId =
+      asset.customer_asset?.id || asset.id || asset.customer_asset_id;
+
     if (!assetId) {
       Alert.alert('Error', 'Asset ID is missing. Please try again.');
       return;
     }
-    
+
     // Set the current asset for dispense in the store with proper structure
     const assetForDispense = {
       id: assetId,
       customer_asset: asset.customer_asset || asset,
-      ...asset
+      ...asset,
     };
-    
+
     orderStore.setState(state => ({
       ...state,
       currentAssetForDispense: assetForDispense,
     }));
-    
+
     // Navigate to live stream screen
     navigation.navigate('live-stream');
   };
 
   const handleProceed = () => {
     // Filter assets with dispensed fuel for the next step
-    const dispensedAssets = orderAssets?.filter((asset: any) => (asset.quantity_dispensed || 0) > 0) || [];
-    
+    const dispensedAssets =
+      orderAssets?.filter(
+        (asset: any) => (asset.quantity_dispensed || 0) > 0,
+      ) || [];
+
     if (dispensedAssets.length === 0) {
       Alert.alert(
         'No Fuel Dispensed',
@@ -130,7 +130,7 @@ const ChooseAssetScreen: React.FC = () => {
       );
       return;
     }
-    
+
     // Store dispensed assets in the order store for the delivery challan
     orderStore.setState(state => ({
       ...state,
@@ -145,23 +145,22 @@ const ChooseAssetScreen: React.FC = () => {
     }
   };
 
+  // 🚫 CANCELLATION FUNCTIONALITY - Using simplified components
+  const [showCancellationModal, setShowCancellationModal] = useState(false);
+
   const handleCancel = () => {
-    Alert.alert(
-      'Cancel Request',
-      'Are you sure you want to cancel this request?',
-      [
-        {text: 'No', style: 'cancel'},
-        {text: 'Yes', style: 'destructive', onPress: () => navigation.goBack()},
-      ],
-    );
+    setShowCancellationModal(true);
   };
 
-
+  const handleCancellationSuccess = () => {
+    // Navigate back to previous screen after successful cancellation
+    navigation.goBack();
+  };
 
   const getCustomerOrderAssets = useCallback(async () => {
     // Get the selected order (fillup order takes priority)
     const selectedOrder = currentFillupOrder || currentDriverOrder;
-    
+
     // Check if selectedOrder is available before making API call
     if (!selectedOrder) {
       return;
@@ -193,7 +192,13 @@ const ChooseAssetScreen: React.FC = () => {
     } finally {
       stopLoader('orderAssets');
     }
-  }, [currentFillupOrder, currentDriverOrder, debouncedSearchQuery, startLoader, stopLoader]);
+  }, [
+    currentFillupOrder,
+    currentDriverOrder,
+    debouncedSearchQuery,
+    startLoader,
+    stopLoader,
+  ]);
 
   useEffect(() => {
     getCustomerOrderAssets();
@@ -203,12 +208,14 @@ const ChooseAssetScreen: React.FC = () => {
   useFocusEffect(
     useCallback(() => {
       getCustomerOrderAssets();
-    }, [getCustomerOrderAssets])
+    }, [getCustomerOrderAssets]),
   );
 
   // Function to check if any asset has fill remaining status
   const getAssetIdFromAsset = (asset: any) => {
-    return asset?.customer_asset?.id || asset?.id || asset?.customer_asset_id || '';
+    return (
+      asset?.customer_asset?.id || asset?.id || asset?.customer_asset_id || ''
+    );
   };
 
   const hasAnyAssetWithFillRemaining = React.useMemo(() => {
@@ -216,41 +223,142 @@ const ChooseAssetScreen: React.FC = () => {
 
     return orderAssets.some((asset: any) => {
       const assetId = getAssetIdFromAsset(asset);
-      return partiallyFilledAssetsArray.includes(assetId) || assetsWithUploadedVideos.includes(assetId);
+      return (
+        partiallyFilledAssetsArray.includes(assetId) ||
+        assetsWithUploadedVideos.includes(assetId)
+      );
     });
   }, [orderAssets, partiallyFilledAssetsArray, assetsWithUploadedVideos]);
 
   // Function to check if a specific asset has fill remaining (for current asset exclusion)
-  const assetHasFillRemaining = React.useCallback((asset: any) => {
-    const assetId = getAssetIdFromAsset(asset);
-    return partiallyFilledAssetsArray.includes(assetId) || assetsWithUploadedVideos.includes(assetId);
-  }, [partiallyFilledAssetsArray, assetsWithUploadedVideos]);
+  const assetHasFillRemaining = React.useCallback(
+    (asset: any) => {
+      const assetId = getAssetIdFromAsset(asset);
+      return (
+        partiallyFilledAssetsArray.includes(assetId) ||
+        assetsWithUploadedVideos.includes(assetId)
+      );
+    },
+    [partiallyFilledAssetsArray, assetsWithUploadedVideos],
+  );
+
+  /**
+   * 🎯 CENTRALIZED BUTTON STATE MANAGEMENT
+   *
+   * This function determines the state of both Cancel Request and Proceed buttons
+   * based on the current order assets and their dispensing status.
+   *
+   * Logic matches Vue.js ChooseAsset.vue implementation:
+   * - Cancel Request: Only enabled when NO dispensing activity has started
+   * - Proceed: Only enabled when AT LEAST ONE asset has been dispensed
+   */
+  const buttonStates = React.useMemo(() => {
+    // Default state when no assets are loaded
+    if (!orderAssets || orderAssets.length === 0) {
+      return {
+        isCancelRequestEnabled: true,
+        isProceedEnabled: false,
+        debugInfo: 'No assets loaded',
+      };
+    }
+
+    // 1️⃣ Check if ANY asset has been dispensed (has quantity > 0)
+    const hasAssetWithQuantityDispensed = orderAssets.some((asset: any) => {
+      const quantity = asset.quantity_dispensed;
+      return quantity !== null && quantity !== undefined && quantity > 0;
+    });
+
+    // 2️⃣ Check if ANY asset is in partially filled state
+    const hasPartiallyFilledAsset = partiallyFilledAssetsArray.length > 0;
+
+    // 3️⃣ Check if ANY asset has uploaded video (streaming done but no quantity entered yet)
+    const hasAssetWithUploadedVideo = assetsWithUploadedVideos.length > 0;
+
+    // 📊 Button Logic (matching Vue.js):
+    //
+    // CANCEL REQUEST BUTTON:
+    // ✅ Enabled: When NO dispensing activity has started
+    // ❌ Disabled: When ANY dispensing activity has started
+    const isCancelRequestEnabled =
+      !hasAssetWithQuantityDispensed &&
+      !hasPartiallyFilledAsset &&
+      !hasAssetWithUploadedVideo;
+
+    // PROCEED BUTTON:
+    // ✅ Enabled: When at least one asset has been dispensed
+    // ❌ Disabled: When no assets have been dispensed yet
+    const isProceedEnabled = hasAssetWithQuantityDispensed;
+
+    // Debug information for developers
+    const debugInfo = {
+      hasAssetWithQuantityDispensed,
+      hasPartiallyFilledAsset,
+      hasAssetWithUploadedVideo,
+      partiallyFilledCount: partiallyFilledAssetsArray.length,
+      uploadedVideoCount: assetsWithUploadedVideos.length,
+      totalAssets: orderAssets.length,
+    };
+
+    return {
+      isCancelRequestEnabled,
+      isProceedEnabled,
+      debugInfo,
+    };
+  }, [orderAssets, partiallyFilledAssetsArray, assetsWithUploadedVideos]);
+
+  // 🐛 Debug logging (can be removed in production)
+  console.log('🎯 Button States:', {
+    cancelEnabled: buttonStates.isCancelRequestEnabled,
+    proceedEnabled: buttonStates.isProceedEnabled,
+    debug: buttonStates.debugInfo,
+  });
 
   // Memoize the renderItem function to prevent unnecessary re-renders
-  const renderAssetItem = React.useCallback(({item, index}: {item: any, index: number}) => {
-    // Find the original asset data
-    const originalAsset = orderAssets?.[index];
-    if (!originalAsset) return null;
+  const renderAssetItem = React.useCallback(
+    ({item, index}: {item: any; index: number}) => {
+      // Find the original asset data
+      const originalAsset = orderAssets?.[index];
+      if (!originalAsset) return null;
 
-    // Check if this specific asset has fill remaining status
-    const currentAssetHasFillRemaining = assetHasFillRemaining(originalAsset);
+      // Check if this specific asset has fill remaining status
+      const currentAssetHasFillRemaining = assetHasFillRemaining(originalAsset);
 
-    // Determine if other assets have fill remaining (exclude current asset)
-    const hasOtherAssetWithFillRemaining = hasAnyAssetWithFillRemaining && !currentAssetHasFillRemaining;
+      // Determine if other assets have fill remaining (exclude current asset)
+      const hasOtherAssetWithFillRemaining =
+        hasAnyAssetWithFillRemaining && !currentAssetHasFillRemaining;
 
-    return (
-      <AssetCard
-        assetName={item.name}
-        assetCode={item.code}
-        requestedQuantity={item.requestedQuantity}
-        filledQuantity={item.filledQuantity}
-        onDispense={() => handleDispense(item.id)}
-        asset={originalAsset} // Pass the full asset object
-        onStartDispense={() => handleStartDispense(originalAsset)} // Pass the original asset with full data
-        hasOtherFillRemaining={hasOtherAssetWithFillRemaining} // Pass the new prop
-      />
+      return (
+        <AssetCard
+          assetName={item.name}
+          assetCode={item.code}
+          requestedQuantity={item.requestedQuantity}
+          filledQuantity={item.filledQuantity}
+          onDispense={() => handleDispense(item.id)}
+          asset={originalAsset} // Pass the full asset object
+          onStartDispense={() => handleStartDispense(originalAsset)} // Pass the original asset with full data
+          hasOtherFillRemaining={hasOtherAssetWithFillRemaining} // Pass the new prop
+        />
+      );
+    },
+    [orderAssets, hasAnyAssetWithFillRemaining, assetHasFillRemaining],
+  );
+
+  // Get data from store for cancellation reason logic
+  const orderAssetsForCancellation = orderStore.use.orderAssets();
+  const partiallyFilledAssetsArrayForCancellation = orderStore.use.partiallyFilledAssetsArray();
+  const assetsWithUploadedVideosForCancellation = orderStore.use.assetsWithUploadedVideos();
+
+  // Get context-aware button text
+  const getCancellationButtonText = useCallback(() => {
+    const hasDispenseStarted = orderAssetsForCancellation?.some(
+      (asset: any) =>
+        asset.quantity_dispensed > 0 ||
+        partiallyFilledAssetsArrayForCancellation.includes(asset?.customer_asset?.id) ||
+        assetsWithUploadedVideosForCancellation.includes(asset?.customer_asset?.id),
     );
-  }, [orderAssets, hasAnyAssetWithFillRemaining, assetHasFillRemaining]);
+
+    return hasDispenseStarted ? 'Report Issue' : 'Cancel Request';
+  }, [orderAssetsForCancellation, partiallyFilledAssetsArrayForCancellation, assetsWithUploadedVideosForCancellation]);
 
   return (
     <View style={{flex: 1}}>
@@ -269,7 +377,9 @@ const ChooseAssetScreen: React.FC = () => {
 
         <FlatList
           data={mappedAssets}
-          keyExtractor={(item, index) => `${item.id}-${item.filledQuantity}-${index}`} // Include filledQuantity in key to force re-render
+          keyExtractor={(item, index) =>
+            `${item.id}-${item.filledQuantity}-${index}`
+          } // Include filledQuantity in key to force re-render
           renderItem={renderAssetItem}
           contentContainerStyle={{paddingBottom: 100}} // 👈 ensures space for buttons
           extraData={orderAssets} // Force re-render when orderAssets changes
@@ -281,20 +391,54 @@ const ChooseAssetScreen: React.FC = () => {
         loaderText="Fetching order assets"
       />
       <View style={styles.buttonContainer as ViewStyle}>
+        {/* 🚫 CANCEL REQUEST BUTTON */}
         <Button
           onPress={handleCancel}
           variant="outlined"
-          style={{flex: 1, marginRight: 8, borderColor: FBColorPalette.error}}
-          textStyle={{color: FBColorPalette.error}}>
-          Cancel Request
+          style={[
+            {flex: 1, marginRight: 8},
+            buttonStates.isCancelRequestEnabled
+              ? {borderColor: FBColorPalette.error} // 🔴 Active red state
+              : {borderColor: FBColorPalette.disabledInputText, opacity: 0.5}, // 🔄 Disabled gray state
+          ]}
+          textStyle={{
+            color: buttonStates.isCancelRequestEnabled
+              ? FBColorPalette.error // 🔴 Active red text
+              : FBColorPalette.disabledInputText, // 🔄 Disabled gray text
+          }}
+          disabled={!buttonStates.isCancelRequestEnabled}>
+          {getCancellationButtonText()}
         </Button>
+
+        {/* ✅ PROCEED BUTTON */}
         <Button
           onPress={handleProceed}
           variant="solid"
-          style={{flex: 1, marginLeft: 8}}>
+          style={[
+            {flex: 1, marginLeft: 8},
+            buttonStates.isProceedEnabled
+              ? {} // 🟢 Default green state (handled by variant="solid")
+              : {
+                  backgroundColor: FBColorPalette.disabledInputText,
+                  opacity: 0.6,
+                }, // 🔄 Disabled state
+          ]}
+          textStyle={{
+            color: buttonStates.isProceedEnabled
+              ? 'white' // 🟢 Active white text
+              : FBColorPalette.disabledInputText, // 🔄 Disabled gray text
+          }}
+          disabled={!buttonStates.isProceedEnabled}>
           Proceed
         </Button>
       </View>
+
+      {/* 🚫 ORDER CANCELLATION REQUEST COMPONENT */}
+      <OrderCancellationRequest
+        isVisible={showCancellationModal}
+        onClose={() => setShowCancellationModal(false)}
+        onSuccess={handleCancellationSuccess}
+      />
     </View>
   );
 };

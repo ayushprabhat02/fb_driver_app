@@ -1,0 +1,10 @@
+mutation addTaskCancellationReason(
+  $object: task_cancellation_reasons_insert_input!
+) {
+  insert_task_cancellation_reasons_one(object: $object) {
+    id
+    is_active
+    task_id
+    reason
+  }
+}
