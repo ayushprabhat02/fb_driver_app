@@ -1,5 +1,0 @@
-query checkIfPanAlreadyExists($object: checkIfPanExistsInput!) {
-  checkIfPanExists(object: $object) {
-    flag
-  }
-}

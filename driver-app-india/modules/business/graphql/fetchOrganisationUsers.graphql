@@ -1,9 +1,0 @@
-# query to fetch all users in an org using the organization_user_id
-
-query fetchOrganizationUsers($organization_user_id: uuid!) {
-  fetchOrganizationUsers(
-    object: {organization_user_id: $organization_user_id}
-  ) {
-    organization_users
-  }
-}

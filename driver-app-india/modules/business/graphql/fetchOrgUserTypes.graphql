@@ -1,6 +1,0 @@
-query fetchOrganizationUserTypes {
-  organization_user_type {
-    value
-    comment
-  }
-}

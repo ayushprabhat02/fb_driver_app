@@ -8,12 +8,7 @@ import SkeletonPlaceholder from 'react-native-skeleton-placeholder';
 import {DateTime} from 'luxon';
 
 // store
-import {
-  addressStore,
-  businessStore,
-  deliveryStore,
-  homeStore,
-} from '@/globalStore';
+import {addressStore, deliveryStore, homeStore} from '@/globalStore';
 
 //services
 import {
@@ -37,8 +32,8 @@ import {
 } from '@/generated/graphql';
 
 const SwitchProfileHeader: React.FC = () => {
-  const activeDeliveryOrgUser = businessStore.use.activeDeliveryOrgUser();
-  const loader = businessStore.use.loaders();
+  // const activeDeliveryOrgUser = businessStore.use.activeDeliveryOrgUser();
+  // const loader = businessStore.use.loaders();
   const startLoaderDelivery = deliveryStore.use.startLoader();
   const stopLoaderDelivery = deliveryStore.use.stopLoader();
   const stopLoaderAddress = addressStore.use.stopLoader();
@@ -53,39 +48,39 @@ const SwitchProfileHeader: React.FC = () => {
    * hence moved the state inside child component ( SwitchProfileHeader )
    */
 
-  useEffect(() => {
-    if (activeDeliveryOrgUser) {
-      HomeService.getLastCustomerOrder({
-        organization_user_id: activeDeliveryOrgUser?.id,
-      }).then(response => {
-        if (response.length) {
-          homeStore.setState(state => ({
-            ...state,
-            showRepeatOrder: true,
-          }));
-        } else {
-          false;
-        }
-      });
+  // useEffect(() => {
+  //   if (activeDeliveryOrgUser) {
+  //     HomeService.getLastCustomerOrder({
+  //       organization_user_id: activeDeliveryOrgUser?.id,
+  //     }).then(response => {
+  //       if (response.length) {
+  //         homeStore.setState(state => ({
+  //           ...state,
+  //           showRepeatOrder: true,
+  //         }));
+  //       } else {
+  //         false;
+  //       }
+  //     });
 
-      HomeService.fetchCustomerStatistic({
-        organization_user_id: activeDeliveryOrgUser?.id,
-        state: Customer_Order_Item_State_Enum.Delivered,
-      });
+  //     HomeService.fetchCustomerStatistic({
+  //       organization_user_id: activeDeliveryOrgUser?.id,
+  //       state: Customer_Order_Item_State_Enum.Delivered,
+  //     });
 
-      AddressService.getShippingAddresses({
-        address_type: Address_Type_Enum.Shipping,
-        organization_user_id: activeDeliveryOrgUser?.id,
-      }).finally(() => {
-        stopLoaderAddress('fetchAddresses');
-      });
+  //     AddressService.getShippingAddresses({
+  //       address_type: Address_Type_Enum.Shipping,
+  //       organization_user_id: activeDeliveryOrgUser?.id,
+  //     }).finally(() => {
+  //       stopLoaderAddress('fetchAddresses');
+  //     });
 
-      AddressService.getBillingAddresses({
-        address_type: Address_Type_Enum.Billing,
-        organization_user_id: activeDeliveryOrgUser?.id,
-      });
-    }
-  }, [activeDeliveryOrgUser, stopLoaderAddress]);
+  //     AddressService.getBillingAddresses({
+  //       address_type: Address_Type_Enum.Billing,
+  //       organization_user_id: activeDeliveryOrgUser?.id,
+  //     });
+  //   }
+  // }, [activeDeliveryOrgUser, stopLoaderAddress]);
 
   const selectAddress = async () => {
     startLoaderDelivery('fetchDeliverySlots');
@@ -162,7 +157,7 @@ const SwitchProfileHeader: React.FC = () => {
 };
 
 const styles = ScaledSheet.create({
-  container: { alignItems: 'flex-end'},
+  container: {alignItems: 'flex-end'},
 
   settingsBtn: {
     width: 56,

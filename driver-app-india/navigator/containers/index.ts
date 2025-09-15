@@ -9,6 +9,5 @@ export {default as SettingsNavigator} from './Settings';
 export {default as OrderNavigator} from './Order';
 export {default as UserNavigator} from './User';
 export {default as SupportNavigator} from './Support';
-export {default as BusinessNavigator} from './Business';
 export {default as ReportNavigator} from './Reports';
 export {default as CheckinNavigator} from './CheckinPage';

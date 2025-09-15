@@ -3,8 +3,7 @@ export {default as StatsCardGrid} from './StatsCardGrid';
 export {default as RepeatLastOrderCard} from './RepeatLastOrderCard';
 export {default as ForYouDecoration} from './ForYouDecoration';
 export {default as ImagesCarousel} from './ImagesCarousel';
-export {default as BusinessHomeCard} from './BusinessHomeCard';
-export {default as BusinessList} from './BusinessList';
+
 export {default as Explore} from './Explore';
 export {default as Wallet} from './Wallet';
 export {default as NoStats} from './NoStats';
