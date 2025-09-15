@@ -5,7 +5,7 @@ import {Client, Provider} from 'urql';
 
 // components
 import {
-  AddressNavigator,
+  FillupNavigator,
   AssetsNavigator,
   BusinessNavigator,
   DeliveryNavigator,
@@ -67,7 +67,7 @@ const ProtectedNavigator: React.FC<Props> = () => {
         />
 
         <ProtectedStack.Screen name="reports" component={ReportNavigator} />
-        <ProtectedStack.Screen name="address" component={AddressNavigator} />
+        <ProtectedStack.Screen name="fillup" component={FillupNavigator} />
         <ProtectedStack.Screen
           name="wallet"
           component={WalletNavigator}
