@@ -2,6 +2,7 @@
 import {View, StyleSheet} from 'react-native';
 import React, {useEffect} from 'react';
 import {useNavigation} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 
 // components
 import SuccessAnimation from '@/components/SucessAnimation';
@@ -11,8 +12,13 @@ import {Divider, HeaderAvoidingContainer, Text} from '@/components';
 
 import Toast from 'react-native-toast-message';
 
+type RootStackParamList = {
+  home: undefined;
+};
+
 const OrderSuccess: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   useEffect(() => {
     // Show success toast after 1 second
@@ -26,10 +32,8 @@ const OrderSuccess: React.FC = () => {
 
     // Navigate to homeLandingPage after 3 seconds
     const navigationTimer = setTimeout(() => {
-      (navigation as any).reset({
-        index: 0,
-        routes: [{name: 'homeLandingPage'}],
-      });
+      // Navigate to the home route
+      (navigation as any).navigate('home');
     }, 3000);
 
     return () => {
