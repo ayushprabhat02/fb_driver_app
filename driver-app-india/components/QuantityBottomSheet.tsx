@@ -33,6 +33,8 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
   const [loading, setLoading] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const pendingQuantity = orderStore.use.pendingQuantity();
+  const fuelDispensedTillNow = orderStore.use.fuelDispensedTillNow();
+  const quantityToBeDispensed = orderStore.use.quantityToBeDispensed();
 
   const bottomSheetRef = useRef<BottomSheetModal>(null);
 
@@ -40,7 +42,13 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
     if (visible) {
       setIsComplete(false);
       // For filling remaining, don't prefill with existing quantity to allow adding more
-      setQuantity(isFillingRemaining ? '' : (existingQuantity > 0 ? existingQuantity.toString() : ''));
+      setQuantity(
+        isFillingRemaining
+          ? ''
+          : existingQuantity > 0
+          ? existingQuantity.toString()
+          : '',
+      );
       bottomSheetRef.current?.present();
     } else {
       bottomSheetRef.current?.close();
@@ -86,6 +94,16 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
       return;
     }
 
+    // Validate quantity is in multiples of 20 (like Vue project)
+    if (quantityNum % 20 !== 0) {
+      Toast.show({
+        type: 'error',
+        text1: 'Invalid Quantity',
+        text2: 'Quantity must be in multiples of 20 liters',
+      });
+      return;
+    }
+
     // If filling remaining, add to existing quantity
     if (isFillingRemaining) {
       quantityNum = existingQuantity + quantityNum;
@@ -97,6 +115,16 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
         type: 'error',
         text1: 'Quantity Exceeds Pending',
         text2: `The entered quantity exceeds the pending quantity of ${pendingQuantity}L`,
+      });
+      return;
+    }
+
+    // Validation based on Vue project logic - check if total dispensed quantity exceeds quantity to be dispensed
+    if (quantityToBeDispensed > 0 && (fuelDispensedTillNow + quantityNum) > quantityToBeDispensed && quantityNum !== 0) {
+      Toast.show({
+        type: 'error',
+        text1: 'Quantity Exceeds Limit',
+        text2: `Total dispensed quantity (${fuelDispensedTillNow + quantityNum}L) exceeds the quantity to be dispensed (${quantityToBeDispensed}L)`,
       });
       return;
     }
@@ -125,7 +153,11 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
       <BottomSheetView style={styles.bottomSheetView}>
         <View style={styles.container}>
           <Text size="lg" weight="700" color="secondary">
-            {isComplete ? 'Dispensing Complete' : (isFillingRemaining ? 'Enter Additional Quantity' : 'Enter Quantity Dispensed')}
+            {isComplete
+              ? 'Dispensing Complete'
+              : isFillingRemaining
+              ? 'Enter Additional Quantity'
+              : 'Enter Quantity Dispensed'}
           </Text>
 
           <Divider height={16} />
@@ -151,28 +183,57 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
                     </Text>
                   </View>
                 </>
-              ) : pendingQuantity > 0 ? (
-                <View style={styles.orderInfo}>
-                  <Text size="sm" color="darkGray" weight="500">
-                    Pending Quantity
-                  </Text>
-                  <Text size="base" color="primary" weight="700">
-                    {pendingQuantity}L
-                  </Text>
-                </View>
-              ) : null}
+              ) : (
+                <>
+                  {fuelDispensedTillNow > 0 && (
+                    <View style={styles.orderInfo}>
+                      <Text size="sm" color="darkGray" weight="500">
+                        Fuel Dispensed Till Now
+                      </Text>
+                      <Text size="base" color="primary" weight="700">
+                        {fuelDispensedTillNow}L
+                      </Text>
+                    </View>
+                  )}
+                  {quantityToBeDispensed > 0 && (
+                    <View style={styles.orderInfo}>
+                      <Text size="sm" color="darkGray" weight="500">
+                        Quantity To Be Dispensed
+                      </Text>
+                      <Text size="base" color="secondary" weight="700">
+                        {quantityToBeDispensed}L
+                      </Text>
+                    </View>
+                  )}
+                  {pendingQuantity > 0 && (
+                    <View style={styles.orderInfo}>
+                      <Text size="sm" color="darkGray" weight="500">
+                        Pending Quantity
+                      </Text>
+                      <Text size="base" color="error" weight="700">
+                        {pendingQuantity}L
+                      </Text>
+                    </View>
+                  )}
+                </>
+              )}
 
               <View style={styles.inputContainer}>
                 <Text size="sm" weight="500" color="neutral">
-                  {isFillingRemaining ? 'Additional Quantity (Liters)' : 'Quantity Dispensed (Liters)'}
+                  {isFillingRemaining
+                    ? 'Additional Quantity (Liters)'
+                    : 'Quantity Dispensed (Liters)'}
                 </Text>
                 <BottomSheetTextInput
                   style={styles.textInput}
                   value={quantity}
                   onChangeText={setQuantity}
-                  placeholder="Enter quantity in liters"
+                  placeholder="Enter quantity in multiples of 20L"
                   keyboardType="numeric"
                 />
+                <Text size="xs" color="darkGray" style={{marginTop: 4, fontStyle: 'italic'}}>
+                  Note: Quantity must be in multiples of 20 liters
+                </Text>
               </View>
 
               <View style={styles.buttonRow}>

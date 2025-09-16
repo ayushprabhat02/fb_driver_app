@@ -116,6 +116,12 @@ type OrderStore = {
   assetsWithUploadedVideos: string[];
 
   pendingQuantity: number;
+
+  // fuel dispensed till now - tracks total quantity dispensed across all sessions
+  fuelDispensedTillNow: number;
+
+  // quantity to be dispensed - target quantity for current dispensing session
+  quantityToBeDispensed: number;
 };
 
 type OrderActions = {
@@ -131,6 +137,10 @@ type OrderActions = {
   // video upload status management
   addAssetWithUploadedVideo: (assetId: string) => void;
   removeAssetWithUploadedVideo: (assetId: string) => void;
+
+  // quantity tracking actions
+  setFuelDispensedTillNow: (quantity: number) => void;
+  setQuantityToBeDispensed: (quantity: number) => void;
 };
 
 /*
@@ -205,9 +215,10 @@ const orderInitialState: OrderStore = {
   
   // missing properties initial values
   fuelDispensedTillNow: 0,
+  quantityToBeDispensed: 0,
   driverVehicleDetails: null,
-  
-  pendingQuantity:0
+
+  pendingQuantity: 0
 };
 
 const orderPaginationInitialState = {
@@ -277,11 +288,17 @@ const orderStore = create<OrderStore & OrderActions>(set => ({
       assetsWithUploadedVideos: state.assetsWithUploadedVideos.filter(id => id !== assetId),
     })),
 
-  // missing actions from Vue.js implementation
+  // quantity tracking actions
   setFuelDispensedTillNow: (quantity: number) =>
     set(state => ({
       ...state,
       fuelDispensedTillNow: quantity,
+    })),
+
+  setQuantityToBeDispensed: (quantity: number) =>
+    set(state => ({
+      ...state,
+      quantityToBeDispensed: quantity,
     })),
 
   setDriverVehicleDetails: (details: any) =>

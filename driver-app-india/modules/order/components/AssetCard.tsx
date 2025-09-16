@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import {ScaledSheet} from 'react-native-size-matters';
 import {useNavigation} from '@react-navigation/native';
+import Toast from 'react-native-toast-message';
 import {Text, QuantityBottomSheet} from '@/components';
 import {FBColors, FBBackground, FBBorders, FontSizeEnum} from '@/types/styles';
 import {orderStore} from '@/globalStore';
@@ -94,20 +95,25 @@ const AssetCard: React.FC<AssetCardProps> = ({
       return;
     }
 
+    const selectedOrder = orderStore.getState().currentDriverOrder;
+    if (!selectedOrder?.customer_order?.id) {
+      Alert.alert('Error', 'Order data is missing');
+      return;
+    }
+
+    const assetId = asset.customer_asset?.id || asset.id || asset.customer_asset_id;
+    if (!assetId) {
+      Alert.alert('Error', 'Asset ID is missing');
+      return;
+    }
+
     try {
-      const selectedOrder = orderStore.getState().currentDriverOrder;
-
-      if (!selectedOrder?.customer_order?.id) {
-        Alert.alert('Error', 'Order data is missing');
-        return;
-      }
-
-      const assetId =
-        asset.customer_asset?.id || asset.id || asset.customer_asset_id;
-      if (!assetId) {
-        Alert.alert('Error', 'Asset ID is missing');
-        return;
-      }
+      // Show loading toast (like Vue project)
+      Toast.show({
+        type: 'success',
+        text1: 'Updating...',
+        text2: 'Updating asset value, please wait a moment...',
+      });
 
       // Update asset quantity through API
       await orderService.updateAssetQty({
@@ -115,19 +121,6 @@ const AssetCard: React.FC<AssetCardProps> = ({
         customerOrderId: selectedOrder.customer_order.id,
         qty: quantity,
       });
-
-      // Update the asset in the store
-      const updatedAssets = orderStore.getState().orderAssets?.map((a: any) => {
-        if ((a.customer_asset?.id || a.id) === assetId) {
-          return {...a, quantity_dispensed: quantity};
-        }
-        return a;
-      });
-
-      orderStore.setState(state => ({
-        ...state,
-        orderAssets: updatedAssets,
-      }));
 
       // Remove from uploaded videos array since quantity is now entered
       removeAssetWithUploadedVideo(assetId);
@@ -142,8 +135,21 @@ const AssetCard: React.FC<AssetCardProps> = ({
       }
 
       setShowQuantityBottomSheet(false);
+
+      // Success feedback (like Vue project)
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Asset quantity updated successfully',
+      });
+
     } catch (error) {
-      Alert.alert('Error', 'Failed to update quantity. Please try again.');
+      console.error('Error updating asset quantity:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Update Failed',
+        text2: 'Failed to update quantity. Please try again.',
+      });
     }
   };
 

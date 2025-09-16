@@ -8,11 +8,7 @@ import type {OrderStackParamList} from '@/navigator/containers/Order';
 
 // components
 import {FocusAwareStatusBar, FullScreenLoader, Button} from '@/components';
-import {
-  AssetSummaryCard,
-  AssetSearchBar,
-  AssetCard,
-} from '../components';
+import {AssetSummaryCard, AssetSearchBar, AssetCard} from '../components';
 import OrderCancellationRequest from '../components/OrderCancellationRequest';
 
 // styles
@@ -345,20 +341,30 @@ const ChooseAssetScreen: React.FC = () => {
 
   // Get data from store for cancellation reason logic
   const orderAssetsForCancellation = orderStore.use.orderAssets();
-  const partiallyFilledAssetsArrayForCancellation = orderStore.use.partiallyFilledAssetsArray();
-  const assetsWithUploadedVideosForCancellation = orderStore.use.assetsWithUploadedVideos();
+  const partiallyFilledAssetsArrayForCancellation =
+    orderStore.use.partiallyFilledAssetsArray();
+  const assetsWithUploadedVideosForCancellation =
+    orderStore.use.assetsWithUploadedVideos();
 
   // Get context-aware button text
   const getCancellationButtonText = useCallback(() => {
     const hasDispenseStarted = orderAssetsForCancellation?.some(
       (asset: any) =>
         asset.quantity_dispensed > 0 ||
-        partiallyFilledAssetsArrayForCancellation.includes(asset?.customer_asset?.id) ||
-        assetsWithUploadedVideosForCancellation.includes(asset?.customer_asset?.id),
+        partiallyFilledAssetsArrayForCancellation.includes(
+          asset?.customer_asset?.id,
+        ) ||
+        assetsWithUploadedVideosForCancellation.includes(
+          asset?.customer_asset?.id,
+        ),
     );
 
     return hasDispenseStarted ? 'Report Issue' : 'Cancel Request';
-  }, [orderAssetsForCancellation, partiallyFilledAssetsArrayForCancellation, assetsWithUploadedVideosForCancellation]);
+  }, [
+    orderAssetsForCancellation,
+    partiallyFilledAssetsArrayForCancellation,
+    assetsWithUploadedVideosForCancellation,
+  ]);
 
   return (
     <View style={{flex: 1}}>

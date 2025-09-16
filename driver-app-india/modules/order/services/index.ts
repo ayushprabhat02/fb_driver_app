@@ -443,8 +443,21 @@ class OrderService {
         },
       );
 
+      // Calculate quantities for validation (like Vue project)
+      const totalQuantityRequested = sortedAssets.reduce(
+        (sum, asset) => sum + (asset.quantity_requested || 0),
+        0,
+      );
+      const totalQuantityDispensed = sortedAssets.reduce(
+        (sum, asset) => sum + (asset.quantity_dispensed || 0),
+        0,
+      );
+
       orderStore.setState({
         orderAssets: sortedAssets,
+        quantityToBeDispensed: totalQuantityRequested,
+        fuelDispensedTillNow: totalQuantityDispensed,
+        pendingQuantity: totalQuantityRequested - totalQuantityDispensed,
       });
 
       return sortedAssets;
@@ -521,7 +534,38 @@ class OrderService {
         },
       });
 
-      return response.update_customer_order_customer_asset?.returning[0];
+      const updatedAsset =
+        response.update_customer_order_customer_asset?.returning[0];
+
+      // Update the store state with new quantity values (like Vue project)
+      if (updatedAsset) {
+        const currentState = orderStore.getState();
+        const updatedAssets = currentState.orderAssets.map(asset =>
+          asset.customer_asset?.id === updatedAsset.customer_asset?.id
+            ? {...asset, quantity_dispensed: updatedAsset.quantity_dispensed}
+            : asset,
+        );
+
+        // Recalculate totals
+        const totalQuantityDispensed = updatedAssets.reduce(
+          (sum, asset) => sum + (asset.quantity_dispensed || 0),
+          0,
+        );
+        const totalQuantityRequested = updatedAssets.reduce(
+          (sum, asset) => sum + (asset.quantity_requested || 0),
+          0,
+        );
+
+        orderStore.setState(state => ({
+          ...state,
+          orderAssets: updatedAssets,
+          fuelDispensedTillNow: totalQuantityDispensed,
+          pendingQuantity: totalQuantityRequested - totalQuantityDispensed,
+          quantityDispensed: args.qty, // Set the current dispensed quantity
+        }));
+      }
+
+      return updatedAsset;
     } catch (error) {
       console.error('Error updating asset quantity:', error);
       throw new Error('Failed to update asset quantity');
