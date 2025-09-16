@@ -394,10 +394,27 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
     }
   };
 
+  const getVideoFormat = (uri: string, mimeType?: string) => {
+    // Check the MIME type first if available
+    if (mimeType) {
+      if (mimeType.includes('webm')) return 'webm';
+      if (mimeType.includes('mp4')) return 'mp4';
+    }
+
+    // Fallback to URI extension check
+    if (uri.toLowerCase().includes('.webm')) return 'webm';
+    if (uri.toLowerCase().includes('.mp4')) return 'mp4';
+
+    // Default based on platform - Android often produces webm from camera
+    return Platform.OS === 'android' ? 'webm' : 'mp4';
+  };
+
   const handleRecordingFinished = async (data: any) => {
     try {
-      // filename
-      const fileName = `Recording_${currentDriverOrder?.customer_order?.order_code}.mp4`;
+      // Detect actual video format
+      const videoFormat = getVideoFormat(data.uri, data.codec);
+      const contentType = `video/${videoFormat}`;
+      const fileName = `Recording_${currentDriverOrder?.customer_order?.order_code}.${videoFormat}`;
 
       let uploadedUrl = data.uri || ''; // Fallback to local URI
       let uploadSuccess = false;
@@ -415,11 +432,12 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         const blob = await response.blob();
 
         console.log(`Video size: ${(blob.size / 1024 / 1024).toFixed(2)} MB`);
+        console.log(`Video format detected: ${videoFormat}, Content-Type: ${contentType}`);
 
         // Upload video to Google Cloud Storage
         const uploadResult = await supportService.uploadFile({
           fileName: fileName,
-          contentType: 'video/mp4',
+          contentType: contentType,
           fileData: blob,
         });
 
@@ -600,15 +618,20 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
     try {
       setIsUploadingFromDevice(true);
 
+      // Detect video format from selected file
+      const detectedFormat = selectedFile.type?.includes('webm') ? 'webm' :
+                            selectedFile.type?.includes('mp4') ? 'mp4' :
+                            selectedFile.name?.toLowerCase().includes('.webm') ? 'webm' : 'mp4';
+      const contentType = selectedFile.type || `video/${detectedFormat}`;
       const fileName = `Upload_${
         currentDriverOrder?.customer_order?.order_code
-      }_${Date.now()}.mp4`;
+      }_${Date.now()}.${detectedFormat}`;
 
       // Try to upload the file directly using the file object
       // Many upload services can handle the file object with uri, type, and name
       const fileData = {
         uri: selectedFile.uri,
-        type: selectedFile.type || 'video/mp4',
+        type: contentType,
         name: fileName,
       };
 
@@ -619,11 +642,12 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           1024
         ).toFixed(2)} MB`,
       );
+      console.log(`Selected video format: ${detectedFormat}, Content-Type: ${contentType}`);
 
       // Upload video to Google Cloud Storage
       const uploadResult = await supportService.uploadFile({
         fileName: fileName,
-        contentType: selectedFile.type || 'video/mp4',
+        contentType: contentType,
         fileData: fileData, // Pass the file object directly
       });
 
@@ -691,19 +715,24 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
     try {
       setIsManualUploading(true);
 
-      const fileName = `Recording_${currentDriverOrder?.customer_order?.order_code}.mp4`;
+      // Detect format from recorded file path
+      const detectedFormat = recordedVideoFile.toLowerCase().includes('.webm') ? 'webm' : 'mp4';
+      const contentType = `video/${detectedFormat}`;
+      const fileName = `Recording_${currentDriverOrder?.customer_order?.order_code}.${detectedFormat}`;
 
       // Create file object for upload
       const fileData = {
         uri: recordedVideoFile,
-        type: 'video/mp4',
+        type: contentType,
         name: fileName,
       };
+
+      console.log(`Manual upload format detected: ${detectedFormat}, Content-Type: ${contentType}`);
 
       // Upload video to Google Cloud Storage
       const uploadResult = await supportService.uploadFile({
         fileName: fileName,
-        contentType: 'video/mp4',
+        contentType: contentType,
         fileData: fileData,
       });
 
