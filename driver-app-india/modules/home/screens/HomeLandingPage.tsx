@@ -177,10 +177,14 @@ const HomeLandingPage: React.FC = () => {
     }
 
     const targetDate = date || selectedDate;
-    const startDate = new Date(targetDate);
-    startDate.setHours(0, 0, 0, 0);
-    const endDate = new Date(targetDate);
-    endDate.setHours(23, 59, 59, 999);
+
+    // Format dates without timezone conversion (matching Vue.js implementation)
+    const year = targetDate.getFullYear();
+    const month = String(targetDate.getMonth() + 1).padStart(2, '0');
+    const day = String(targetDate.getDate()).padStart(2, '0');
+
+    const startDateString = `${year}-${month}-${day}T00:00:00`;
+    const endDateString = `${year}-${month}-${day}T23:59:59`;
 
     startLoader('driverCurrentOrder');
     homeService
@@ -197,8 +201,8 @@ const HomeLandingPage: React.FC = () => {
         limit: 10,
         offset: 0,
         driver_vehicle_id: driverVehicleId,
-        start_date: startDate.toISOString(),
-        end_date: endDate.toISOString(),
+        start_date: startDateString,
+        end_date: endDateString,
       })
       .finally(() => {
         stopLoader('driverCurrentOrder');
