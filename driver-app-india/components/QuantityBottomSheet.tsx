@@ -8,7 +8,7 @@ import {
   BottomSheetView,
 } from '@gorhom/bottom-sheet';
 
-import {Input, Button, SimpleBottomSheet, Text, Divider} from '@/components';
+import {Input, Button, SimpleBottomSheet, Text, Divider, FullScreenLoader} from '@/components';
 import {FBBackground, FBColors, FBBorders} from '@/types/styles';
 import {orderStore} from '@/globalStore';
 
@@ -35,6 +35,9 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
   const pendingQuantity = orderStore.use.pendingQuantity();
   const fuelDispensedTillNow = orderStore.use.fuelDispensedTillNow();
   const quantityToBeDispensed = orderStore.use.quantityToBeDispensed();
+  const startLoader = orderStore.use.startLoader();
+  const stopLoader = orderStore.use.stopLoader();
+  const loaders = orderStore.use.loaders();
 
   const bottomSheetRef = useRef<BottomSheetModal>(null);
 
@@ -64,6 +67,7 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
 
   const proceedWithQuantity = async (quantityNum: number) => {
     try {
+      startLoader('quantityBottomSheet');
       setLoading(true);
       await Promise.resolve(onProceed(quantityNum));
       setIsComplete(true);
@@ -79,6 +83,8 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
         text1: 'Failed to save quantity',
         text2: 'Please try again',
       });
+    } finally {
+      stopLoader('quantityBottomSheet');
     }
   };
 
@@ -271,6 +277,9 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
           )}
         </View>
       </BottomSheetView>
+
+      {/* FullScreen Loader */}
+      <FullScreenLoader showLoader={loaders.quantityBottomSheet} loaderText="Saving quantity..." />
     </SimpleBottomSheet>
   );
 };

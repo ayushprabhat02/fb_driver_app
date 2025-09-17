@@ -30,7 +30,13 @@ type LoaderTypes =
   | 'quantityImage'
   | 'challanImage'
   | 'technicianImage'
-  | 'orderAssets';
+  | 'orderAssets'
+  | 'upsertTaskAction'     // For API calls to upsert task actions
+  | 'updateAssetQty'      // For API calls to update asset quantity
+  | 'uploadVideo'         // For actual file upload operations
+  | 'liveStream'          // For live streaming operations
+  | 'chooseAsset'         // For choose asset screen operations
+  | 'quantityBottomSheet'; // For quantity bottom sheet operations
 
 type Loaders = {
   currentOrdersInView: boolean;
@@ -42,6 +48,12 @@ type Loaders = {
   challanImage: boolean;
   technicianImage: boolean;
   orderAssets: boolean;
+  upsertTaskAction: boolean;
+  updateAssetQty: boolean;
+  uploadVideo: boolean;
+  liveStream: boolean;
+  chooseAsset: boolean;
+  quantityBottomSheet: boolean;
 };
 
 type OrderStore = {
@@ -122,6 +134,9 @@ type OrderStore = {
 
   // quantity to be dispensed - target quantity for current dispensing session
   quantityToBeDispensed: number;
+
+  // driver vehicle details
+  driverVehicleDetails: any | null;
 };
 
 type OrderActions = {
@@ -171,6 +186,12 @@ const orderInitialState: OrderStore = {
     challanImage: false,
     technicianImage: false,
     orderAssets: false,
+    upsertTaskAction: false,
+    updateAssetQty: false,
+    uploadVideo: false,
+    liveStream: false,
+    chooseAsset: false,
+    quantityBottomSheet: false,
   },
   currentOrderStatus: undefined,
   upcomingOrders: undefined,

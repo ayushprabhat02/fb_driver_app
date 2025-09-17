@@ -23,6 +23,7 @@ import {
   QuantityBottomSheet,
   Divider,
   Button,
+  FullScreenLoader,
 } from '@/components';
 import PermissionScreen from '../components/PermissionScreen';
 import CameraOverlay from '../components/CameraOverlay';
@@ -87,6 +88,12 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   const addAssetWithUploadedVideo = orderStore.use.addAssetWithUploadedVideo();
   const removeAssetWithUploadedVideo =
     orderStore.use.removeAssetWithUploadedVideo();
+  const fuelDispensedTillNow = orderStore.use.fuelDispensedTillNow();
+  const quantityToBeDispensed = orderStore.use.quantityToBeDispensed();
+  const currentAssetForDispense = orderStore.use.currentAssetForDispense();
+  const startLoader = orderStore.use.startLoader();
+  const stopLoader = orderStore.use.stopLoader();
+  const loaders = orderStore.use.loaders();
 
   // console.log('--currentDriverOrder---', currentDriverOrder);
 
@@ -218,6 +225,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
     if (!cameraRef.current || isRecording) return;
 
     try {
+      startLoader('liveStream');
       setIsLoading(true);
       setStreamingState('started');
 
@@ -226,7 +234,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         throw new Error('Order data is missing');
       }
 
-      const currentAssetId = orderStore.getState().currentAssetForDispense?.id;
+      const currentAssetId = currentAssetForDispense?.id;
       if (!currentAssetId) {
         throw new Error('Asset data is missing');
       }
@@ -241,6 +249,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       setCanStopStream(false);
 
       // Update stream status via API
+      startLoader('upsertTaskAction');
       await orderService.upsertStepTaskAction({
         object: {
           key: 'STREAM_STARTED',
@@ -250,6 +259,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           customer_asset_id: currentAssetId,
         },
       });
+      stopLoader('upsertTaskAction');
 
       await orderService.updateTaskLiveDispensingStatus({
         task_id: currentDriverOrder?.id,
@@ -293,6 +303,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         text2: 'Unable to start recording',
       });
     } finally {
+      stopLoader('liveStream');
       setIsLoading(false);
     }
   };
@@ -305,15 +316,17 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       setStreamingState('stopped');
 
       // Update stream status via API
+      startLoader('upsertTaskAction');
       await orderService.upsertStepTaskAction({
         object: {
           key: 'STREAM_STOPPED',
           url: '',
           value: new Date().toISOString(),
           task_id: currentDriverOrder?.id,
-          customer_asset_id: orderStore.getState().currentAssetForDispense?.id,
+          customer_asset_id: currentAssetForDispense?.id,
         },
       });
+      stopLoader('upsertTaskAction');
 
       await orderService.updateTaskLiveDispensingStatus({
         task_id: currentDriverOrder?.id || '',
@@ -411,6 +424,8 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
 
   const handleRecordingFinished = async (data: any) => {
     try {
+      startLoader('uploadVideo');
+      
       // Detect actual video format
       const videoFormat = getVideoFormat(data.uri, data.codec);
       const contentType = `video/${videoFormat}`;
@@ -457,6 +472,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       }
 
       // Save the task action with uploaded video URL or local URI
+      startLoader('upsertTaskAction');
       await orderService.upsertStepTaskAction({
         object: {
           key: 'LIVE_STREAM_RECORDING',
@@ -464,12 +480,13 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           value: fileName,
           quantity_dispensed: 0,
           task_id: currentDriverOrder?.id,
-          customer_asset_id: orderStore.getState().currentAssetForDispense?.id,
+          customer_asset_id: currentAssetForDispense?.id,
         },
       });
+      stopLoader('upsertTaskAction');
 
       // Mark asset as having uploaded video
-      const currentAssetId = orderStore.getState().currentAssetForDispense?.id;
+      const currentAssetId = currentAssetForDispense?.id;
       if (currentAssetId && uploadSuccess) {
         addAssetWithUploadedVideo(currentAssetId);
       }
@@ -490,6 +507,8 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         text1: 'Processing Failed',
         text2: 'Failed to save recording. Please try again.',
       });
+    } finally {
+      stopLoader('uploadVideo');
     }
   };
 
@@ -533,7 +552,16 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       'Video File Location',
       `File Path: ${recordedVideoFile}\n\nFile Exists: ${
         fileExists ? 'Yes' : 'No'
-      }\n\nFor Android Emulator:\n1. Use Device File Explorer in Android Studio\n2. Navigate to: /data/data/com.customer_app_in/files/\n3. Or check Downloads folder\n\nFor iOS Simulator:\n1. Simulator → Device → Photos\n2. Or check app sandbox in Finder`,
+      }
+
+For Android Emulator:
+1. Use Device File Explorer in Android Studio
+2. Navigate to: /data/data/com.customer_app_in/files/
+3. Or check Downloads folder
+
+For iOS Simulator:
+1. Simulator → Device → Photos
+2. Or check app sandbox in Finder`,
       [
         {
           text: 'Copy Path',
@@ -618,6 +646,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
 
   const processSelectedVideo = async (selectedFile: any) => {
     try {
+      startLoader('uploadVideo');
       setIsUploadingFromDevice(true);
 
       // Detect video format from selected file
@@ -661,6 +690,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
 
       if (uploadResult.storeUrl) {
         // Save the task action with uploaded video URL
+        startLoader('upsertTaskAction');
         await orderService.upsertStepTaskAction({
           object: {
             key: 'LIVE_STREAM_RECORDING',
@@ -668,14 +698,13 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
             value: fileName,
             quantity_dispensed: 0,
             task_id: currentDriverOrder?.id,
-            customer_asset_id:
-              orderStore.getState().currentAssetForDispense?.id,
+            customer_asset_id: currentAssetForDispense?.id,
           },
         });
+        stopLoader('upsertTaskAction');
 
         // Mark asset as having uploaded video
-        const currentAssetId =
-          orderStore.getState().currentAssetForDispense?.id;
+        const currentAssetId = currentAssetForDispense?.id;
         if (currentAssetId) {
           addAssetWithUploadedVideo(currentAssetId);
         }
@@ -706,6 +735,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
             : 'Failed to upload selected video. Please try again.',
       });
     } finally {
+      stopLoader('uploadVideo');
       setIsUploadingFromDevice(false);
     }
   };
@@ -721,6 +751,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
     }
 
     try {
+      startLoader('uploadVideo');
       setIsManualUploading(true);
 
       // Detect format from recorded file path
@@ -750,6 +781,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
 
       if (uploadResult.storeUrl) {
         // Update the task action with the new URL
+        startLoader('upsertTaskAction');
         await orderService.upsertStepTaskAction({
           object: {
             key: 'LIVE_STREAM_RECORDING',
@@ -757,14 +789,13 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
             value: fileName,
             quantity_dispensed: 0,
             task_id: currentDriverOrder?.id,
-            customer_asset_id:
-              orderStore.getState().currentAssetForDispense?.id,
+            customer_asset_id: currentAssetForDispense?.id,
           },
         });
+        stopLoader('upsertTaskAction');
 
         // Mark asset as having uploaded video
-        const currentAssetId =
-          orderStore.getState().currentAssetForDispense?.id;
+        const currentAssetId = currentAssetForDispense?.id;
         if (currentAssetId) {
           addAssetWithUploadedVideo(currentAssetId);
         }
@@ -797,6 +828,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
             : 'Failed to upload video. Please try again later.',
       });
     } finally {
+      stopLoader('uploadVideo');
       setIsManualUploading(false);
     }
   };
@@ -1283,6 +1315,11 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         }
         existingQuantity={getCurrentAssetFilledQuantity()}
       />
+
+      {/* FullScreen Loaders */}
+      <FullScreenLoader showLoader={loaders.liveStream} loaderText="Starting live stream..." />
+      <FullScreenLoader showLoader={loaders.uploadVideo} loaderText="Uploading video..." />
+      <FullScreenLoader showLoader={loaders.upsertTaskAction} loaderText="Updating task status..." />
     </View>
   );
 };

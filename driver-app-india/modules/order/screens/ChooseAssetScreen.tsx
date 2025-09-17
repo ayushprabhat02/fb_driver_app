@@ -23,6 +23,8 @@ const ChooseAssetScreen: React.FC = () => {
   const currentFillupOrder = orderStore.use.currentFillupOrder();
   const currentDriverOrder = orderStore.use.currentDriverOrder();
   const orderAssets = orderStore.use.orderAssets();
+  const fuelDispensedTillNow = orderStore.use.fuelDispensedTillNow();
+  const quantityToBeDispensed = orderStore.use.quantityToBeDispensed();
 
   const stopLoader = orderStore.use.stopLoader();
   const startLoader = orderStore.use.startLoader();
@@ -177,7 +179,7 @@ const ChooseAssetScreen: React.FC = () => {
     // Use search query or default to '%%' for all results
     const searchKey = debouncedSearchQuery ? `%${debouncedSearchQuery}%` : '%%';
 
-    startLoader('orderAssets');
+    startLoader('chooseAsset');
     try {
       await orderService.getAllCustomerOrderedAssets({
         custOrderId: customerOrderId,
@@ -186,7 +188,7 @@ const ChooseAssetScreen: React.FC = () => {
     } catch (error) {
       console.error('Error fetching assets:', error);
     } finally {
-      stopLoader('orderAssets');
+      stopLoader('chooseAsset');
     }
   }, [
     currentFillupOrder,
@@ -445,6 +447,9 @@ const ChooseAssetScreen: React.FC = () => {
         onClose={() => setShowCancellationModal(false)}
         onSuccess={handleCancellationSuccess}
       />
+
+      {/* FullScreen Loader */}
+      <FullScreenLoader showLoader={orderLoader.chooseAsset} loaderText="Loading assets..." />
     </View>
   );
 };
