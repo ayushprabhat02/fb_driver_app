@@ -6,43 +6,25 @@ import createSelectors from '@/utils/selectors';
 
 // types
 import {
-  FetchCancellationReasonsByReasonTypeQuery,
-  FetchDeliveryOrderByIdQuery,
-  FetchCustomerOrderByIdQuery,
-  FetchDeliveryOrderByStateQuery,
-  FetchDeliveryOrderStateflowQuery,
-  Customer_Order,
-  FetchOrderItemStatusQuery,
-  FetchOrganizationUpcomingOrdersQuery,
-  VerifyPlacedOrderOtpQuery,
-  FetchOrderForDriverIncompleteQuery,
-  GetCustomerOrderedAssetsQuery,
   FetchOrderForDriverNew2Query,
+  GetCustomerOrderedAssetsQuery,
 } from '@/generated/graphql';
 import {BottomSheetModal} from '@gorhom/bottom-sheet';
 
 type LoaderTypes =
-  | 'currentOrdersInView'
-  | 'singleOrderDetails'
-  | 'fetchInvoices'
-  | 'verifyPlacedOrderOtp'
   | 'totalizerImage'
   | 'quantityImage'
   | 'challanImage'
   | 'technicianImage'
   | 'orderAssets'
-  | 'upsertTaskAction'     // For API calls to upsert task actions
-  | 'updateAssetQty'      // For API calls to update asset quantity
-  | 'uploadVideo'         // For actual file upload operations
-  | 'liveStream'          // For live streaming operations
-  | 'chooseAsset'         // For choose asset screen operations
+  | 'upsertTaskAction' // For API calls to upsert task actions
+  | 'updateAssetQty' // For API calls to update asset quantity
+  | 'uploadVideo' // For actual file upload operations
+  | 'liveStream' // For live streaming operations
+  | 'chooseAsset' // For choose asset screen operations
   | 'quantityBottomSheet'; // For quantity bottom sheet operations
 
 type Loaders = {
-  currentOrdersInView: boolean;
-  singleOrderDetails: boolean;
-  fetchInvoices: boolean;
-  verifyPlacedOrderOtp: boolean;
   totalizerImage: boolean;
   quantityImage: boolean;
   challanImage: boolean;
@@ -57,35 +39,9 @@ type Loaders = {
 };
 
 type OrderStore = {
-  currentOrdersInView: FetchDeliveryOrderByStateQuery['customer_order'];
-  currentOrdersInViewClone: FetchDeliveryOrderByStateQuery['customer_order'];
-  currentOrdersInViewOffset: number;
-  currentOrdersInViewCnt: number;
-  allOrdersCount: number;
-  currentOrdersInViewHasMoreOrders: boolean;
-  singleOrderDetails:
-    | FetchDeliveryOrderByStateQuery['customer_order'][0]
-    | FetchDeliveryOrderByIdQuery['customer_order'][0]
-    | Customer_Order
-    | undefined;
-  currentOrderStateFlow: FetchDeliveryOrderStateflowQuery['customer_order_item_stateflow'];
-  currentOrderStatus: FetchOrderItemStatusQuery['fetchOrderItemStatus'];
+  cancellationReason: undefined;
+  cancellationReasonsByReasonType: any;
 
-  // cancellation
-  cancellationReasonsByReasonType: FetchCancellationReasonsByReasonTypeQuery['reasons'];
-  cancellationReason:
-    | FetchCancellationReasonsByReasonTypeQuery['reasons'][0]
-    | undefined;
-
-  // upcoming orders
-  upcomingOrders: FetchOrganizationUpcomingOrdersQuery['fetchOrganizationUpcomingOrdersOtp'];
-  placeOrderOtp: string;
-  upcomingOrdersVerify: any;
-
-  singleOrderDetailsId:
-    | FetchCustomerOrderByIdQuery['customer_order'][0]
-    | undefined;
-  fetchInvoices: string;
   // loading states
   loaders: Loaders;
 
@@ -101,13 +57,13 @@ type OrderStore = {
   quantityImageData: string | null;
   totalizerReading: string;
   quantityDispensed: number;
-  
+
   // buddy challan image data
   challanImageData: string | null;
   technicianImageData: string | null;
   challanUploadedUrl: string | null;
   technicianUploadedUrl: string | null;
-  
+
   // totalizer readings
   totalizerBeforeReading: number;
   totalizerAfterReading: number;
@@ -163,24 +119,10 @@ type OrderActions = {
  * Hence make sure to use 'setState' method provided by zustand to update the state
  */
 const orderInitialState: OrderStore = {
-  currentOrdersInView: [],
-  currentOrdersInViewClone: [],
-  allOrdersCount: 0,
-  currentOrdersInViewOffset: 0,
-  currentOrdersInViewCnt: 0,
-  currentOrdersInViewHasMoreOrders: false,
-  singleOrderDetails: undefined,
-  currentOrderStateFlow: [],
-  cancellationReasonsByReasonType: [],
   cancellationReason: undefined,
-  singleOrderDetailsId: undefined,
-  fetchInvoices: '',
-  // loading states
+  cancellationReasonsByReasonType: [],
+
   loaders: {
-    currentOrdersInView: false,
-    singleOrderDetails: false,
-    fetchInvoices: true,
-    verifyPlacedOrderOtp: false,
     totalizerImage: false,
     quantityImage: false,
     challanImage: false,
@@ -193,10 +135,6 @@ const orderInitialState: OrderStore = {
     chooseAsset: false,
     quantityBottomSheet: false,
   },
-  currentOrderStatus: undefined,
-  upcomingOrders: undefined,
-  placeOrderOtp: '',
-  upcomingOrdersVerify: undefined,
 
   // bottom sheet
   bottomSheetRefOtp: null,
@@ -208,13 +146,13 @@ const orderInitialState: OrderStore = {
   quantityImageData: null,
   totalizerReading: '',
   quantityDispensed: 0,
-  
+
   // buddy challan image data initial state
   challanImageData: null,
   technicianImageData: null,
   challanUploadedUrl: null,
   technicianUploadedUrl: null,
-  
+
   // totalizer readings initial state
   totalizerBeforeReading: 0,
   totalizerAfterReading: 0,
@@ -227,19 +165,19 @@ const orderInitialState: OrderStore = {
 
   // dispensed assets for delivery challan
   dispenseCompletedAssets: null,
-  
+
   // partially filled assets array initial state
   partiallyFilledAssetsArray: [],
-  
+
   // assets with uploaded videos initial state
   assetsWithUploadedVideos: [],
-  
+
   // missing properties initial values
   fuelDispensedTillNow: 0,
   quantityToBeDispensed: 0,
   driverVehicleDetails: null,
 
-  pendingQuantity: 0
+  pendingQuantity: 0,
 };
 
 const orderPaginationInitialState = {
@@ -264,7 +202,12 @@ const orderStore = create<OrderStore & OrderActions>(set => ({
     }),
 
   // reset order store
-  resetOrderStore: () => set({...orderInitialState, partiallyFilledAssetsArray: [], assetsWithUploadedVideos: []}),
+  resetOrderStore: () =>
+    set({
+      ...orderInitialState,
+      partiallyFilledAssetsArray: [],
+      assetsWithUploadedVideos: [],
+    }),
 
   // reset pagination
   resetOrderPagination: () =>
@@ -283,7 +226,9 @@ const orderStore = create<OrderStore & OrderActions>(set => ({
   addPartiallyFilledAsset: (assetId: string) =>
     set(state => ({
       ...state,
-      partiallyFilledAssetsArray: state.partiallyFilledAssetsArray.includes(assetId)
+      partiallyFilledAssetsArray: state.partiallyFilledAssetsArray.includes(
+        assetId,
+      )
         ? state.partiallyFilledAssetsArray
         : [...state.partiallyFilledAssetsArray, assetId],
     })),
@@ -291,7 +236,9 @@ const orderStore = create<OrderStore & OrderActions>(set => ({
   removePartiallyFilledAsset: (assetId: string) =>
     set(state => ({
       ...state,
-      partiallyFilledAssetsArray: state.partiallyFilledAssetsArray.filter(id => id !== assetId),
+      partiallyFilledAssetsArray: state.partiallyFilledAssetsArray.filter(
+        id => id !== assetId,
+      ),
     })),
 
   // video upload status management
@@ -306,7 +253,9 @@ const orderStore = create<OrderStore & OrderActions>(set => ({
   removeAssetWithUploadedVideo: (assetId: string) =>
     set(state => ({
       ...state,
-      assetsWithUploadedVideos: state.assetsWithUploadedVideos.filter(id => id !== assetId),
+      assetsWithUploadedVideos: state.assetsWithUploadedVideos.filter(
+        id => id !== assetId,
+      ),
     })),
 
   // quantity tracking actions
@@ -327,7 +276,6 @@ const orderStore = create<OrderStore & OrderActions>(set => ({
       ...state,
       driverVehicleDetails: details,
     })),
-
 }));
 
 export default createSelectors(orderStore);
