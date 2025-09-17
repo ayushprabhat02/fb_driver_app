@@ -69,14 +69,15 @@ interface Asset {
 }
 
 const FillAsset: React.FC = () => {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [searchQuery, setSearchQuery] = useState('');
   const driverVehicleId = checkinStore.use.driverVehicleId();
   const selectedDate = homeStore.use.selectedDate();
   const currentDriverOrder = orderStore.use.currentDriverOrder();
   const assets = getAssetsFromOrder(currentDriverOrder);
 
-  console.log('---currentDriverOrder---', JSON.stringify(currentDriverOrder));
+  // console.log('---currentDriverOrder---', JSON.stringify(currentDriverOrder));
 
   // Set navigation options
   useLayoutEffect(() => {

@@ -88,7 +88,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   const removeAssetWithUploadedVideo =
     orderStore.use.removeAssetWithUploadedVideo();
 
-  console.log('--currentDriverOrder---', currentDriverOrder);
+  // console.log('--currentDriverOrder---', currentDriverOrder);
 
   // const streamingDurationSeconds = 5 * 60; // 5 minutes
   const streamingDurationSeconds = 10; // 10 seconds
@@ -432,7 +432,9 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         const blob = await response.blob();
 
         console.log(`Video size: ${(blob.size / 1024 / 1024).toFixed(2)} MB`);
-        console.log(`Video format detected: ${videoFormat}, Content-Type: ${contentType}`);
+        console.log(
+          `Video format detected: ${videoFormat}, Content-Type: ${contentType}`,
+        );
 
         // Upload video to Google Cloud Storage
         const uploadResult = await supportService.uploadFile({
@@ -619,9 +621,13 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       setIsUploadingFromDevice(true);
 
       // Detect video format from selected file
-      const detectedFormat = selectedFile.type?.includes('webm') ? 'webm' :
-                            selectedFile.type?.includes('mp4') ? 'mp4' :
-                            selectedFile.name?.toLowerCase().includes('.webm') ? 'webm' : 'mp4';
+      const detectedFormat = selectedFile.type?.includes('webm')
+        ? 'webm'
+        : selectedFile.type?.includes('mp4')
+        ? 'mp4'
+        : selectedFile.name?.toLowerCase().includes('.webm')
+        ? 'webm'
+        : 'mp4';
       const contentType = selectedFile.type || `video/${detectedFormat}`;
       const fileName = `Upload_${
         currentDriverOrder?.customer_order?.order_code
@@ -642,7 +648,9 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           1024
         ).toFixed(2)} MB`,
       );
-      console.log(`Selected video format: ${detectedFormat}, Content-Type: ${contentType}`);
+      console.log(
+        `Selected video format: ${detectedFormat}, Content-Type: ${contentType}`,
+      );
 
       // Upload video to Google Cloud Storage
       const uploadResult = await supportService.uploadFile({
@@ -716,7 +724,9 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       setIsManualUploading(true);
 
       // Detect format from recorded file path
-      const detectedFormat = recordedVideoFile.toLowerCase().includes('.webm') ? 'webm' : 'mp4';
+      const detectedFormat = recordedVideoFile.toLowerCase().includes('.webm')
+        ? 'webm'
+        : 'mp4';
       const contentType = `video/${detectedFormat}`;
       const fileName = `Recording_${currentDriverOrder?.customer_order?.order_code}.${detectedFormat}`;
 
@@ -727,7 +737,9 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         name: fileName,
       };
 
-      console.log(`Manual upload format detected: ${detectedFormat}, Content-Type: ${contentType}`);
+      console.log(
+        `Manual upload format detected: ${detectedFormat}, Content-Type: ${contentType}`,
+      );
 
       // Upload video to Google Cloud Storage
       const uploadResult = await supportService.uploadFile({
@@ -999,10 +1011,17 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       console.log('=== BOWSER QUANTITY UPDATE DEBUG ===');
       console.log('currentAssetId:', currentAssetId);
       console.log('quantity:', quantity);
-      console.log('updatedAssets:', JSON.stringify(updatedAssets?.map(a => ({
-        id: a.customer_asset?.id || a.id,
-        quantity_dispensed: a.quantity_dispensed
-      })), null, 2));
+      console.log(
+        'updatedAssets:',
+        JSON.stringify(
+          updatedAssets?.map(a => ({
+            id: a.customer_asset?.id || a.id,
+            quantity_dispensed: a.quantity_dispensed,
+          })),
+          null,
+          2,
+        ),
+      );
       console.log('currentAsset found:', currentAsset);
 
       orderStore.setState(state => ({

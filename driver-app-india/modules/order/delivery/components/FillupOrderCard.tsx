@@ -23,12 +23,15 @@ const FillupOrderCard: React.FC<Props> = ({order}) => {
     if (isSelected) {
       orderStore.setState(state=>({
         ...state,
-        currentFillupOrder: null
+        currentFillupOrder: null,
+        quantityToBeDispensed: 0
       }))
     } else {
+        const quantity = order?.fillup_requests[0]?.quantity_approved || 0;
         orderStore.setState(state=>({
         ...state,
-        currentFillupOrder: order
+        currentFillupOrder: order,
+        quantityToBeDispensed: quantity
       }))
     }
   };

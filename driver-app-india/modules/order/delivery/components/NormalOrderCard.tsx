@@ -21,16 +21,19 @@ const NormalOrderCard: React.FC<Props> = ({order}) => {
 
   const handleOrderSelect = () => {
     if (isSelected) {
-         orderStore.setState(state=>({
-           ...state,
-           currentDriverOrder: null
-         }))
-       } else {
-           orderStore.setState(state=>({
-           ...state,
-           currentDriverOrder: order
-         }))
-       }
+      orderStore.setState(state => ({
+        ...state,
+        currentDriverOrder: null,
+        quantityToBeDispensed: 0,
+      }));
+    } else {
+      const quantity = order?.customer_order?.customer_order_items[0]?.qty || 0;
+      orderStore.setState(state => ({
+        ...state,
+        currentDriverOrder: order,
+        quantityToBeDispensed: quantity,
+      }));
+    }
   };
 
   return (
