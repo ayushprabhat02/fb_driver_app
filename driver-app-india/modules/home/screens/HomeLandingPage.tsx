@@ -21,6 +21,7 @@ import {
   checkinStore,
   deliveryStore,
   homeStore,
+  orderStore,
   userStore,
 } from '@/globalStore';
 
@@ -45,6 +46,8 @@ const HomeLandingPage: React.FC = () => {
   const fillupHistory = homeStore.use.fillupHistory();
   const isLoadingOrder = homeStore.use.loaders().driverCurrentOrder;
   const isLoadingFillupHistory = homeStore.use.loaders().fillupHistory;
+  const currentDriverOrder = orderStore.use.currentDriverOrder();
+  const currentFillupOrder = orderStore.use.currentFillupOrder();
 
   const allFillupsCompleted = fillupHistory?.every(
     (item: any) => item.state === 'COMPLETE' || item.state === 'REJECTED',
@@ -178,7 +181,7 @@ const HomeLandingPage: React.FC = () => {
     // Check if driverVehicleId is available before making API call
     if (!driverVehicleId) {
       console.warn('Driver vehicle ID not available, skipping order fetch');
-      return;
+      return Promise.resolve();
     }
 
     const targetDate = date || selectedDate;
@@ -192,7 +195,7 @@ const HomeLandingPage: React.FC = () => {
     const endDateString = `${year}-${month}-${day}T23:59:59`;
 
     startLoader('driverCurrentOrder');
-    homeService
+    return homeService
       .fetchDriverOrders({
         state: [
           Task_State_Enum.Cancelled,
@@ -245,12 +248,59 @@ const HomeLandingPage: React.FC = () => {
     fetchFillupHistory();
   }, [driverVehicleId]);
 
-  // Refetch orders when date changes
-  useEffect(() => {
+  // Handle date changes with order preservation
+  const handleDateChange = async (newDate: Date) => {
+    // Store current selection to restore after API call
+    const selectedOrderId = currentDriverOrder?.id || currentFillupOrder?.id;
+    const selectedOrderType = currentDriverOrder ? 'driver' : currentFillupOrder ? 'fillup' : null;
+
+    // Update date in store
+    homeStore.setState(state => ({ ...state, selectedDate: newDate }));
+
+    // Fetch new data and restore selection if order still exists
     if (driverVehicleId) {
-      fetchCurrentOrder(selectedDate);
+      try {
+        await fetchCurrentOrder(newDate);
+
+        if (selectedOrderId && selectedOrderType) {
+          // Try to restore selection from the new data
+          const newDriverOrders = homeStore.getState().driverOrders;
+          const matchingOrder = newDriverOrders?.find((order: any) => order.id === selectedOrderId);
+
+          if (matchingOrder) {
+            if (selectedOrderType === 'driver') {
+              orderStore.setState(state => ({
+                ...state,
+                currentDriverOrder: matchingOrder,
+                quantityToBeDispensed: matchingOrder?.customer_order?.customer_order_items[0]?.qty || 0,
+              }));
+            } else if (selectedOrderType === 'fillup') {
+              orderStore.setState(state => ({
+                ...state,
+                currentFillupOrder: matchingOrder,
+              }));
+            }
+          } else {
+            // Order not found in new date, clear selection
+            if (selectedOrderType === 'driver') {
+              orderStore.setState(state => ({
+                ...state,
+                currentDriverOrder: null,
+                quantityToBeDispensed: 0,
+              }));
+            } else if (selectedOrderType === 'fillup') {
+              orderStore.setState(state => ({
+                ...state,
+                currentFillupOrder: null,
+              }));
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching orders:', error);
+      }
     }
-  }, [selectedDate]);
+  };
 
   // Removed fillup completion alert as requested
 
@@ -279,9 +329,8 @@ const HomeLandingPage: React.FC = () => {
           <OrderSummaryCard />
           <CustomDateSelector
             selectedDate={selectedDate}
-            onDateChange={(date: Date) =>
-              homeStore.setState(state => ({ ...state, selectedDate: date }))
-            }
+            onDateChange={handleDateChange}
+            isLoading={isLoadingOrder}
             style={{ marginHorizontal: 0 }}
           />
           <View>

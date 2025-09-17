@@ -6,6 +6,7 @@ import {
   Modal,
   FlatList,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import {ScaledSheet} from 'react-native-size-matters';
 
@@ -13,12 +14,14 @@ interface CustomDateSelectorProps {
   selectedDate: Date;
   onDateChange: (date: Date) => void;
   style?: any;
+  isLoading?: boolean;
 }
 
 const CustomDateSelector: React.FC<CustomDateSelectorProps> = ({
   selectedDate,
   onDateChange,
   style,
+  isLoading = false,
 }) => {
   const [showCalendar, setShowCalendar] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date(selectedDate));
@@ -151,22 +154,28 @@ const CustomDateSelector: React.FC<CustomDateSelectorProps> = ({
       {/* Date Navigation */}
       <View style={styles.dateNavigation}>
         <TouchableOpacity
-          style={styles.navButton}
-          onPress={() => navigateDate('prev')}>
-          <Text style={styles.navButtonText}>‹</Text>
+          style={[styles.navButton, isLoading && styles.disabledButton]}
+          onPress={() => !isLoading && navigateDate('prev')}
+          disabled={isLoading}>
+          <Text style={[styles.navButtonText, isLoading && styles.disabledText]}>‹</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.dateButton}
           onPress={() => setShowCalendar(true)}>
           <Text style={styles.dateText}>{formatDate(selectedDate)}</Text>
-          <Text style={styles.calendarIcon}>📅</Text>
+          {isLoading ? (
+            <ActivityIndicator size="small" color="#007BFF" />
+          ) : (
+            <Text style={styles.calendarIcon}>📅</Text>
+          )}
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.navButton}
-          onPress={() => navigateDate('next')}>
-          <Text style={styles.navButtonText}>›</Text>
+          style={[styles.navButton, isLoading && styles.disabledButton]}
+          onPress={() => !isLoading && navigateDate('next')}
+          disabled={isLoading}>
+          <Text style={[styles.navButtonText, isLoading && styles.disabledText]}>›</Text>
         </TouchableOpacity>
       </View>
 
@@ -260,6 +269,13 @@ const styles = ScaledSheet.create({
     fontSize: '20@s',
     fontWeight: 'bold',
     color: '#495057',
+  },
+  disabledButton: {
+    backgroundColor: '#E9ECEF',
+    opacity: 0.6,
+  },
+  disabledText: {
+    color: '#ADB5BD',
   },
   dateButton: {
     flex: 1,

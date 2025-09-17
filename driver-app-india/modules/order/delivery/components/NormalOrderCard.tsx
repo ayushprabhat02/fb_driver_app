@@ -1,9 +1,10 @@
-import React from 'react';
-import {View, TouchableOpacity} from 'react-native';
+import React, {memo} from 'react';
+import {View, TouchableOpacity, Pressable, Alert} from 'react-native';
 import {ScaledSheet} from 'react-native-size-matters';
 import {Text, Divider} from '@/components';
-import {FBColors} from '@/types/styles';
-import {User, MapPin, Package, Check} from 'lucide-react-native';
+import {FBBorders} from '@/types/styles';
+import {DateTime} from 'luxon';
+import {X} from 'phosphor-react-native';
 import orderStore from '../../store';
 
 interface Props {
@@ -14,9 +15,39 @@ const NormalOrderCard: React.FC<Props> = ({order}) => {
   const currentDriverOrder = orderStore.use.currentDriverOrder();
   const isSelected = currentDriverOrder?.id === order?.id;
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return '';
-    return new Date(dateString).toLocaleDateString();
+  const getOrderStateColor = (state: string) => {
+    switch (state) {
+      case 'DISPENSING':
+        return {
+          backgroundColor: '#fee2e2',
+          textColor: '#991b1b',
+          borderColor: '#fecaca',
+        };
+      case 'ASSIGNED':
+        return {
+          backgroundColor: '#dbeafe',
+          textColor: '#1e40af',
+          borderColor: '#bfdbfe',
+        };
+      case 'IN_TRANSIT':
+        return {
+          backgroundColor: '#fef3c7',
+          textColor: '#92400e',
+          borderColor: '#fde68a',
+        };
+      case 'ARRIVED':
+        return {
+          backgroundColor: '#dcfce7',
+          textColor: '#166534',
+          borderColor: '#bbf7d0',
+        };
+      default:
+        return {
+          backgroundColor: '#f3f4f6',
+          textColor: '#1f2937',
+          borderColor: '#e5e7eb',
+        };
+    }
   };
 
   const handleOrderSelect = () => {
@@ -36,129 +67,239 @@ const NormalOrderCard: React.FC<Props> = ({order}) => {
     }
   };
 
+  const getCustomerName = () => {
+    const firstName = order.customer_order?.organization_user?.user?.first_name || '';
+    const lastName = order.customer_order?.organization_user?.user?.last_name || '';
+    return `${firstName} ${lastName}`.trim() || 'Customer';
+  };
+
+  const getQuantity = () => {
+    return (order.customer_order?.customer_order_items[0]?.qty || 0) + 'L';
+  };
+
+  const getOrderDate = () => {
+    if (!order.customer_order?.order_date) return '';
+    return DateTime.fromISO(order.customer_order.order_date).toFormat('dd-MMM-yyyy hh:mm a');
+  };
+
+  const handleCancelOrder = (event: any) => {
+    // Stop event propagation to prevent card selection
+    event.stopPropagation();
+
+    Alert.alert(
+      "Cancel Order",
+      `Are you sure you want to cancel order ${order.customer_order?.order_code}?`,
+      [
+        {
+          text: "No",
+          style: "cancel"
+        },
+        {
+          text: "Yes, Cancel",
+          style: "destructive",
+          onPress: () => {
+            // TODO: Implement actual cancel order logic
+            console.log('Order cancelled:', order.customer_order?.order_code);
+          }
+        }
+      ]
+    );
+  };
+
+
   return (
     <TouchableOpacity
-      style={[styles.card, isSelected && styles.selectedCard]}
+      style={[styles.orderListCardContainer, isSelected && styles.selectedCard]}
       onPress={handleOrderSelect}
       activeOpacity={0.7}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text weight="700" size="lg" color="neutral">
-          #{order.customer_order?.order_code}
-        </Text>
-        <View style={styles.statusChip}>
-          <Text color="primary" size="xs" weight="600">
-            {order?.state}
+
+      {/* First Row: Order Code and Site */}
+      <View style={styles.firstRow}>
+        <View style={styles.leftSection}>
+          <Text weight="600" size="sm">Order Code: </Text>
+          <Text weight="600" size="sm">{order.customer_order?.order_code || ''}</Text>
+        </View>
+        <View style={styles.rightSection}>
+          <Text weight="600" size="sm">Site: </Text>
+          <Text weight="600" size="sm">
+            {order.customer_order?.organizationAddressByShippingAddressId?.name ||
+             order.customer_order?.name ||
+             order.customer_order?.organization_user?.organization?.name ||
+             'N/A'}
           </Text>
-          <Check size={12} color="#1E40AF" style={{marginLeft: 4}} />
         </View>
       </View>
 
-      {/* Customer + Quantity */}
-      <View style={styles.row}>
-        <User size={14} color="#6B7280" />
-        <Text size="sm" style={{marginLeft: 4}}>
-          {order.customer_order?.organization_user?.user?.first_name +
-            ' ' +
-            order.customer_order?.organization_user?.user?.last_name}
-        </Text>
-        <Package size={14} color="#6B7280" style={styles.iconSpacing} />
-        <Text size="sm">
-          {(order.customer_order?.customer_order_items[0]?.qty || 0) + 'L'}
-        </Text>
-      </View>
-
-      {/* Organization Name */}
-      <View style={styles.row}>
-        <Text size="sm" color="lightGray">
-          {order.customer_order?.organization_user?.organization?.name ||
-            'Organization'}
-        </Text>
-      </View>
-
-      {/* Site */}
-      <View style={styles.row}>
-        <Text size="sm" color="lightGray">
-          Site:{' '}
-          {order.customer_order?.organizationAddressByShippingAddressId?.name}
-        </Text>
-      </View>
-
-      {/* Address */}
-      <View style={styles.row}>
-        <MapPin size={14} color="#6B7280" />
-        <Text size="sm" style={{marginLeft: 4}}>
+      <Divider height={6} />
+      <View style={styles.flexRow}>
+        <Text weight="600" size="sm">Status: </Text>
+        <View style={[
+          styles.statusBadge,
           {
-            order.customer_order?.organizationAddressByShippingAddressId
-              ?.address_line1
+            backgroundColor: getOrderStateColor(order?.state || '').backgroundColor,
+            borderColor: getOrderStateColor(order?.state || '').borderColor,
           }
-        </Text>
+        ]}>
+          <Text
+            weight="600"
+            size="xs"
+            style={{color: getOrderStateColor(order?.state || '').textColor}}>
+            {order?.state || 'ASSIGNED'}
+          </Text>
+        </View>
       </View>
 
-      <Divider height={8} />
+      {/* Customer Name */}
+      <Divider height={6} />
+      <OrderDetail
+        detail="Customer"
+        value={getCustomerName()}
+      />
 
-      {/* Footer */}
-      <View style={styles.footer}>
-        <View style={styles.deliveryChip}>
-          <Text color="lightGray" size="xs" weight="600">
+      {/* Organization */}
+      <Divider height={6} />
+      <OrderDetail
+        detail="Organization"
+        value={order.customer_order?.organization_user?.organization?.name || 'Organization'}
+      />
+
+      {/* Quantity */}
+      <Divider height={6} />
+      <OrderDetail
+        detail="Quantity"
+        value={getQuantity()}
+        emphasize
+      />
+
+      {/* Order Date */}
+      <Divider height={6} />
+      <OrderDetail
+        detail="Order Date"
+        value={getOrderDate()}
+      />
+
+      {/* Bottom Row: Delivery Badge and Cancel Button */}
+      <View style={styles.bottomRow}>
+        <View style={styles.deliveryBadge}>
+          <Text size="xs" weight="600" style={{color: '#4b5563'}}>
             DELIVERY
           </Text>
         </View>
-        <Text size="sm">{formatDate(order.customer_order?.order_date)}</Text>
+
+        {/* Cancel Button - only show for ASSIGNED state */}
+        {order?.state === 'ASSIGNED' && (
+          <Pressable
+            style={styles.cancelButton}
+            onPress={handleCancelOrder}
+            android_ripple={{color: '#fee2e2', borderless: false}}>
+            <X size={12} color="#dc2626" weight="bold" />
+            <Text size="xs" weight="600" style={{color: '#dc2626', marginLeft: 4}}>
+              Cancel
+            </Text>
+          </Pressable>
+        )}
       </View>
+
+      {/* OTP if available */}
+      {order.customer_order?.otp && (
+        <Text
+          size="sm"
+          weight="600"
+          color="redGradient"
+          style={{paddingTop: 7, position: 'absolute', right: 10, bottom: 4}}>
+          OTP: {order.customer_order.otp}
+        </Text>
+      )}
     </TouchableOpacity>
   );
 };
 
+interface OrderDetailProps {
+  detail: string;
+  value: string | number;
+  emphasize?: boolean;
+}
+
+const OrderDetail: React.FC<OrderDetailProps> = memo(
+  ({detail, value, emphasize = false}) => (
+    <View style={styles.flexRow}>
+      <Text weight="600" size="sm">
+        {detail}:{' '}
+      </Text>
+      <Text
+        weight={emphasize ? '600' : '400'}
+        size="sm"
+        lines={2}
+        style={{flex: 1}}>
+        {value}
+      </Text>
+    </View>
+  ),
+);
+
 const styles = ScaledSheet.create({
-  card: {
+  orderListCardContainer: {
     backgroundColor: 'white',
     padding: '10@s',
     borderRadius: '10@s',
     borderWidth: 1,
-    borderColor: '#3B82F6', // blue border for normal orders
+    borderColor: FBBorders.secondary,
     marginBottom: '10@vs',
     marginHorizontal: '0@s',
+    position: 'relative',
   },
   selectedCard: {
     backgroundColor: '#E8F0FF',
     borderColor: '#1E40AF',
     borderWidth: 2,
   },
-  header: {
+  firstRow: {
+    width: '100%',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '6@vs',
   },
-  statusChip: {
+  leftSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E8F0FF',
-    borderRadius: '12@s',
+  },
+  rightSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  flexRow: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  statusBadge: {
+    borderRadius: '6@s',
+    borderWidth: 1,
     paddingHorizontal: '8@s',
     paddingVertical: '2@vs',
+    marginLeft: '8@s',
   },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: '4@vs',
-  },
-  iconSpacing: {
-    marginLeft: '10@s',
-    marginRight: '4@s',
-  },
-  footer: {
+  bottomRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: '6@vs',
+    marginTop: '8@vs',
   },
-  deliveryChip: {
+  deliveryBadge: {
     backgroundColor: '#F3F4F6',
     borderRadius: '6@s',
-    paddingHorizontal: '6@s',
-    paddingVertical: '2@vs',
+    paddingHorizontal: '8@s',
+    paddingVertical: '4@vs',
+  },
+  cancelButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fef2f2',
+    borderRadius: '6@s',
+    paddingHorizontal: '8@s',
+    paddingVertical: '4@vs',
+    borderWidth: 1,
+    borderColor: '#fecaca',
   },
 });
 
