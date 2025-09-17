@@ -1,8 +1,8 @@
 //dependencies
-import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {RefreshControl, ScrollView, View} from 'react-native';
-import {hasNotch} from 'react-native-device-info';
-import {ScaledSheet} from 'react-native-size-matters';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { RefreshControl, ScrollView, View } from 'react-native';
+import { hasNotch } from 'react-native-device-info';
+import { ScaledSheet } from 'react-native-size-matters';
 
 //components
 import {
@@ -12,10 +12,10 @@ import {
   SwitchProfileHeader,
 } from '@/components';
 import CustomDateSelector from '../components/CustomDateSelector';
-import {OrderListSkeleton} from '../components/SkeletonLoader';
+import { OrderListSkeleton } from '../components/SkeletonLoader';
 
 // service
-import {requestAppPermissions} from '@/utils/general';
+import { requestAppPermissions } from '@/utils/general';
 
 // store
 import {
@@ -26,14 +26,15 @@ import {
   userStore,
 } from '@/globalStore';
 
-import {Task_State_Enum} from '@/generated/graphql';
-import {OrderListCard} from '@/modules/order/delivery/components';
-import {UserService} from '@/services';
-import {FBBackground} from '@/types/styles';
-import {useFocusEffect, useNavigation} from '@react-navigation/native';
+import { Task_State_Enum } from '@/generated/graphql';
+import { OrderListCard } from '@/modules/order/delivery/components';
+import { UserService } from '@/services';
+import { FBBackground } from '@/types/styles';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import OrderSummaryCard from '../components/delivery/OrderSummaryCard';
 import homeService from '../services';
-import {updateOrderQuantity} from '@/utils/orderUtil';
+import { updateOrderQuantity } from '@/utils/orderUtil';
+import userService from '@/modules/user/services';
 
 const HomeLandingPage: React.FC = () => {
   const navigation = useNavigation();
@@ -80,7 +81,7 @@ const HomeLandingPage: React.FC = () => {
 
   useFocusEffect(
     useCallback(() => {
-      scrollViewRef?.current?.scrollTo({x: 0, y: 0, animated: true});
+      scrollViewRef?.current?.scrollTo({ x: 0, y: 0, animated: true });
     }, []),
   );
 
@@ -105,7 +106,7 @@ const HomeLandingPage: React.FC = () => {
             }
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -138,6 +139,15 @@ const HomeLandingPage: React.FC = () => {
           });
       }
     }, 5000);
+  };
+
+
+  const fetchMyProfile = async () => {
+    try {
+      await userService.fetchMyProfile();
+    } catch (error) {
+      console.error('Failed to fetch profile:', error);
+    }
   };
 
   /**
@@ -217,7 +227,11 @@ const HomeLandingPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchOrderStats();
+    fetchOrderStats()
+    fetchMyProfile()
+  }, [])
+
+  useEffect(() => {
     fetchCurrentOrder();
     fetchFillupHistory();
   }, [driverVehicleId]);
@@ -232,7 +246,7 @@ const HomeLandingPage: React.FC = () => {
   // Removed fillup completion alert as requested
 
   return (
-    <View style={{flex: 1, backgroundColor: FBBackground.white}}>
+    <View style={{ flex: 1, backgroundColor: FBBackground.white }}>
       <FocusAwareStatusBar
         translucent
         backgroundColor={'transparent'}
@@ -248,18 +262,18 @@ const HomeLandingPage: React.FC = () => {
         ref={scrollViewRef}
         style={styles.body}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{paddingBottom: 10}}
+        contentContainerStyle={{ paddingBottom: 10 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }>
-        <Container paddingHorizontal={16} style={{position: 'relative'}}>
+        <Container paddingHorizontal={16} style={{ position: 'relative' }}>
           <OrderSummaryCard />
           <CustomDateSelector
             selectedDate={selectedDate}
             onDateChange={(date: Date) =>
-              homeStore.setState(state => ({...state, selectedDate: date}))
+              homeStore.setState(state => ({ ...state, selectedDate: date }))
             }
-            style={{marginHorizontal: 0}}
+            style={{ marginHorizontal: 0 }}
           />
           <View>
             {driverOrders?.map((order, index) => {
