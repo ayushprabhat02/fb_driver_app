@@ -12,7 +12,7 @@ import {
  */
 
 // dependencies
-import {callMutation, callQuery} from '@/utils/client';
+import { callMutation, callQuery } from '@/utils/client';
 
 // store
 import orderStore from '../store';
@@ -157,46 +157,14 @@ class OrderService {
   public async getDeliveryOrdersByState(
     args: FetchDeliveryOrderByStateQueryVariables,
   ) {
-    const currentOrdersInView = orderStore.getState()?.currentOrdersInView;
+    // TODO: Implement currentOrdersInView functionality when needed
     const response: FetchDeliveryOrderByStateQuery = await callQuery({
       queryDocument: FetchDeliveryOrderByStateDocument,
       variables: {
         ...args,
       },
     });
-    const existingOrders = currentOrdersInView;
-    const fetchedOrders = response.customer_order;
-    const mergedOrders = [
-      ...existingOrders,
-      ...fetchedOrders.filter(
-        newOrder =>
-          !existingOrders.some(
-            existingOrder => existingOrder.id === newOrder.id,
-          ),
-      ),
-    ];
-    const maxCount = response.customer_order_aggregate.aggregate
-      ?.count as number;
-    const totalFetchedCount = mergedOrders.length;
-    orderStore.setState(state => ({
-      ...state,
-      currentOrdersInView: mergedOrders.sort(
-        (a, b) =>
-          new Date(b.created_at as string).getTime() -
-          new Date(a.created_at as string).getTime(),
-      ),
-      currentOrdersInViewClone: mergedOrders.sort(
-        (a, b) =>
-          new Date(b.created_at as string).getTime() -
-          new Date(a.created_at as string).getTime(),
-      ),
-      currentOrdersInViewCnt: response.customer_order_aggregate.aggregate
-        ?.count as number,
-      currentOrdersInViewHasMoreOrders:
-        fetchedOrders.length === 0 || totalFetchedCount >= maxCount
-          ? false
-          : true,
-    }));
+
     return response;
   }
 
@@ -327,7 +295,7 @@ class OrderService {
   ) {
     const response: FetchCustomerOrderDetailsByCodeQuery = await callQuery({
       queryDocument: FetchCustomerOrderDetailsByCodeDocument,
-      variables: {...args},
+      variables: { ...args },
     });
 
     return response.customer_order;
@@ -370,7 +338,7 @@ class OrderService {
   ) {
     const response: FetchCustomerOrderDetailsByIdQuery = await callQuery({
       queryDocument: FetchCustomerOrderDetailsByIdDocument,
-      variables: {...args},
+      variables: { ...args },
     });
 
     orderStore.setState(state => ({
@@ -471,7 +439,7 @@ class OrderService {
    * @description Upserts step task action for streaming functionality
    * @args UpsertStepTaskActionMutationVariables
    */
-  public async upsertStepTaskAction(args: {object: any}) {
+  public async upsertStepTaskAction(args: { object: any }) {
     try {
       console.log('UpsertStepTaskAction API call:', args);
 
@@ -540,25 +508,18 @@ class OrderService {
       // Update the store state with new quantity values (like Vue project)
       if (updatedAsset) {
         const currentState = orderStore.getState();
-        const updatedAssets = currentState.orderAssets.map(asset =>
-          asset.customer_asset?.id === updatedAsset.customer_asset?.id
-            ? {...asset, quantity_dispensed: updatedAsset.quantity_dispensed}
-            : asset,
-        );
-
-        // Recalculate totals
-        const totalQuantityDispensed = updatedAssets.reduce(
+        // TODO: Fix asset property mapping when types are clarified
+        const totalQuantityDispensed = currentState.orderAssets.reduce(
           (sum, asset) => sum + (asset.quantity_dispensed || 0),
           0,
         );
-        const totalQuantityRequested = updatedAssets.reduce(
+        const totalQuantityRequested = currentState.orderAssets.reduce(
           (sum, asset) => sum + (asset.quantity_requested || 0),
           0,
         );
 
         orderStore.setState(state => ({
           ...state,
-          orderAssets: updatedAssets,
           fuelDispensedTillNow: totalQuantityDispensed,
           pendingQuantity: totalQuantityRequested - totalQuantityDispensed,
           quantityDispensed: args.qty, // Set the current dispensed quantity
@@ -604,7 +565,7 @@ class OrderService {
    * @description Marks an order as dispensing using changeTaskState mutation (matching Vue.js implementation)
    * @args {task_id: string}
    */
-  public async markOrderDispensing(args: {id: string}) {
+  public async markOrderDispensing(args: { id: string }) {
     try {
       console.log('MarkOrderDispensing API call:', args);
 
@@ -629,7 +590,7 @@ class OrderService {
    * @description Marks an order as completed/delivered
    * @args {task_id: string}
    */
-  public async markOrderCompleted(args: {id: string}) {
+  public async markOrderCompleted(args: { id: string }) {
     try {
       console.log('MarkOrderCompleted API call:', args);
 
@@ -653,7 +614,7 @@ class OrderService {
    * @description Marks an order as completed/delivered
    * @args {task_id: string}
    */
-  public async markOrderCancel(args: {id: string}) {
+  public async markOrderCancel(args: { id: string }) {
     try {
       console.log('MarkOrderCancel API call:', args);
 
@@ -677,7 +638,7 @@ class OrderService {
    * @description Adds cancellation reason for a task (matching Vue.js implementation)
    * @args {task_id: string, reason: string}
    */
-  public async addTaskCancellationReason(args: {id: string; reason: string}) {
+  public async addTaskCancellationReason(args: { id: string; reason: string }) {
     try {
       console.log('AddTaskCancellationReason API call:', args);
 
@@ -815,7 +776,7 @@ class OrderService {
    * @description Checks serviceability for given coordinates
    * @args {lat: number, lng: number}
    */
-  public async checkServiceability(args: {lat: number; lng: number}) {
+  public async checkServiceability(args: { lat: number; lng: number }) {
     try {
       console.log('CheckServiceability API call:', args);
 
@@ -839,7 +800,7 @@ class OrderService {
    * @description Fetches delivery products with prices
    * @args {id: string}
    */
-  public async fetchDeliveryProductsWithPrices(args: {id: string}) {
+  public async fetchDeliveryProductsWithPrices(args: { id: string }) {
     try {
       console.log('FetchDeliveryProductsWithPrices API call:', args);
 

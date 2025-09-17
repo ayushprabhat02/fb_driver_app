@@ -1,8 +1,8 @@
 //dependencies
-import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {RefreshControl, ScrollView, View} from 'react-native';
-import {hasNotch} from 'react-native-device-info';
-import {ScaledSheet} from 'react-native-size-matters';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { RefreshControl, ScrollView, View, Alert, TouchableOpacity, Text } from 'react-native';
+import { hasNotch } from 'react-native-device-info';
+import { ScaledSheet } from 'react-native-size-matters';
 
 //components
 import {
@@ -12,10 +12,10 @@ import {
   SwitchProfileHeader,
 } from '@/components';
 import CustomDateSelector from '../components/CustomDateSelector';
-import {OrderListSkeleton} from '../components/SkeletonLoader';
+import { OrderListSkeleton } from '../components/SkeletonLoader';
 
 // service
-import {requestAppPermissions} from '@/utils/general';
+import { requestAppPermissions } from '@/utils/general';
 
 // store
 import {
@@ -26,20 +26,36 @@ import {
   userStore,
 } from '@/globalStore';
 
-import {Task_State_Enum} from '@/generated/graphql';
-import {OrderListCard} from '@/modules/order/delivery/components';
-import {UserService} from '@/services';
-import {FBBackground} from '@/types/styles';
-import {useFocusEffect, useNavigation} from '@react-navigation/native';
+// order validation utilities
+import {
+  canSelectOrderTowerDriver,
+  hasDispensingOrder,
+  hasFillupOrder,
+  formatDate,
+  getStateColor,
+  updateOrderQuantity,
+  getPaymentInfo,
+  calculateTotalQuantityDispensed,
+  getCompletedDispensedAssets,
+} from '@/modules/order/utils/orderValidation';
+
+// live location tracking
+import { startLiveLocationTracking } from '@/modules/order/utils/liveLocationTracking';
+
+import { Task_State_Enum } from '@/generated/graphql';
+import { OrderListCard } from '@/modules/order/delivery/components';
+import { UserService } from '@/services';
+import { FBBackground } from '@/types/styles';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import OrderSummaryCard from '../components/delivery/OrderSummaryCard';
 import homeService from '../services';
-import {updateOrderQuantity} from '@/utils/orderUtil';
 
 const HomeLandingPage: React.FC = () => {
   const navigation = useNavigation();
   const [refreshing, setRefreshing] = React.useState(false);
-  const [checkBusinessLeadLoader, setCheckBusinessLeadLoader] =
-    useState<boolean>(false);
+  const [checkBusinessLeadLoader, setCheckBusinessLeadLoader] = useState<boolean>(false);
+
+  // State management hooks (using Zustand selectors per specification)
   const selectedDate = homeStore.use.selectedDate();
   const loggedInUser = userStore.use.loggedInUser();
   const driverVehicleId = checkinStore.use.driverVehicleId();
@@ -50,15 +66,38 @@ const HomeLandingPage: React.FC = () => {
   const currentFillupOrder = orderStore.use.currentFillupOrder();
   const currentDriverOrder = orderStore.use.currentDriverOrder();
 
+  // Order management state
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [navigationLoading, setNavigationLoading] = useState<boolean>(false);
+  const [continueOrderLoading, setContinueOrderLoading] = useState<boolean>(false);
+  const [startTripLoading, setStartTripLoading] = useState<boolean>(false);
+
+  // Get order store methods (using Zustand selectors)
+  const setCurrentDriverOrder = orderStore.use.setCurrentDriverOrder();
+  const setAllDriverOrders = orderStore.use.setAllDriverOrders();
+  const setQuantityToBeDispensed = orderStore.use.setQuantityToBeDispensed();
+  const setFuelDispensedTillNow = orderStore.use.setFuelDispensedTillNow();
+  const setDispenseCompletedAssets = orderStore.use.setDispenseCompletedAssets();
+  const markOrderInTransit = orderStore.use.markOrderInTransit();
+
+  // Tower Driver App - All users are tower drivers
+  console.log('🗼 Tower Driver App - All users are tower drivers');
+  console.log('📝 Can select any order');
+  console.log('🌍 Live location tracking enabled');
+  console.log('🎥 Live streaming mode for dispensing');
+
+  // Computed values
   const allFillupsCompleted = fillupHistory?.every(
     (item: any) => item.state === 'COMPLETE' || item.state === 'REJECTED',
   );
 
+  const hasIncompleteFillupHistory = !allFillupsCompleted;
+  const hasDispensingOrderValue = hasDispensingOrder(driverOrders || []);
+  const hasFillupOrderValue = hasFillupOrder(driverOrders || []);
+
   const startLoader = homeStore.use.startLoader();
   const stopLoader = homeStore.use.stopLoader();
-
   const resetDeliveryStore = deliveryStore.use.resetDeliveryStore();
-
   const scrollViewRef = useRef<ScrollView>(null);
 
   useEffect(() => {
@@ -80,7 +119,7 @@ const HomeLandingPage: React.FC = () => {
 
   useFocusEffect(
     useCallback(() => {
-      scrollViewRef?.current?.scrollTo({x: 0, y: 0, animated: true});
+      scrollViewRef?.current?.scrollTo({ x: 0, y: 0, animated: true });
     }, []),
   );
 
@@ -105,7 +144,7 @@ const HomeLandingPage: React.FC = () => {
             }
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -229,10 +268,178 @@ const HomeLandingPage: React.FC = () => {
     }
   }, [selectedDate]);
 
+  // Order selection logic (tower driver app - can select any order)
+  const selectOrder = async (order: any) => {
+    // Use tower driver validation (can select any order)
+    const canSelect = canSelectOrderTowerDriver(order, driverOrders || [], navigationLoading, continueOrderLoading, refreshing, startTripLoading);
+
+    if (!canSelect) {
+      Alert.alert('Cannot Select Order', 'This order cannot be selected at this time.');
+      return;
+    }
+
+    setSelectedOrder(order);
+    setCurrentDriverOrder(order);
+
+    // Update quantity based on order type
+    updateOrderQuantity(order, orderStore);
+
+    // Update store with calculated values
+    const assets = order?.customer_order?.customer_order_customer_assets || [];
+    const totalQuantityDispensed = calculateTotalQuantityDispensed(assets);
+    const completedAssets = getCompletedDispensedAssets(assets);
+
+    setFuelDispensedTillNow(totalQuantityDispensed);
+    setDispenseCompletedAssets(completedAssets);
+
+    console.log('🎯 Selected order:', order.id, 'Category:', order.category, 'State:', order.state);
+  };
+
+  // Start Navigation
+  const startNavigation = async () => {
+    if (!selectedOrder || !canSelectOrderTowerDriver(selectedOrder, driverOrders || [], navigationLoading, continueOrderLoading, refreshing, startTripLoading)) {
+      return;
+    }
+
+    setNavigationLoading(true);
+
+    try {
+      setCurrentDriverOrder(selectedOrder);
+      updateOrderQuantity(selectedOrder, orderStore);
+
+      // Navigate to appropriate screen
+      // @ts-ignore
+      navigation.navigate('order', {
+        screen: 'navigation',
+      });
+    } catch (error) {
+      console.error('Navigation error:', error);
+    } finally {
+      setNavigationLoading(false);
+    }
+  };
+
+  // Continue Order
+  const continueOrder = async () => {
+    const order = selectedOrder;
+    if (!order || order.state !== 'DISPENSING') {
+      return;
+    }
+
+    setContinueOrderLoading(true);
+
+    try {
+      setCurrentDriverOrder(order);
+      updateOrderQuantity(order, orderStore);
+
+      // Tower drivers always go to live streaming for dispensing
+      // @ts-ignore
+      navigation.navigate('order', { screen: 'live-stream' });
+    } catch (error) {
+      console.error('Continue order error:', error);
+    } finally {
+      setContinueOrderLoading(false);
+    }
+  };
+
+  // Start Trip (tower driver logic)
+  const startTrip = async () => {
+    const order = selectedOrder || currentDriverOrder;
+    if (!order) {
+      return;
+    }
+
+    const estimatedDeliveryDate = order?.customer_order?.customer_order_items[0]?.estimate_delivery_date;
+
+    // Start live location tracking for today's orders
+    if (estimatedDeliveryDate) {
+      const today = new Date().toISOString().split('T')[0];
+      const orderDate = new Date(estimatedDeliveryDate).toISOString().split('T')[0];
+
+      if (orderDate === today) {
+        console.log('🌍 Starting live location tracking');
+        try {
+          await startLiveLocationTracking();
+        } catch (error) {
+          console.error('❌ Failed to start live location tracking:', error);
+        }
+      }
+    }
+
+    setStartTripLoading(true);
+
+    try {
+      // Ensure currentDriverOrder is set in store before routing
+      setCurrentDriverOrder(order);
+
+      // Update quantity to be dispensed based on selected order
+      updateOrderQuantity(order, orderStore);
+
+      // Update order state if needed
+      const isAssigned = order.state === 'ASSIGNED';
+      if (isAssigned) {
+        const success = await markOrderInTransit(order.id);
+        if (!success) {
+          Alert.alert('Error', 'Unable to update order state to In Transit');
+          return;
+        }
+      }
+
+      // Route based on order category and state
+      handleOrderNavigation(order);
+    } catch (error) {
+      console.error('Start trip error:', error);
+      Alert.alert('Error', 'Unable to start trip');
+    } finally {
+      setStartTripLoading(false);
+    }
+  };
+
+  // Handle order navigation (tower driver specific)
+  const handleOrderNavigation = async (order: any) => {
+    try {
+      const { state, category } = order;
+
+      if (category === 'DELIVERY') {
+        if (state === 'DISPENSING') {
+          // Tower drivers always go to live streaming for dispensing
+          // @ts-ignore
+          navigation.navigate('order', { screen: 'live-stream' });
+          return;
+        }
+
+        // For delivery orders, always route to choose asset (customer tests exempted)
+        // @ts-ignore
+        navigation.navigate('order', { screen: 'choose-asset' });
+      } else if (category === 'FILL_UP') {
+        if (state === 'DISPENSING' || state === 'ARRIVED') {
+          // @ts-ignore
+          navigation.navigate('address', { screen: 'fill-asset' });
+          return;
+        }
+
+        // @ts-ignore
+        navigation.navigate('address', { screen: 'health-checks-fillup' });
+      }
+    } catch (error) {
+      console.error('Order navigation error:', error);
+      // Fallback navigation
+      if (order.category === 'DELIVERY') {
+        // @ts-ignore
+        navigation.navigate('order', { screen: 'choose-asset' });
+      } else {
+        // @ts-ignore
+        navigation.navigate('address', { screen: 'health-checks-fillup' });
+      }
+    }
+  };
+
+  // Refetch orders when date changes
+
   // Removed fillup completion alert as requested
 
   return (
-    <View style={{flex: 1, backgroundColor: FBBackground.white}}>
+    <View style={{ flex: 1, backgroundColor: FBBackground.white }}>
       <FocusAwareStatusBar
         translucent
         backgroundColor={'transparent'}
@@ -241,6 +448,24 @@ const HomeLandingPage: React.FC = () => {
 
       <View style={styles.headerContainer}>
         <SwitchProfileHeader />
+        {/* Tower Driver App Indicator */}
+        <View style={{
+          backgroundColor: '#8B5CF6',
+          paddingHorizontal: 12,
+          paddingVertical: 6,
+          borderRadius: 20,
+          alignSelf: 'center',
+          marginTop: 8,
+        }}>
+          <Text style={{
+            color: 'white',
+            fontSize: 12,
+            fontWeight: 'bold',
+            textAlign: 'center',
+          }}>
+            🗼 TOWER DRIVER APP
+          </Text>
+        </View>
       </View>
 
       <ScrollView
@@ -248,35 +473,54 @@ const HomeLandingPage: React.FC = () => {
         ref={scrollViewRef}
         style={styles.body}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{paddingBottom: 10}}
+        contentContainerStyle={{ paddingBottom: 10 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }>
-        <Container paddingHorizontal={16} style={{position: 'relative'}}>
+        <Container paddingHorizontal={16} style={{ position: 'relative' }}>
           <OrderSummaryCard />
           <CustomDateSelector
             selectedDate={selectedDate}
             onDateChange={(date: Date) =>
-              homeStore.setState(state => ({...state, selectedDate: date}))
+              homeStore.setState(state => ({ ...state, selectedDate: date }))
             }
-            style={{marginHorizontal: 0}}
+            style={{ marginHorizontal: 0 }}
           />
           <View>
             {driverOrders?.map((order, index) => {
-              const isFillupOrder =
-                (order as any)?.fillup_requests &&
-                (order as any)?.fillup_requests.length > 0;
-              const shouldDisable = !allFillupsCompleted && !isFillupOrder;
+              // Use tower driver validation
+              const canSelect = canSelectOrderTowerDriver(order, driverOrders || [], navigationLoading, continueOrderLoading, refreshing, startTripLoading);
+              const isSelected = selectedOrder?.id === order.id;
 
               return (
-                <View
+                <TouchableOpacity
                   key={index}
                   style={{
-                    opacity: shouldDisable ? 0.5 : 1,
-                    pointerEvents: shouldDisable ? 'none' : 'auto',
-                  }}>
+                    opacity: !canSelect ? 0.5 : 1,
+                    borderWidth: isSelected ? 2 : 0,
+                    borderColor: isSelected ? '#8B5CF6' : 'transparent', // Purple theme
+                    borderRadius: 8,
+                    marginBottom: 8,
+                    backgroundColor: isSelected ? '#F3F4F6' : 'transparent',
+                  }}
+                  onPress={() => canSelect && selectOrder(order)}
+                  disabled={!canSelect}>
                   <OrderListCard order={order} />
-                </View>
+                  {/* Selected indicator */}
+                  {isSelected && (
+                    <View style={{
+                      position: 'absolute',
+                      top: 8,
+                      right: 8,
+                      backgroundColor: '#8B5CF6',
+                      paddingHorizontal: 8,
+                      paddingVertical: 4,
+                      borderRadius: 4,
+                    }}>
+                      <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>SELECTED</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
               );
             })}
           </View>
@@ -286,47 +530,78 @@ const HomeLandingPage: React.FC = () => {
         )}
       </ScrollView>
 
-      {/* Floating Buttons */}
-      {(currentFillupOrder || currentDriverOrder) &&
-        (allFillupsCompleted ||
-          ((currentFillupOrder as any)?.fillup_requests &&
-            (currentFillupOrder as any)?.fillup_requests.length > 0)) && (
-          <View style={styles.floatingButtonsContainer}>
+      {/* Action Buttons */}
+      {selectedOrder && canSelectOrderTowerDriver(selectedOrder, driverOrders || [], navigationLoading, continueOrderLoading, refreshing, startTripLoading) && (
+        <View style={styles.floatingButtonsContainer}>
+          {/* Navigation Button */}
+          <Button
+            variant="solid"
+            style={[styles.floatingButton, styles.navigationButton]}
+            onPress={startNavigation}
+            disabled={navigationLoading || startTripLoading}>
+            {navigationLoading ? 'Loading...' : 'Navigation'}
+          </Button>
+
+          {/* Start Trip or Continue Order Button */}
+          {selectedOrder.state === 'DISPENSING' ? (
             <Button
               variant="solid"
-              style={[styles.floatingButton, styles.navigationButton]}
-              onPress={() => {
-                // Handle navigation
-                console.log('Navigation pressed');
-              }}>
-              Navigation
+              style={[styles.floatingButton, styles.dispensingButton]}
+              onPress={continueOrder}
+              disabled={continueOrderLoading || startTripLoading}>
+              {continueOrderLoading ? 'Loading...' : 'Live Stream'}
             </Button>
+          ) : (
             <Button
               variant="solid"
               style={[styles.floatingButton, styles.startTripButton]}
-              onPress={() => {
-                const currentOrder = currentFillupOrder || currentDriverOrder;
-                const isFillupOrder =
-                  (currentFillupOrder as any)?.fillup_requests &&
-                  (currentFillupOrder as any)?.fillup_requests.length > 0;
-                // update dispense quantity
-                updateOrderQuantity(currentOrder);
-                if (isFillupOrder) {
-                  // @ts-ignore
-                  navigation.navigate('address', {
-                    screen: 'fill-asset',
-                  });
-                } else {
-                  // @ts-ignore
-                  navigation.navigate('order', {
-                    screen: 'choose-asset',
-                  });
-                }
-              }}>
-              Start Trip
+              onPress={startTrip}
+              disabled={startTripLoading || navigationLoading}>
+              {startTripLoading ? 'Loading...' : 'Start Trip'}
             </Button>
-          </View>
-        )}
+          )}
+        </View>
+      )}
+
+      {/* Fallback buttons for current orders (if no order selected) */}
+      {!selectedOrder && (currentFillupOrder || currentDriverOrder) && (
+        <View style={styles.floatingButtonsContainer}>
+          <Button
+            variant="solid"
+            style={[styles.floatingButton, styles.navigationButton]}
+            onPress={() => {
+              console.log('Navigation pressed for current order');
+            }}
+            disabled={startTripLoading}>
+            Navigation
+          </Button>
+          <Button
+            variant="solid"
+            style={[styles.floatingButton, styles.startTripButton]}
+            onPress={() => {
+              const currentOrder = currentFillupOrder || currentDriverOrder;
+              const isFillupOrder =
+                (currentFillupOrder as any)?.fillup_requests &&
+                (currentFillupOrder as any)?.fillup_requests.length > 0;
+              // update dispense quantity
+              updateOrderQuantity(currentOrder, orderStore);
+              if (isFillupOrder) {
+                // @ts-ignore
+                navigation.navigate('address', {
+                  screen: 'fill-asset',
+                });
+              } else {
+                // @ts-ignore
+                navigation.navigate('order', {
+                  screen: 'choose-asset',
+                });
+              }
+            }}
+            disabled={startTripLoading}>
+            {startTripLoading ? 'Loading...' : 'Start Trip'}
+          </Button>
+        </View>
+      )}
     </View>
   );
 };
@@ -338,12 +613,6 @@ const styles = ScaledSheet.create({
     position: 'relative',
     paddingHorizontal: 20,
     paddingTop: 10,
-    // top: 0,
-    // left: 0,
-    // paddingHorizontal: 16,
-    // paddingTop: 10,
-    // zIndex: 0,
-    // width: '100%',
   },
   image: {
     width: '310@s',
@@ -374,6 +643,9 @@ const styles = ScaledSheet.create({
   },
   navigationButton: {
     backgroundColor: '#3B82F6',
+  },
+  dispensingButton: {
+    backgroundColor: '#8B5CF6', // Purple for dispensing/live stream
   },
   startTripButton: {
     backgroundColor: '#10B981',

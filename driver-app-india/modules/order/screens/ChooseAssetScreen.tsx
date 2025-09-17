@@ -1,39 +1,56 @@
 import React, {useState, useLayoutEffect, useEffect, useCallback} from 'react';
 import {useDebounce} from 'use-debounce';
-import {View, Alert, ViewStyle, FlatList} from 'react-native';
+import {View, Alert, ViewStyle, FlatList, RefreshControl} from 'react-native';
 import {ScaledSheet} from 'react-native-size-matters';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import type {StackNavigationProp} from '@react-navigation/stack';
 import type {OrderStackParamList} from '@/navigator/containers/Order';
 
 // components
-import {FocusAwareStatusBar, FullScreenLoader, Button} from '@/components';
+import {FocusAwareStatusBar, FullScreenLoader, Button, Text} from '@/components';
 import {AssetSummaryCard, AssetSearchBar, AssetCard} from '../components';
+import QuantitySummaryCard from '../components/QuantitySummaryCard';
 import OrderCancellationRequest from '../components/OrderCancellationRequest';
 
 // styles
 import {FBBackground, FBColorPalette} from '@/types/styles';
 import orderService from '../services';
-import {orderStore} from '@/globalStore';
+import {orderStore, userStore} from '@/globalStore';
+
+// utils and services
+import {markOrderArrived, fetchCurrentDriverOrderState, handleMissedIntermediateActions} from '@/modules/order/utils/orderValidation';
+import {startLiveLocationTracking} from '@/modules/order/utils/liveLocationTracking';
 
 const ChooseAssetScreen: React.FC = () => {
   const navigation = useNavigation<StackNavigationProp<OrderStackParamList>>();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery] = useDebounce(searchQuery, 500);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loadingAssets, setLoadingAssets] = useState(true);
+  
+  // Store selectors (using Zustand per project specification)
   const currentFillupOrder = orderStore.use.currentFillupOrder();
   const currentDriverOrder = orderStore.use.currentDriverOrder();
   const orderAssets = orderStore.use.orderAssets();
   const fuelDispensedTillNow = orderStore.use.fuelDispensedTillNow();
   const quantityToBeDispensed = orderStore.use.quantityToBeDispensed();
+  const partiallyFilledAssetsArray = orderStore.use.partiallyFilledAssetsArray();
+  const assetsWithUploadedVideos = orderStore.use.assetsWithUploadedVideos();
+  const loggedInUser = userStore.use.loggedInUser();
 
+  // Store methods
   const stopLoader = orderStore.use.stopLoader();
   const startLoader = orderStore.use.startLoader();
   const orderLoader = orderStore.use.loaders();
+  const setCurrentAssetForDispense = orderStore.use.setCurrentAssetForDispense();
+  const setDispenseCompletedAssets = orderStore.use.setDispenseCompletedAssets();
 
-  // Get partially filled assets and assets with uploaded videos from store
-  const partiallyFilledAssetsArray =
-    orderStore.use.partiallyFilledAssetsArray();
-  const assetsWithUploadedVideos = orderStore.use.assetsWithUploadedVideos();
+  // Tower Driver Check (exclusive app - all users are tower drivers)
+  const isTowerDriverUser = true;
+  
+  console.log('🗼 ChooseAsset - Tower Driver App - All users are tower drivers');
+  console.log('🔄 Current order state:', currentDriverOrder?.state);
+  console.log('📦 Assets count:', orderAssets?.length || 0);
 
   // Set navigation options
   useLayoutEffect(() => {
@@ -42,6 +59,140 @@ const ChooseAssetScreen: React.FC = () => {
       headerShown: true,
     });
   }, [navigation]);
+
+  /**
+   * Handle missed intermediate page actions when jumping directly to ChooseAsset
+   * This auto-handles health checks and order state transitions
+   * Matches Vue.js handleMissedIntermediateActions functionality
+   */
+  const handleMissedIntermediateActionsLocal = useCallback(async () => {
+    try {
+      const currentOrder = currentDriverOrder;
+      console.log('🔍 ChooseAsset handleMissedIntermediateActions called with order:', {
+        id: currentOrder?.id,
+        orderCode: currentOrder?.customer_order?.order_code,
+        state: currentOrder?.state
+      });
+      
+      // Safety check: Don't proceed if we don't have a valid order
+      if (!currentOrder?.id) {
+        console.warn('⚠️ No current order found in handleMissedIntermediateActions');
+        return;
+      }
+      
+      // Handle missed intermediate page actions only for ASSIGNED and IN_TRANSIT orders
+      const currentState = currentOrder?.state;
+      if (currentState === 'ASSIGNED' || currentState === 'IN_TRANSIT') {
+        console.log('⚡ Calling handleMissedIntermediateActions for', currentState, 'order');
+        await handleMissedIntermediateActions();
+      } else {
+        console.log('⏭️ Skipping handleMissedIntermediateActions for', currentState, 'order');
+      }
+    } catch (error) {
+      console.error('Error in handleMissedIntermediateActionsLocal:', error);
+      // Don't throw error, let the page continue loading
+    }
+  }, [currentDriverOrder]);
+
+  /**
+   * Fetch current order and assets data (matching Vue.js fetchCurrentOrderAndAssets)
+   */
+  const fetchCurrentOrderAndAssets = useCallback(async (skipOrderRefresh = false) => {
+    setLoadingAssets(true);
+    
+    try {
+      let order = currentDriverOrder;
+
+      // Only fetch fresh order data if not already done
+      if (!skipOrderRefresh) {
+        console.log('🔄 fetchCurrentOrderAndAssets - Before fetchCurrentDriverOrderState:', {
+          id: order?.id,
+          orderCode: order?.customer_order?.order_code,
+          state: order?.state
+        });
+        
+        // Fetch fresh order data to get latest dispensed quantities
+        await fetchCurrentDriverOrderState();
+        order = orderStore.getState().currentDriverOrder;
+
+        console.log('🔄 fetchCurrentOrderAndAssets - After fetchCurrentDriverOrderState:', {
+          id: order?.id,
+          orderCode: order?.customer_order?.order_code,
+          state: order?.state
+        });
+      } else {
+        console.log('⏭️ Skipping fetchCurrentDriverOrderState - already refreshed');
+      }
+
+      if (!order) {
+        Alert.alert('Order Unassigned', 'No order is currently assigned.');
+        navigation.goBack();
+        return;
+      }
+
+      // Fetch assets for the current order
+      await getCustomerOrderAssets();
+      
+      console.log('✅ fetchCurrentOrderAndAssets completed');
+    } catch (error) {
+      console.error('Error in fetchCurrentOrderAndAssets:', error);
+      Alert.alert('Error', 'Failed to load order data. Please try again.');
+    } finally {
+      setLoadingAssets(false);
+    }
+  }, [currentDriverOrder, navigation]);
+
+  /**
+   * onMounted equivalent - handles initial data loading and missed actions
+   * Matches Vue.js onMounted logic
+   */
+  useEffect(() => {
+    const initializeChooseAsset = async () => {
+      try {
+        console.log('🚀 ChooseAsset onMounted - Initial order state:', {
+          id: currentDriverOrder?.id,
+          orderCode: currentDriverOrder?.customer_order?.order_code,
+          state: currentDriverOrder?.state
+        });
+        
+        // CRITICAL FIX: Always refresh order data first to ensure we have the latest state
+        console.log('🔄 Refreshing order data first to prevent stale references');
+        await fetchCurrentDriverOrderState();
+        
+        const refreshedOrder = orderStore.getState().currentDriverOrder;
+        console.log('🔄 After refresh - Current order:', {
+          id: refreshedOrder?.id,
+          orderCode: refreshedOrder?.customer_order?.order_code,
+          state: refreshedOrder?.state
+        });
+        
+        // Handle missed intermediate page actions
+        await handleMissedIntermediateActionsLocal();
+        
+        // Fetch order and assets data (pass true to skip redundant fetchCurrentDriverOrderState)
+        await fetchCurrentOrderAndAssets(true);
+        
+        console.log('✅ ChooseAsset onMounted completed');
+      } catch (error) {
+        console.error('Error on ChooseAsset mounted:', error);
+        Alert.alert('Error', 'Failed to initialize screen. Please try again.');
+      }
+    };
+
+    initializeChooseAsset();
+  }, []);
+
+  // Refresh control for pull-to-refresh
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await fetchCurrentOrderAndAssets(false);
+    } catch (error) {
+      console.error('Error refreshing:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [fetchCurrentOrderAndAssets]);
 
   // Map orderAssets to the expected format for AssetCard
   // Use useMemo to ensure this recalculates when orderAssets changes
@@ -114,32 +265,39 @@ const ChooseAssetScreen: React.FC = () => {
     navigation.navigate('live-stream');
   };
 
-  const handleProceed = () => {
-    // Filter assets with dispensed fuel for the next step
-    const dispensedAssets =
-      orderAssets?.filter(
+  const handleProceed = async () => {
+    // Tower driver proceed logic (matching Vue.js proceed function)
+    try {
+      console.log('🚀 Tower Driver proceeding to next step');
+      
+      // Filter assets with dispensed fuel for the next step
+      const dispensedAssets = orderAssets?.filter(
         (asset: any) => (asset.quantity_dispensed || 0) > 0,
       ) || [];
 
-    if (dispensedAssets.length === 0) {
-      Alert.alert(
-        'No Fuel Dispensed',
-        'Please dispense fuel to at least one asset before proceeding.',
-      );
-      return;
-    }
+      if (dispensedAssets.length === 0) {
+        Alert.alert(
+          'No Fuel Dispensed',
+          'Please dispense fuel to at least one asset before proceeding.',
+        );
+        return;
+      }
 
-    // Store dispensed assets in the order store for the delivery challan
-    orderStore.setState(state => ({
-      ...state,
-      dispenseCompletedAssets: dispensedAssets,
-    }));
+      // Store dispensed assets in the order store for the delivery challan
+      setDispenseCompletedAssets(dispensedAssets);
 
-    // Check if buddy challan flow is enabled
-    if (currentDriverOrder?.is_enable_buddycan_flow) {
-      navigation.navigate('buddy-challan');
-    } else {
-      navigation.navigate('delivery-challan');
+      // Tower driver specific routing logic (matching Vue.js)
+      if (currentDriverOrder?.is_enable_buddycan_flow) {
+        console.log('🤖 Routing to buddy challan (BuddyCan flow)');
+        navigation.navigate('buddy-challan');
+      } else {
+        console.log('📄 Routing to delivery challan');
+        // For tower drivers, route to delivery challan
+        navigation.navigate('delivery-challan');
+      }
+    } catch (error) {
+      console.error('Error in handleProceed:', error);
+      Alert.alert('Error', 'Failed to proceed. Please try again.');
     }
   };
 
@@ -369,29 +527,69 @@ const ChooseAssetScreen: React.FC = () => {
   ]);
 
   return (
-    <View style={{flex: 1}}>
+    <View style={{flex: 1, backgroundColor: '#F9FAFB'}}>
       <FocusAwareStatusBar
         backgroundColor={FBBackground.primary}
         barStyle="dark-content"
       />
 
-      <View style={styles.container as ViewStyle}>
-        <AssetSummaryCard />
+      {/* Professional Header */}
+      <View style={styles.headerContainer as ViewStyle}>
+        <View style={styles.headerContent as ViewStyle}>
+          <Text size="xl" weight="600" color="neutral">
+            Assets to be filled
+          </Text>
+          <Text size="sm" color="lightGray" style={{marginTop: 4}}>
+            Order #{currentDriverOrder?.customer_order?.order_code}
+          </Text>
+        </View>
+      </View>
 
+      {/* Progress Summary (matching Vue.js QuantitySummaryCard) */}
+      <View style={styles.progressContainer as ViewStyle}>
+        <QuantitySummaryCard />
+      </View>
+
+      <View style={styles.container as ViewStyle}>
         <AssetSearchBar
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
         />
 
-        <FlatList
-          data={mappedAssets}
-          keyExtractor={(item, index) =>
-            `${item.id}-${item.filledQuantity}-${index}`
-          } // Include filledQuantity in key to force re-render
-          renderItem={renderAssetItem}
-          contentContainerStyle={{paddingBottom: 100}} // 👈 ensures space for buttons
-          extraData={orderAssets} // Force re-render when orderAssets changes
-        />
+        {/* Loading State */}
+        {loadingAssets ? (
+          <View style={styles.loadingContainer as ViewStyle}>
+            <Text size="sm" color="lightGray">
+              Loading assets...
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            data={mappedAssets}
+            keyExtractor={(item, index) =>
+              `${item.id}-${item.filledQuantity}-${index}`
+            }
+            renderItem={renderAssetItem}
+            contentContainerStyle={{paddingBottom: 100}}
+            extraData={orderAssets}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+            ListEmptyComponent={
+              <View style={styles.emptyStateContainer as ViewStyle}>
+                <View style={styles.emptyStateIcon as ViewStyle}>
+                  <Text size="xl">📦</Text>
+                </View>
+                <Text size="lg" weight="600" color="neutral" style={{marginBottom: 8}}>
+                  No assets found
+                </Text>
+                <Text size="sm" color="lightGray">
+                  No assets available for this order
+                </Text>
+              </View>
+            }
+          />
+        )}
       </View>
 
       <FullScreenLoader
@@ -459,6 +657,46 @@ const styles = ScaledSheet.create({
     flex: 1,
     backgroundColor: 'white',
     paddingHorizontal: 20,
+  },
+  headerContainer: {
+    backgroundColor: 'white',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  headerContent: {
+    paddingHorizontal: '16@s',
+    paddingVertical: '16@vs',
+  },
+  progressContainer: {
+    backgroundColor: 'white',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+    paddingHorizontal: '16@s',
+    paddingVertical: '16@vs',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: '48@vs',
+  },
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: '48@vs',
+  },
+  emptyStateIcon: {
+    width: '64@s',
+    height: '64@s',
+    backgroundColor: '#F3F4F6',
+    borderRadius: '32@s',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: '16@vs',
   },
   scrollView: {
     flexGrow: 1,

@@ -1,15 +1,19 @@
 // dependencies
-import {create} from 'zustand';
+import { create } from 'zustand';
 
 // utils
 import createSelectors from '@/utils/selectors';
+
+// services - import OrderService for use in actions
+import orderService from '../services';
 
 // types
 import {
   FetchOrderForDriverNew2Query,
   GetCustomerOrderedAssetsQuery,
+  Task_State_Enum,
 } from '@/generated/graphql';
-import {BottomSheetModal} from '@gorhom/bottom-sheet';
+import { BottomSheetModal } from '@gorhom/bottom-sheet';
 
 type LoaderTypes =
   | 'totalizerImage'
@@ -52,6 +56,9 @@ type OrderStore = {
   currentFillupOrder: FetchOrderForDriverNew2Query['task'][0] | null;
   currentDriverOrder: FetchOrderForDriverNew2Query['task'][0] | null;
 
+  // all driver orders (matching Vue.js orderStore)
+  allDriverOrders: FetchOrderForDriverNew2Query['task'];
+
   // fillup image data
   totalizerImageData: string | null;
   quantityImageData: string | null;
@@ -93,6 +100,40 @@ type OrderStore = {
 
   // driver vehicle details
   driverVehicleDetails: any | null;
+
+  // driver details
+  driverDetails: any | null;
+
+  // driver vehicle ID
+  driverVehicleId: string | null;
+
+  // current shift data
+  driverCurrentShift: any | null;
+
+  // partially filled asset IDs (matching Vue.js)
+  partiallyFilledAssetIds: string[];
+
+  // UI state flags
+  showRefresh: boolean;
+  fetchDriverOrderLoader: boolean;
+  isAuthorizedForDispense: boolean;
+
+  // date filter for orders
+  selectedDeliveryDate: string;
+
+  // notification state
+  showNotification: boolean;
+  notificationTitle: string;
+  notificationBody: string;
+
+  // verification states
+  verificationStarted: boolean;
+  dispenseAuthModal: boolean;
+  orderPriorityModal: boolean;
+  orderPriorityInterval: any;
+
+  // order stats tracking
+  totalQuantityDispensed: number;
 };
 
 type OrderActions = {
@@ -112,6 +153,41 @@ type OrderActions = {
   // quantity tracking actions
   setFuelDispensedTillNow: (quantity: number) => void;
   setQuantityToBeDispensed: (quantity: number) => void;
+
+  // Order state management actions (matching Vue.js)
+  setCurrentDriverOrder: (order: any) => void;
+  setAllDriverOrders: (orders: any[]) => void;
+  setCurrentAssetForDispense: (assetDetails: any) => void;
+  setIsAuthorizedForDispense: (state: boolean) => void;
+  setDispenseCompletedAssets: (assetList: any[]) => void;
+  setDriverVehicleId: (id: string) => void;
+  setDriverCurrentShift: (shift: any) => void;
+  setDriverVehicleDetails: (vehicle: any) => void;
+  setDriverDetails: (user: any) => void;
+  setPartiallyFilledAssetIds: (ids: string[]) => void;
+  setTotalQuantityDispensed: (qty: number) => void;
+  setQuantityDispensed: (qty: number) => void;
+  setTotalizerAfterReading: (reading: number) => void;
+  setTotalizerBeforeReading: (reading: number) => void;
+  setSelectedDeliveryDate: (date: string) => void;
+  setOrderAssets: (assets: any[]) => void;
+
+  // UI state toggles (matching Vue.js)
+  toggleFetchDriverOrderLoader: (state: boolean) => void;
+  toggleDispenseAuthModal: (state: boolean) => void;
+  toggleVerificationStarted: (state: boolean) => void;
+  toggleRefresh: (state: boolean) => void;
+  toggleOrderPriorityModal: (state: boolean) => void;
+  setOrderPriorityInterval: (interval: any) => void;
+  setNotification: (notification: { title?: string; body?: string }) => void;
+
+  // Order state transition methods (matching Vue.js API calls)
+  markOrderInTransit: (id: string) => Promise<boolean>;
+  markOrderArrived: (id: string) => Promise<boolean>;
+  markOrderDispensing: (id: string) => Promise<boolean>;
+  markOrderCompleted: (id: string) => Promise<boolean>;
+  markOrderCancelRequest: (id: string) => Promise<boolean>;
+  addTaskCancellationReason: (id: string, reason: string) => Promise<boolean>;
 };
 
 /*
@@ -140,6 +216,9 @@ const orderInitialState: OrderStore = {
   bottomSheetRefOtp: null,
   currentFillupOrder: null,
   currentDriverOrder: null,
+
+  // all driver orders (matching Vue.js orderStore)
+  allDriverOrders: [],
 
   // fillup image data initial state
   totalizerImageData: null,
@@ -176,6 +255,22 @@ const orderInitialState: OrderStore = {
   fuelDispensedTillNow: 0,
   quantityToBeDispensed: 0,
   driverVehicleDetails: null,
+  driverDetails: null,
+  driverVehicleId: null,
+  driverCurrentShift: null,
+  partiallyFilledAssetIds: [],
+  showRefresh: false,
+  fetchDriverOrderLoader: true,
+  isAuthorizedForDispense: false,
+  selectedDeliveryDate: new Date().toISOString().split('T')[0] + 'T00:00:00',
+  showNotification: false,
+  notificationTitle: '',
+  notificationBody: '',
+  verificationStarted: false,
+  dispenseAuthModal: false,
+  orderPriorityModal: false,
+  orderPriorityInterval: null,
+  totalQuantityDispensed: 0,
 
   pendingQuantity: 0,
 };
@@ -193,12 +288,12 @@ const orderStore = create<OrderStore & OrderActions>(set => ({
   // loader actions
   startLoader: (loaderType: LoaderTypes) =>
     set(state => {
-      return {...state, loaders: {...state.loaders, [loaderType]: true}};
+      return { ...state, loaders: { ...state.loaders, [loaderType]: true } };
     }),
 
   stopLoader: (loaderType: LoaderTypes) =>
     set(state => {
-      return {...state, loaders: {...state.loaders, [loaderType]: false}};
+      return { ...state, loaders: { ...state.loaders, [loaderType]: false } };
     }),
 
   // reset order store
@@ -276,6 +371,221 @@ const orderStore = create<OrderStore & OrderActions>(set => ({
       ...state,
       driverVehicleDetails: details,
     })),
+
+  // Order state management actions (matching Vue.js)
+  setCurrentDriverOrder: (order: any) =>
+    set(state => ({
+      ...state,
+      currentDriverOrder: order,
+    })),
+
+  setAllDriverOrders: (orders: any[]) =>
+    set(state => ({
+      ...state,
+      allDriverOrders: orders,
+    })),
+
+  setCurrentAssetForDispense: (assetDetails: any) =>
+    set(state => ({
+      ...state,
+      currentAssetForDispense: { ...assetDetails },
+    })),
+
+  setIsAuthorizedForDispense: (authState: boolean) =>
+    set(state => ({
+      ...state,
+      isAuthorizedForDispense: authState,
+    })),
+
+  setDispenseCompletedAssets: (assetList: any[]) =>
+    set(state => ({
+      ...state,
+      dispenseCompletedAssets: [...assetList],
+    })),
+
+  setDriverVehicleId: (id: string) =>
+    set(state => ({
+      ...state,
+      driverVehicleId: id,
+    })),
+
+  setDriverCurrentShift: (shift: any) =>
+    set(state => ({
+      ...state,
+      driverCurrentShift: shift,
+    })),
+
+  setDriverDetails: (user: any) =>
+    set(state => ({
+      ...state,
+      driverDetails: user,
+    })),
+
+  setPartiallyFilledAssetIds: (ids: string[]) =>
+    set(state => ({
+      ...state,
+      partiallyFilledAssetIds: ids,
+    })),
+
+  setTotalQuantityDispensed: (qty: number) =>
+    set(state => ({
+      ...state,
+      totalQuantityDispensed: state.totalQuantityDispensed + qty,
+    })),
+
+  setQuantityDispensed: (qty: number) =>
+    set(state => ({
+      ...state,
+      quantityDispensed: qty,
+    })),
+
+  setTotalizerAfterReading: (reading: number) =>
+    set(state => ({
+      ...state,
+      totalizerAfterReading: reading,
+    })),
+
+  setTotalizerBeforeReading: (reading: number) =>
+    set(state => ({
+      ...state,
+      totalizerBeforeReading: reading,
+    })),
+
+  setSelectedDeliveryDate: (date: string) =>
+    set(state => ({
+      ...state,
+      selectedDeliveryDate: date,
+    })),
+
+  setOrderAssets: (assets: any[]) =>
+    set(state => ({
+      ...state,
+      orderAssets: assets,
+    })),
+
+  // UI state toggles (matching Vue.js)
+  toggleFetchDriverOrderLoader: (toggleState: boolean) =>
+    set(state => ({
+      ...state,
+      fetchDriverOrderLoader: toggleState,
+    })),
+
+  toggleDispenseAuthModal: (toggleState: boolean) =>
+    set(state => ({
+      ...state,
+      dispenseAuthModal: toggleState,
+    })),
+
+  toggleVerificationStarted: (toggleState: boolean) =>
+    set(state => ({
+      ...state,
+      verificationStarted: toggleState,
+    })),
+
+  toggleRefresh: (toggleState: boolean) =>
+    set(state => ({
+      ...state,
+      showRefresh: toggleState,
+    })),
+
+  toggleOrderPriorityModal: (toggleState: boolean) =>
+    set(state => ({
+      ...state,
+      orderPriorityModal: toggleState,
+    })),
+
+  setOrderPriorityInterval: (interval: any) =>
+    set(state => ({
+      ...state,
+      orderPriorityInterval: interval,
+    })),
+
+  setNotification: (notification: { title?: string; body?: string }) =>
+    set(state => ({
+      ...state,
+      notificationTitle: notification.title || '',
+      notificationBody: notification.body || '',
+      showNotification: true,
+    })),
+
+  // Order state transition methods (matching Vue.js API calls)
+  markOrderInTransit: async (id: string) => {
+    try {
+      console.log(`🚀 markOrderInTransit called for order ID: ${id}`);
+      await orderService.changeTaskState({
+        id,
+        state: Task_State_Enum.InTransit,
+      });
+      console.log(`✅ markOrderInTransit completed for order ID: ${id}`);
+      return true;
+    } catch (err) {
+      console.error(`❌ markOrderInTransit failed for order ID: ${id}`, err);
+      return false;
+    }
+  },
+
+  markOrderArrived: async (id: string) => {
+    try {
+      console.log(`🎯 markOrderArrived called for order ID: ${id}`);
+      await orderService.changeTaskState({
+        id,
+        state: Task_State_Enum.Arrived,
+      });
+      console.log(`✅ markOrderArrived completed for order ID: ${id}`);
+      return true;
+    } catch (err) {
+      console.error(`❌ markOrderArrived failed for order ID: ${id}`, err);
+      return false;
+    }
+  },
+
+  markOrderDispensing: async (id: string) => {
+    try {
+      console.log(`⛽ markOrderDispensing called for order ID: ${id}`);
+      await orderService.markOrderDispensing({ id });
+      console.log(`✅ markOrderDispensing completed for order ID: ${id}`);
+      return true;
+    } catch (err) {
+      console.error(`❌ markOrderDispensing failed for order ID: ${id}`, err);
+      return false;
+    }
+  },
+
+  markOrderCompleted: async (id: string) => {
+    try {
+      console.log(`✅ markOrderCompleted called for order ID: ${id}`);
+      await orderService.markOrderCompleted({ id });
+      console.log(`🎉 markOrderCompleted completed for order ID: ${id}`);
+      return true;
+    } catch (err) {
+      console.error(`❌ markOrderCompleted failed for order ID: ${id}`, err);
+      return false;
+    }
+  },
+
+  markOrderCancelRequest: async (id: string) => {
+    try {
+      console.log(`❌ markOrderCancelRequest called for order ID: ${id}`);
+      await orderService.markOrderCancel({ id });
+      console.log(`✅ markOrderCancelRequest completed for order ID: ${id}`);
+      return true;
+    } catch (err) {
+      console.error(`❌ markOrderCancelRequest failed for order ID: ${id}`, err);
+      return false;
+    }
+  },
+
+  addTaskCancellationReason: async (id: string, reason: string) => {
+    try {
+      console.log(`📝 addTaskCancellationReason called for order ID: ${id}`, reason);
+      await orderService.addTaskCancellationReason({ id, reason });
+      console.log(`✅ addTaskCancellationReason completed for order ID: ${id}`);
+      return true;
+    } catch (err) {
+      console.error(`❌ addTaskCancellationReason failed for order ID: ${id}`, err);
+      return false;
+    }
+  },
 }));
 
 export default createSelectors(orderStore);
