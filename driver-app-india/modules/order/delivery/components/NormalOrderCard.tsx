@@ -6,6 +6,8 @@ import {FBBorders} from '@/types/styles';
 import {DateTime} from 'luxon';
 import {X} from 'phosphor-react-native';
 import orderStore from '../../store';
+import {homeStore} from '@/globalStore';
+import {canSelectOrder, getOrderValidationState, showOrderSelectionAlert} from '@/utils/orderValidation';
 
 interface Props {
   order: any; // type from your driverOrders API
@@ -14,6 +16,14 @@ interface Props {
 const NormalOrderCard: React.FC<Props> = ({order}) => {
   const currentDriverOrder = orderStore.use.currentDriverOrder();
   const isSelected = currentDriverOrder?.id === order?.id;
+
+  // Get validation state from stores
+  const driverOrders = homeStore.use.driverOrders();
+  const fillupHistory = homeStore.use.fillupHistory();
+  const isLoadingOrder = homeStore.use.loaders().driverCurrentOrder;
+
+  const validationState = getOrderValidationState(driverOrders || [], fillupHistory || []);
+  const canSelect = canSelectOrder(order, validationState, isLoadingOrder);
 
   const getOrderStateColor = (state: string) => {
     switch (state) {
@@ -58,6 +68,12 @@ const NormalOrderCard: React.FC<Props> = ({order}) => {
         quantityToBeDispensed: 0,
       }));
     } else {
+      // Check if order can be selected
+      if (!canSelect) {
+        showOrderSelectionAlert(order, validationState);
+        return;
+      }
+
       const quantity = order?.customer_order?.customer_order_items[0]?.qty || 0;
       orderStore.setState(state => ({
         ...state,
@@ -112,9 +128,13 @@ const NormalOrderCard: React.FC<Props> = ({order}) => {
 
   return (
     <TouchableOpacity
-      style={[styles.orderListCardContainer, isSelected && styles.selectedCard]}
+      style={[
+        styles.orderListCardContainer,
+        isSelected && styles.selectedCard,
+        !canSelect && styles.disabledCard
+      ]}
       onPress={handleOrderSelect}
-      activeOpacity={0.7}>
+      activeOpacity={canSelect ? 0.7 : 1}>
       {/* First Row: Order Code and Site */}
       <View style={styles.firstRow}>
         <View style={styles.leftSection}>
@@ -261,6 +281,11 @@ const styles = ScaledSheet.create({
     backgroundColor: '#E8F0FF',
     borderColor: '#1E40AF',
     borderWidth: 2,
+  },
+  disabledCard: {
+    opacity: 0.6,
+    backgroundColor: '#f9fafb',
+    borderColor: '#e5e7eb',
   },
   firstRow: {
     width: '100%',

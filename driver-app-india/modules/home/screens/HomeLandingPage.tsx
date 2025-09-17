@@ -19,6 +19,8 @@ import {
 } from '@/components';
 import CustomDateSelector from '../components/CustomDateSelector';
 import {OrderListSkeleton} from '../components/SkeletonLoader';
+import OrderValidationAlert from '../components/OrderValidationAlert';
+import {getOrderValidationState} from '@/utils/orderValidation';
 
 // service
 import {requestAppPermissions} from '@/utils/general';
@@ -435,6 +437,13 @@ const HomeLandingPage: React.FC = () => {
           style={{marginHorizontal: 0}}
         />
       </Container>
+
+      {/* Order Validation Alerts */}
+      {driverOrders && driverOrders.length > 0 && (
+        <OrderValidationAlert
+          {...getOrderValidationState(driverOrders, fillupHistory || [])}
+        />
+      )}
 
       {/* Orders FlatList */}
       {(isLoadingOrder || isLoadingFillupHistory || refreshing) && (
