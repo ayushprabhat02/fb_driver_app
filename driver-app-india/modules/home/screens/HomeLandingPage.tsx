@@ -268,9 +268,9 @@ const HomeLandingPage: React.FC = () => {
         barStyle="dark-content"
       />
 
-      <View style={styles.headerContainer}>
+      {/* <View style={styles.headerContainer}>
         <SwitchProfileHeader />
-      </View>
+      </View> */}
 
       <ScrollView
         keyboardShouldPersistTaps="handled"

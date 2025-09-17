@@ -6,12 +6,11 @@ import {
   BottomTabScreenProps,
   createBottomTabNavigator,
 } from '@react-navigation/bottom-tabs';
-import {Wallet, HouseLine, FileText} from 'phosphor-react-native';
+import {HouseLine, User} from 'phosphor-react-native';
 
 // components
 import {HomeLandingPage} from '@/modules/home/screens';
-import {WalletDelivery} from '@/modules/wallet/delivery/screens';
-import {MyOrders} from '@/modules/order/delivery/screens';
+import Settings from '@/modules/settings/screens';
 
 //styles
 import {FBBackground, FBColors} from '@/types/styles';
@@ -20,8 +19,7 @@ const TabNav = createBottomTabNavigator();
 
 export type HomeTabsParamList = {
   'home-tab': undefined;
-  'orders-tab': undefined;
-  'wallet-tab': undefined;
+  'profile-tab': undefined;
 };
 export type Props = BottomTabScreenProps<HomeTabsParamList, 'home-tab'>;
 
@@ -31,22 +29,6 @@ type TabIconProps = {
   size?: number;
 };
 
-const WalletTabIcon: React.FC<TabIconProps> = ({focused}) => {
-  return (
-    <View
-      style={[
-        styles.tabIconContainer,
-        {
-          backgroundColor: focused ? FBBackground.active : FBBackground.white,
-        },
-      ]}>
-      <Wallet
-        color={focused ? FBColors.white : FBColors.neutral}
-        size={ms(24)}
-      />
-    </View>
-  );
-};
 
 const HomeTabIcon: React.FC<TabIconProps> = ({focused}) => {
   return (
@@ -65,7 +47,7 @@ const HomeTabIcon: React.FC<TabIconProps> = ({focused}) => {
   );
 };
 
-const ReportTabIcon: React.FC<TabIconProps> = ({focused}) => {
+const ProfileTabIcon: React.FC<TabIconProps> = ({focused}) => {
   return (
     <View
       style={[
@@ -74,7 +56,7 @@ const ReportTabIcon: React.FC<TabIconProps> = ({focused}) => {
           backgroundColor: focused ? FBBackground.active : FBBackground.white,
         },
       ]}>
-      <FileText
+      <User
         color={focused ? FBColors.white : FBColors.neutral}
         size={ms(24)}
       />
@@ -93,14 +75,6 @@ const Home: React.FC<Props> = () => {
         tabBarStyle: styles.tabBar,
       }}>
       <TabNav.Screen
-        name="wallet-tab"
-        component={WalletDelivery}
-        options={{
-          headerShown: false,
-          tabBarIcon: WalletTabIcon,
-        }}
-      />
-      <TabNav.Screen
         name="home-tab"
         component={HomeLandingPage}
         options={{
@@ -109,11 +83,11 @@ const Home: React.FC<Props> = () => {
         }}
       />
       <TabNav.Screen
-        name="orders-tab"
-        component={MyOrders}
+        name="profile-tab"
+        component={Settings}
         options={{
-          title: 'My Orders',
-          tabBarIcon: ReportTabIcon,
+          title: 'Profile',
+          tabBarIcon: ProfileTabIcon,
           headerTitleAlign: 'center',
           headerShown: true,
           headerTransparent: true,

@@ -1,23 +1,23 @@
 // dependencies
-import { ScrollView, View } from 'react-native';
-import React, { useCallback, useEffect } from 'react';
-import { ScaledSheet } from 'react-native-size-matters';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import {ScrollView, View} from 'react-native';
+import React, {useCallback, useEffect} from 'react';
+import {ScaledSheet} from 'react-native-size-matters';
+import {useFocusEffect, useNavigation} from '@react-navigation/native';
 
 // services
-import { signOut } from '@/modules/auth/services';
+import {signOut} from '@/modules/auth/services';
 
 // components
-import { HeaderAvoidingContainer } from '@/components';
-import { SettingsHeader } from '../components';
+import {HeaderAvoidingContainer} from '@/components';
+import {SettingsHeader} from '../components';
 import SettingsCard from '../components/SettingsCard';
 
 // data
-import { settingsOptions } from '../data/settings';
+import {settingsOptions} from '../data/settings';
 
 // types
-import { FBBackground, FBBorders, FBColors } from '@/types/styles';
-import { UserService } from '@/services';
+import {FBBackground, FBBorders, FBColors} from '@/types/styles';
+import {UserService} from '@/services';
 import userService from '@/modules/user/services';
 
 const Settings: React.FC = () => {
@@ -37,7 +37,7 @@ const Settings: React.FC = () => {
   const navigateToModule = (setting: NavigateProps) => {
     if (setting?.screen) {
       // @ts-ignore
-      navigation.navigate(setting.module, { screen: setting.screen });
+      navigation.navigate(setting.module, {screen: setting.screen});
       return;
     }
 
@@ -60,13 +60,13 @@ const Settings: React.FC = () => {
   // );
 
   return (
-    <HeaderAvoidingContainer>
+    <View style={{flex: 1, padding: 20, backgroundColor: FBBackground.white}}>
       <SettingsHeader />
 
       <ScrollView
-        style={{ flex: 1 }}
+        style={{flex: 1}}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 24 }}>
+        contentContainerStyle={{paddingBottom: 24}}>
         <View style={styles.settingsListContainer}>
           {settingsOptions.map(setting => (
             <SettingsCard
@@ -90,7 +90,7 @@ const Settings: React.FC = () => {
           />
         </View>
       </ScrollView>
-    </HeaderAvoidingContainer>
+    </View>
   );
 };
 
