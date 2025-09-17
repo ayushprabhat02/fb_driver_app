@@ -35,6 +35,7 @@ import OrderSummaryCard from '../components/delivery/OrderSummaryCard';
 import homeService from '../services';
 import { updateOrderQuantity } from '@/utils/orderUtil';
 import userService from '@/modules/user/services';
+import { setupShiftValidation } from '@/utils/shiftValidation';
 
 const HomeLandingPage: React.FC = () => {
   const navigation = useNavigation();
@@ -61,6 +62,8 @@ const HomeLandingPage: React.FC = () => {
   const resetDeliveryStore = deliveryStore.use.resetDeliveryStore();
 
   const scrollViewRef = useRef<ScrollView>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
 
   useEffect(() => {
     requestAppPermissions().then(response => {
@@ -83,6 +86,14 @@ const HomeLandingPage: React.FC = () => {
     useCallback(() => {
       scrollViewRef?.current?.scrollTo({ x: 0, y: 0, animated: true });
     }, []),
+  );
+
+  // Set up periodic validation only when this screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      const cleanup = setupShiftValidation(driverVehicleId, intervalRef);
+      return cleanup;
+    }, [driverVehicleId]),
   );
 
   // checking if user business lead exists
