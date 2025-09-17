@@ -68,8 +68,10 @@ const NormalOrderCard: React.FC<Props> = ({order}) => {
   };
 
   const getCustomerName = () => {
-    const firstName = order.customer_order?.organization_user?.user?.first_name || '';
-    const lastName = order.customer_order?.organization_user?.user?.last_name || '';
+    const firstName =
+      order.customer_order?.organization_user?.user?.first_name || '';
+    const lastName =
+      order.customer_order?.organization_user?.user?.last_name || '';
     return `${firstName} ${lastName}`.trim() || 'Customer';
   };
 
@@ -79,7 +81,9 @@ const NormalOrderCard: React.FC<Props> = ({order}) => {
 
   const getOrderDate = () => {
     if (!order.customer_order?.order_date) return '';
-    return DateTime.fromISO(order.customer_order.order_date).toFormat('dd-MMM-yyyy hh:mm a');
+    return DateTime.fromISO(order.customer_order.order_date).toFormat(
+      'dd-MMM-yyyy hh:mm a',
+    );
   };
 
   const handleCancelOrder = (event: any) => {
@@ -87,59 +91,68 @@ const NormalOrderCard: React.FC<Props> = ({order}) => {
     event.stopPropagation();
 
     Alert.alert(
-      "Cancel Order",
+      'Cancel Order',
       `Are you sure you want to cancel order ${order.customer_order?.order_code}?`,
       [
         {
-          text: "No",
-          style: "cancel"
+          text: 'No',
+          style: 'cancel',
         },
         {
-          text: "Yes, Cancel",
-          style: "destructive",
+          text: 'Yes, Cancel',
+          style: 'destructive',
           onPress: () => {
             // TODO: Implement actual cancel order logic
             console.log('Order cancelled:', order.customer_order?.order_code);
-          }
-        }
-      ]
+          },
+        },
+      ],
     );
   };
-
 
   return (
     <TouchableOpacity
       style={[styles.orderListCardContainer, isSelected && styles.selectedCard]}
       onPress={handleOrderSelect}
       activeOpacity={0.7}>
-
       {/* First Row: Order Code and Site */}
       <View style={styles.firstRow}>
         <View style={styles.leftSection}>
-          <Text weight="600" size="sm">Order Code: </Text>
-          <Text weight="600" size="sm">{order.customer_order?.order_code || ''}</Text>
+          <Text weight="600" size="sm">
+            Order Code:{' '}
+          </Text>
+          <Text weight="600" size="sm">
+            {order.customer_order?.order_code || ''}
+          </Text>
         </View>
         <View style={styles.rightSection}>
-          <Text weight="600" size="sm">Site: </Text>
           <Text weight="600" size="sm">
-            {order.customer_order?.organizationAddressByShippingAddressId?.name ||
-             order.customer_order?.name ||
-             order.customer_order?.organization_user?.organization?.name ||
-             'N/A'}
+            Site:{' '}
+          </Text>
+          <Text weight="600" size="sm">
+            {order.customer_order?.organizationAddressByShippingAddressId
+              ?.name ||
+              order.customer_order?.name ||
+              order.customer_order?.organization_user?.organization?.name ||
+              'N/A'}
           </Text>
         </View>
       </View>
 
       <Divider height={6} />
       <View style={styles.flexRow}>
-        <Text weight="600" size="sm">Status: </Text>
-        <View style={[
-          styles.statusBadge,
-          {
-            backgroundColor: getOrderStateColor(order?.state || '').backgroundColor,
-            borderColor: getOrderStateColor(order?.state || '').borderColor,
-          }
-        ]}>
+        <Text weight="600" size="sm">
+          Status:{' '}
+        </Text>
+        <View
+          style={[
+            styles.statusBadge,
+            {
+              backgroundColor: getOrderStateColor(order?.state || '')
+                .backgroundColor,
+              borderColor: getOrderStateColor(order?.state || '').borderColor,
+            },
+          ]}>
           <Text
             weight="600"
             size="xs"
@@ -151,32 +164,25 @@ const NormalOrderCard: React.FC<Props> = ({order}) => {
 
       {/* Customer Name */}
       <Divider height={6} />
-      <OrderDetail
-        detail="Customer"
-        value={getCustomerName()}
-      />
+      <OrderDetail detail="Customer" value={getCustomerName()} />
 
       {/* Organization */}
       <Divider height={6} />
       <OrderDetail
         detail="Organization"
-        value={order.customer_order?.organization_user?.organization?.name || 'Organization'}
+        value={
+          order.customer_order?.organization_user?.organization?.name ||
+          'Organization'
+        }
       />
 
       {/* Quantity */}
       <Divider height={6} />
-      <OrderDetail
-        detail="Quantity"
-        value={getQuantity()}
-        emphasize
-      />
+      <OrderDetail detail="Quantity" value={getQuantity()} emphasize />
 
       {/* Order Date */}
       <Divider height={6} />
-      <OrderDetail
-        detail="Order Date"
-        value={getOrderDate()}
-      />
+      <OrderDetail detail="Order Date" value={getOrderDate()} />
 
       {/* Bottom Row: Delivery Badge and Cancel Button */}
       <View style={styles.bottomRow}>
@@ -193,7 +199,10 @@ const NormalOrderCard: React.FC<Props> = ({order}) => {
             onPress={handleCancelOrder}
             android_ripple={{color: '#fee2e2', borderless: false}}>
             <X size={12} color="#dc2626" weight="bold" />
-            <Text size="xs" weight="600" style={{color: '#dc2626', marginLeft: 4}}>
+            <Text
+              size="xs"
+              weight="600"
+              style={{color: '#dc2626', marginLeft: 4}}>
               Cancel
             </Text>
           </Pressable>
@@ -244,7 +253,7 @@ const styles = ScaledSheet.create({
     borderRadius: '10@s',
     borderWidth: 1,
     borderColor: FBBorders.secondary,
-    marginBottom: '10@vs',
+    marginBottom: '0@vs',
     marginHorizontal: '0@s',
     position: 'relative',
   },

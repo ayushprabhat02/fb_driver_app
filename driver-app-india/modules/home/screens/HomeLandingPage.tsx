@@ -1,7 +1,13 @@
 //dependencies
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { RefreshControl, ScrollView, View } from 'react-native';
-import { ScaledSheet } from 'react-native-size-matters';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
+import {
+  RefreshControl,
+  ScrollView,
+  View,
+  FlatList,
+  ListRenderItem,
+} from 'react-native';
+import {ScaledSheet} from 'react-native-size-matters';
 
 //components
 import {
@@ -9,12 +15,13 @@ import {
   FocusAwareStatusBar,
   SwitchProfileHeader,
   FloatingActionButtons,
+  Text,
 } from '@/components';
 import CustomDateSelector from '../components/CustomDateSelector';
-import { OrderListSkeleton } from '../components/SkeletonLoader';
+import {OrderListSkeleton} from '../components/SkeletonLoader';
 
 // service
-import { requestAppPermissions } from '@/utils/general';
+import {requestAppPermissions} from '@/utils/general';
 
 // store
 import {
@@ -25,20 +32,23 @@ import {
   userStore,
 } from '@/globalStore';
 
-import { Task_State_Enum } from '@/generated/graphql';
-import { OrderListCard } from '@/modules/order/delivery/components';
-import { UserService } from '@/services';
-import { FBBackground } from '@/types/styles';
-import { useFocusEffect } from '@react-navigation/native';
+import {Task_State_Enum} from '@/generated/graphql';
+import {OrderListCard} from '@/modules/order/delivery/components';
+import {UserService} from '@/services';
+import {FBBackground} from '@/types/styles';
+import {useFocusEffect} from '@react-navigation/native';
 import OrderSummaryCard from '../components/delivery/OrderSummaryCard';
 import homeService from '../services';
 import userService from '@/modules/user/services';
-import { setupShiftValidation } from '@/utils/shiftValidation';
+import {setupShiftValidation} from '@/utils/shiftValidation';
 
 const HomeLandingPage: React.FC = () => {
   const [refreshing, setRefreshing] = React.useState(false);
   const [checkBusinessLeadLoader, setCheckBusinessLeadLoader] =
     useState<boolean>(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [currentOffset, setCurrentOffset] = useState(0);
+  const [hasMoreData, setHasMoreData] = useState(true);
   const selectedDate = homeStore.use.selectedDate();
   const loggedInUser = userStore.use.loggedInUser();
   const driverVehicleId = checkinStore.use.driverVehicleId();
@@ -58,9 +68,8 @@ const HomeLandingPage: React.FC = () => {
 
   const resetDeliveryStore = deliveryStore.use.resetDeliveryStore();
 
-  const scrollViewRef = useRef<ScrollView>(null);
+  const flatListRef = useRef<FlatList>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
 
   useEffect(() => {
     requestAppPermissions().then(response => {
@@ -70,18 +79,42 @@ const HomeLandingPage: React.FC = () => {
     });
   }, []);
 
-  const onRefresh = React.useCallback(() => {
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    setCurrentOffset(0);
+    setHasMoreData(true);
     resetDeliveryStore();
 
-    setTimeout(() => {
+    try {
+      if (driverVehicleId) {
+        await fetchCurrentOrder(selectedDate, 0, false);
+        await fetchFillupHistory();
+      }
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+    } finally {
       setRefreshing(false);
-    }, 2000);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [driverVehicleId, selectedDate]);
+
+  const loadMoreOrders = async () => {
+    if (isLoadingMore || !hasMoreData || !driverVehicleId) {
+      return;
+    }
+
+    const newOffset = currentOffset + 5;
+    try {
+      await fetchCurrentOrder(selectedDate, newOffset, true);
+      setCurrentOffset(newOffset);
+    } catch (error) {
+      console.error('Error loading more orders:', error);
+    }
+  };
 
   useFocusEffect(
     useCallback(() => {
-      scrollViewRef?.current?.scrollTo({ x: 0, y: 0, animated: true });
+      flatListRef?.current?.scrollToOffset({offset: 0, animated: true});
     }, []),
   );
 
@@ -114,7 +147,7 @@ const HomeLandingPage: React.FC = () => {
             }
           }
         })
-        .catch(() => { });
+        .catch(() => {});
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -149,7 +182,6 @@ const HomeLandingPage: React.FC = () => {
     }, 5000);
   };
 
-
   const fetchMyProfile = async () => {
     try {
       await userService.fetchMyProfile();
@@ -177,7 +209,11 @@ const HomeLandingPage: React.FC = () => {
   };
 
   // fetch driver orders api
-  const fetchCurrentOrder = async (date?: Date) => {
+  const fetchCurrentOrder = async (
+    date?: Date,
+    offset: number = 0,
+    isLoadMore: boolean = false,
+  ) => {
     // Check if driverVehicleId is available before making API call
     if (!driverVehicleId) {
       console.warn('Driver vehicle ID not available, skipping order fetch');
@@ -194,9 +230,14 @@ const HomeLandingPage: React.FC = () => {
     const startDateString = `${year}-${month}-${day}T00:00:00`;
     const endDateString = `${year}-${month}-${day}T23:59:59`;
 
-    startLoader('driverCurrentOrder');
-    return homeService
-      .fetchDriverOrders({
+    if (isLoadMore) {
+      setIsLoadingMore(true);
+    } else {
+      startLoader('driverCurrentOrder');
+    }
+
+    try {
+      const response = await homeService.fetchDriverOrders({
         state: [
           Task_State_Enum.Cancelled,
           Task_State_Enum.CancellationRequested,
@@ -206,15 +247,31 @@ const HomeLandingPage: React.FC = () => {
           Task_State_Enum.Rescheduled,
           Task_State_Enum.Open,
         ],
-        limit: 10,
-        offset: 0,
+        limit: 5,
+        offset: offset,
         driver_vehicle_id: driverVehicleId,
         start_date: startDateString,
         end_date: endDateString,
-      })
-      .finally(() => {
-        stopLoader('driverCurrentOrder');
       });
+
+      // Check if we have more data
+      if (response && Array.isArray(response) && response.length < 5) {
+        setHasMoreData(false);
+      } else {
+        setHasMoreData(true);
+      }
+
+      return response;
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      throw error;
+    } finally {
+      if (isLoadMore) {
+        setIsLoadingMore(false);
+      } else {
+        stopLoader('driverCurrentOrder');
+      }
+    }
   };
 
   const fetchFillupHistory = async () => {
@@ -239,9 +296,9 @@ const HomeLandingPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchOrderStats()
-    fetchMyProfile()
-  }, [])
+    fetchOrderStats();
+    fetchMyProfile();
+  }, []);
 
   useEffect(() => {
     fetchCurrentOrder();
@@ -252,27 +309,39 @@ const HomeLandingPage: React.FC = () => {
   const handleDateChange = async (newDate: Date) => {
     // Store current selection to restore after API call
     const selectedOrderId = currentDriverOrder?.id || currentFillupOrder?.id;
-    const selectedOrderType = currentDriverOrder ? 'driver' : currentFillupOrder ? 'fillup' : null;
+    const selectedOrderType = currentDriverOrder
+      ? 'driver'
+      : currentFillupOrder
+      ? 'fillup'
+      : null;
+
+    // Reset pagination state
+    setCurrentOffset(0);
+    setHasMoreData(true);
 
     // Update date in store
-    homeStore.setState(state => ({ ...state, selectedDate: newDate }));
+    homeStore.setState(state => ({...state, selectedDate: newDate}));
 
     // Fetch new data and restore selection if order still exists
     if (driverVehicleId) {
       try {
-        await fetchCurrentOrder(newDate);
+        await fetchCurrentOrder(newDate, 0, false);
 
         if (selectedOrderId && selectedOrderType) {
           // Try to restore selection from the new data
           const newDriverOrders = homeStore.getState().driverOrders;
-          const matchingOrder = newDriverOrders?.find((order: any) => order.id === selectedOrderId);
+          const matchingOrder = newDriverOrders?.find(
+            (order: any) => order.id === selectedOrderId,
+          );
 
           if (matchingOrder) {
             if (selectedOrderType === 'driver') {
               orderStore.setState(state => ({
                 ...state,
                 currentDriverOrder: matchingOrder,
-                quantityToBeDispensed: matchingOrder?.customer_order?.customer_order_items[0]?.qty || 0,
+                quantityToBeDispensed:
+                  matchingOrder?.customer_order?.customer_order_items[0]?.qty ||
+                  0,
               }));
             } else if (selectedOrderType === 'fillup') {
               orderStore.setState(state => ({
@@ -302,10 +371,50 @@ const HomeLandingPage: React.FC = () => {
     }
   };
 
-  // Removed fillup completion alert as requested
+  // Render order item for FlatList
+  const renderOrderItem: ListRenderItem<any> = ({item: order}) => {
+    const isFillupOrder =
+      (order as any)?.fillup_requests &&
+      (order as any)?.fillup_requests.length > 0;
+    const shouldDisable = !allFillupsCompleted && !isFillupOrder;
+
+    return (
+      <Container paddingHorizontal={16}>
+        <View
+          style={{
+            opacity: shouldDisable ? 0.5 : 1,
+            pointerEvents: shouldDisable ? 'none' : 'auto',
+          }}>
+          <OrderListCard order={order} />
+        </View>
+      </Container>
+    );
+  };
+
+  // Render FlatList header (empty since we moved static content out)
+  const renderHeader = () => null;
+
+  // Render FlatList footer
+  const renderFooter = () => {
+    if (isLoadingMore) {
+      return (
+        <View style={{padding: 20, alignItems: 'center'}}>
+          <Text>Loading more orders...</Text>
+        </View>
+      );
+    }
+    if (!hasMoreData && driverOrders?.length > 0) {
+      return (
+        <View style={{padding: 20, alignItems: 'center'}}>
+          <Text>No more orders to load</Text>
+        </View>
+      );
+    }
+    return null;
+  };
 
   return (
-    <View style={{ flex: 1, backgroundColor: FBBackground.white }}>
+    <View style={{flex: 1, backgroundColor: FBBackground.white}}>
       <FocusAwareStatusBar
         translucent
         backgroundColor={'transparent'}
@@ -316,47 +425,50 @@ const HomeLandingPage: React.FC = () => {
         <SwitchProfileHeader />
       </View>
 
-      <ScrollView
-        keyboardShouldPersistTaps="handled"
-        ref={scrollViewRef}
-        style={styles.body}
+      {/* Static Content - OrderSummary and DateSelector */}
+      <Container paddingHorizontal={16} style={{position: 'relative'}}>
+        <OrderSummaryCard />
+        <CustomDateSelector
+          selectedDate={selectedDate}
+          onDateChange={handleDateChange}
+          isLoading={isLoadingOrder}
+          style={{marginHorizontal: 0}}
+        />
+      </Container>
+
+      {/* Orders FlatList */}
+      {(isLoadingOrder || isLoadingFillupHistory || refreshing) && (
+        <Container paddingHorizontal={16}>
+          <OrderListSkeleton count={3} />
+        </Container>
+      )}
+
+      <FlatList
+        ref={flatListRef}
+        data={
+          isLoadingOrder || isLoadingFillupHistory || refreshing
+            ? []
+            : driverOrders || []
+        }
+        renderItem={renderOrderItem}
+        keyExtractor={(item, index) => item?.id?.toString() || index.toString()}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 10 }}
+        contentContainerStyle={{paddingBottom: 100}}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }>
-        <Container paddingHorizontal={16} style={{ position: 'relative' }}>
-          <OrderSummaryCard />
-          <CustomDateSelector
-            selectedDate={selectedDate}
-            onDateChange={handleDateChange}
-            isLoading={isLoadingOrder}
-            style={{ marginHorizontal: 0 }}
-          />
-          <View>
-            {driverOrders?.map((order, index) => {
-              const isFillupOrder =
-                (order as any)?.fillup_requests &&
-                (order as any)?.fillup_requests.length > 0;
-              const shouldDisable = !allFillupsCompleted && !isFillupOrder;
-
-              return (
-                <View
-                  key={index}
-                  style={{
-                    opacity: shouldDisable ? 0.5 : 1,
-                    pointerEvents: shouldDisable ? 'none' : 'auto',
-                  }}>
-                  <OrderListCard order={order} />
-                </View>
-              );
-            })}
-          </View>
-        </Container>
-        {(isLoadingOrder || isLoadingFillupHistory) && (
-          <OrderListSkeleton count={3} />
+        }
+        onEndReached={loadMoreOrders}
+        onEndReachedThreshold={0.1}
+        ListFooterComponent={renderFooter}
+        ListEmptyComponent={() => (
+          <Container paddingHorizontal={16}>
+            <View style={{padding: 20, alignItems: 'center'}}>
+              <Text>No orders found for this date</Text>
+            </View>
+          </Container>
         )}
-      </ScrollView>
+        style={{flex: 1}}
+      />
 
       {/* Floating Action Buttons */}
       <FloatingActionButtons />
