@@ -1,15 +1,14 @@
 //dependencies
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { RefreshControl, ScrollView, View } from 'react-native';
-import { hasNotch } from 'react-native-device-info';
 import { ScaledSheet } from 'react-native-size-matters';
 
 //components
 import {
-  Button,
   Container,
   FocusAwareStatusBar,
   SwitchProfileHeader,
+  FloatingActionButtons,
 } from '@/components';
 import CustomDateSelector from '../components/CustomDateSelector';
 import { OrderListSkeleton } from '../components/SkeletonLoader';
@@ -30,15 +29,13 @@ import { Task_State_Enum } from '@/generated/graphql';
 import { OrderListCard } from '@/modules/order/delivery/components';
 import { UserService } from '@/services';
 import { FBBackground } from '@/types/styles';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 import OrderSummaryCard from '../components/delivery/OrderSummaryCard';
 import homeService from '../services';
-import { updateOrderQuantity } from '@/utils/orderUtil';
 import userService from '@/modules/user/services';
 import { setupShiftValidation } from '@/utils/shiftValidation';
 
 const HomeLandingPage: React.FC = () => {
-  const navigation = useNavigation();
   const [refreshing, setRefreshing] = React.useState(false);
   const [checkBusinessLeadLoader, setCheckBusinessLeadLoader] =
     useState<boolean>(false);
@@ -49,8 +46,6 @@ const HomeLandingPage: React.FC = () => {
   const fillupHistory = homeStore.use.fillupHistory();
   const isLoadingOrder = homeStore.use.loaders().driverCurrentOrder;
   const isLoadingFillupHistory = homeStore.use.loaders().fillupHistory;
-  const currentFillupOrder = orderStore.use.currentFillupOrder();
-  const currentDriverOrder = orderStore.use.currentDriverOrder();
 
   const allFillupsCompleted = fillupHistory?.every(
     (item: any) => item.state === 'COMPLETE' || item.state === 'REJECTED',
@@ -315,47 +310,8 @@ const HomeLandingPage: React.FC = () => {
         )}
       </ScrollView>
 
-      {/* Floating Buttons */}
-      {(currentFillupOrder || currentDriverOrder) &&
-        (allFillupsCompleted ||
-          ((currentFillupOrder as any)?.fillup_requests &&
-            (currentFillupOrder as any)?.fillup_requests.length > 0)) && (
-          <View style={styles.floatingButtonsContainer}>
-            <Button
-              variant="solid"
-              style={[styles.floatingButton, styles.navigationButton]}
-              onPress={() => {
-                // Handle navigation
-                console.log('Navigation pressed');
-              }}>
-              Navigation
-            </Button>
-            <Button
-              variant="solid"
-              style={[styles.floatingButton, styles.startTripButton]}
-              onPress={() => {
-                const currentOrder = currentFillupOrder || currentDriverOrder;
-                const isFillupOrder =
-                  (currentFillupOrder as any)?.fillup_requests &&
-                  (currentFillupOrder as any)?.fillup_requests.length > 0;
-                // update dispense quantity
-                updateOrderQuantity(currentOrder);
-                if (isFillupOrder) {
-                  // @ts-ignore
-                  navigation.navigate('address', {
-                    screen: 'fill-asset',
-                  });
-                } else {
-                  // @ts-ignore
-                  navigation.navigate('order', {
-                    screen: 'choose-asset',
-                  });
-                }
-              }}>
-              Start Trip
-            </Button>
-          </View>
-        )}
+      {/* Floating Action Buttons */}
+      <FloatingActionButtons />
     </View>
   );
 };
@@ -385,27 +341,6 @@ const styles = ScaledSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     width: '100%',
-  },
-  floatingButtonsContainer: {
-    position: 'absolute',
-    bottom: '20@vs',
-    left: '20@s',
-    right: '20@s',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    zIndex: 1000,
-  },
-  floatingButton: {
-    flex: 1,
-    marginHorizontal: '5@s',
-    borderRadius: '25@s',
-    paddingVertical: '12@vs',
-  },
-  navigationButton: {
-    backgroundColor: '#3B82F6',
-  },
-  startTripButton: {
-    backgroundColor: '#10B981',
   },
 });
 

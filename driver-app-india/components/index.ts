@@ -1,5 +1,6 @@
 export {default as Button} from './Button';
 export {default as Text} from './Text';
+export {default as FloatingActionButtons} from './FloatingActionButtons';
 export {default as Input} from './Input';
 export {default as HeroCard} from './HeroCard';
 export {default as SwitchProfileHeader} from './SwitchProfileHeader';
