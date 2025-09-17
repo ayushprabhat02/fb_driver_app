@@ -51,22 +51,22 @@ const CheckinPage: React.FC = () => {
   const odometerViewY = useRef(0);
   const [isSubmitState, setIsSubmitState] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
-  type ImageCaptureType = 'selfie' | 'refueller' | 'odometer' | 'totalizer';
+  type ImageCaptureType = 'refueller' | 'odometer' | 'totalizer';
 
   const [imageType, setImageType] = useState<ImageCaptureType | null>(null);
   // Commented out for simplified flow
   // const [odometerReading, setOdometerReading] = useState('');
   // const [totalizerReading, setTotalizerReading] = useState('');
 
-  const selfieImageData = checkinStore.use.selfieImageData();
-  const selfieStoreUrl = checkinStore.use.selfieStoreUrl();
+  const refuellerImageData = checkinStore.use.refuellerImageData();
+  const refuellerStoreUrl = checkinStore.use.refuellerStoreUrl();
   // Commented out for simplified flow
   // const refuellerImageData = checkinStore.use.refuellerImageData();
   // const odometerImageData = checkinStore.use.odometerImageData();
   // const totalizerImageData = checkinStore.use.totalizerImageData();
 
-  const isSelfieImageUploading =
-    checkinStore.use.loaders().isSelfieImageUploading;
+  const isRefuellerImageUploading =
+    checkinStore.use.loaders().isRefuellerImageUploading;
   const isCheckingIn = checkinStore.use.loaders().isCheckingIn;
   // Commented out for simplified flow
   // const isRefuellerImageUploading =
@@ -107,10 +107,10 @@ const CheckinPage: React.FC = () => {
   // };
 
   const handleSubmit = async () => {
-    if (!selfieStoreUrl) {
+    if (!refuellerStoreUrl) {
       Alert.alert(
         'Required Image',
-        'Please upload and wait for selfie image to be processed before proceeding',
+        'Please upload and wait for refueller image to be processed before proceeding',
       );
       return;
     }
@@ -139,7 +139,7 @@ const CheckinPage: React.FC = () => {
       // Complete check-in process
       console.log('Calling completeCheckIn service...');
       await checkinService.completeCheckIn({
-        selfieStoreUrl: selfieStoreUrl,
+        refuellerStoreUrl: refuellerStoreUrl,
         location,
         driverVehicleId,
       });
@@ -207,13 +207,6 @@ const CheckinPage: React.FC = () => {
       setShowCamera(false);
       let loaderType: LoaderTypes | null = null;
       switch (imageType) {
-        case 'selfie':
-          loaderType = 'isSelfieImageUploading';
-          checkinStore.setState(state => ({
-            ...state,
-            selfieImageData: data.uri,
-          }));
-          break;
         case 'refueller':
           loaderType = 'isRefuellerImageUploading';
           checkinStore.setState(state => ({
@@ -246,11 +239,11 @@ const CheckinPage: React.FC = () => {
     }
   };
 
-  const handleRemoveSelfie = () => {
+  const handleRemoveRefueller = () => {
     checkinStore.setState(state => ({
       ...state,
-      selfieImageData: null,
-      selfieStoreUrl: null,
+      refuellerImageData: null,
+      refuellerStoreUrl: null,
     }));
   };
 
@@ -269,10 +262,10 @@ const CheckinPage: React.FC = () => {
       console.log('Image uploaded:', {src, storeUrl});
 
       // Store the uploaded URL in the store based on image type
-      if (type === 'selfie' && storeUrl) {
+      if (type === 'refueller' && storeUrl) {
         checkinStore.setState(state => ({
           ...state,
-          selfieStoreUrl: storeUrl,
+          refuellerStoreUrl: storeUrl,
         }));
       }
     } catch (error) {
@@ -283,10 +276,7 @@ const CheckinPage: React.FC = () => {
   };
 
   if (showCamera) {
-    const cameraType =
-      imageType === 'selfie'
-        ? RNCamera.Constants.Type.front
-        : RNCamera.Constants.Type.back;
+    const cameraType = RNCamera.Constants.Type.back;
 
     return (
       <View style={styles.cameraContainer}>
@@ -361,12 +351,12 @@ const CheckinPage: React.FC = () => {
         </Text>
 
         <ImageContainer
-          label="Upload Selfie"
-          imageData={selfieImageData}
-          isUploading={isSelfieImageUploading}
-          onCameraPress={() => openCamera('selfie')}
-          onRemovePhoto={handleRemoveSelfie}
-          uploadingText="Uploading Selfie image..."
+          label="Upload Refueller Image"
+          imageData={refuellerImageData}
+          isUploading={isRefuellerImageUploading}
+          onCameraPress={() => openCamera('refueller')}
+          onRemovePhoto={handleRemoveRefueller}
+          uploadingText="Uploading Refueller image..."
           required={true}
         />
         {/* Refueller and Odometer sections commented out for simplified check-in flow */}
@@ -396,11 +386,11 @@ const CheckinPage: React.FC = () => {
 
       <View style={styles.buttonContainer}>
         <Button
-          style={[styles.button, !selfieStoreUrl && styles.disabledButton]}
+          style={[styles.button, !refuellerStoreUrl && styles.disabledButton]}
           variant="solid"
           onPress={handleSubmit}
           loading={isCheckingIn}
-          disabled={!selfieStoreUrl}>
+          disabled={!refuellerStoreUrl}>
           {isCheckingIn ? 'Checking in...' : 'Check-in'}
         </Button>
       </View>
@@ -576,6 +566,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   vehicleValue: {
-    color: FBColors.darkGray,
+    color: FBColors.primary,
   },
 });

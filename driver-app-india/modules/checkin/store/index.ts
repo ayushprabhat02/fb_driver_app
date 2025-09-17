@@ -29,9 +29,8 @@ type Loaders = {
 type CheckinStore = {
   driverVehicleId: string | null;
   driverVehicleDetails: Vehicle | null;
-  selfieImageData: string | null;
-  selfieStoreUrl: string | null; // Store the uploaded image URL
   refuellerImageData: string | null;
+  refuellerStoreUrl: string | null; // Store the uploaded image URL
   odometerImageData: string | null;
   totalizerImageData: string | null;
   isQuantityCheckEnabled: boolean;
@@ -54,9 +53,8 @@ type CheckinActions = {
 const checkinInitialState: CheckinStore = {
   driverVehicleId: null,
   driverVehicleDetails: null,
-  selfieImageData: null,
-  selfieStoreUrl: null,
   refuellerImageData: null,
+  refuellerStoreUrl: null,
   isQuantityCheckEnabled: false,
   odometerImageData: null,
   totalizerImageData: null,

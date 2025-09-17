@@ -8,7 +8,14 @@ import {
   BottomSheetView,
 } from '@gorhom/bottom-sheet';
 
-import {Input, Button, SimpleBottomSheet, Text, Divider, FullScreenLoader} from '@/components';
+import {
+  Input,
+  Button,
+  SimpleBottomSheet,
+  Text,
+  Divider,
+  FullScreenLoader,
+} from '@/components';
 import {FBBackground, FBColors, FBBorders} from '@/types/styles';
 import {orderStore} from '@/globalStore';
 
@@ -126,21 +133,32 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
     }
 
     // Validation based on Vue project logic - check if total dispensed quantity exceeds quantity to be dispensed
-    if (quantityToBeDispensed > 0 && (fuelDispensedTillNow + quantityNum) > quantityToBeDispensed && quantityNum !== 0) {
+    if (
+      quantityToBeDispensed > 0 &&
+      fuelDispensedTillNow + quantityNum > quantityToBeDispensed &&
+      quantityNum !== 0
+    ) {
       Toast.show({
         type: 'error',
         text1: 'Quantity Exceeds Limit',
-        text2: `Total dispensed quantity (${fuelDispensedTillNow + quantityNum}L) exceeds the quantity to be dispensed (${quantityToBeDispensed}L)`,
+        text2: `Total dispensed quantity (${
+          fuelDispensedTillNow + quantityNum
+        }L) exceeds the quantity to be dispensed (${quantityToBeDispensed}L)`,
       });
       return;
     }
 
     // Hard validation to prevent total dispensed quantity from exceeding order quantity
-    if (orderQuantity > 0 && quantityNum > orderQuantity) {
+    if (
+      orderQuantity > 0 &&
+      fuelDispensedTillNow + quantityNum > orderQuantity
+    ) {
       Toast.show({
         type: 'error',
         text1: 'Quantity Exceeds Order',
-        text2: `You cannot dispense more than the order quantity of ${orderQuantity}L`,
+        text2: `Total dispensed quantity (${
+          fuelDispensedTillNow + quantityNum
+        }L) cannot exceed the order quantity of ${orderQuantity}L`,
       });
       return;
     }
@@ -161,9 +179,9 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
           <Text size="lg" weight="700" color="secondary">
             {isComplete
               ? 'Dispensing Complete'
-              : isFillingRemaining
-              ? 'Enter Additional Quantity'
-              : 'Enter Quantity Dispensed'}
+              : isFillingRemaining &&
+                // ? 'Enter Additional Quantity' :
+                'Enter Quantity Dispensed'}
           </Text>
 
           <Divider height={16} />
@@ -237,7 +255,10 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
                   placeholder="Enter quantity in multiples of 20L"
                   keyboardType="numeric"
                 />
-                <Text size="xs" color="darkGray" style={{marginTop: 4, fontStyle: 'italic'}}>
+                <Text
+                  size="xs"
+                  color="darkGray"
+                  style={{marginTop: 4, fontStyle: 'italic'}}>
                   Note: Quantity must be in multiples of 20 liters
                 </Text>
               </View>
@@ -279,7 +300,10 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
       </BottomSheetView>
 
       {/* FullScreen Loader */}
-      <FullScreenLoader showLoader={loaders.quantityBottomSheet} loaderText="Saving quantity..." />
+      <FullScreenLoader
+        showLoader={loaders.quantityBottomSheet}
+        loaderText="Saving quantity..."
+      />
     </SimpleBottomSheet>
   );
 };

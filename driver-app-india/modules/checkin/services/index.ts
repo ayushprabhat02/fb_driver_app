@@ -249,15 +249,15 @@ class CheckinService {
 
   /**
    * @method completeCheckIn
-   * @description Complete check-in process with selfie store URL and location - Following fuelbuddy-driver flow
+   * @description Complete check-in process with refueller store URL and location - Following fuelbuddy-driver flow
    */
   public async completeCheckIn(checkInData: {
-    selfieStoreUrl: string;
+    refuellerStoreUrl: string;
     location: {lat: number; lng: number};
     driverVehicleId: string;
   }) {
     try {
-      const {selfieStoreUrl, location, driverVehicleId} = checkInData;
+      const {refuellerStoreUrl, location, driverVehicleId} = checkInData;
 
       console.log('Starting check-in process with data:', checkInData);
 
@@ -280,9 +280,9 @@ class CheckinService {
         driver_duty_photos: {
           data: [
             {
-              category: Photo_Type_Enum.SelfieStart, // As in Vue project line 424
+              category: Photo_Type_Enum.RefuellerStart, // As in Vue project line 429
               is_active: true,
-              url: selfieStoreUrl,
+              url: refuellerStoreUrl,
             },
           ],
         },
