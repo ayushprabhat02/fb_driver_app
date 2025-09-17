@@ -21,7 +21,6 @@ import {
   checkinStore,
   deliveryStore,
   homeStore,
-  orderStore,
   userStore,
 } from '@/globalStore';
 
