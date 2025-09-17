@@ -10,7 +10,7 @@ import {authStore} from '@/globalStore';
 // components
 import {Text, Button, Divider} from '@/components';
 import LoginFormHeading from './LoginHeading';
-import {Password} from 'phosphor-react-native';
+import {Eye, EyeSlash} from 'phosphor-react-native';
 
 // types
 import {FBColors} from '@/types/styles';
@@ -136,11 +136,19 @@ const LoginForm: React.FC = () => {
               <Pressable
                 onPress={() => setShowPassword(!showPassword)}
                 style={styles.eyeIcon}>
-                <Password
-                  size={20}
-                  color={FBColors.neutral}
-                  weight={showPassword ? 'fill' : 'regular'}
-                />
+                {showPassword ? (
+                  <EyeSlash
+                    size={20}
+                    color={FBColors.neutral}
+                    weight="regular"
+                  />
+                ) : (
+                  <Eye
+                    size={20}
+                    color={FBColors.neutral}
+                    weight="regular"
+                  />
+                )}
               </Pressable>
             </View>
             {errors.password && (

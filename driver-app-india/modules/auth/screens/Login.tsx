@@ -1,10 +1,10 @@
 // dependencies
-import {Dimensions, StyleSheet, Image} from 'react-native';
+import {Dimensions, Image} from 'react-native';
 import React, {useEffect, useRef} from 'react';
 import {StackScreenProps} from '@react-navigation/stack';
 import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
 // import LottieView from 'lottie-react-native';
-import FuelBuddyLogo from '@/assets/branding/fuelbuddy-full.svg';
+import FuelBuddyVueLogo from '@/assets/branding/fuelbuddy-vue-logo.svg';
 
 //components
 import {LoginForm} from '../components';
@@ -26,7 +26,6 @@ import {
 // types
 import {AuthStackParamList} from '../navigator';
 import {View} from 'react-native';
-import {FBBorders} from '@/types/styles';
 import {FocusAwareStatusBar} from '@/components';
 
 export type Props = StackScreenProps<AuthStackParamList, 'login'>;
@@ -66,17 +65,13 @@ const Login: React.FC<Props> = ({navigation}: Props) => {
       <FocusAwareStatusBar barStyle={'light-content'} />
       <View
         style={{
-          width: 200,
-          height: 200,
+          width: 300,
+          height: 120,
           justifyContent: 'center',
           alignItems: 'center',
-          // backgroundColor: 'green',
+          marginTop: 80,
         }}>
-        {/* <Image
-          source={require('@/assets/branding/fuelbuddy-full.svg')}
-          resizeMode="stretch"
-        /> */}
-        <FuelBuddyLogo width={200} height={200} />
+        <FuelBuddyVueLogo width={200} height={200} />
       </View>
 
       <LoginForm
@@ -88,11 +83,3 @@ const Login: React.FC<Props> = ({navigation}: Props) => {
 };
 
 export default Login;
-
-const styles = StyleSheet.create({
-  sheetBackground: {
-    borderColor: FBBorders.primary,
-    borderWidth: 0,
-    borderRadius: 0,
-  },
-});
