@@ -118,7 +118,7 @@ const CustomDateSelector: React.FC<CustomDateSelectorProps> = ({
     return date.toDateString() === new Date().toDateString();
   };
 
-  const renderDay = ({item, index}: {item: Date | null; index: number}) => {
+  const renderDay = ({item}: {item: Date | null; index: number}) => {
     if (!item) {
       return <View style={styles.emptyDay} />;
     }
