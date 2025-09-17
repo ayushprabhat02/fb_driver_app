@@ -22,6 +22,13 @@ const OrderSummaryCard: React.FC = () => {
     );
   }
 
+  const getCurrentDate = () => {
+    return new Date().toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
   return (
     <View style={styles.card}>
       <View style={styles.header}>
@@ -29,59 +36,59 @@ const OrderSummaryCard: React.FC = () => {
           Today's Summary
         </Text>
         <Text size="sm" weight="500" color="neutral">
-          Aug 18
+          {getCurrentDate()}
         </Text>
       </View>
 
       <View style={styles.statsRow}>
         <View style={styles.statItem}>
+          <Text size="xs" weight="500" color="neutral">
+            Total
+          </Text>
           <Text size="lg" weight="700" color="primary">
             {totalOrders}
           </Text>
           <Text size="xs" weight="500" color="neutral">
             {driverOrderStats?.data?.total_assigned_qty || 0}L
           </Text>
-          <Text size="xs" weight="500" color="neutral">
-            Total
-          </Text>
         </View>
 
         <View style={styles.statDivider} />
 
         <View style={styles.statItem}>
+          <Text size="xs" weight="500" color="neutral">
+            Delivered
+          </Text>
           <Text size="lg" weight="700" style={{color: '#28a745'}}>
             {deliveredOrders}
           </Text>
           <Text size="xs" weight="500" color="neutral">
             {driverOrderStats?.data?.total_delivered_qty_today || 0}L
           </Text>
-          <Text size="xs" weight="500" color="neutral">
-            Delivered
-          </Text>
         </View>
 
         <View style={styles.statDivider} />
 
         <View style={styles.statItem}>
+          <Text size="xs" weight="500" color="neutral">
+            Pending
+          </Text>
           <Text size="lg" weight="700" style={{color: '#fd7e14'}}>
             {pendingOrders}
           </Text>
           <Text size="xs" weight="500" color="neutral">
             {driverOrderStats?.data?.total_pending_qty || 0}L
           </Text>
-          <Text size="xs" weight="500" color="neutral">
-            Pending
-          </Text>
         </View>
 
         <View style={styles.statDivider} />
 
         <View style={styles.statItem}>
-          <Text size="lg" weight="700" color="primary">
-            {progressPercentage}%
-          </Text>
           <Text size="xs" weight="500" color="neutral">
             Progress
+          </Text>
+          <Text size="lg" weight="700" color="primary">
+            {progressPercentage}%
           </Text>
         </View>
       </View>
