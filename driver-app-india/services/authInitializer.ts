@@ -76,40 +76,52 @@ const initializeAuthListener = () => {
     }, 500);
   };
 
-  // The main listener
+  // The main listener - optimized for faster loading
   auth().onAuthStateChanged(async user => {
-    if (user) {
-      const tokenResult = await user.getIdTokenResult();
-      const hasuraIdExists = checkHasuraId(tokenResult);
+    try {
+      if (user) {
+        // Check if client is already initialized to prevent duplicate initialization
+        const currentClient = authStore.getState().graphQLClient;
+        if (currentClient) {
+          splashStore.setState({isLoading: false});
+          return;
+        }
 
-      if (!hasuraIdExists?.hasuraId || !hasuraIdExists?.isDriverAccount) {
-        Toast.show({type: 'error', text1: 'Unauthorized account role.'});
-        setTimeout(() => signOut(), 1500);
-        return;
+        const tokenResult = await user.getIdTokenResult();
+        const hasuraIdExists = checkHasuraId(tokenResult);
+
+        if (!hasuraIdExists?.hasuraId || !hasuraIdExists?.isDriverAccount) {
+          Toast.show({type: 'error', text1: 'Unauthorized account role.'});
+          setTimeout(() => signOut(), 1500);
+          splashStore.setState({isLoading: false});
+          return;
+        }
+
+        const isNew = isNewUserCheck(
+          user.metadata.creationTime,
+          user.metadata.lastSignInTime,
+        );
+        setIsNewUser(isNew);
+        setXHasuraId(hasuraIdExists.hasuraId);
+        
+        const token = await user.getIdToken();
+        setAuthToken(token);
+        setFirebaseUser(user);
+
+        // Initialize GraphQL client only once
+        const graphqlClient = initializeClient();
+        setGraphQLClient(graphqlClient);
+      } else {
+        setGraphQLClient(null);
+        resetAuthStore();
       }
-
-      const isNew = isNewUserCheck(
-        user.metadata.creationTime,
-        user.metadata.lastSignInTime,
-      );
-      setIsNewUser(isNew);
-
-      setXHasuraId(hasuraIdExists.hasuraId);
-      const token = await user.getIdToken();
-      setAuthToken(token);
-      setFirebaseUser(user);
-
-      // ✅ always initialize with customer role
-      const graphqlClient = initializeClient();
-      setGraphQLClient(graphqlClient);
-    } else {
+    } catch (error) {
+      console.error('Auth initialization error:', error);
       setGraphQLClient(null);
       resetAuthStore();
-    }
-
-    setTimeout(() => {
+    } finally {
       splashStore.setState({isLoading: false});
-    }, 500);
+    }
   });
 };
 

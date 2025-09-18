@@ -161,31 +161,32 @@ const CheckinPage: React.FC = () => {
   };
 
   useEffect(() => {
-    const dateTime = new Date().toISOString();
-    startLoader('isDriverVehicleIdLoading');
-    checkinService
-      .fetchDriverVehicleId({dateTime})
-      .catch(error => {
-        console.error('Error fetching driver vehicle ID:', error);
-      })
-      .finally(() => {
+    const initializeCheckin = async () => {
+      try {
+        startLoader('isDriverVehicleIdLoading');
+        const dateTime = new Date().toISOString();
+        
+        // Fetch driver vehicle ID first
+        await checkinService.fetchDriverVehicleId({dateTime});
+        
+        // Get the updated driverVehicleId from store
+        const currentDriverVehicleId = checkinStore.getState().driverVehicleId;
+        
+        // If we have the ID, fetch details immediately
+        if (currentDriverVehicleId) {
+          await checkinService.fetchDriverVehicleDetailsById({
+            driver_vehicle_id: currentDriverVehicleId as string,
+          });
+        }
+      } catch (error) {
+        console.error('Error initializing checkin:', error);
+      } finally {
         stopLoader('isDriverVehicleIdLoading');
-      });
-  }, []);
+      }
+    };
 
-  useEffect(() => {
-    if (!driverVehicleId) return;
-    checkinService
-      .fetchDriverVehicleDetailsById({
-        driver_vehicle_id: driverVehicleId as string,
-      })
-      .catch(error => {
-        console.error('Error fetching driver vehicle details:', error);
-      })
-      .finally(() => {
-        stopLoader('isDriverVehicleIdLoading');
-      });
-  }, [driverVehicleId]);
+    initializeCheckin();
+  }, []);
 
   const openCamera = async (type: ImageCaptureType) => {
     const cameraPermission = await check(PERMISSIONS.ANDROID.CAMERA);

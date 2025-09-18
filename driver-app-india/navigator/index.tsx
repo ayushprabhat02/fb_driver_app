@@ -1,7 +1,9 @@
 //dependencies
 import {createStackNavigator, StackScreenProps} from '@react-navigation/stack';
 import React from 'react';
+import {View} from 'react-native';
 import {Client, Provider} from 'urql';
+import {Text} from '@/components';
 
 // components
 import {
@@ -46,6 +48,15 @@ export type Props = StackScreenProps<ProtectedStackParamList, 'home'>;
 
 const ProtectedNavigator: React.FC<Props> = () => {
   const graphQLClient = authStore.use.graphQLClient();
+
+  // Show loading immediately if client is not ready
+  if (!graphQLClient) {
+    return (
+      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff'}}>
+        <Text>Loading...</Text>
+      </View>
+    );
+  }
 
   return (
     // production

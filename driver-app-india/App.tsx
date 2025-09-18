@@ -57,7 +57,7 @@ function App(): React.JSX.Element {
     return <SplashScreen />;
   }
 
-  console.log('GraphQL Client:', graphqlClient);
+
 
   return (
     <SafeAreaProvider>
