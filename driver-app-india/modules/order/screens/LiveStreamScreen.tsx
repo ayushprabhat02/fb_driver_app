@@ -40,6 +40,12 @@ import supportService from '@/modules/support/services';
 import {FBColors, FBBackground} from '@/types/styles';
 import {OrderStackParamList} from '@/navigator/containers/Order';
 import {getCurrentLocation} from '@/utils/location';
+import {
+  saveStreamState,
+  getStreamState,
+  clearStreamState,
+  hasPausedStreamForTask,
+} from '@/utils/streamStorage';
 
 type LiveStreamNavigationProp = StackNavigationProp<
   OrderStackParamList,
@@ -57,6 +63,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
 
   // State
   const [isRecording, setIsRecording] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [permissionStatus, setPermissionStatus] = useState({
     camera: 'unknown',
@@ -68,7 +75,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   const [hasStreamedOnce, setHasStreamedOnce] = useState(false);
   const [isStreamUploaded, setIsStreamUploaded] = useState(false);
   const [streamingState, setStreamingState] = useState<
-    'not_started' | 'started' | 'stopped'
+    'not_started' | 'started' | 'paused' | 'stopped'
   >('not_started');
   const [showQuantityBottomSheet, setShowQuantityBottomSheet] = useState(false);
   const [uploadError, setUploadError] = useState(false);
@@ -114,14 +121,44 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
     return currentAsset?.quantity_dispensed || 0;
   };
 
-  // Check permissions on component mount
+  // Check permissions and restore state on component mount
   useEffect(() => {
     checkPermissions();
+    restoreStreamState();
   }, []);
 
-  // Setup recording timer (increments duration only)
+  // Restore stream state from storage
+  const restoreStreamState = async () => {
+    if (!currentDriverOrder?.id || !currentAssetForDispense?.id) return;
+
+    try {
+      const hasPaused = await hasPausedStreamForTask(
+        currentDriverOrder.id,
+        currentAssetForDispense.id
+      );
+
+      if (hasPaused) {
+        const savedState = await getStreamState();
+        setIsPaused(true);
+        setStreamingState('paused');
+        setRecordingDuration(savedState.recordingDuration);
+        setHasStreamedOnce(savedState.hasStreamedOnce);
+        setCanStopStream(savedState.recordingDuration >= streamingDurationSeconds);
+
+        Toast.show({
+          type: 'info',
+          text1: 'Paused Recording Found',
+          text2: 'Your previous recording session was paused. You can resume it.',
+        });
+      }
+    } catch (error) {
+      console.error('Failed to restore stream state:', error);
+    }
+  };
+
+  // Setup recording timer (increments duration only when recording and not paused)
   useEffect(() => {
-    if (!isRecording) {
+    if (!isRecording || isPaused) {
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
@@ -130,7 +167,20 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
     }
 
     timerRef.current = setInterval(() => {
-      setRecordingDuration(prev => prev + 1);
+      setRecordingDuration(prev => {
+        const newDuration = prev + 1;
+        // Save state periodically during recording
+        saveStreamState({
+          isRecording: true,
+          isPaused: false,
+          recordingDuration: newDuration,
+          streamingState: 'started',
+          hasStreamedOnce: true,
+          taskId: currentDriverOrder?.id || null,
+          assetId: currentAssetForDispense?.id || null,
+        });
+        return newDuration;
+      });
     }, 1000);
 
     return () => {
@@ -139,7 +189,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         timerRef.current = null;
       }
     };
-  }, [isRecording]);
+  }, [isRecording, isPaused]);
 
   // Enable stop after threshold using latest state
   useEffect(() => {
@@ -308,8 +358,108 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
     }
   };
 
+  const pauseRecording = async () => {
+    if (!cameraRef.current || !isRecording || isPaused) return;
+
+    try {
+      setIsLoading(true);
+      setIsPaused(true);
+      setStreamingState('paused');
+
+      // Update stream status via API
+      startLoader('upsertTaskAction');
+      await orderService.upsertStepTaskAction({
+        object: {
+          key: 'STREAM_PAUSED',
+          url: '',
+          value: new Date().toISOString(),
+          task_id: currentDriverOrder?.id,
+          customer_asset_id: currentAssetForDispense?.id,
+        },
+      });
+      stopLoader('upsertTaskAction');
+
+      // Save paused state
+      await saveStreamState({
+        isRecording: true,
+        isPaused: true,
+        recordingDuration,
+        streamingState: 'paused',
+        hasStreamedOnce: true,
+        taskId: currentDriverOrder?.id || null,
+        assetId: currentAssetForDispense?.id || null,
+      });
+
+      Toast.show({
+        type: 'info',
+        text1: 'Recording Paused',
+        text2: 'You can resume recording anytime',
+      });
+    } catch (error) {
+      console.error('Pause recording error:', error);
+      setIsPaused(false);
+      Toast.show({
+        type: 'error',
+        text1: 'Pause Failed',
+        text2: 'Unable to pause recording',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resumeRecording = async () => {
+    if (!cameraRef.current || !isPaused) return;
+
+    try {
+      setIsLoading(true);
+      setIsPaused(false);
+      setStreamingState('started');
+
+      // Update stream status via API
+      startLoader('upsertTaskAction');
+      await orderService.upsertStepTaskAction({
+        object: {
+          key: 'STREAM_RESUMED',
+          url: '',
+          value: new Date().toISOString(),
+          task_id: currentDriverOrder?.id,
+          customer_asset_id: currentAssetForDispense?.id,
+        },
+      });
+      stopLoader('upsertTaskAction');
+
+      // Update stream status
+      await saveStreamState({
+        isRecording: true,
+        isPaused: false,
+        recordingDuration,
+        streamingState: 'started',
+        hasStreamedOnce: true,
+        taskId: currentDriverOrder?.id || null,
+        assetId: currentAssetForDispense?.id || null,
+      });
+
+      Toast.show({
+        type: 'success',
+        text1: 'Recording Resumed',
+        text2: 'Live stream is recording again',
+      });
+    } catch (error) {
+      console.error('Resume recording error:', error);
+      setIsPaused(true);
+      Toast.show({
+        type: 'error',
+        text1: 'Resume Failed',
+        text2: 'Unable to resume recording',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const stopRecording = async () => {
-    if (!cameraRef.current || !isRecording) return;
+    if (!cameraRef.current || (!isRecording && !isPaused)) return;
 
     try {
       setIsLoading(true);
@@ -333,8 +483,13 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         is_live_dispensing: false,
       });
 
-      cameraRef.current.stopRecording();
+      // Only stop camera recording if actually recording (not just paused)
+      if (isRecording && !isPaused) {
+        cameraRef.current.stopRecording();
+      }
+
       setIsRecording(false);
+      setIsPaused(false);
 
       // Reset timer states
       if (timerRef.current) {
@@ -343,6 +498,9 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       }
       setCanStopStream(false);
       setRecordingDuration(0);
+
+      // Clear persisted state since recording is complete
+      await clearStreamState();
 
       Toast.show({
         type: 'success',
@@ -1225,6 +1383,7 @@ For iOS Simulator:
 
           <CameraOverlay
             isRecording={isRecording}
+            isPaused={isPaused}
             recordingDuration={recordingDuration}
             canStopStream={canStopStream}
             streamingDurationSeconds={streamingDurationSeconds}
@@ -1236,12 +1395,15 @@ For iOS Simulator:
       <View style={styles.controlsSection}>
         <StreamControls
           isRecording={isRecording}
+          isPaused={isPaused}
           isLoading={isLoading}
           canStopStream={canStopStream}
           hasStreamedOnce={hasStreamedOnce}
           streamingState={streamingState}
           isStreamUploaded={isStreamUploaded}
           onStartRecording={startRecording}
+          onPauseRecording={pauseRecording}
+          onResumeRecording={resumeRecording}
           onStopRecording={stopRecording}
           onNext={goNext}
         />

@@ -4,6 +4,7 @@ import {ScaledSheet} from 'react-native-size-matters';
 
 interface CameraOverlayProps {
   isRecording: boolean;
+  isPaused: boolean;
   recordingDuration: number;
   canStopStream: boolean;
   streamingDurationSeconds: number;
@@ -11,6 +12,7 @@ interface CameraOverlayProps {
 
 const CameraOverlay: React.FC<CameraOverlayProps> = ({
   isRecording,
+  isPaused,
   recordingDuration,
   canStopStream,
   streamingDurationSeconds,
@@ -21,24 +23,39 @@ const CameraOverlay: React.FC<CameraOverlayProps> = ({
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
-  if (!isRecording) return null;
+  if (!isRecording && !isPaused) return null;
 
   return (
     <>
-      {/* Recording indicator */}
+      {/* Recording/Paused indicator */}
       <View style={styles.recordingIndicator}>
-        <View style={styles.recordingDot} />
-        <RNText style={styles.recordingText}>
-          REC {formatTime(recordingDuration)}
+        <View style={[
+          styles.recordingDot,
+          isPaused && styles.pausedDot
+        ]} />
+        <RNText style={[
+          styles.recordingText,
+          isPaused && styles.pausedText
+        ]}>
+          {isPaused ? 'PAUSED' : 'REC'} {formatTime(recordingDuration)}
         </RNText>
       </View>
 
-      {/* Timer display */}
-      {!canStopStream && (
+      {/* Timer display - only when actively recording */}
+      {isRecording && !isPaused && !canStopStream && (
         <View style={styles.timerContainer}>
           <RNText style={styles.timerText}>
             Stop available in{' '}
             {formatTime(streamingDurationSeconds - recordingDuration)}
+          </RNText>
+        </View>
+      )}
+
+      {/* Paused message */}
+      {isPaused && (
+        <View style={styles.pausedContainer}>
+          <RNText style={styles.pausedMessage}>
+            Recording is paused. You can resume or stop.
           </RNText>
         </View>
       )}
@@ -83,6 +100,28 @@ const styles = ScaledSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
     paddingHorizontal: '12@s',
     paddingVertical: '6@vs',
+    borderRadius: '20@s',
+    textAlign: 'center',
+  },
+  pausedDot: {
+    backgroundColor: '#F59E0B', // Amber color for paused
+  },
+  pausedText: {
+    color: 'white',
+  },
+  pausedContainer: {
+    position: 'absolute',
+    bottom: '80@vs',
+    left: '20@s',
+    right: '20@s',
+    alignItems: 'center',
+  },
+  pausedMessage: {
+    color: 'white',
+    fontSize: '14@ms',
+    backgroundColor: 'rgba(245, 158, 11, 0.8)', // Amber background
+    paddingHorizontal: '16@s',
+    paddingVertical: '8@vs',
     borderRadius: '20@s',
     textAlign: 'center',
   },

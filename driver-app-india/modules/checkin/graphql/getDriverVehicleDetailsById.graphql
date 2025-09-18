@@ -6,17 +6,12 @@ query getDriverVehicleDetailsById($driver_vehicle_id: uuid!) {
     }
     vehicle {
       id
-      is_elocking_enable
       fuel_tank_capacity
-      insurance_expire_date
       is_active
       is_mothership
       location
-      model
       name
-      rc_expire_date
       registration_number
-      rfid
       tanker_capacity
       tanker_compartment_number
       category
