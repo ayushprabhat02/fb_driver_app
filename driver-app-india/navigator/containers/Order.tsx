@@ -8,7 +8,6 @@ import {
   OrderDetails,
   OrderDetailsUpcoming,
 } from '@/modules/order/delivery/screens';
-import ChooseAsset from '@/modules/order/screens/ChooseAsset';
 import FillAsset from '@/modules/order/screens/FillAsset';
 import UploadImageAsset from '@/modules/order/screens/UploadImageAsset';
 import LiveStreamScreen from '@/modules/order/screens/LiveStreamScreen';
