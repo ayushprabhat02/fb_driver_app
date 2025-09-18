@@ -425,15 +425,7 @@ const DeliveryChallanScreen: React.FC = () => {
       // Step 5: Mark order as completed
       await markOrderCompleted();
 
-      // Reset states (following Vue.js pattern)
-      orderStore.setState(state => ({
-        ...state,
-        dispenseCompletedAssets: [],
-        partiallyFilledAssetsArray: [],
-        assetsWithUploadedVideos: [],
-        challanImageData: null,
-        challanUploadedUrl: null,
-      }));
+      // Note: OrderSuccess component will handle cleanup and navigation
 
       // Navigate to success screen
       setTimeout(() => {

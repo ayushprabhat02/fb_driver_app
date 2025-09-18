@@ -31,14 +31,15 @@ import {
   FuelDeliveryToMutationVariables,
 } from '@/generated/graphql';
 import {OrderSuccess} from '@/modules/home/components';
+import {OrderInfoCard} from '../components';
 
 type BuddyChallanNavigationProp = StackNavigationProp<
   OrderStackParamList,
   'buddy-challan'
 >;
 
-type ImageCaptureType = 'challan' | 'technician';
-type LoaderTypes = 'challanImage' | 'technicianImage';
+type ImageCaptureType = 'challan' | 'technician' | 'imap';
+type LoaderTypes = 'challanImage' | 'technicianImage' | 'imapImage';
 
 const BuddyChallanScreen: React.FC = () => {
   const navigation = useNavigation<BuddyChallanNavigationProp>();
@@ -55,10 +56,13 @@ const BuddyChallanScreen: React.FC = () => {
   const dispenseCompletedAssets = orderStore.use.dispenseCompletedAssets();
   const challanImageData = orderStore.use.challanImageData();
   const technicianImageData = orderStore.use.technicianImageData();
+  const imapImageData = orderStore.use.imapImageData();
   const challanUploadedUrl = orderStore.use.challanUploadedUrl();
   const technicianUploadedUrl = orderStore.use.technicianUploadedUrl();
+  const imapUploadedUrl = orderStore.use.imapUploadedUrl();
   const challanImageUploading = orderStore.use.loaders().challanImage;
   const technicianImageUploading = orderStore.use.loaders().technicianImage;
+  const imapImageUploading = orderStore.use.loaders().imapImage;
 
   // Rate state for invoice calculations
   const [rate, setRate] = useState<number>(0);
@@ -161,6 +165,15 @@ const BuddyChallanScreen: React.FC = () => {
       return false;
     }
 
+    if (!imapImageData) {
+      Toast.show({
+        type: 'error',
+        text1: 'Validation Error',
+        text2: 'Please upload IMAP photo',
+      });
+      return false;
+    }
+
     if (!selectedDeliveryTo) {
       Toast.show({
         type: 'error',
@@ -201,28 +214,33 @@ const BuddyChallanScreen: React.FC = () => {
       const data = await cameraRef.current.takePictureAsync(options);
       setShowCamera(false);
 
-      let loaderType: LoaderTypes | null = null;
+      // Only store image locally, don't upload immediately
       switch (imageType) {
         case 'challan':
-          loaderType = 'challanImage';
           orderStore.setState({
             challanImageData: data.uri,
           });
           break;
         case 'technician':
-          loaderType = 'technicianImage';
           orderStore.setState({
             technicianImageData: data.uri,
+          });
+          break;
+        case 'imap':
+          orderStore.setState({
+            imapImageData: data.uri,
           });
           break;
         default:
           break;
       }
 
-      if (loaderType !== null) {
-        orderStore.getState().startLoader(loaderType);
-        await uploadImage(data.uri, imageType, loaderType);
-      }
+      Toast.show({
+        type: 'success',
+        text1: 'Photo Captured',
+        text2: `${imageType.charAt(0).toUpperCase() + imageType.slice(1)} image saved. It will be uploaded when you mark order complete.`,
+        visibilityTime: 3000,
+      });
     }
   };
 
@@ -248,6 +266,8 @@ const BuddyChallanScreen: React.FC = () => {
         orderStore.setState({challanUploadedUrl: storeUrl || src});
       } else if (type === 'technician') {
         orderStore.setState({technicianUploadedUrl: storeUrl || src});
+      } else if (type === 'imap') {
+        orderStore.setState({imapUploadedUrl: storeUrl || src});
       }
 
       console.log('Image uploaded:', {src, storeUrl});
@@ -263,6 +283,8 @@ const BuddyChallanScreen: React.FC = () => {
         orderStore.setState({challanImageData: null});
       } else if (type === 'technician') {
         orderStore.setState({technicianImageData: null});
+      } else if (type === 'imap') {
+        orderStore.setState({imapImageData: null});
       }
     } finally {
       orderStore.getState().stopLoader(loaderType);
@@ -376,6 +398,16 @@ const BuddyChallanScreen: React.FC = () => {
           task_id: currentDriverOrder?.id || '',
         },
       });
+
+      // Create IMAP task
+      await orderService.upsertStepTaskAction({
+        object: {
+          key: 'IMAP',
+          url: imapUploadedUrl || imapImageData || '',
+          value: '0.0',
+          task_id: currentDriverOrder?.id || '',
+        },
+      });
     } catch (error) {
       throw new Error('Error creating challan task');
     }
@@ -415,6 +447,30 @@ const BuddyChallanScreen: React.FC = () => {
     }
   };
 
+  const uploadAllImages = async () => {
+    try {
+      // Upload challan image
+      if (challanImageData && !challanUploadedUrl) {
+        orderStore.getState().startLoader('challanImage');
+        await uploadImage(challanImageData, 'challan', 'challanImage');
+      }
+
+      // Upload technician image
+      if (technicianImageData && !technicianUploadedUrl) {
+        orderStore.getState().startLoader('technicianImage');
+        await uploadImage(technicianImageData, 'technician', 'technicianImage');
+      }
+
+      // Upload IMAP image
+      if (imapImageData && !imapUploadedUrl) {
+        orderStore.getState().startLoader('imapImage');
+        await uploadImage(imapImageData, 'imap', 'imapImage');
+      }
+    } catch (error) {
+      throw new Error('Failed to upload images');
+    }
+  };
+
   const handleSubmit = async () => {
     if (!validateForm()) {
       return;
@@ -432,6 +488,9 @@ const BuddyChallanScreen: React.FC = () => {
     try {
       setLoading(true);
 
+      // Step 0: Upload all images first
+      await uploadAllImages();
+
       // Step 1: Create invoice
       await createInvoice();
 
@@ -447,13 +506,7 @@ const BuddyChallanScreen: React.FC = () => {
       // Step 5: Mark order as completed
       await markOrderCompleted();
 
-      // Reset states
-      orderStore.setState(state => ({
-        ...state,
-        dispenseCompletedAssets: [],
-        partiallyFilledAssetsArray: [],
-        assetsWithUploadedVideos: [],
-      }));
+      // Note: OrderSuccess component will handle cleanup and navigation
 
       // Show success screen
       setShowSuccess(true);
@@ -530,10 +583,9 @@ const BuddyChallanScreen: React.FC = () => {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
-        <Divider height={10} />
-
+        <OrderInfoCard />
         {/* Order Summary */}
-        <View style={styles.vehicleDetailsContainer}>
+        {/*    <View style={styles.vehicleDetailsContainer}>
           <Text weight="600" size="lg" color="neutral">
             Delivery Summary
           </Text>
@@ -568,18 +620,17 @@ const BuddyChallanScreen: React.FC = () => {
               </Text>
             </View>
           )}
-        </View>
-
-        <Divider height={10} />
+        </View>*/}
 
         {/* Dispensed Assets */}
-        <View style={styles.vehicleDetailsContainer}>
+        {/*  <View style={styles.vehicleDetailsContainer}>
           <Text weight="600" size="sm" color="neutral">
             Dispensed Assets:
           </Text>
           <Divider height={8} />
           {renderDispensedAssets()}
         </View>
+         */}
 
         <Divider height={10} />
 
@@ -647,10 +698,18 @@ const BuddyChallanScreen: React.FC = () => {
 
         {/* Challan Image */}
         <ImageContainer
-          label="Challan"
+          label="Upload Delivery Challan"
           imageData={challanImageData}
           isUploading={challanImageUploading}
           onCameraPress={() => openCamera('challan')}
+          onRemovePhoto={() => {
+            orderStore.setState({ challanImageData: null, challanUploadedUrl: null });
+            Toast.show({
+              type: 'info',
+              text1: 'Image Removed',
+              text2: 'Challan image has been removed. You can retake it.',
+            });
+          }}
           uploadingText="Uploading challan image..."
           required={true}
         />
@@ -663,7 +722,35 @@ const BuddyChallanScreen: React.FC = () => {
           imageData={technicianImageData}
           isUploading={technicianImageUploading}
           onCameraPress={() => openCamera('technician')}
+          onRemovePhoto={() => {
+            orderStore.setState({ technicianImageData: null, technicianUploadedUrl: null });
+            Toast.show({
+              type: 'info',
+              text1: 'Image Removed',
+              text2: 'Technician image has been removed. You can retake it.',
+            });
+          }}
           uploadingText="Uploading technician image..."
+          required={true}
+        />
+
+        <Divider height={10} />
+
+        {/* IMAP Photo */}
+        <ImageContainer
+          label="Upload IMAP Image"
+          imageData={imapImageData}
+          isUploading={imapImageUploading}
+          onCameraPress={() => openCamera('imap')}
+          onRemovePhoto={() => {
+            orderStore.setState({ imapImageData: null, imapUploadedUrl: null });
+            Toast.show({
+              type: 'info',
+              text1: 'Image Removed',
+              text2: 'IMAP image has been removed. You can retake it.',
+            });
+          }}
+          uploadingText="Uploading IMAP photo..."
           required={true}
         />
       </ScrollView>
@@ -675,16 +762,28 @@ const BuddyChallanScreen: React.FC = () => {
             styles.button,
             (!challanImageData ||
               !technicianImageData ||
-              !selectedDeliveryTo) &&
+              !imapImageData ||
+              !selectedDeliveryTo ||
+              challanImageUploading ||
+              technicianImageUploading ||
+              imapImageUploading) &&
               styles.disabledButton,
           ]}
           variant="solid"
           onPress={handleSubmit}
-          loading={loading}
+          loading={loading || challanImageUploading || technicianImageUploading || imapImageUploading}
           disabled={
-            !challanImageData || !technicianImageData || !selectedDeliveryTo
+            !challanImageData ||
+            !technicianImageData ||
+            !imapImageData ||
+            !selectedDeliveryTo ||
+            challanImageUploading ||
+            technicianImageUploading ||
+            imapImageUploading
           }>
-          Mark Order Complete
+          {challanImageUploading || technicianImageUploading || imapImageUploading
+            ? 'Uploading Images...'
+            : 'Mark Order Complete'}
         </Button>
       </View>
     </View>

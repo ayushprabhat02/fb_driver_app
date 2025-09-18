@@ -16,6 +16,7 @@ type LoaderTypes =
   | 'quantityImage'
   | 'challanImage'
   | 'technicianImage'
+  | 'imapImage'
   | 'orderAssets'
   | 'upsertTaskAction' // For API calls to upsert task actions
   | 'updateAssetQty' // For API calls to update asset quantity
@@ -29,6 +30,7 @@ type Loaders = {
   quantityImage: boolean;
   challanImage: boolean;
   technicianImage: boolean;
+  imapImage: boolean;
   orderAssets: boolean;
   upsertTaskAction: boolean;
   updateAssetQty: boolean;
@@ -61,8 +63,10 @@ type OrderStore = {
   // buddy challan image data
   challanImageData: string | null;
   technicianImageData: string | null;
+  imapImageData: string | null;
   challanUploadedUrl: string | null;
   technicianUploadedUrl: string | null;
+  imapUploadedUrl: string | null;
 
   // totalizer readings
   totalizerBeforeReading: number;
@@ -127,6 +131,7 @@ const orderInitialState: OrderStore = {
     quantityImage: false,
     challanImage: false,
     technicianImage: false,
+    imapImage: false,
     orderAssets: false,
     upsertTaskAction: false,
     updateAssetQty: false,
@@ -150,8 +155,10 @@ const orderInitialState: OrderStore = {
   // buddy challan image data initial state
   challanImageData: null,
   technicianImageData: null,
+  imapImageData: null,
   challanUploadedUrl: null,
   technicianUploadedUrl: null,
+  imapUploadedUrl: null,
 
   // totalizer readings initial state
   totalizerBeforeReading: 0,
