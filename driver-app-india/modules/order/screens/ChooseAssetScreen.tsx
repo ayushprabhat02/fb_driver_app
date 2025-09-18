@@ -1,20 +1,20 @@
-import React, {useState, useLayoutEffect, useEffect, useCallback} from 'react';
-import {useDebounce} from 'use-debounce';
-import {View, Alert, ViewStyle, FlatList} from 'react-native';
-import {ScaledSheet} from 'react-native-size-matters';
-import {useNavigation, useFocusEffect} from '@react-navigation/native';
-import type {StackNavigationProp} from '@react-navigation/stack';
-import type {OrderStackParamList} from '@/navigator/containers/Order';
+import React, { useState, useLayoutEffect, useEffect, useCallback } from 'react';
+import { useDebounce } from 'use-debounce';
+import { View, Alert, ViewStyle, FlatList } from 'react-native';
+import { ScaledSheet } from 'react-native-size-matters';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
+import type { OrderStackParamList } from '@/navigator/containers/Order';
 
 // components
-import {FocusAwareStatusBar, FullScreenLoader, Button} from '@/components';
-import {AssetSummaryCard, AssetSearchBar, AssetCard} from '../components';
+import { FocusAwareStatusBar, FullScreenLoader, Button } from '@/components';
+import { AssetSummaryCard, AssetSearchBar, AssetCard, OrderInfoCard } from '../components';
 import OrderCancellationRequest from '../components/OrderCancellationRequest';
 
 // styles
-import {FBBackground, FBColorPalette} from '@/types/styles';
+import { FBBackground, FBColorPalette } from '@/types/styles';
 import orderService from '../services';
-import {orderStore} from '@/globalStore';
+import { orderStore } from '@/globalStore';
 
 const ChooseAssetScreen: React.FC = () => {
   const navigation = useNavigation<StackNavigationProp<OrderStackParamList>>();
@@ -68,8 +68,8 @@ const ChooseAssetScreen: React.FC = () => {
 
   const handleDispense = (assetId: string) => {
     Alert.alert('Start Dispense', `Start dispensing for asset ${assetId}?`, [
-      {text: 'Cancel', style: 'cancel'},
-      {text: 'Start', onPress: () => console.log('Dispense started')},
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Start', onPress: () => console.log('Dispense started') },
     ]);
   };
 
@@ -313,7 +313,7 @@ const ChooseAssetScreen: React.FC = () => {
 
   // Memoize the renderItem function to prevent unnecessary re-renders
   const renderAssetItem = React.useCallback(
-    ({item, index}: {item: any; index: number}) => {
+    ({ item, index }: { item: any; index: number }) => {
       // Find the original asset data
       const originalAsset = orderAssets?.[index];
       if (!originalAsset) return null;
@@ -369,13 +369,15 @@ const ChooseAssetScreen: React.FC = () => {
   ]);
 
   return (
-    <View style={{flex: 1}}>
+    <View style={{ flex: 1 }}>
       <FocusAwareStatusBar
         backgroundColor={FBBackground.primary}
         barStyle="dark-content"
       />
 
       <View style={styles.container as ViewStyle}>
+        <OrderInfoCard />
+
         <AssetSummaryCard />
 
         <AssetSearchBar
@@ -389,7 +391,7 @@ const ChooseAssetScreen: React.FC = () => {
             `${item.id}-${item.filledQuantity}-${index}`
           } // Include filledQuantity in key to force re-render
           renderItem={renderAssetItem}
-          contentContainerStyle={{paddingBottom: 100}} // 👈 ensures space for buttons
+          contentContainerStyle={{ paddingBottom: 100 }} // 👈 ensures space for buttons
           extraData={orderAssets} // Force re-render when orderAssets changes
         />
       </View>
@@ -404,10 +406,10 @@ const ChooseAssetScreen: React.FC = () => {
           onPress={handleCancel}
           variant="outlined"
           style={[
-            {flex: 1, marginRight: 8},
+            { flex: 1, marginRight: 8 },
             buttonStates.isCancelRequestEnabled
-              ? {borderColor: FBColorPalette.error} // 🔴 Active red state
-              : {borderColor: FBColorPalette.disabledInputText, opacity: 0.5}, // 🔄 Disabled gray state
+              ? { borderColor: FBColorPalette.error } // 🔴 Active red state
+              : { borderColor: FBColorPalette.disabledInputText, opacity: 0.5 }, // 🔄 Disabled gray state
           ]}
           textStyle={{
             color: buttonStates.isCancelRequestEnabled
@@ -423,13 +425,13 @@ const ChooseAssetScreen: React.FC = () => {
           onPress={handleProceed}
           variant="solid"
           style={[
-            {flex: 1, marginLeft: 8},
+            { flex: 1, marginLeft: 8 },
             buttonStates.isProceedEnabled
               ? {} // 🟢 Default green state (handled by variant="solid")
               : {
-                  backgroundColor: FBColorPalette.disabledInputText,
-                  opacity: 0.6,
-                }, // 🔄 Disabled state
+                backgroundColor: FBColorPalette.disabledInputText,
+                opacity: 0.6,
+              }, // 🔄 Disabled state
           ]}
           textStyle={{
             color: buttonStates.isProceedEnabled
