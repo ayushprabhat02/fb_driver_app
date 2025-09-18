@@ -8,11 +8,11 @@ import {
   OrderDetails,
   OrderDetailsUpcoming,
 } from '@/modules/order/delivery/screens';
-import ChooseAsset from '@/modules/order/screens/ChooseAsset';
 import FillAsset from '@/modules/order/screens/FillAsset';
 import UploadImageAsset from '@/modules/order/screens/UploadImageAsset';
 import LiveStreamScreen from '@/modules/order/screens/LiveStreamScreen';
 import ChooseAssetScreen from '@/modules/order/screens/ChooseAssetScreen';
+import ReachLocationScreen from '@/modules/order/screens/ReachLocationScreen';
 import DeliveryChallanScreen from '@/modules/order/screens/DeliveryChallanScreen';
 import BuddyChallanScreen from '@/modules/order/screens/BuddyChallanScreen';
 import {BackButtonArrow} from '@/components';
@@ -30,6 +30,7 @@ export type OrderStackParamList = {
     orderId: string;
   };
   'choose-asset': undefined;
+  'reach-location': undefined;
   'fill-asset': undefined;
   'upload-image-asset': undefined;
   'live-stream': undefined;
@@ -71,6 +72,17 @@ const OrderNavigator: React.FC = () => {
         component={ChooseAssetScreen}
         options={{
           title: 'Choose Asset',
+          headerTransparent: false,
+          headerStyle: {
+            backgroundColor: FBBackground.white,
+          },
+        }}
+      />
+      <OrderStack.Screen
+        name="reach-location"
+        component={ReachLocationScreen}
+        options={{
+          title: 'Reach Location',
           headerTransparent: false,
           headerStyle: {
             backgroundColor: FBBackground.white,

@@ -527,6 +527,54 @@ class OrderService {
   }
 
   /**
+   * @method markOrderInTransit
+   * @description Marks an order as in transit using changeTaskState mutation (matching Vue.js implementation)
+   * @args {id: string}
+   */
+  public async markOrderInTransit(args: {id: string}) {
+    try {
+      console.log('MarkOrderInTransit API call:', args);
+
+      const response: ChangeTaskStateMutation = await callMutation({
+        queryDocument: ChangeTaskStateDocument,
+        variables: {
+          id: args.id,
+          state: Task_State_Enum.InTransit,
+        },
+      });
+
+      return response.update_task_by_pk;
+    } catch (error) {
+      console.error('Error marking order as in transit:', error);
+      throw new Error('Failed to mark order as in transit');
+    }
+  }
+
+  /**
+   * @method markOrderArrived
+   * @description Marks an order as arrived using changeTaskState mutation (matching Vue.js implementation)
+   * @args {id: string}
+   */
+  public async markOrderArrived(args: {id: string}) {
+    try {
+      console.log('MarkOrderArrived API call:', args);
+
+      const response: ChangeTaskStateMutation = await callMutation({
+        queryDocument: ChangeTaskStateDocument,
+        variables: {
+          id: args.id,
+          state: Task_State_Enum.Arrived,
+        },
+      });
+
+      return response.update_task_by_pk;
+    } catch (error) {
+      console.error('Error marking order as arrived:', error);
+      throw new Error('Failed to mark order as arrived');
+    }
+  }
+
+  /**
    * @method markOrderDispensing
    * @description Marks an order as dispensing using changeTaskState mutation (matching Vue.js implementation)
    * @args {task_id: string}

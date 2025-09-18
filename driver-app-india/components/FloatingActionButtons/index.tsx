@@ -6,6 +6,7 @@ import {updateOrderQuantity} from '@/utils/orderUtil';
 import {retrieveCoordsFromString} from '@/utils/general';
 import {homeStore, orderStore} from '@/globalStore';
 import {useNavigation} from '@react-navigation/native';
+import {startTrip} from '@/utils/orderFlow';
 
 interface FloatingActionButtonsProps {}
 
@@ -51,22 +52,22 @@ const FloatingActionButtons: React.FC<FloatingActionButtonsProps> = () => {
       };
     }
 
-    // ARRIVED: Show only "Start Trip" (full width) - no navigation needed
+    // ARRIVED: Show only "Start Delivery/Fillup" (full width) - no navigation needed
     if (orderState === 'ARRIVED') {
       return {
         type: 'start',
         showNavigation: false,
-        buttonText: 'Start Delivery',
+        buttonText: isFillupOrder ? 'Start Fillup' : 'Start Delivery',
         buttonStyle: 'full'
       };
     }
 
     // Other states (ASSIGNED, IN_TRANSIT): Show both buttons
-    if (['ASSIGNED', 'IN_TRANSIT'].includes(orderState)) {
+    if (['ASSIGNED', 'IN_TRANSIT'].includes(orderState || '')) {
       return {
         type: 'both',
         showNavigation: true,
-        buttonText: 'Start Delivery',
+        buttonText: isFillupOrder ? 'Start Fillup' : 'Start Delivery',
         buttonStyle: 'half'
       };
     }
@@ -123,68 +124,30 @@ const FloatingActionButtons: React.FC<FloatingActionButtonsProps> = () => {
   };
 
   const handleNavigation = () => {
-    const destination = getDestinationLocation();
-
-    if (destination && destination.lat && destination.lng) {
-      openExternalNavigation(destination.lat, destination.lng);
-    } else {
-      Alert.alert('Error', 'Destination location not available for navigation');
-    }
+    // Navigate to the ReachLocation screen
+    // @ts-ignore
+    navigation.navigate('order', {
+      screen: 'reach-location',
+    });
   };
 
-  const handleStartTrip = () => {
+  const handleStartTrip = async () => {
     if (!selectedOrder) return;
 
-    // Update dispense quantity
-    updateOrderQuantity(selectedOrder);
+    try {
+      // Use the comprehensive start trip flow
+      const result = await startTrip(selectedOrder);
 
-    const orderState = selectedOrder.state;
-
-    // Handle DISPENSING state - continue existing order
-    if (orderState === 'DISPENSING') {
-      if (isFillupOrder) {
+      if (result.success && result.navigateTo) {
         // @ts-ignore
-        navigation.navigate('address', {
-          screen: 'fill-asset',
-        });
-      } else {
-        // @ts-ignore
-        navigation.navigate('order', {
-          screen: 'choose-asset',
-        });
+        navigation.navigate(result.navigateTo, result.navigateParams);
+      } else if (!result.success) {
+        // Error was already shown in startTrip function
+        console.error('Start trip failed');
       }
-      return;
-    }
-
-    // Handle ARRIVED state - start dispensing process
-    if (orderState === 'ARRIVED') {
-      if (isFillupOrder) {
-        // @ts-ignore
-        navigation.navigate('address', {
-          screen: 'fill-asset',
-        });
-      } else {
-        // @ts-ignore
-        navigation.navigate('order', {
-          screen: 'choose-asset',
-        });
-      }
-      return;
-    }
-
-    // Handle ASSIGNED/IN_TRANSIT - start trip flow
-    if (isFillupOrder) {
-      // For fillup orders, go to health checks first
-      // @ts-ignore
-      navigation.navigate('address', {
-        screen: 'health-checks-fillup',
-      });
-    } else {
-      // For delivery orders, check if need customer test or COD, otherwise go to asset selection
-      // @ts-ignore
-      navigation.navigate('order', {
-        screen: 'choose-asset',
-      });
+    } catch (error) {
+      console.error('Error in handleStartTrip:', error);
+      Alert.alert('Error', 'Failed to start trip. Please try again.');
     }
   };
 
