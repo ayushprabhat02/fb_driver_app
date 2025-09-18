@@ -53,7 +53,7 @@ const initializeAuthListener = () => {
       if (!hasuraIdExists?.hasuraId) {
         await fireRefreshToken(user); // Recursive call if claims not set yet
       } else {
-        if (hasuraIdExists?.role !== 'driver') {
+        if (hasuraIdExists?.role !== 'tower_driver') {
           Toast.show({type: 'error', text1: 'Unauthorized account role.'});
           setTimeout(() => {
             signOut();

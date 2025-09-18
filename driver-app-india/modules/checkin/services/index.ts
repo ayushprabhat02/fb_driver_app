@@ -78,23 +78,19 @@ class CheckinService {
 
       // Check for shift end conditions
       if (!driverVehicleId || !shiftSchedule) {
-        // No active shift found - driver should be logged out
-        Toast.show({
-          type: 'info',
-          text1: 'Shift Ended',
-          text2: 'Your shift has ended. Please log in again.',
-        });
-        await this.handleShiftEndLogout();
+        // No shift found at all - may be network issue
+        console.log('No shift found during login, allowing user to continue');
         return response.shift_schedule;
       }
 
-      // Check if current time exceeds shift end time
+      // Check if current time exceeds shift end time by more than 1 hour (grace period)
       if (shiftEndTime) {
         const currentTime = DateTime.now();
         const endTime = DateTime.fromISO(shiftEndTime);
+        const timeDifference = currentTime.diff(endTime, 'hours').hours;
 
-        if (currentTime > endTime) {
-          // Shift has ended based on time - driver should be logged out
+        if (timeDifference > 1) {
+          // Shift has ended more than 1 hour ago - driver should be logged out
           Toast.show({
             type: 'info',
             text1: 'Shift Time Expired',

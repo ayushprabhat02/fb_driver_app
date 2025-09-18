@@ -221,3 +221,56 @@ export const getAssetIdsWithUploadedVideosForTask = async (
     return [];
   }
 };
+
+/**
+ * Check if there's an interrupted recording session for a specific asset
+ */
+export const hasInterruptedRecordingForAsset = async (
+  taskId: string,
+  assetId: string
+): Promise<boolean> => {
+  try {
+    const state = await getStreamState();
+    return (
+      (state.streamingState === 'paused' || state.streamingState === 'started') &&
+      state.taskId === taskId &&
+      state.assetId === assetId &&
+      Date.now() - state.timestamp <= STATE_EXPIRY_TIME
+    );
+  } catch (error) {
+    console.error('Failed to check interrupted recording:', error);
+    return false;
+  }
+};
+
+/**
+ * Get all asset IDs with interrupted recording sessions for a task
+ */
+export const getAssetIdsWithInterruptedRecording = async (
+  taskId: string
+): Promise<string[]> => {
+  try {
+    const state = await getStreamState();
+    console.log('Checking interrupted recording state:', {
+      streamingState: state.streamingState,
+      taskId: state.taskId,
+      assetId: state.assetId,
+      timestamp: state.timestamp,
+      isExpired: Date.now() - state.timestamp > STATE_EXPIRY_TIME
+    });
+    
+    if (
+      (state.streamingState === 'paused' || state.streamingState === 'started') &&
+      state.taskId === taskId &&
+      state.assetId &&
+      Date.now() - state.timestamp <= STATE_EXPIRY_TIME
+    ) {
+      console.log('Found interrupted recording for asset:', state.assetId);
+      return [state.assetId];
+    }
+    return [];
+  } catch (error) {
+    console.error('Failed to get asset IDs with interrupted recording:', error);
+    return [];
+  }
+};

@@ -497,6 +497,17 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
 
       // Clear persisted state since recording is complete
       await clearStreamState();
+      
+      // Remove from interrupted recording array since recording is now complete
+      const currentAssetId = currentAssetForDispense?.id;
+      if (currentAssetId) {
+        orderStore.setState(state => ({
+          ...state,
+          assetsWithInterruptedRecording: state.assetsWithInterruptedRecording.filter(
+            id => id !== currentAssetId
+          ),
+        }));
+      }
 
       Toast.show({
         type: 'success',

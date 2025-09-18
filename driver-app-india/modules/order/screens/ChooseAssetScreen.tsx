@@ -15,7 +15,7 @@ import OrderCancellationRequest from '../components/OrderCancellationRequest';
 import { FBBackground, FBColorPalette } from '@/types/styles';
 import orderService from '../services';
 import { orderStore } from '@/globalStore';
-import { getAssetIdsWithUploadedVideosForTask } from '@/utils/streamStorage';
+import { getAssetIdsWithUploadedVideosForTask, getAssetIdsWithInterruptedRecording } from '@/utils/streamStorage';
 
 const ChooseAssetScreen: React.FC = () => {
   const navigation = useNavigation<StackNavigationProp<OrderStackParamList>>();
@@ -176,6 +176,31 @@ const ChooseAssetScreen: React.FC = () => {
     }
   }, [currentFillupOrder, currentDriverOrder]);
 
+  const restoreInterruptedRecordingSessions = useCallback(async () => {
+    const selectedOrder = currentFillupOrder || currentDriverOrder;
+    if (!selectedOrder?.id) {
+      console.log('No selected order for interrupted recording restoration');
+      return;
+    }
+
+    try {
+      console.log('Restoring interrupted recording sessions for order:', selectedOrder.id);
+      const interruptedAssetIds = await getAssetIdsWithInterruptedRecording(selectedOrder.id);
+      
+      console.log('Found interrupted asset IDs:', interruptedAssetIds);
+      
+      if (interruptedAssetIds.length > 0) {
+        orderStore.setState(state => ({
+          ...state,
+          assetsWithInterruptedRecording: [...new Set([...state.assetsWithInterruptedRecording, ...interruptedAssetIds])],
+        }));
+        console.log('Updated store with interrupted recording assets:', interruptedAssetIds);
+      }
+    } catch (error) {
+      console.error('Failed to restore interrupted recording sessions:', error);
+    }
+  }, [currentFillupOrder, currentDriverOrder]);
+
   const getCustomerOrderAssets = useCallback(async () => {
     // Get the selected order (fillup order takes priority)
     const selectedOrder = currentFillupOrder || currentDriverOrder;
@@ -209,6 +234,8 @@ const ChooseAssetScreen: React.FC = () => {
       
       // Restore assets with uploaded videos after fetching assets
       await restoreAssetsWithUploadedVideos();
+      // Restore interrupted recording sessions
+      await restoreInterruptedRecordingSessions();
     } catch (error) {
       console.error('Error fetching assets:', error);
     } finally {
@@ -221,6 +248,7 @@ const ChooseAssetScreen: React.FC = () => {
     startLoader,
     stopLoader,
     restoreAssetsWithUploadedVideos,
+    restoreInterruptedRecordingSessions,
   ]);
 
   useEffect(() => {

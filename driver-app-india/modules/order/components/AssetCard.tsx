@@ -57,6 +57,11 @@ const AssetCard: React.FC<AssetCardProps> = ({
   const assetsWithUploadedVideos = orderStore.use.assetsWithUploadedVideos();
   const removeAssetWithUploadedVideo =
     orderStore.use.removeAssetWithUploadedVideo();
+  // Get assets with interrupted recording
+  const assetsWithInterruptedRecording =
+    orderStore.use.assetsWithInterruptedRecording();
+  const removeAssetWithInterruptedRecording =
+    orderStore.use.removeAssetWithInterruptedRecording();
 
   // Get order completion status
   const fuelDispensedTillNow = orderStore.use.fuelDispensedTillNow();
@@ -78,6 +83,12 @@ const AssetCard: React.FC<AssetCardProps> = ({
       partiallyFilledAssetsArray.includes(assetId) ||
       assetsWithUploadedVideos.includes(assetId)
     );
+  };
+
+  // Helper function to check if asset has interrupted recording
+  const hasInterruptedRecording = () => {
+    const assetId = getAssetId();
+    return assetsWithInterruptedRecording.includes(assetId);
   };
 
   const handleStartDispense = () => {
@@ -197,28 +208,44 @@ const AssetCard: React.FC<AssetCardProps> = ({
     const assetId = getAssetId();
     const hasUploadedVideo = assetsWithUploadedVideos.includes(assetId);
     const isInPartiallyFilled = partiallyFilledAssetsArray.includes(assetId);
+    const hasInterruptedRecording =
+      assetsWithInterruptedRecording.includes(assetId);
+    
+    // Debug logging
+    console.log('AssetCard Debug:', {
+      assetId,
+      hasInterruptedRecording,
+      assetsWithInterruptedRecording,
+      hasUploadedVideo,
+      isInPartiallyFilled
+    });
 
     // Priority 0: If order is completely dispensed, show Order Complete
     if (isOrderCompletelyDispensed) {
       return 'Order Complete';
     }
 
-    // Priority 1: If streaming done but no quantity OR partially filled with quantity, show Fill Remaining
+    // Priority 1: If has interrupted recording session, show Continue Recording
+    if (hasInterruptedRecording) {
+      return 'Continue Recording';
+    }
+
+    // Priority 2: If streaming done but no quantity OR partially filled with quantity, show Fill Remaining
     if (hasUploadedVideo || isInPartiallyFilled) {
       return 'Fill Remaining';
     }
 
-    // Priority 2: If dispensing is complete (filled quantity >= requested quantity), show Complete
+    // Priority 3: If dispensing is complete (filled quantity >= requested quantity), show Complete
     if (filledQuantity >= requestedQuantity && filledQuantity > 0) {
       return 'Complete';
     }
 
-    // Priority 3: If no streaming done and no quantity, show Start Dispense
+    // Priority 4: If no streaming done and no quantity, show Start Dispense
     if (filledQuantity === 0 && !hasUploadedVideo) {
       return 'Start Dispense';
     }
 
-    // Priority 4: If some quantity but no streaming recorded and not marked as partially filled, show Complete
+    // Priority 5: If some quantity but no streaming recorded and not marked as partially filled, show Complete
     if (filledQuantity > 0 && !hasUploadedVideo && !isInPartiallyFilled) {
       return 'Complete';
     }
@@ -294,7 +321,7 @@ const AssetCard: React.FC<AssetCardProps> = ({
                 size="xs"
                 color="lightGray"
                 style={styles.editHint as TextStyle}>
-                (tap to edit)
+                (edit)
               </Text>
             </TouchableOpacity>
           )}
@@ -306,6 +333,8 @@ const AssetCard: React.FC<AssetCardProps> = ({
           styles.dispenseButton as ViewStyle,
           getButtonText() === 'Fill Remaining' &&
             (styles.fillRemainingButton as ViewStyle),
+          getButtonText() === 'Continue Recording' &&
+            (styles.continueRecordingButton as ViewStyle),
           (disabled ||
             getButtonText() === 'Complete' ||
             getButtonText() === 'Order Complete' ||
@@ -313,7 +342,9 @@ const AssetCard: React.FC<AssetCardProps> = ({
             (styles.disabledButton as ViewStyle),
         ]}
         onPress={
-          isAssetPartiallyFilled()
+          hasInterruptedRecording()
+            ? handleStartDispense
+            : isAssetPartiallyFilled()
             ? handleFilledQuantityPress
             : handleStartDispense
         }
@@ -420,6 +451,10 @@ const styles = ScaledSheet.create({
   fillRemainingButton: {
     backgroundColor: '#FF8C00', // Orange background for Fill Remaining
     borderColor: '#FF8C00',
+  },
+  continueRecordingButton: {
+    backgroundColor: '#4CAF50', // Green background for Continue Recording
+    borderColor: '#4CAF50',
   },
   editHint: {
     fontStyle: 'italic',

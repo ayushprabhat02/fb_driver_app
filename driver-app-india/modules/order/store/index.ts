@@ -87,6 +87,9 @@ type OrderStore = {
   // assets with uploaded videos but no quantity dispensed yet
   assetsWithUploadedVideos: string[];
 
+  // assets with interrupted recording sessions (paused/crashed during recording)
+  assetsWithInterruptedRecording: string[];
+
   pendingQuantity: number;
 
   // fuel dispensed till now - tracks total quantity dispensed across all sessions
@@ -112,6 +115,9 @@ type OrderActions = {
   // video upload status management
   addAssetWithUploadedVideo: (assetId: string) => void;
   removeAssetWithUploadedVideo: (assetId: string) => void;
+  // interrupted recording management
+  addAssetWithInterruptedRecording: (assetId: string) => void;
+  removeAssetWithInterruptedRecording: (assetId: string) => void;
 
   // quantity tracking actions
   setFuelDispensedTillNow: (quantity: number) => void;
@@ -179,6 +185,9 @@ const orderInitialState: OrderStore = {
   // assets with uploaded videos initial state
   assetsWithUploadedVideos: [],
 
+  // assets with interrupted recording initial state
+  assetsWithInterruptedRecording: [],
+
   // missing properties initial values
   fuelDispensedTillNow: 0,
   quantityToBeDispensed: 0,
@@ -214,6 +223,7 @@ const orderStore = create<OrderStore & OrderActions>(set => ({
       ...orderInitialState,
       partiallyFilledAssetsArray: [],
       assetsWithUploadedVideos: [],
+      assetsWithInterruptedRecording: [],
     }),
 
   // reset pagination
@@ -261,6 +271,23 @@ const orderStore = create<OrderStore & OrderActions>(set => ({
     set(state => ({
       ...state,
       assetsWithUploadedVideos: state.assetsWithUploadedVideos.filter(
+        id => id !== assetId,
+      ),
+    })),
+
+  // interrupted recording management
+  addAssetWithInterruptedRecording: (assetId: string) =>
+    set(state => ({
+      ...state,
+      assetsWithInterruptedRecording: state.assetsWithInterruptedRecording.includes(assetId)
+        ? state.assetsWithInterruptedRecording
+        : [...state.assetsWithInterruptedRecording, assetId],
+    })),
+
+  removeAssetWithInterruptedRecording: (assetId: string) =>
+    set(state => ({
+      ...state,
+      assetsWithInterruptedRecording: state.assetsWithInterruptedRecording.filter(
         id => id !== assetId,
       ),
     })),
