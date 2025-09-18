@@ -95,6 +95,11 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
     }
   };
 
+  console.log('----quantityno----', parseFloat(quantity));
+  console.log('-----pendingQuantity----', pendingQuantity);
+
+  console.log('----isFillingRemaining----', isFillingRemaining);
+
   const handleProceed = async () => {
     let quantityNum = parseFloat(quantity);
 
@@ -117,48 +122,46 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
       return;
     }
 
-    // If filling remaining, add to existing quantity
+    // Use quantityToBeDispensed as the primary validation source if available
+    const totalOrderQuantity = quantityToBeDispensed > 0 ? quantityToBeDispensed : orderQuantity;
+    
+    // Calculate how much can still be dispensed (total order - already dispensed + current asset existing)
+    const availableQuantity = totalOrderQuantity - fuelDispensedTillNow + existingQuantity;
+    
+    // If filling remaining, validate the additional quantity doesn't exceed available
     if (isFillingRemaining) {
+      const maxAdditional = availableQuantity - existingQuantity;
+      if (quantityNum > maxAdditional) {
+        Toast.show({
+          type: 'error',
+          text1: 'Quantity Exceeds Available',
+          text2: `The entered quantity exceeds the available quantity of ${maxAdditional}L`,
+        });
+        return;
+      }
+      // Add to existing quantity for final validation
       quantityNum = existingQuantity + quantityNum;
+    } else {
+      // For normal dispensing or editing, check against available quantity
+      if (quantityNum > availableQuantity) {
+        Toast.show({
+          type: 'error',
+          text1: 'Quantity Exceeds Available',
+          text2: `The entered quantity exceeds the available quantity of ${availableQuantity}L`,
+        });
+        return;
+      }
     }
 
-    // Check if entered quantity exceeds pending quantity (only if not filling remaining)
-    if (!isFillingRemaining && quantityNum > pendingQuantity) {
+    // Final validation: check if new total dispensed quantity exceeds the total order quantity
+    // When editing, we need to subtract the existing quantity and add the new quantity
+    const newTotalDispensed = fuelDispensedTillNow - existingQuantity + quantityNum;
+    
+    if (totalOrderQuantity > 0 && newTotalDispensed > totalOrderQuantity) {
       Toast.show({
         type: 'error',
-        text1: 'Quantity Exceeds Pending',
-        text2: `The entered quantity exceeds the pending quantity of ${pendingQuantity}L`,
-      });
-      return;
-    }
-
-    // Validation based on Vue project logic - check if total dispensed quantity exceeds quantity to be dispensed
-    if (
-      quantityToBeDispensed > 0 &&
-      fuelDispensedTillNow + quantityNum > quantityToBeDispensed &&
-      quantityNum !== 0
-    ) {
-      Toast.show({
-        type: 'error',
-        text1: 'Quantity Exceeds Limit',
-        text2: `Total dispensed quantity (${
-          fuelDispensedTillNow + quantityNum
-        }L) exceeds the quantity to be dispensed (${quantityToBeDispensed}L)`,
-      });
-      return;
-    }
-
-    // Hard validation to prevent total dispensed quantity from exceeding order quantity
-    if (
-      orderQuantity > 0 &&
-      fuelDispensedTillNow + quantityNum > orderQuantity
-    ) {
-      Toast.show({
-        type: 'error',
-        text1: 'Quantity Exceeds Order',
-        text2: `Total dispensed quantity (${
-          fuelDispensedTillNow + quantityNum
-        }L) cannot exceed the order quantity of ${orderQuantity}L`,
+        text1: 'Quantity Exceeds Total Order',
+        text2: `Total dispensed quantity (${newTotalDispensed}L) cannot exceed the order quantity of ${totalOrderQuantity}L`,
       });
       return;
     }
@@ -336,6 +339,7 @@ const styles = ScaledSheet.create({
     marginBottom: '20@vs',
   },
   textInput: {
+    color: '#000',
     marginTop: '8@vs',
     borderWidth: 1,
     borderColor: FBBorders.secondary,

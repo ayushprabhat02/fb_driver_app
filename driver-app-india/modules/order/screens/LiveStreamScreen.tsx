@@ -6,6 +6,7 @@ import {
   Platform,
   StyleSheet,
   TouchableOpacity,
+  PermissionsAndroid,
 } from 'react-native';
 import {RNCamera} from 'react-native-camera';
 import {useNavigation} from '@react-navigation/native';
@@ -85,6 +86,12 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   const [isManualUploading, setIsManualUploading] = useState(false);
   const [showUploadOptions, setShowUploadOptions] = useState(false);
   const [isUploadingFromDevice, setIsUploadingFromDevice] = useState(false);
+  
+  // Individual button loading states
+  const [isStartingRecording, setIsStartingRecording] = useState(false);
+  const [isPausingRecording, setIsPausingRecording] = useState(false);
+  const [isResumingRecording, setIsResumingRecording] = useState(false);
+  const [isStoppingRecording, setIsStoppingRecording] = useState(false);
 
   // Store
   const currentDriverOrder = orderStore.use.currentDriverOrder();
@@ -275,8 +282,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
     if (!cameraRef.current || isRecording) return;
 
     try {
-      startLoader('liveStream');
-      setIsLoading(true);
+      setIsStartingRecording(true);
       setStreamingState('started');
 
       // Validate required data
@@ -298,8 +304,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       setRecordingDuration(0);
       setCanStopStream(false);
 
-      // Update stream status via API
-      startLoader('upsertTaskAction');
+      // Update stream status via API (no loader for task state)
       await orderService.upsertStepTaskAction({
         object: {
           key: 'STREAM_STARTED',
@@ -309,7 +314,6 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           customer_asset_id: currentAssetId,
         },
       });
-      stopLoader('upsertTaskAction');
 
       await orderService.updateTaskLiveDispensingStatus({
         task_id: currentDriverOrder?.id,
@@ -331,11 +335,9 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         text2: 'Live stream is now recording',
       });
 
-      // Start recording without blocking the UI; allow Stop button to enable after 10s
+      // Start recording without blocking the UI
       const recordPromise = cameraRef.current.recordAsync(recordOptions);
-      // We are done with the "starting" state, enable controls
-      setIsLoading(false);
-
+      
       recordPromise.then(handleRecordingFinished).catch(error => {
         console.error('Recording error:', error);
         Toast.show({
@@ -353,8 +355,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         text2: 'Unable to start recording',
       });
     } finally {
-      stopLoader('liveStream');
-      setIsLoading(false);
+      setIsStartingRecording(false);
     }
   };
 
@@ -362,12 +363,11 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
     if (!cameraRef.current || !isRecording || isPaused) return;
 
     try {
-      setIsLoading(true);
+      setIsPausingRecording(true);
       setIsPaused(true);
       setStreamingState('paused');
 
-      // Update stream status via API
-      startLoader('upsertTaskAction');
+      // Update stream status via API (no loader for task state)
       await orderService.upsertStepTaskAction({
         object: {
           key: 'STREAM_PAUSED',
@@ -377,7 +377,6 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           customer_asset_id: currentAssetForDispense?.id,
         },
       });
-      stopLoader('upsertTaskAction');
 
       // Save paused state
       await saveStreamState({
@@ -404,7 +403,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         text2: 'Unable to pause recording',
       });
     } finally {
-      setIsLoading(false);
+      setIsPausingRecording(false);
     }
   };
 
@@ -412,12 +411,11 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
     if (!cameraRef.current || !isPaused) return;
 
     try {
-      setIsLoading(true);
+      setIsResumingRecording(true);
       setIsPaused(false);
       setStreamingState('started');
 
-      // Update stream status via API
-      startLoader('upsertTaskAction');
+      // Update stream status via API (no loader for task state)
       await orderService.upsertStepTaskAction({
         object: {
           key: 'STREAM_RESUMED',
@@ -427,7 +425,6 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           customer_asset_id: currentAssetForDispense?.id,
         },
       });
-      stopLoader('upsertTaskAction');
 
       // Update stream status
       await saveStreamState({
@@ -454,7 +451,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         text2: 'Unable to resume recording',
       });
     } finally {
-      setIsLoading(false);
+      setIsResumingRecording(false);
     }
   };
 
@@ -462,11 +459,10 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
     if (!cameraRef.current || (!isRecording && !isPaused)) return;
 
     try {
-      setIsLoading(true);
+      setIsStoppingRecording(true);
       setStreamingState('stopped');
 
-      // Update stream status via API
-      startLoader('upsertTaskAction');
+      // Update stream status via API (no loader for task state)
       await orderService.upsertStepTaskAction({
         object: {
           key: 'STREAM_STOPPED',
@@ -476,15 +472,14 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           customer_asset_id: currentAssetForDispense?.id,
         },
       });
-      stopLoader('upsertTaskAction');
 
       await orderService.updateTaskLiveDispensingStatus({
         task_id: currentDriverOrder?.id || '',
         is_live_dispensing: false,
       });
 
-      // Only stop camera recording if actually recording (not just paused)
-      if (isRecording && !isPaused) {
+      // Stop camera recording if recording was ever started (regardless of pause state)
+      if (isRecording || isPaused) {
         cameraRef.current.stopRecording();
       }
 
@@ -515,7 +510,50 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         text2: 'Unable to stop recording properly',
       });
     } finally {
-      setIsLoading(false);
+      setIsStoppingRecording(false);
+    }
+  };
+
+  // Check storage permissions for Android
+  const checkStoragePermissions = async (): Promise<boolean> => {
+    if (Platform.OS !== 'android') {
+      return true; // iOS doesn't require explicit storage permissions for app directories
+    }
+
+    try {
+      // For Android 13+ (API 33+), WRITE_EXTERNAL_STORAGE is deprecated
+      // For Android 10-12 (API 29-32), scoped storage is used
+      // For older versions, we still need WRITE_EXTERNAL_STORAGE
+      const androidVersion = Platform.Version as number;
+
+      // For Android 10+ (API 29+), try without permission first
+      if (androidVersion >= 29) {
+        // Android 10+ uses scoped storage, might not need explicit permission
+        // Try to write directly and fall back to permission request if it fails
+        return true;
+      }
+
+      // For older Android versions, check for WRITE_EXTERNAL_STORAGE permission
+      const permission = PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE;
+      const hasPermission = await PermissionsAndroid.check(permission);
+
+      if (hasPermission) {
+        return true;
+      }
+
+      // Request permission if not granted
+      const granted = await PermissionsAndroid.request(permission, {
+        title: 'Storage Permission',
+        message: 'This app needs access to storage to save recorded videos to Downloads folder',
+        buttonNeutral: 'Ask Me Later',
+        buttonNegative: 'Cancel',
+        buttonPositive: 'OK',
+      });
+
+      return granted === PermissionsAndroid.RESULTS.GRANTED;
+    } catch (error) {
+      console.error('Error checking storage permissions:', error);
+      return false;
     }
   };
 
@@ -524,43 +562,56 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
     fileName: string,
   ): Promise<string | null> => {
     try {
-      // Create a unique file path in the Documents directory
+      // Create a unique file path in the Documents directory (always accessible)
       const documentsPath = RNFS.DocumentDirectoryPath;
       const videoPath = `${documentsPath}/${fileName}`;
 
-      // Also try to save to external storage (Downloads folder) for easier access
+      // Copy the video file to Documents directory (this should always work)
+      await RNFS.copyFile(sourceUri, videoPath);
+      console.log(`Video saved locally at: ${videoPath}`);
+
       let externalPath = null;
+      let savedToDownloads = false;
+
+      // Try to save to external storage (Downloads folder) for easier access
       if (Platform.OS === 'android') {
         try {
-          const downloadsPath = RNFS.DownloadDirectoryPath;
-          externalPath = `${downloadsPath}/${fileName}`;
-          await RNFS.copyFile(sourceUri, externalPath);
-          console.log(`Video also saved to Downloads: ${externalPath}`);
+          const hasStoragePermission = await checkStoragePermissions();
+
+          if (hasStoragePermission) {
+            const downloadsPath = RNFS.DownloadDirectoryPath;
+            externalPath = `${downloadsPath}/${fileName}`;
+            await RNFS.copyFile(sourceUri, externalPath);
+            savedToDownloads = true;
+            console.log(`Video also saved to Downloads: ${externalPath}`);
+          } else {
+            console.log('Storage permission denied - video saved to app folder only');
+          }
         } catch (externalError) {
           console.warn('Failed to save to Downloads folder:', externalError);
+          // Continue with internal storage only
         }
       }
 
-      // Copy the video file to Documents directory
-      await RNFS.copyFile(sourceUri, videoPath);
-
-      console.log(`Video saved locally at: ${videoPath}`);
-      console.log(`Documents path: ${documentsPath}`);
-
-      // Show more detailed information about where the file is saved
+      // Show appropriate success message
       Toast.show({
         type: 'info',
         text1: 'Video Saved Locally',
-        text2:
-          Platform.OS === 'android' && externalPath
-            ? 'Check Downloads folder or app documents'
-            : 'Saved in app documents folder',
+        text2: savedToDownloads
+          ? 'Saved to Downloads folder and app documents'
+          : 'Saved in app documents folder',
         visibilityTime: 4000,
       });
 
       return externalPath || videoPath;
     } catch (error) {
       console.error('Failed to save video locally:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Save Failed',
+        text2: 'Unable to save video to device',
+        visibilityTime: 4000,
+      });
       return null;
     }
   };
@@ -629,8 +680,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         // Continue with local URI as fallback
       }
 
-      // Save the task action with uploaded video URL or local URI
-      startLoader('upsertTaskAction');
+      // Save the task action with uploaded video URL or local URI (no loader for task state)
       await orderService.upsertStepTaskAction({
         object: {
           key: 'LIVE_STREAM_RECORDING',
@@ -641,7 +691,6 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           customer_asset_id: currentAssetForDispense?.id,
         },
       });
-      stopLoader('upsertTaskAction');
 
       // Mark asset as having uploaded video
       const currentAssetId = currentAssetForDispense?.id;
@@ -847,8 +896,7 @@ For iOS Simulator:
       });
 
       if (uploadResult.storeUrl) {
-        // Save the task action with uploaded video URL
-        startLoader('upsertTaskAction');
+        // Save the task action with uploaded video URL (no loader for task state)
         await orderService.upsertStepTaskAction({
           object: {
             key: 'LIVE_STREAM_RECORDING',
@@ -859,7 +907,6 @@ For iOS Simulator:
             customer_asset_id: currentAssetForDispense?.id,
           },
         });
-        stopLoader('upsertTaskAction');
 
         // Mark asset as having uploaded video
         const currentAssetId = currentAssetForDispense?.id;
@@ -938,8 +985,7 @@ For iOS Simulator:
       });
 
       if (uploadResult.storeUrl) {
-        // Update the task action with the new URL
-        startLoader('upsertTaskAction');
+        // Update the task action with the new URL (no loader for task state)
         await orderService.upsertStepTaskAction({
           object: {
             key: 'LIVE_STREAM_RECORDING',
@@ -950,7 +996,6 @@ For iOS Simulator:
             customer_asset_id: currentAssetForDispense?.id,
           },
         });
-        stopLoader('upsertTaskAction');
 
         // Mark asset as having uploaded video
         const currentAssetId = currentAssetForDispense?.id;
@@ -1406,6 +1451,11 @@ For iOS Simulator:
           onResumeRecording={resumeRecording}
           onStopRecording={stopRecording}
           onNext={goNext}
+          // Button loading states
+          isStartingRecording={isStartingRecording}
+          isPausingRecording={isPausingRecording}
+          isResumingRecording={isResumingRecording}
+          isStoppingRecording={isStoppingRecording}
         />
 
         {/* Upload Error Section - Show within controls area when error occurs */}
@@ -1478,10 +1528,8 @@ For iOS Simulator:
         existingQuantity={getCurrentAssetFilledQuantity()}
       />
 
-      {/* FullScreen Loaders */}
-      <FullScreenLoader showLoader={loaders.liveStream} loaderText="Starting live stream..." />
+      {/* FullScreen Loaders - Only for video upload */}
       <FullScreenLoader showLoader={loaders.uploadVideo} loaderText="Uploading video..." />
-      <FullScreenLoader showLoader={loaders.upsertTaskAction} loaderText="Updating task status..." />
     </View>
   );
 };

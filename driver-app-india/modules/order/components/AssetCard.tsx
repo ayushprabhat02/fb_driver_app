@@ -56,6 +56,11 @@ const AssetCard: React.FC<AssetCardProps> = ({
   const assetsWithUploadedVideos = orderStore.use.assetsWithUploadedVideos();
   const removeAssetWithUploadedVideo =
     orderStore.use.removeAssetWithUploadedVideo();
+  
+  // Get order completion status
+  const fuelDispensedTillNow = orderStore.use.fuelDispensedTillNow();
+  const quantityToBeDispensed = orderStore.use.quantityToBeDispensed();
+  const isOrderCompletelyDispensed = fuelDispensedTillNow >= quantityToBeDispensed && quantityToBeDispensed > 0;
 
   // Helper function to get asset ID
   const getAssetId = () => {
@@ -123,6 +128,30 @@ const AssetCard: React.FC<AssetCardProps> = ({
         qty: quantity,
       });
 
+      // Update local store state to reflect the change immediately
+      const updatedAssets = orderStore.getState().orderAssets?.map((orderAsset: any) => {
+        const orderAssetId = orderAsset.customer_asset?.id || orderAsset.id || orderAsset.customer_asset_id;
+        if (orderAssetId === assetId) {
+          return {
+            ...orderAsset,
+            quantity_dispensed: quantity,
+          };
+        }
+        return orderAsset;
+      });
+
+      // Calculate new total fuel dispensed
+      const newFuelDispensedTillNow = updatedAssets?.reduce((total: number, asset: any) => {
+        return total + (asset.quantity_dispensed || 0);
+      }, 0) || 0;
+
+      // Update the store with the new asset data and total fuel dispensed
+      orderStore.setState(state => ({
+        ...state,
+        orderAssets: updatedAssets,
+        fuelDispensedTillNow: newFuelDispensedTillNow,
+      }));
+
       // Remove from uploaded videos array since quantity is now entered
       removeAssetWithUploadedVideo(assetId);
 
@@ -157,6 +186,11 @@ const AssetCard: React.FC<AssetCardProps> = ({
     const assetId = getAssetId();
     const hasUploadedVideo = assetsWithUploadedVideos.includes(assetId);
     const isInPartiallyFilled = partiallyFilledAssetsArray.includes(assetId);
+
+    // Priority 0: If order is completely dispensed, show Order Complete
+    if (isOrderCompletelyDispensed) {
+      return 'Order Complete';
+    }
 
     // Priority 1: If streaming done but no quantity OR partially filled with quantity, show Fill Remaining
     if (hasUploadedVideo || isInPartiallyFilled) {
@@ -264,6 +298,7 @@ const AssetCard: React.FC<AssetCardProps> = ({
             (styles.fillRemainingButton as ViewStyle),
           (disabled ||
             getButtonText() === 'Complete' ||
+            getButtonText() === 'Order Complete' ||
             isDisabledDueToOtherFillRemaining()) &&
             (styles.disabledButton as ViewStyle),
         ]}
@@ -275,6 +310,7 @@ const AssetCard: React.FC<AssetCardProps> = ({
         disabled={
           disabled ||
           getButtonText() === 'Complete' ||
+          getButtonText() === 'Order Complete' ||
           isDisabledDueToOtherFillRemaining()
         }
         activeOpacity={0.7}>
@@ -284,6 +320,7 @@ const AssetCard: React.FC<AssetCardProps> = ({
           color={
             disabled ||
             getButtonText() === 'Complete' ||
+            getButtonText() === 'Order Complete' ||
             isDisabledDueToOtherFillRemaining()
               ? 'disabledInputText'
               : 'white'
