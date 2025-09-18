@@ -101,7 +101,8 @@ const AssetCard: React.FC<AssetCardProps> = ({
       return;
     }
 
-    const assetId = asset.customer_asset?.id || asset.id || asset.customer_asset_id;
+    const assetId =
+      asset.customer_asset?.id || asset.id || asset.customer_asset_id;
     if (!assetId) {
       Alert.alert('Error', 'Asset ID is missing');
       return;
@@ -142,7 +143,6 @@ const AssetCard: React.FC<AssetCardProps> = ({
         text1: 'Success',
         text2: 'Asset quantity updated successfully',
       });
-
     } catch (error) {
       console.error('Error updating asset quantity:', error);
       Toast.show({
@@ -152,8 +152,6 @@ const AssetCard: React.FC<AssetCardProps> = ({
       });
     }
   };
-
-  console.log('---assetsWithUploadedVideos-----', assetsWithUploadedVideos);
 
   const getButtonText = () => {
     const assetId = getAssetId();

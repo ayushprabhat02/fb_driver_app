@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from 'react';
+import React, {useMemo, useEffect} from 'react';
 import {View} from 'react-native';
 import {ScaledSheet} from 'react-native-size-matters';
 import {Text} from '@/components';
@@ -7,20 +7,27 @@ import {orderStore} from '@/globalStore';
 
 const AssetSummaryCard: React.FC = ({}) => {
   const orderAssets = orderStore.use.orderAssets();
-  const quantityToBeDispensed = orderStore.use.quantityDispensed();
+  const quantityToBeDispensed = orderStore.use.quantityToBeDispensed();
+  console.log('---quantityToBeDispensed----', quantityToBeDispensed);
 
   // Calculate total quantity from order assets
   const totalQuantity = useMemo(() => {
-    return orderAssets?.reduce((total, asset) => {
-      return total + (asset.quantity_requested || 0);
-    }, 0) || quantityToBeDispensed || 0;
+    return (
+      orderAssets?.reduce((total, asset) => {
+        return total + (asset.quantity_requested || 0);
+      }, 0) ||
+      quantityToBeDispensed ||
+      0
+    );
   }, [orderAssets, quantityToBeDispensed]);
 
   // Calculate dispensed quantity from order assets
   const dispensedQuantity = useMemo(() => {
-    return orderAssets?.reduce((total, asset) => {
-      return total + (asset.quantity_dispensed || 0);
-    }, 0) || 0;
+    return (
+      orderAssets?.reduce((total, asset) => {
+        return total + (asset.quantity_dispensed || 0);
+      }, 0) || 0
+    );
   }, [orderAssets]);
 
   // Calculate pending quantity
@@ -32,7 +39,7 @@ const AssetSummaryCard: React.FC = ({}) => {
   useEffect(() => {
     orderStore.setState(state => ({
       ...state,
-      pendingQuantity
+      pendingQuantity,
     }));
   }, [pendingQuantity]);
 
@@ -80,15 +87,12 @@ const AssetSummaryCard: React.FC = ({}) => {
           </Text>
         </View>
       </View>
-      
+
       {/* Progress Bar */}
       <View style={styles.progressContainer}>
         <View style={styles.progressBackground}>
-          <View 
-            style={[
-              styles.progressFill,
-              { width: `${progressPercentage}%` }
-            ]}
+          <View
+            style={[styles.progressFill, {width: `${progressPercentage}%`}]}
           />
         </View>
       </View>

@@ -65,7 +65,6 @@ const NormalOrderCard: React.FC<Props> = ({order}) => {
       orderStore.setState(state => ({
         ...state,
         currentDriverOrder: null,
-        quantityToBeDispensed: 0,
       }));
     } else {
       // Check if order can be selected
@@ -74,11 +73,9 @@ const NormalOrderCard: React.FC<Props> = ({order}) => {
         return;
       }
 
-      const quantity = order?.customer_order?.customer_order_items[0]?.qty || 0;
       orderStore.setState(state => ({
         ...state,
         currentDriverOrder: order,
-        quantityToBeDispensed: quantity,
       }));
     }
   };

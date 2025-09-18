@@ -382,7 +382,7 @@ class OrderService {
 
       orderStore.setState({
         orderAssets: sortedAssets,
-        quantityToBeDispensed: totalQuantityRequested,
+        // quantityToBeDispensed: totalQuantityRequested,
         fuelDispensedTillNow: totalQuantityDispensed,
         pendingQuantity: totalQuantityRequested - totalQuantityDispensed,
       });

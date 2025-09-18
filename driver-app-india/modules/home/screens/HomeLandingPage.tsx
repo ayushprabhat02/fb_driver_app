@@ -341,9 +341,6 @@ const HomeLandingPage: React.FC = () => {
               orderStore.setState(state => ({
                 ...state,
                 currentDriverOrder: matchingOrder,
-                quantityToBeDispensed:
-                  matchingOrder?.customer_order?.customer_order_items[0]?.qty ||
-                  0,
               }));
             } else if (selectedOrderType === 'fillup') {
               orderStore.setState(state => ({
@@ -357,7 +354,6 @@ const HomeLandingPage: React.FC = () => {
               orderStore.setState(state => ({
                 ...state,
                 currentDriverOrder: null,
-                quantityToBeDispensed: 0,
               }));
             } else if (selectedOrderType === 'fillup') {
               orderStore.setState(state => ({

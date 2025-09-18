@@ -73,7 +73,9 @@ const updateOrderState = async (order: any): Promise<boolean> => {
       // Update store with fresh order data after state change
       const allDriverOrders = homeStore.getState().driverOrders;
       if (allDriverOrders) {
-        const updatedOrder = allDriverOrders.find((o: any) => o.id === order.id);
+        const updatedOrder = allDriverOrders.find(
+          (o: any) => o.id === order.id,
+        );
         if (updatedOrder) {
           // Update the order object with new state
           updatedOrder.state = 'IN_TRANSIT' as any;
@@ -105,7 +107,9 @@ const updateOrderState = async (order: any): Promise<boolean> => {
  * @function routeToOrderHandler
  * @description Routes based on order category (DELIVERY vs FILL_UP)
  */
-const routeToOrderHandler = (order: any): {navigateTo: string; navigateParams?: any} => {
+const routeToOrderHandler = (
+  order: any,
+): {navigateTo: string; navigateParams?: any} => {
   switch (order.category) {
     case 'DELIVERY':
       return handleDelivery(order);
@@ -122,7 +126,9 @@ const routeToOrderHandler = (order: any): {navigateTo: string; navigateParams?: 
  * @description Handles delivery order routing logic
  * Matches Vue.js handleDelivery() implementation
  */
-const handleDelivery = (order: any): {navigateTo: string; navigateParams?: any} => {
+const handleDelivery = (
+  order: any,
+): {navigateTo: string; navigateParams?: any} => {
   const {state} = order;
 
   // DISPENSING orders go directly to asset selection
@@ -149,7 +155,9 @@ const handleDelivery = (order: any): {navigateTo: string; navigateParams?: any} 
  * @description Handles fillup order routing logic
  * Matches Vue.js handleFillUp() implementation
  */
-const handleFillUp = (order: any): {navigateTo: string; navigateParams?: any} => {
+const handleFillUp = (
+  order: any,
+): {navigateTo: string; navigateParams?: any} => {
   const {state} = order;
 
   // DISPENSING/ARRIVED orders go directly to fill asset
@@ -182,10 +190,11 @@ const updateOrderQuantity = (order: any) => {
   if (order.category === 'DELIVERY') {
     quantity = order?.customer_order?.customer_order_items[0]?.qty || 0;
   } else if (order.category === 'FILL_UP') {
-    // For fillup orders, quantity might be calculated differently
-    quantity = order?.fillup_requests?.[0]?.quantity || 0;
+    // For fillup orders, use quantity_approved as specified in Vue.js code
+    quantity = order?.fillup_requests?.[0]?.quantity_approved || 0;
   }
 
+  // Use setState directly to update the quantity
   orderStore.setState(state => ({
     ...state,
     quantityToBeDispensed: quantity,
@@ -198,10 +207,12 @@ const updateOrderQuantity = (order: any) => {
  * Matches Vue.js getPaymentInfo utility
  */
 export const getPaymentInfo = (custOrder: any) => {
-  const payment = custOrder?.organizationAddressByShippingAddressId
-    ?.organization_address_payment_methods?.[0]?.customer_payment_method
-    ?.value;
-  const {is_credit_available} = custOrder?.organization_user?.organization || {};
+  const payment =
+    custOrder?.organizationAddressByShippingAddressId
+      ?.organization_address_payment_methods?.[0]?.customer_payment_method
+      ?.value;
+  const {is_credit_available} =
+    custOrder?.organization_user?.organization || {};
 
   return {
     isCodOrder: payment === 'COD' && is_credit_available,
