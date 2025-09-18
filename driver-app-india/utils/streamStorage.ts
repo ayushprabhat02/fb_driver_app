@@ -17,7 +17,14 @@ interface StreamState {
 }
 
 const STREAM_STATE_KEY = 'live_stream_state';
+const ASSETS_WITH_VIDEOS_KEY = 'assets_with_uploaded_videos';
 const STATE_EXPIRY_TIME = 24 * 60 * 60 * 1000; // 24 hours
+
+interface AssetVideoState {
+  taskId: string;
+  assetId: string;
+  timestamp: number;
+}
 
 /**
  * Save stream state to AsyncStorage
@@ -106,5 +113,111 @@ export const hasPausedStreamForTask = async (
   } catch (error) {
     console.error('Failed to check paused stream:', error);
     return false;
+  }
+};
+
+/**
+ * Save asset with uploaded video state
+ */
+export const saveAssetWithUploadedVideo = async (
+  taskId: string,
+  assetId: string
+): Promise<void> => {
+  try {
+    const existingAssets = await getAssetsWithUploadedVideos();
+    const newAsset: AssetVideoState = {
+      taskId,
+      assetId,
+      timestamp: Date.now(),
+    };
+    
+    // Remove existing entry for this asset if it exists
+    const filteredAssets = existingAssets.filter(
+      asset => !(asset.taskId === taskId && asset.assetId === assetId)
+    );
+    
+    // Add the new entry
+    const updatedAssets = [...filteredAssets, newAsset];
+    
+    await AsyncStorage.setItem(ASSETS_WITH_VIDEOS_KEY, JSON.stringify(updatedAssets));
+  } catch (error) {
+    console.error('Failed to save asset with uploaded video:', error);
+  }
+};
+
+/**
+ * Get all assets with uploaded videos
+ */
+export const getAssetsWithUploadedVideos = async (): Promise<AssetVideoState[]> => {
+  try {
+    const assetsStr = await AsyncStorage.getItem(ASSETS_WITH_VIDEOS_KEY);
+    
+    if (!assetsStr) {
+      return [];
+    }
+    
+    const assets: AssetVideoState[] = JSON.parse(assetsStr);
+    
+    // Filter out expired entries
+    const validAssets = assets.filter(
+      asset => Date.now() - asset.timestamp <= STATE_EXPIRY_TIME
+    );
+    
+    // Save back the filtered list if any were removed
+    if (validAssets.length !== assets.length) {
+      await AsyncStorage.setItem(ASSETS_WITH_VIDEOS_KEY, JSON.stringify(validAssets));
+    }
+    
+    return validAssets;
+  } catch (error) {
+    console.error('Failed to get assets with uploaded videos:', error);
+    return [];
+  }
+};
+
+/**
+ * Remove asset from uploaded videos list
+ */
+export const removeAssetWithUploadedVideo = async (
+  taskId: string,
+  assetId: string
+): Promise<void> => {
+  try {
+    const existingAssets = await getAssetsWithUploadedVideos();
+    const filteredAssets = existingAssets.filter(
+      asset => !(asset.taskId === taskId && asset.assetId === assetId)
+    );
+    
+    await AsyncStorage.setItem(ASSETS_WITH_VIDEOS_KEY, JSON.stringify(filteredAssets));
+  } catch (error) {
+    console.error('Failed to remove asset with uploaded video:', error);
+  }
+};
+
+/**
+ * Clear all assets with uploaded videos
+ */
+export const clearAssetsWithUploadedVideos = async (): Promise<void> => {
+  try {
+    await AsyncStorage.removeItem(ASSETS_WITH_VIDEOS_KEY);
+  } catch (error) {
+    console.error('Failed to clear assets with uploaded videos:', error);
+  }
+};
+
+/**
+ * Get asset IDs with uploaded videos for a specific task
+ */
+export const getAssetIdsWithUploadedVideosForTask = async (
+  taskId: string
+): Promise<string[]> => {
+  try {
+    const assets = await getAssetsWithUploadedVideos();
+    return assets
+      .filter(asset => asset.taskId === taskId)
+      .map(asset => asset.assetId);
+  } catch (error) {
+    console.error('Failed to get asset IDs with uploaded videos for task:', error);
+    return [];
   }
 };

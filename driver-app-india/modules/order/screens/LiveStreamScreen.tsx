@@ -46,6 +46,7 @@ import {
   getStreamState,
   clearStreamState,
   hasPausedStreamForTask,
+  saveAssetWithUploadedVideo,
 } from '@/utils/streamStorage';
 
 type LiveStreamNavigationProp = StackNavigationProp<
@@ -696,6 +697,11 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       const currentAssetId = currentAssetForDispense?.id;
       if (currentAssetId && uploadSuccess) {
         addAssetWithUploadedVideo(currentAssetId);
+        // Also save to persistent storage
+        await saveAssetWithUploadedVideo(
+          currentDriverOrder?.id || '',
+          currentAssetId
+        );
       }
 
       Toast.show({

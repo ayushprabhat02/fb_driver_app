@@ -123,11 +123,13 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
     }
 
     // Use quantityToBeDispensed as the primary validation source if available
-    const totalOrderQuantity = quantityToBeDispensed > 0 ? quantityToBeDispensed : orderQuantity;
-    
+    const totalOrderQuantity =
+      quantityToBeDispensed > 0 ? quantityToBeDispensed : orderQuantity;
+
     // Calculate how much can still be dispensed (total order - already dispensed + current asset existing)
-    const availableQuantity = totalOrderQuantity - fuelDispensedTillNow + existingQuantity;
-    
+    const availableQuantity =
+      totalOrderQuantity - fuelDispensedTillNow + existingQuantity;
+
     // If filling remaining, validate the additional quantity doesn't exceed available
     if (isFillingRemaining) {
       const maxAdditional = availableQuantity - existingQuantity;
@@ -155,8 +157,9 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
 
     // Final validation: check if new total dispensed quantity exceeds the total order quantity
     // When editing, we need to subtract the existing quantity and add the new quantity
-    const newTotalDispensed = fuelDispensedTillNow - existingQuantity + quantityNum;
-    
+    const newTotalDispensed =
+      fuelDispensedTillNow - existingQuantity + quantityNum;
+
     if (totalOrderQuantity > 0 && newTotalDispensed > totalOrderQuantity) {
       Toast.show({
         type: 'error',
@@ -182,9 +185,9 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
           <Text size="lg" weight="700" color="secondary">
             {isComplete
               ? 'Dispensing Complete'
-              : isFillingRemaining &&
-                // ? 'Enter Additional Quantity' :
-                'Enter Quantity Dispensed'}
+              : isFillingRemaining
+              ? 'Enter Dispensed Quantity'
+              : 'Enter Dispensed Quantity'}
           </Text>
 
           <Divider height={16} />
@@ -248,7 +251,7 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
               <View style={styles.inputContainer}>
                 <Text size="sm" weight="500" color="neutral">
                   {isFillingRemaining
-                    ? 'Additional Quantity (Liters)'
+                    ? 'Quantity Dispensed (Liters)'
                     : 'Quantity Dispensed (Liters)'}
                 </Text>
                 <BottomSheetTextInput

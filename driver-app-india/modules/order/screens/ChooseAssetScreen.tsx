@@ -15,6 +15,7 @@ import OrderCancellationRequest from '../components/OrderCancellationRequest';
 import { FBBackground, FBColorPalette } from '@/types/styles';
 import orderService from '../services';
 import { orderStore } from '@/globalStore';
+import { getAssetIdsWithUploadedVideosForTask } from '@/utils/streamStorage';
 
 const ChooseAssetScreen: React.FC = () => {
   const navigation = useNavigation<StackNavigationProp<OrderStackParamList>>();
@@ -155,6 +156,26 @@ const ChooseAssetScreen: React.FC = () => {
     navigation.goBack();
   };
 
+  const restoreAssetsWithUploadedVideos = useCallback(async () => {
+    const selectedOrder = currentFillupOrder || currentDriverOrder;
+    if (!selectedOrder?.id) return;
+
+    try {
+      // Get persisted asset IDs with uploaded videos
+      const persistedAssetIds = await getAssetIdsWithUploadedVideosForTask(selectedOrder.id);
+      
+      if (persistedAssetIds.length > 0) {
+        // Update store with persisted asset IDs
+        orderStore.setState(state => ({
+          ...state,
+          assetsWithUploadedVideos: [...new Set([...state.assetsWithUploadedVideos, ...persistedAssetIds])],
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to restore assets with uploaded videos:', error);
+    }
+  }, [currentFillupOrder, currentDriverOrder]);
+
   const getCustomerOrderAssets = useCallback(async () => {
     // Get the selected order (fillup order takes priority)
     const selectedOrder = currentFillupOrder || currentDriverOrder;
@@ -185,6 +206,9 @@ const ChooseAssetScreen: React.FC = () => {
         custOrderId: customerOrderId,
         searchKey: searchKey,
       });
+      
+      // Restore assets with uploaded videos after fetching assets
+      await restoreAssetsWithUploadedVideos();
     } catch (error) {
       console.error('Error fetching assets:', error);
     } finally {
@@ -196,6 +220,7 @@ const ChooseAssetScreen: React.FC = () => {
     debouncedSearchQuery,
     startLoader,
     stopLoader,
+    restoreAssetsWithUploadedVideos,
   ]);
 
   useEffect(() => {
@@ -272,33 +297,35 @@ const ChooseAssetScreen: React.FC = () => {
     // 3️⃣ Check if ANY asset has uploaded video (streaming done but no quantity entered yet)
     const hasAssetWithUploadedVideo = assetsWithUploadedVideos.length > 0;
 
-    // 📊 Button Logic (matching Vue.js):
+    // 📊 Simplified Button Logic:
     //
-    // CANCEL REQUEST BUTTON:
-    // ✅ Enabled: When NO dispensing activity has started
-    // ❌ Disabled: When ANY dispensing activity has started
-    const isCancelRequestEnabled =
-      !hasAssetWithQuantityDispensed &&
-      !hasPartiallyFilledAsset &&
-      !hasAssetWithUploadedVideo;
+    // Show CANCEL REQUEST when: NO dispensing activity has started
+    // Show PROCEED when: ANY dispensing activity has started
+    const hasAnyDispensingActivity =
+      hasAssetWithQuantityDispensed ||
+      hasPartiallyFilledAsset ||
+      hasAssetWithUploadedVideo;
 
-    // PROCEED BUTTON:
-    // ✅ Enabled: When at least one asset has been dispensed
-    // ❌ Disabled: When no assets have been dispensed yet
-    const isProceedEnabled = hasAssetWithQuantityDispensed;
+    const showCancelRequest = !hasAnyDispensingActivity;
+    const showProceed = hasAnyDispensingActivity;
+
+    // PROCEED BUTTON enabled when: at least one asset dispensed AND no pending fill remaining
+    const isProceedEnabled = hasAssetWithQuantityDispensed && !hasAssetWithUploadedVideo;
 
     // Debug information for developers
     const debugInfo = {
       hasAssetWithQuantityDispensed,
       hasPartiallyFilledAsset,
       hasAssetWithUploadedVideo,
+      hasAnyDispensingActivity,
       partiallyFilledCount: partiallyFilledAssetsArray.length,
       uploadedVideoCount: assetsWithUploadedVideos.length,
       totalAssets: orderAssets.length,
     };
 
     return {
-      isCancelRequestEnabled,
+      showCancelRequest,
+      showProceed,
       isProceedEnabled,
       debugInfo,
     };
@@ -306,7 +333,8 @@ const ChooseAssetScreen: React.FC = () => {
 
   // 🐛 Debug logging (can be removed in production)
   console.log('🎯 Button States:', {
-    cancelEnabled: buttonStates.isCancelRequestEnabled,
+    showCancel: buttonStates.showCancelRequest,
+    showProceed: buttonStates.showProceed,
     proceedEnabled: buttonStates.isProceedEnabled,
     debug: buttonStates.debugInfo,
   });
@@ -401,46 +429,41 @@ const ChooseAssetScreen: React.FC = () => {
         loaderText="Fetching order assets"
       />
       <View style={styles.buttonContainer as ViewStyle}>
-        {/* 🚫 CANCEL REQUEST BUTTON */}
-        <Button
-          onPress={handleCancel}
-          variant="outlined"
-          style={[
-            { flex: 1, marginRight: 8 },
-            buttonStates.isCancelRequestEnabled
-              ? { borderColor: FBColorPalette.error } // 🔴 Active red state
-              : { borderColor: FBColorPalette.disabledInputText, opacity: 0.5 }, // 🔄 Disabled gray state
-          ]}
-          textStyle={{
-            color: buttonStates.isCancelRequestEnabled
-              ? FBColorPalette.error // 🔴 Active red text
-              : FBColorPalette.disabledInputText, // 🔄 Disabled gray text
-          }}
-          disabled={!buttonStates.isCancelRequestEnabled}>
-          {getCancellationButtonText()}
-        </Button>
-
-        {/* ✅ PROCEED BUTTON */}
-        <Button
-          onPress={handleProceed}
-          variant="solid"
-          style={[
-            { flex: 1, marginLeft: 8 },
-            buttonStates.isProceedEnabled
-              ? {} // 🟢 Default green state (handled by variant="solid")
-              : {
-                backgroundColor: FBColorPalette.disabledInputText,
-                opacity: 0.6,
-              }, // 🔄 Disabled state
-          ]}
-          textStyle={{
-            color: buttonStates.isProceedEnabled
-              ? 'white' // 🟢 Active white text
-              : FBColorPalette.disabledInputText, // 🔄 Disabled gray text
-          }}
-          disabled={!buttonStates.isProceedEnabled}>
-          Proceed
-        </Button>
+        {buttonStates.showCancelRequest ? (
+          <Button
+            onPress={handleCancel}
+            variant="outlined"
+            style={[
+              { flex: 1 },
+              { borderColor: FBColorPalette.error }
+            ]}
+            textStyle={{
+              color: FBColorPalette.error
+            }}>
+            Cancel Request
+          </Button>
+        ) : (
+          <Button
+            onPress={handleProceed}
+            variant="solid"
+            style={[
+              { flex: 1 },
+              buttonStates.isProceedEnabled
+                ? {}
+                : {
+                  backgroundColor: FBColorPalette.disabledInputText,
+                  opacity: 0.6,
+                }
+            ]}
+            textStyle={{
+              color: buttonStates.isProceedEnabled
+                ? 'white'
+                : FBColorPalette.disabledInputText
+            }}
+            disabled={!buttonStates.isProceedEnabled}>
+            Proceed
+          </Button>
+        )}
       </View>
 
       {/* 🚫 ORDER CANCELLATION REQUEST COMPONENT */}

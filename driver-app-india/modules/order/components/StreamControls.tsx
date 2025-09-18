@@ -43,17 +43,16 @@ const StreamControls: React.FC<StreamControlsProps> = ({
   isStoppingRecording,
 }) => {
   const canProceedNext = () => {
-    return !isRecording && !isPaused && hasStreamedOnce && streamingState === 'stopped';
+    return (
+      !isRecording &&
+      !isPaused &&
+      hasStreamedOnce &&
+      streamingState === 'stopped'
+    );
   };
 
   const getNextButtonText = () => {
-    if (isRecording && !isPaused) return 'Stop streaming to continue';
-    if (isPaused) return 'Resume and stop streaming to continue';
-    if (!hasStreamedOnce) return 'Start streaming first';
-    if (streamingState === 'started') return 'Stop streaming to continue';
-    if (streamingState === 'paused') return 'Resume and stop streaming to continue';
-    if (streamingState === 'stopped') return 'Next';
-    return 'Start streaming first';
+    return 'Next';
   };
 
   return (
@@ -68,7 +67,7 @@ const StreamControls: React.FC<StreamControlsProps> = ({
               disabled={isStartingRecording}
               loading={isStartingRecording}
               style={[styles.button, styles.recordButton]}>
-              'Start Recording'
+              Start Recording
             </Button>
           )
         ) : isRecording && !isPaused ? (
@@ -79,7 +78,7 @@ const StreamControls: React.FC<StreamControlsProps> = ({
               disabled={isPausingRecording}
               loading={isPausingRecording}
               style={[styles.button, styles.pauseButton]}>
-              'Pause'
+              Pause
             </Button>
             <Button
               variant="solid"
@@ -89,9 +88,10 @@ const StreamControls: React.FC<StreamControlsProps> = ({
               style={[
                 styles.button,
                 styles.stopButton,
-                (!canStopStream || isStoppingRecording) && styles.disabledButton,
+                (!canStopStream || isStoppingRecording) &&
+                  styles.disabledButton,
               ]}>
-              'Stop Recording'
+              Stop Recording
             </Button>
           </View>
         ) : isPaused ? (
@@ -102,7 +102,7 @@ const StreamControls: React.FC<StreamControlsProps> = ({
               disabled={isResumingRecording}
               loading={isResumingRecording}
               style={[styles.button, styles.resumeButton]}>
-              'Resume Recording'
+              Resume Recording
             </Button>
             <Button
               variant="solid"
@@ -114,7 +114,7 @@ const StreamControls: React.FC<StreamControlsProps> = ({
                 styles.stopButton,
                 isStoppingRecording && styles.disabledButton,
               ]}>
-              'Stop Recording'
+              Stop Recording
             </Button>
           </View>
         ) : null}

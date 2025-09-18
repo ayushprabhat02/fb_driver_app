@@ -15,6 +15,7 @@ import {Text, QuantityBottomSheet} from '@/components';
 import {FBColors, FBBackground, FBBorders, FontSizeEnum} from '@/types/styles';
 import {orderStore} from '@/globalStore';
 import orderService from '../services';
+import {removeAssetWithUploadedVideo as removeAssetFromPersistentStorage} from '@/utils/streamStorage';
 
 interface AssetCardProps {
   assetName: string;
@@ -56,11 +57,12 @@ const AssetCard: React.FC<AssetCardProps> = ({
   const assetsWithUploadedVideos = orderStore.use.assetsWithUploadedVideos();
   const removeAssetWithUploadedVideo =
     orderStore.use.removeAssetWithUploadedVideo();
-  
+
   // Get order completion status
   const fuelDispensedTillNow = orderStore.use.fuelDispensedTillNow();
   const quantityToBeDispensed = orderStore.use.quantityToBeDispensed();
-  const isOrderCompletelyDispensed = fuelDispensedTillNow >= quantityToBeDispensed && quantityToBeDispensed > 0;
+  const isOrderCompletelyDispensed =
+    fuelDispensedTillNow >= quantityToBeDispensed && quantityToBeDispensed > 0;
 
   // Helper function to get asset ID
   const getAssetId = () => {
@@ -129,21 +131,27 @@ const AssetCard: React.FC<AssetCardProps> = ({
       });
 
       // Update local store state to reflect the change immediately
-      const updatedAssets = orderStore.getState().orderAssets?.map((orderAsset: any) => {
-        const orderAssetId = orderAsset.customer_asset?.id || orderAsset.id || orderAsset.customer_asset_id;
-        if (orderAssetId === assetId) {
-          return {
-            ...orderAsset,
-            quantity_dispensed: quantity,
-          };
-        }
-        return orderAsset;
-      });
+      const updatedAssets = orderStore
+        .getState()
+        .orderAssets?.map((orderAsset: any) => {
+          const orderAssetId =
+            orderAsset.customer_asset?.id ||
+            orderAsset.id ||
+            orderAsset.customer_asset_id;
+          if (orderAssetId === assetId) {
+            return {
+              ...orderAsset,
+              quantity_dispensed: quantity,
+            };
+          }
+          return orderAsset;
+        });
 
       // Calculate new total fuel dispensed
-      const newFuelDispensedTillNow = updatedAssets?.reduce((total: number, asset: any) => {
-        return total + (asset.quantity_dispensed || 0);
-      }, 0) || 0;
+      const newFuelDispensedTillNow =
+        updatedAssets?.reduce((total: number, asset: any) => {
+          return total + (asset.quantity_dispensed || 0);
+        }, 0) || 0;
 
       // Update the store with the new asset data and total fuel dispensed
       orderStore.setState(state => ({
@@ -154,6 +162,9 @@ const AssetCard: React.FC<AssetCardProps> = ({
 
       // Remove from uploaded videos array since quantity is now entered
       removeAssetWithUploadedVideo(assetId);
+
+      // Also remove from persistent storage
+      await removeAssetFromPersistentStorage(selectedOrder.id, assetId);
 
       // Update partially filled assets array based on the new quantity
       if (quantity > 0 && quantity < requestedQuantity) {
@@ -234,6 +245,10 @@ const AssetCard: React.FC<AssetCardProps> = ({
   };
 
   const handleFilledQuantityPress = () => {
+    // Don't allow editing if other assets have fill remaining
+    if (isDisabledDueToOtherFillRemaining()) {
+      return;
+    }
     setShowQuantityBottomSheet(true);
   };
 
@@ -241,11 +256,9 @@ const AssetCard: React.FC<AssetCardProps> = ({
     <View style={styles.container as ViewStyle}>
       <View style={styles.assetInfo as ViewStyle}>
         <View style={styles.assetIcon as ViewStyle}>
-          <Image
-            source={require('@/assets/home/truck-fuelbuddy.png')}
-            style={styles.vehicleLogo as ImageStyle}
-            resizeMode="contain"
-          />
+          <Text size="lg" weight="600" color="white">
+            ⛽
+          </Text>
         </View>
 
         <View style={styles.assetDetails as ViewStyle}>
@@ -264,30 +277,27 @@ const AssetCard: React.FC<AssetCardProps> = ({
       <View style={styles.quantityInfo as ViewStyle}>
         <View style={styles.quantityRow as ViewStyle}>
           <Text size="sm" color="lightGray">
-            Filled Qty:
-          </Text>
-          <TouchableOpacity
-            onPress={handleFilledQuantityPress}
-            style={styles.editableQuantity as ViewStyle}
-            disabled={filledQuantity === 0} // Disable press when quantity is zero
-          >
+            Filled Qty:{' '}
             <Text
               size="sm"
               weight="600"
-              color={filledQuantity > 0 ? 'primary' : 'neutral'}
-              style={styles.quantityValue as TextStyle}>
+              color={filledQuantity > 0 ? 'primary' : 'neutral'}>
               {filledQuantity} {unit}
             </Text>
-            {/* Show "(tap to edit)" only when filled quantity is greater than 0 */}
-            {filledQuantity > 0 && (
+          </Text>
+          {/* Show edit hint only when editing is allowed */}
+          {filledQuantity > 0 && !isDisabledDueToOtherFillRemaining() && (
+            <TouchableOpacity
+              onPress={handleFilledQuantityPress}
+              style={styles.editButton as ViewStyle}>
               <Text
                 size="xs"
                 color="lightGray"
                 style={styles.editHint as TextStyle}>
                 (tap to edit)
               </Text>
-            )}
-          </TouchableOpacity>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
@@ -390,8 +400,9 @@ const styles = ScaledSheet.create({
     alignItems: 'center',
     marginBottom: '2@vs',
   },
-  quantityValue: {
-    marginLeft: '8@s',
+  editButton: {
+    paddingVertical: '2@vs',
+    paddingHorizontal: '4@s',
   },
   dispenseButton: {
     backgroundColor: FBColors.primary,
@@ -410,17 +421,7 @@ const styles = ScaledSheet.create({
     backgroundColor: '#FF8C00', // Orange background for Fill Remaining
     borderColor: '#FF8C00',
   },
-  editableQuantity: {
-    alignItems: 'flex-end',
-    paddingVertical: '2@vs',
-    paddingHorizontal: '4@s',
-    borderRadius: '4@s',
-    backgroundColor: FBBackground.white,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
   editHint: {
-    marginTop: '1@vs',
     fontStyle: 'italic',
   },
   vehicleLogo: {
