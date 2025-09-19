@@ -6,6 +6,8 @@ import createSelectors from '@/utils/selectors';
 
 type UserStore = {
   isLoading: boolean;
+  setLoading: (loading: boolean) => void;
+  initializeSplash: () => void;
 };
 
 /*
@@ -17,8 +19,15 @@ const userInitialState: UserStore = {
   isLoading: true,
 };
 
-const userStore = create<UserStore>(() => ({
+const userStore = create<UserStore>((set) => ({
   ...userInitialState,
+  setLoading: (loading: boolean) => set({isLoading: loading}),
+  initializeSplash: () => {
+    set({isLoading: true});
+    setTimeout(() => {
+      set({isLoading: false});
+    }, 2000);
+  },
 }));
 
 export default createSelectors(userStore);

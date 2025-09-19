@@ -43,9 +43,12 @@ const StackNavigator = createStackNavigator();
 
 function App(): React.JSX.Element {
   const isLoading = splashStore.use.isLoading();
+  const initializeSplash = splashStore.use.initializeSplash();
   const graphqlClient = authStore.use.graphQLClient();
-  const driverVehicleId = checkinStore.use.driverVehicleId();
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    initializeSplash();
+  }, [initializeSplash]);
 
   // Periodic shift validation moved to HomeLandingPage.tsx to only run when on home screen
 
