@@ -60,11 +60,15 @@ const OrderCancellationRequest: React.FC<OrderCancellationRequestProps> = ({
 
   // Get data from store for cancellation reason logic
   const orderAssets = orderStore.use.orderAssets();
-  const partiallyFilledAssetsArray = orderStore.use.partiallyFilledAssetsArray();
+  const partiallyFilledAssetsArray =
+    orderStore.use.partiallyFilledAssetsArray();
   const assetsWithUploadedVideos = orderStore.use.assetsWithUploadedVideos();
 
   // Static cancellation reasons matching Vue.js implementation
-  const getCancellationReasons = useCallback((): Array<{id: string; reason: string}> => {
+  const getCancellationReasons = useCallback((): Array<{
+    id: string;
+    reason: string;
+  }> => {
     const baseCancelReasons = [
       {id: 'customer_facility', reason: 'Customer Facility related'},
       {id: 'customer_reschedule', reason: 'Customer requested to reschedule'},
@@ -205,9 +209,7 @@ const OrderCancellationRequest: React.FC<OrderCancellationRequestProps> = ({
     onClose();
   };
 
-  const chooseReason = (
-    item: any,
-  ) => {
+  const chooseReason = (item: any) => {
     orderStore.setState(state => ({
       ...state,
       cancellationReason: item,
@@ -258,9 +260,10 @@ const OrderCancellationRequest: React.FC<OrderCancellationRequestProps> = ({
       });
 
       // Step 2: Add cancellation reason (matching Vue.js addTaskCancelReason)
-      const reasonText = cancellationComment.trim() || selectedReason.reason || '';
+      const reasonText =
+        cancellationComment.trim() || selectedReason?.reason || '';
       await orderService.addTaskCancellationReason({
-        id: orderStore.getState().currentDriverOrder?.id ,
+        id: orderStore.getState().currentDriverOrder?.id,
         reason: reasonText,
       });
 
@@ -283,7 +286,10 @@ const OrderCancellationRequest: React.FC<OrderCancellationRequestProps> = ({
       );
     } catch (error) {
       console.error('❌ Error cancelling order:', error);
-      Alert.alert('Cancellation Failed', 'Failed to cancel order. Please try again.');
+      Alert.alert(
+        'Cancellation Failed',
+        'Failed to cancel order. Please try again.',
+      );
     } finally {
       setCancellationLoading(false);
     }
@@ -342,7 +348,11 @@ const OrderCancellationRequest: React.FC<OrderCancellationRequestProps> = ({
                   color={showCancelReasons ? 'disabledInputText' : 'neutral'}>
                   {cancellationReason?.reason}
                 </Text>
-                <Icon name="arrow-drop-down" size={24} color={FBColors.steelBlue} />
+                <Icon
+                  name="arrow-drop-down"
+                  size={24}
+                  color={FBColors.steelBlue}
+                />
               </Pressable>
 
               <Divider height={10} />
@@ -363,7 +373,11 @@ const OrderCancellationRequest: React.FC<OrderCancellationRequestProps> = ({
                 <Button
                   variant="outlined"
                   onPress={handleCancelModalClose}
-                  style={{width: '45%', borderColor: FBBorders.error, height: 40}}>
+                  style={{
+                    width: '45%',
+                    borderColor: FBBorders.error,
+                    height: 40,
+                  }}>
                   <Text color="error">Close</Text>
                 </Button>
                 <Button

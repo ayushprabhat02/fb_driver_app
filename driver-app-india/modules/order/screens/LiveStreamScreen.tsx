@@ -48,6 +48,7 @@ import {
   hasPausedStreamForTask,
   saveAssetWithUploadedVideo,
 } from '@/utils/streamStorage';
+import {OrderInfoCard} from '../components';
 
 type LiveStreamNavigationProp = StackNavigationProp<
   OrderStackParamList,
@@ -87,7 +88,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   const [isManualUploading, setIsManualUploading] = useState(false);
   const [showUploadOptions, setShowUploadOptions] = useState(false);
   const [isUploadingFromDevice, setIsUploadingFromDevice] = useState(false);
-  
+
   // Individual button loading states
   const [isStartingRecording, setIsStartingRecording] = useState(false);
   const [isPausingRecording, setIsPausingRecording] = useState(false);
@@ -142,7 +143,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
     try {
       const hasPaused = await hasPausedStreamForTask(
         currentDriverOrder.id,
-        currentAssetForDispense.id
+        currentAssetForDispense.id,
       );
 
       if (hasPaused) {
@@ -151,12 +152,15 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         setStreamingState('paused');
         setRecordingDuration(savedState.recordingDuration);
         setHasStreamedOnce(savedState.hasStreamedOnce);
-        setCanStopStream(savedState.recordingDuration >= streamingDurationSeconds);
+        setCanStopStream(
+          savedState.recordingDuration >= streamingDurationSeconds,
+        );
 
         Toast.show({
           type: 'info',
           text1: 'Paused Recording Found',
-          text2: 'Your previous recording session was paused. You can resume it.',
+          text2:
+            'Your previous recording session was paused. You can resume it.',
         });
       }
     } catch (error) {
@@ -338,7 +342,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
 
       // Start recording without blocking the UI
       const recordPromise = cameraRef.current.recordAsync(recordOptions);
-      
+
       recordPromise.then(handleRecordingFinished).catch(error => {
         console.error('Recording error:', error);
         Toast.show({
@@ -497,15 +501,16 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
 
       // Clear persisted state since recording is complete
       await clearStreamState();
-      
+
       // Remove from interrupted recording array since recording is now complete
       const currentAssetId = currentAssetForDispense?.id;
       if (currentAssetId) {
         orderStore.setState(state => ({
           ...state,
-          assetsWithInterruptedRecording: state.assetsWithInterruptedRecording.filter(
-            id => id !== currentAssetId
-          ),
+          assetsWithInterruptedRecording:
+            state.assetsWithInterruptedRecording.filter(
+              id => id !== currentAssetId,
+            ),
         }));
       }
 
@@ -556,7 +561,8 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       // Request permission if not granted
       const granted = await PermissionsAndroid.request(permission, {
         title: 'Storage Permission',
-        message: 'This app needs access to storage to save recorded videos to Downloads folder',
+        message:
+          'This app needs access to storage to save recorded videos to Downloads folder',
         buttonNeutral: 'Ask Me Later',
         buttonNegative: 'Cancel',
         buttonPositive: 'OK',
@@ -597,7 +603,9 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
             savedToDownloads = true;
             console.log(`Video also saved to Downloads: ${externalPath}`);
           } else {
-            console.log('Storage permission denied - video saved to app folder only');
+            console.log(
+              'Storage permission denied - video saved to app folder only',
+            );
           }
         } catch (externalError) {
           console.warn('Failed to save to Downloads folder:', externalError);
@@ -646,7 +654,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   const handleRecordingFinished = async (data: any) => {
     try {
       startLoader('uploadVideo');
-      
+
       // Detect actual video format
       const videoFormat = getVideoFormat(data.uri, data.codec);
       const contentType = `video/${videoFormat}`;
@@ -711,7 +719,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         // Also save to persistent storage
         await saveAssetWithUploadedVideo(
           currentDriverOrder?.id || '',
-          currentAssetId
+          currentAssetId,
         );
       }
 
@@ -1368,37 +1376,7 @@ For iOS Simulator:
     <View style={styles.container}>
       {/* Header Section - Fixed height */}
       <View style={styles.headerSection}>
-        <CardElevated cardStyle={styles.orderDetailsCard}>
-          <View style={styles.orderDetailsHeader}>
-            <Text weight="bold" size="lg" color="primary">
-              Order Details
-            </Text>
-          </View>
-
-          <View style={styles.orderDetailsRow}>
-            <Text weight="600" size="sm" color="neutral">
-              Customer Name:
-            </Text>
-            <Text weight="400" size="sm" style={styles.orderValue as any}>
-              {`${
-                currentDriverOrder?.customer_order?.organization_user?.user
-                  ?.first_name || ''
-              } ${
-                currentDriverOrder?.customer_order?.organization_user?.user
-                  ?.last_name || ''
-              }`.trim() || 'N/A'}
-            </Text>
-          </View>
-
-          <View style={styles.orderDetailsRow}>
-            <Text weight="600" size="sm" color="neutral">
-              Order Code:
-            </Text>
-            <Text weight="400" size="sm" style={styles.orderValue as any}>
-              {currentDriverOrder?.customer_order?.order_code || 'N/A'}
-            </Text>
-          </View>
-        </CardElevated>
+        <OrderInfoCard />
       </View>
 
       {/* Camera Section - Flexible area that takes remaining space */}
@@ -1546,7 +1524,10 @@ For iOS Simulator:
       />
 
       {/* FullScreen Loaders - Only for video upload */}
-      <FullScreenLoader showLoader={loaders.uploadVideo} loaderText="Uploading video..." />
+      <FullScreenLoader
+        showLoader={loaders.uploadVideo}
+        loaderText="Uploading video..."
+      />
     </View>
   );
 };
