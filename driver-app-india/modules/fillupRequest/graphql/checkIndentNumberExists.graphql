@@ -1,0 +1,7 @@
+query checkIndentNumberExists(
+	$object: isPurchaseIndentNumberExitsInput!
+) {
+	isPurchaseIndentNumberExits(object: $object) {
+		is_exit
+	}
+}

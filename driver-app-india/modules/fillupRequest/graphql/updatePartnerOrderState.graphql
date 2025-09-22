@@ -1,0 +1,13 @@
+mutation updatePartnerOrderState(
+	$id: uuid!
+	$state: partner_order_state_enum!
+) {
+	update_partner_order_by_pk(
+		pk_columns: { id: $id }
+		_set: { state: $state }
+	) {
+		id
+		state
+		created_at
+	}
+}

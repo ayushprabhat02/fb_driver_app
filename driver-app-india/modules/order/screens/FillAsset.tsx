@@ -13,13 +13,14 @@ import {
 import {ScaledSheet} from 'react-native-size-matters';
 
 // components
-import {FocusAwareStatusBar, HeaderAvoidingContainer, Text} from '@/components';
+import {FocusAwareStatusBar, HeaderAvoidingContainer, Text, Divider} from '@/components';
 import {AssetCard} from '../components';
+import FillupOrderStateFlow from '../components/FillupOrderStateFlow';
+import FillupOrderCancellationModal from '../components/FillupOrderCancellationModal';
 
 // styles
-import {Task_State_Enum} from '@/generated/graphql';
-import {checkinStore, homeStore, orderStore} from '@/globalStore';
-import {FBBackground} from '@/types/styles';
+import {orderStore} from '@/globalStore';
+import {FBBackground, FBColors} from '@/types/styles';
 
 type RootStackParamList = {
   order: {
@@ -71,28 +72,23 @@ interface Asset {
 const FillAsset: React.FC = () => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const [searchQuery, setSearchQuery] = useState('');
-  const driverVehicleId = checkinStore.use.driverVehicleId();
-  const selectedDate = homeStore.use.selectedDate();
-  const currentDriverOrder = orderStore.use.currentDriverOrder();
-  const assets = getAssetsFromOrder(currentDriverOrder);
+  const currentFillupOrder = orderStore.use.currentFillupOrder();
+  const assets = getAssetsFromOrder(currentFillupOrder);
 
-  // console.log('---currentDriverOrder---', JSON.stringify(currentDriverOrder));
+  // Enhanced state management (Vue-inspired)
+  const [isCancellationModalOpen, setCancellationModalOpen] = useState(false);
+  const fillupOrderStateFlow = orderStore.use.fillupOrderStateFlow();
+  const setCancellationModalOpenStore = orderStore.use.setCancellationModalOpen();
 
   // Set navigation options
   useLayoutEffect(() => {
     navigation.setOptions({
-      title: 'Choose Asset',
+      title: 'Fillup Assets',
       headerShown: true,
     });
   }, [navigation]);
 
-  // Filter assets based on search query
-  const filteredAssets = assets.filter(
-    (asset: Asset) =>
-      asset.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      asset.code.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+
 
   // Calculate totals
   const totalQuantity = assets.reduce(
@@ -106,7 +102,16 @@ const FillAsset: React.FC = () => {
   const pendingQuantity = totalQuantity - filledQuantity;
 
   const handleDispense = (assetId: string) => {
-    // Navigate to upload image asset page
+    // Store the selected asset for fillup
+    const selectedAsset = assets.find(asset => asset.id === assetId);
+    if (selectedAsset) {
+      orderStore.setState(state => ({
+        ...state,
+        currentAssetForDispense: selectedAsset,
+      }));
+    }
+    
+    // Navigate to upload image asset page for fillup flow
     // @ts-ignore
     navigation.navigate('order', {
       screen: 'upload-image-asset',
@@ -117,15 +122,56 @@ const FillAsset: React.FC = () => {
     Alert.alert('Proceed', 'Proceeding with the order...');
   };
 
+  // Enhanced cancellation with Vue-inspired flow
   const handleCancel = () => {
-    Alert.alert(
-      'Cancel Request',
-      'Are you sure you want to cancel this request?',
-      [
-        {text: 'No', style: 'cancel'},
-        {text: 'Yes', style: 'destructive', onPress: () => navigation.goBack()},
-      ],
-    );
+    setCancellationModalOpen(true);
+    setCancellationModalOpenStore(true);
+  };
+
+  const handleConfirmCancel = async (reasonId: string, comment: string) => {
+    try {
+      // Mock cancellation - in real implementation, call API
+      console.log('Cancelling fillup order with reason:', reasonId, 'comment:', comment);
+
+      // Update order state locally
+      orderStore.setState(state => ({
+        ...state,
+        currentFillupOrder: state.currentFillupOrder
+          ? { ...state.currentFillupOrder, state: 'CANCELLED' }
+          : null,
+      }));
+
+      setCancellationModalOpen(false);
+      setCancellationModalOpenStore(false);
+      navigation.goBack();
+    } catch (error) {
+      console.error('Error cancelling order:', error);
+    }
+  };
+
+  const getOrderStatusColor = (state: string) => {
+    switch (state?.toUpperCase()) {
+      case 'PENDING':
+        return '#FFA500';
+      case 'CONFIRMED':
+        return '#2196F3';
+      case 'IN_TRANSIT':
+        return '#FF9800';
+      case 'ARRIVED':
+        return '#9C27B0';
+      case 'DISPENSING':
+        return '#FF5722';
+      case 'DELIVERED':
+        return '#4CAF50';
+      case 'CANCELLED':
+        return '#F44336';
+      default:
+        return '#6B7280';
+    }
+  };
+
+  const canCancelOrder = (state: string) => {
+    return ['PENDING', 'CONFIRMED', 'IN_TRANSIT', 'ARRIVED'].includes(state?.toUpperCase());
   };
 
   // const fetchOrderForDriverIncompleteCurrent = async () => {
@@ -153,6 +199,10 @@ const FillAsset: React.FC = () => {
   //   fetchOrderForDriverIncompleteCurrent();
   // }, []);
 
+  const orderState = currentFillupOrder?.state || 'PENDING';
+  const statusColor = getOrderStatusColor(orderState);
+  const isCancellable = canCancelOrder(orderState);
+
   return (
     <HeaderAvoidingContainer>
       <FocusAwareStatusBar
@@ -164,6 +214,36 @@ const FillAsset: React.FC = () => {
         <ScrollView
           style={styles.scrollView as ViewStyle}
           showsVerticalScrollIndicator={false}>
+
+          {/* Enhanced Order Header */}
+          {currentFillupOrder && (
+            <View style={styles.orderHeader as ViewStyle}>
+              <View style={styles.orderInfo as ViewStyle}>
+                <Text size="lg" weight="bold" color="neutral">
+                  Order #{currentFillupOrder.id?.substring(0, 8)}
+                </Text>
+                <View style={[styles.statusBadge as ViewStyle, { backgroundColor: statusColor }]}>
+                  <Text size="sm" weight="bold" color="white">
+                    {orderState}
+                  </Text>
+                </View>
+              </View>
+
+              <Text size="sm" color="steelBlue" style={styles.orderSubtitle as TextStyle}>
+                {totalQuantity} L • {assets.length} Asset{assets.length !== 1 ? 's' : ''}
+              </Text>
+            </View>
+          )}
+
+          {/* Order State Flow */}
+          {currentFillupOrder && (
+            <FillupOrderStateFlow
+              orderStateFlow={fillupOrderStateFlow}
+              currentState={orderState}
+            />
+          )}
+
+          <Divider height={10} />
           {/* <AssetSummaryCard
             orderId="650761"
             totalQuantity={totalQuantity}
@@ -189,21 +269,21 @@ const FillAsset: React.FC = () => {
                 size="base"
                 color="lightGray"
                 style={styles.emptyStateMessage as TextStyle}>
-                {currentDriverOrder
+                {currentFillupOrder
                   ? 'No fillup requests available for this order.'
                   : 'Loading order data...'}
               </Text>
               <TouchableOpacity
                 style={styles.retryButton as ViewStyle}
-                onPress={fetchOrderForDriverIncompleteCurrent}
+                onPress={() => navigation.goBack()}
                 activeOpacity={0.7}>
                 <Text size="base" weight="600" color="white">
-                  Retry
+                  Go Back
                 </Text>
               </TouchableOpacity>
             </View>
           ) : (
-            filteredAssets.map((asset: Asset) => (
+            assets.map((asset: Asset) => (
               <AssetCard
                 key={asset.id}
                 assetName={asset.name}
@@ -217,15 +297,27 @@ const FillAsset: React.FC = () => {
           )}
         </ScrollView>
 
-        <TouchableOpacity
-          style={styles.cancelButton as ViewStyle}
-          onPress={handleCancel}
-          activeOpacity={0.7}>
-          <Text size="base" weight="600" color="white">
-            Cancel Request
-          </Text>
-        </TouchableOpacity>
+        {/* Enhanced Action Buttons */}
+        <View style={styles.actionContainer as ViewStyle}>
+          {isCancellable && (
+            <TouchableOpacity
+              style={styles.cancelButton as ViewStyle}
+              onPress={handleCancel}
+              activeOpacity={0.7}>
+              <Text size="base" weight="600" color="white">
+                Cancel Order
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
+
+      {/* Enhanced Modals (Vue-inspired) */}
+      <FillupOrderCancellationModal
+        isVisible={isCancellationModalOpen}
+        onClose={() => setCancellationModalOpen(false)}
+        onConfirmCancel={handleConfirmCancel}
+      />
     </HeaderAvoidingContainer>
   );
 };
@@ -239,6 +331,32 @@ const styles = ScaledSheet.create({
     flex: 1,
     paddingHorizontal: '16@s',
     paddingTop: '16@vs',
+  },
+  orderHeader: {
+    backgroundColor: '#F8F9FA',
+    padding: '16@s',
+    borderRadius: '8@s',
+    marginBottom: '16@vs',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  orderInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '8@vs',
+  },
+  statusBadge: {
+    paddingHorizontal: '12@s',
+    paddingVertical: '6@vs',
+    borderRadius: '16@s',
+  },
+  orderSubtitle: {
+    fontStyle: 'italic',
+  },
+  actionContainer: {
+    paddingHorizontal: '16@s',
+    paddingBottom: '16@vs',
   },
   cancelButton: {
     backgroundColor: '#FF6B6B',

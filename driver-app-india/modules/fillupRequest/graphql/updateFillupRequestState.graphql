@@ -1,0 +1,13 @@
+mutation updateFillupRequestState(
+	$id: uuid!
+	$state: fillup_request_status_enum!
+) {
+	update_fillup_request_by_pk(
+		pk_columns: { id: $id }
+		_set: { state: $state }
+	) {
+		id
+		state
+		created_at
+	}
+}

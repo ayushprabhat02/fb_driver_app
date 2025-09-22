@@ -1,6 +1,7 @@
 import React from 'react';
 import {View, TouchableOpacity} from 'react-native';
 import {ScaledSheet} from 'react-native-size-matters';
+import {useNavigation} from '@react-navigation/native';
 import {Text} from '@/components';
 import {
   FBBackground,
@@ -23,13 +24,10 @@ const allowedStates = [
 
 interface FillupHistoryCardProps {
   item: any;
-  onGoToFillup: (item: any) => void;
 }
 
-const FillupHistoryCard: React.FC<FillupHistoryCardProps> = ({
-  item,
-  onGoToFillup,
-}) => {
+const FillupHistoryCard: React.FC<FillupHistoryCardProps> = ({item}) => {
+  const navigation = useNavigation();
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case 'approved':
@@ -53,10 +51,18 @@ const FillupHistoryCard: React.FC<FillupHistoryCardProps> = ({
     });
   };
 
-  const isApproved = item.state?.toLowerCase() === 'approved';
   const isStateAllowed = allowedStates.includes(item.state?.toUpperCase());
-  const isFillup = item?.category === 'FILL_UP';
-  console.log('-----isFillup-------', isFillup);
+
+  // Navigate to fillup details - based on Vue.js goToFillUp function
+  const goToFillup = () => {
+    if (isStateAllowed) {
+      // @ts-ignore
+      navigation.navigate('address', {
+        screen: 'fillup-details',
+        params: {fillupId: item.id},
+      });
+    }
+  };
 
   return (
     <View style={[styles.card, !isStateAllowed && styles.disabledCard]}>
@@ -105,10 +111,10 @@ const FillupHistoryCard: React.FC<FillupHistoryCardProps> = ({
         </View>
       </View>
 
-      {isApproved && isStateAllowed ? (
+      {isStateAllowed ? (
         <TouchableOpacity
           style={styles.goToFillupButton}
-          onPress={() => onGoToFillup(item)}>
+          onPress={goToFillup}>
           <Text
             size="sm"
             weight="600"
@@ -118,13 +124,11 @@ const FillupHistoryCard: React.FC<FillupHistoryCardProps> = ({
           </Text>
         </TouchableOpacity>
       ) : (
-        !isStateAllowed && (
-          <View style={styles.notAvailableContainer}>
-            <Text size="sm" weight="500" color="lightGray">
-              Not Available
-            </Text>
-          </View>
-        )
+        <View style={styles.notAvailableContainer}>
+          <Text size="sm" weight="500" color="lightGray">
+            Not Available
+          </Text>
+        </View>
       )}
     </View>
   );

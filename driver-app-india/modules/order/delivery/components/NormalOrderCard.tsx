@@ -7,6 +7,7 @@ import {DateTime} from 'luxon';
 import {X} from 'phosphor-react-native';
 import orderStore from '../../store';
 import {homeStore} from '@/globalStore';
+import fillupStore from '@/modules/fillupRequest/store';
 import {canSelectOrder, getOrderValidationState, showOrderSelectionAlert} from '@/utils/orderValidation';
 
 interface Props {
@@ -19,7 +20,7 @@ const NormalOrderCard: React.FC<Props> = ({order}) => {
 
   // Get validation state from stores
   const driverOrders = homeStore.use.driverOrders();
-  const fillupHistory = homeStore.use.fillupHistory();
+  const fillupHistory = fillupStore.use.fillupHistory();
   const isLoadingOrder = homeStore.use.loaders().driverCurrentOrder;
 
   const validationState = getOrderValidationState(driverOrders || [], fillupHistory || []);

@@ -33,6 +33,7 @@ import {
   orderStore,
   userStore,
 } from '@/globalStore';
+import fillupStore from '@/modules/fillupRequest/store';
 
 import {Task_State_Enum} from '@/generated/graphql';
 import {OrderListCard} from '@/modules/order/delivery/components';
@@ -41,6 +42,7 @@ import {FBBackground} from '@/types/styles';
 import {useFocusEffect} from '@react-navigation/native';
 import OrderSummaryCard from '../components/delivery/OrderSummaryCard';
 import homeService from '../services';
+import fillupService from '@/modules/fillupRequest/services';
 import userService from '@/modules/user/services';
 import {setupShiftValidation} from '@/utils/shiftValidation';
 
@@ -55,9 +57,9 @@ const HomeLandingPage: React.FC = () => {
   const loggedInUser = userStore.use.loggedInUser();
   const driverVehicleId = checkinStore.use.driverVehicleId();
   const driverOrders = homeStore.use.driverOrders();
-  const fillupHistory = homeStore.use.fillupHistory();
+  const fillupHistory = fillupStore.use.fillupHistory();
   const isLoadingOrder = homeStore.use.loaders().driverCurrentOrder;
-  const isLoadingFillupHistory = homeStore.use.loaders().fillupHistory;
+  const isLoadingFillupHistory = fillupStore.use.loaders().fillupHistory;
   const currentDriverOrder = orderStore.use.currentDriverOrder();
   const currentFillupOrder = orderStore.use.currentFillupOrder();
 
@@ -67,6 +69,8 @@ const HomeLandingPage: React.FC = () => {
 
   const startLoader = homeStore.use.startLoader();
   const stopLoader = homeStore.use.stopLoader();
+  const startFillupLoader = fillupStore.use.startLoader();
+  const stopFillupLoader = fillupStore.use.stopLoader();
 
   const resetDeliveryStore = deliveryStore.use.resetDeliveryStore();
 
@@ -285,15 +289,15 @@ const HomeLandingPage: React.FC = () => {
       return;
     }
 
-    startLoader('fillupHistory');
-    homeService
+    startFillupLoader('fillupHistory');
+    fillupService
       .fetchFillupHistory({
         limit: 5,
         offset: 0,
         driver_vehicle_id: driverVehicleId,
       })
       .finally(() => {
-        stopLoader('fillupHistory');
+        stopFillupLoader('fillupHistory');
       });
   };
 

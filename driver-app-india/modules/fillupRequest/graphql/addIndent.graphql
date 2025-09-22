@@ -1,0 +1,13 @@
+mutation addIndent($objects: [partner_order_item_value_insert_input!]!) {
+	insert_partner_order_item_value(objects: $objects) {
+		affected_rows
+		returning {
+			id
+			partner_order_item_id
+			key
+			value
+			url
+			is_active
+		}
+	}
+}

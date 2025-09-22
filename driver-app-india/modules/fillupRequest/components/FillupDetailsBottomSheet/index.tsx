@@ -32,12 +32,13 @@ const FillupDetailsBottomSheet: React.FC<FillupDetailsBottomSheetProps> = ({
         </Text>
 
         {isLoading ? (
-          <View style={styles.loadingContainer}>
-            <Text size="base" color="steelBlue">
-              Loading fillup details...
-            </Text>
-          </View>
-        ) : fillupRequestDetails ? (
+          <></>
+        ) : // <View style={styles.loadingContainer}>
+        //   <Text size="base" color="steelBlue">
+        //     Loading fillup details...
+        //   </Text>
+        // </View>
+        fillupRequestDetails ? (
           <View style={styles.fillupDetailsContainer}>
             <View style={styles.detailRow}>
               <Text size="base" color="neutral" weight="500">

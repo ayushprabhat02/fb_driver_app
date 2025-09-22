@@ -8,6 +8,11 @@ export {default as StreamControls} from './StreamControls';
 export {default as OrderCancellationRequest} from './OrderCancellationRequest';
 export {default as OrderInfoCard} from './OrderInfoCard';
 
+// Enhanced Fillup Order Management Components (Vue-inspired)
+export {default as FillupOrderStateFlow} from './FillupOrderStateFlow';
+export {default as FillupOrderDetailsModal} from './FillupOrderDetailsModal';
+export {default as FillupOrderCancellationModal} from './FillupOrderCancellationModal';
+
 // Export types if needed
 export type {default as AssetSummaryCardProps} from './AssetSummaryCard';
 export type {default as AssetSearchBarProps} from './AssetSearchBar';

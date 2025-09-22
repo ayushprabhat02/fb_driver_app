@@ -1,11 +1,18 @@
-import React, {useCallback, useEffect, useState, useRef} from 'react';
-import {View, FlatList, TouchableOpacity} from 'react-native';
-import {ScaledSheet, ms} from 'react-native-size-matters';
+import React, {useCallback, useEffect, useState, useRef, useMemo} from 'react';
+import {
+  View,
+  FlatList,
+  TouchableOpacity,
+  Alert,
+  StyleSheet,
+} from 'react-native';
 import {useFocusEffect} from '@react-navigation/native';
 import {BottomSheetModal, BottomSheetView} from '@gorhom/bottom-sheet';
 import {useForm} from 'react-hook-form';
+import {ms} from 'react-native-size-matters';
 
-// components
+// --- Core Components & Services ---
+// Assuming these are your existing custom components, services, and stores.
 import {
   Button,
   Divider,
@@ -18,224 +25,264 @@ import {
   CustomSelectInput,
   CustomBottomFormInput,
   FillupHistoryCard,
-  FillupDetailsBottomSheet,
 } from '@/modules/fillupRequest/components';
-
-// store
-import homeStore from '@/modules/home/store';
 import fillupStore from '../store';
-
-// services
-import homeService from '@/modules/home/services';
-import fillupService, {
-  extractTankTypeOptions,
-  findTankTypeById,
-} from '../services';
-
-// actions, utils
-import {getDriverVehicleId} from '@/utils/localStorage';
-
-// styles
-import {headerTransparentContainer} from '@/styles';
 import {checkinStore} from '@/globalStore';
+import fillupService from '../services';
+
+// --- SDK Enums & Types ---
 import {
-  Fillup_Request_Status_Enum,
   Fuel_Request_Type_Enum,
+  Vehicle_Tank_Type,
+  Fillup_Request_Status_Enum,
   Order_Type_Enum,
 } from '@/generated/graphql';
-import {FBColors, FBBackground, FBColorPalette} from '@/types/styles';
+import {FBColors} from '@/types/styles';
+import {TankTypeDetails} from '@/types/custom';
+
+// --- Form Data Structure ---
+interface FillupFormData {
+  tankType: string;
+  fillupQuantity: string;
+}
 
 const FillupRequest: React.FC = () => {
-  const [selectedFillupItem, setSelectedFillupItem] = useState<any>(null);
+  // --- STATE MANAGEMENT ---
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // store
+  // Zustand Store Hooks
   const driverVehicleId = checkinStore.use.driverVehicleId();
-  const fillupHistoryData = homeStore.use.fillupHistory();
   const driverVehicleDetails = checkinStore.use.driverVehicleDetails();
-  const selectedTankType = fillupStore.use.selectedTankType();
-  const setSelectedTankType = fillupStore.use.setSelectedTankType();
-
-  //loader
-  const homeLoaders = homeStore.use.loaders();
-  const startHomeLoader = homeStore.use.startLoader();
-  const stopHomeLoader = homeStore.use.stopLoader();
+  const fillupHistory = fillupStore.use.fillupHistory();
   const fillupLoaders = fillupStore.use.loaders();
   const startFillupLoader = fillupStore.use.startLoader();
   const stopFillupLoader = fillupStore.use.stopLoader();
 
-  console.log(
-    '----driverVehicleDetails------',
-    JSON.stringify(driverVehicleDetails),
-  );
-
-  // Modal and form handling
+  // Bottom Sheet Ref
   const bottomSheetRef = useRef<BottomSheetModal>(null);
-  const fillupDetailsSheetRef = useRef<BottomSheetModal>(null);
+
+  // React Hook Form for modal inputs
   const {
     control,
     handleSubmit,
-    formState: {errors},
     reset,
     watch,
-  } = useForm({
-    defaultValues: {
-      tankType: '',
-      fuelQuantity: '',
-    },
+    setValue,
+    formState: {errors},
+  } = useForm<FillupFormData>({
+    defaultValues: {tankType: '', fillupQuantity: ''},
   });
 
-  // Watch form values to enable/disable submit button
-  const watchedValues = watch();
-  const isFormValid = watchedValues.tankType && watchedValues.fuelQuantity;
+  // Watch form values to react to changes
+  const watchedTankType = watch('tankType');
+  const watchedQuantity = watch('fillupQuantity');
+  const isFormValid = watchedTankType && watchedQuantity;
 
-  // Tank type options - dynamically extracted from driverVehicleDetails
-  const tankTypeOptions = React.useMemo(() => {
-    return extractTankTypeOptions(driverVehicleDetails);
+  // --- DERIVED & MEMOIZED VALUES ---
+  // These values are recalculated only when their dependencies change.
+
+  const isRotationFlow = watchedTankType === 'rotation-flow';
+
+  const tankTypeOptions = useMemo(() => {
+    const options =
+      driverVehicleDetails?.vehicle_tank_types?.map(
+        (tank: Vehicle_Tank_Type) => {
+          const tankTypeDetails: TankTypeDetails = {
+            tank_type: {
+              id: tank.tank_type?.id ?? '',
+              name: tank.tank_type?.name ?? 'Unknown',
+              is_active: tank.tank_type?.is_active ?? false,
+              slug: tank.tank_type?.slug ?? '',
+            },
+            tank_type_id: tank.tank_type?.id ?? '',
+            vehicle_tank_type_product_variations:
+              (tank.vehicle_tank_type_product_variations ?? []) as any,
+          };
+
+          return {
+            label: tank.tank_type?.name ?? 'Unknown Tank',
+            value: tank.tank_type?.id ?? '',
+            details: tankTypeDetails,
+          };
+        },
+      ) || [];
+    options.push({
+      label: 'Rotation Flow',
+      value: 'rotation-flow',
+      details: undefined as any,
+    });
+    return options;
   }, [driverVehicleDetails]);
 
-  const openModal = () => {
-    bottomSheetRef.current?.present();
-  };
+  const currentTankDetails = useMemo(() => {
+    if (!watchedTankType || isRotationFlow) return null;
+    return tankTypeOptions.find(opt => opt.value === watchedTankType)?.details;
+  }, [watchedTankType, isRotationFlow, tankTypeOptions]);
 
-  const closeModal = () => {
-    bottomSheetRef.current?.close();
-    reset();
-  };
+  console.log('----currentTankDetails-----', currentTankDetails);
 
-  const openFillupDetailsModal = async (item: any) => {
-    setSelectedFillupItem(item);
+  const maxCapacity = useMemo(() => {
+    if (isRotationFlow) return Number.MAX_SAFE_INTEGER;
+    if (currentTankDetails && driverVehicleDetails) {
+      return currentTankDetails.tank_type?.slug === 'browser-tank'
+        ? driverVehicleDetails.tanker_capacity
+        : driverVehicleDetails.fuel_tank_capacity;
+    }
+    return 0; // Default to 0 if no tank is selected
+  }, [isRotationFlow, currentTankDetails, driverVehicleDetails]);
+
+  // --- DATA FETCHING & LIFECYCLE HOOKS ---
+
+  // Function to fetch fillup history
+  const getFillupHistory = useCallback(async () => {
+    if (!driverVehicleId) return;
+    startFillupLoader('fillupHistory');
     try {
-      await fillupService.fetchFillupRequestById({id: item.id});
-      fillupDetailsSheetRef.current?.present();
-    } catch (error) {
-      console.error('Error fetching fillup details:', error);
-      fillupDetailsSheetRef.current?.present();
-    }
-  };
-
-  const closeFillupDetailsModal = () => {
-    fillupDetailsSheetRef.current?.close();
-    setSelectedFillupItem(null);
-  };
-
-  const onSubmitFillupRequest = (data: any) => {
-    console.log('Fillup request data:', data);
-    console.log('Selected tank type:', selectedTankType);
-
-    if (!selectedTankType) {
-      console.error('No tank type selected');
-      return;
-    }
-
-    // Call the API with form data and selected tank type
-    raiseFillupRequest(data.fuelQuantity, selectedTankType);
-    closeModal();
-  };
-
-  const raiseFillupRequest = async (quantity: string, tankTypeDetails: any) => {
-    startFillupLoader('raiseFillupRequest');
-
-    // Get the vehicle_tank_type_product_variation_id from the selected tank type
-    const vehicleTankTypeProductVariationId =
-      tankTypeDetails.vehicle_tank_type_product_variations?.[0]?.id;
-
-    if (!vehicleTankTypeProductVariationId) {
-      console.error('No vehicle tank type product variation ID found');
-      stopFillupLoader('raiseFillupRequest');
-      return;
-    }
-
-    if (!driverVehicleId) {
-      console.warn('Driver vehicle ID not available, cannot raise fillup request');
-      stopFillupLoader('raiseFillupRequest');
-      return;
-    }
-
-    fillupService
-      .raiseFillupRequest({
-        object: {
-          quantity: quantity,
-          state: Fillup_Request_Status_Enum.Pending,
-          unit: 'liter',
-          fuel_request_type: Fuel_Request_Type_Enum.FuelTank,
-          is_active: true,
-          driver_vehicle_id: driverVehicleId,
-          vehicle_tank_type_product_variation_id:
-            vehicleTankTypeProductVariationId,
-          otp: Math.floor(1000 + Math.random() * 9000),
-          category: Order_Type_Enum.Delivery,
-        },
-      })
-      .finally(() => {
-        stopFillupLoader('raiseFillupRequest');
-        fetchFillupHistory();
-        closeModal();
-      });
-  };
-
-  const fetchFillupHistory = async () => {
-    if (!driverVehicleId) {
-      console.warn('Driver vehicle ID not available, cannot fetch fillup history');
-      return;
-    }
-
-    startHomeLoader('fillupHistory');
-    homeService
-      .fetchFillupHistory({
-        limit: 5,
+      await fillupService.fetchFillupHistory({
+        limit: 10, // Fetch a reasonable number of recent items
         offset: 0,
         driver_vehicle_id: driverVehicleId,
-      })
-      .finally(() => {
-        stopHomeLoader('fillupHistory');
       });
-  };
+    } catch (error) {
+      console.error('Failed to fetch fillup history:', error);
+    } finally {
+      stopFillupLoader('fillupHistory');
+    }
+  }, [driverVehicleId, startFillupLoader, stopFillupLoader]);
 
+  // Fetch initial history when the component mounts or driver ID changes
+  useEffect(() => {
+    getFillupHistory();
+  }, [getFillupHistory]);
+
+  // Set up polling to refresh history every 3 seconds when the screen is focused
   useFocusEffect(
     useCallback(() => {
-      if (driverVehicleId) {
-        fetchFillupHistory();
-      }
-    }, [driverVehicleId]),
+      const intervalId = setInterval(() => {
+        getFillupHistory();
+      }, 10000); // 10 seconds
+
+      return () => clearInterval(intervalId); // Cleanup on blur or unmount
+    }, [getFillupHistory]),
   );
 
-  console.log('----fillupHistoryData----', fillupHistoryData);
+  // Effect to reset quantity whenever the tank type changes
+  useEffect(() => {
+    setValue('fillupQuantity', '');
+  }, [watchedTankType, setValue]);
+
+  // --- MODAL & FORM HANDLERS ---
+
+  const openModal = () => bottomSheetRef.current?.present();
+  const closeModal = () => {
+    bottomSheetRef.current?.close();
+    reset(); // Reset form to default values
+  };
+
+  const onSubmit = async (data: FillupFormData) => {
+    setIsSubmitting(true);
+
+    // 1. Check for pending fill-ups
+    const hasPendingFillups = fillupHistory.some(
+      (fillup: any) =>
+        fillup.state !== 'COMPLETE' && fillup.state !== 'REJECTED',
+    );
+    if (hasPendingFillups) {
+      Alert.alert(
+        'Request Denied',
+        'You cannot raise a new request while a previous one is still pending.',
+      );
+      setIsSubmitting(false);
+      return;
+    }
+
+    const quantity = parseFloat(data.fillupQuantity);
+
+    // 2. Validate quantity against max capacity and ensure it's positive
+    if (quantity <= 0) {
+      Alert.alert(
+        'Invalid Quantity',
+        'Fill-up quantity must be greater than zero.',
+      );
+      setIsSubmitting(false);
+      return;
+    }
+    if (maxCapacity && quantity > maxCapacity) {
+      Alert.alert(
+        'Invalid Quantity',
+        `Quantity cannot exceed the tank capacity of ${maxCapacity} litres.`,
+      );
+      setIsSubmitting(false);
+      return;
+    }
+
+    // 3. Construct the request payload dynamically
+    let requestPayload: any = {
+      quantity: `${quantity}`,
+      state: Fillup_Request_Status_Enum.Pending,
+      unit: 'liter',
+      is_active: true,
+      driver_vehicle_id: driverVehicleId,
+      otp: Math.floor(1000 + Math.random() * 9000), // Generate 4-digit OTP
+      category: Order_Type_Enum.Delivery, // Default to DELIVERY category
+    };
+
+    if (isRotationFlow) {
+      requestPayload.fuel_request_type = Fuel_Request_Type_Enum.RotationalFlow;
+    } else if (currentTankDetails) {
+      requestPayload.fuel_request_type =
+        currentTankDetails.tank_type?.name?.includes('Fuel')
+          ? Fuel_Request_Type_Enum.FuelTank
+          : Fuel_Request_Type_Enum.BowsersTank;
+      requestPayload.vehicle_tank_type_product_variation_id =
+        currentTankDetails.vehicle_tank_type_product_variations?.[0]?.id;
+    }
+
+    // 4. Call the API
+    try {
+      await fillupService.raiseFillupRequest({object: requestPayload});
+      Alert.alert('Success', 'Your fill-up request has been submitted.');
+      closeModal();
+      await getFillupHistory(); // Refresh history immediately after success
+    } catch (error) {
+      console.error('Error raising fill-up request:', error);
+      Alert.alert(
+        'Request Failed',
+        'Could not submit your request. Please try again.',
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // --- RENDER LOGIC ---
 
   return (
     <HeaderAvoidingContainer>
-      <View style={{flex: 1, padding: 8}}>
-        {/* null check */}
-        {!homeLoaders.fillupHistory &&
-          (!fillupHistoryData || fillupHistoryData.length === 0) && (
-            <Text
-              size="sm"
-              color="steelBlue"
-              style={{paddingTop: 12, marginLeft: 8}}>
-              No fillup history found.
-            </Text>
-          )}
-        <FlatList
-          data={fillupHistoryData || []}
-          keyExtractor={(item: any) => item.id}
-          renderItem={({item}: {item: any}) => (
-            <FillupHistoryCard
-              item={item}
-              onGoToFillup={openFillupDetailsModal}
-            />
-          )}
-          windowSize={10}
-          style={{
-            flex: 1,
-            marginTop: ms(4),
-          }}
-          showsVerticalScrollIndicator={false}
-        />
+      <View style={styles.container}>
+        {fillupLoaders.fillupHistory && !fillupHistory?.length ? (
+          <FullScreenLoader
+            loaderText="Fetching fillup history..."
+            showLoader={false}
+          />
+        ) : !fillupHistory?.length ? (
+          <Text size="sm" color="steelBlue" style={styles.infoText}>
+            No fillup history found.
+          </Text>
+        ) : (
+          <FlatList
+            data={fillupHistory || []}
+            keyExtractor={(item: any) => item.id}
+            renderItem={({item}: {item: any}) => (
+              <FillupHistoryCard
+                item={item}
+              />
+            )}
+            style={styles.list}
+            showsVerticalScrollIndicator={false}
+          />
+        )}
       </View>
-
-      <FullScreenLoader
-        showLoader={homeLoaders.fillupHistory}
-        loaderText="Fetching fillup history"
-      />
 
       {/* Floating Action Button */}
       <TouchableOpacity style={styles.fab} onPress={openModal}>
@@ -244,48 +291,63 @@ const FillupRequest: React.FC = () => {
         </Text>
       </TouchableOpacity>
 
-      {/* Modal for fillup request */}
+      {/* Modal for Fillup Request */}
       <SimpleBottomSheet
         ref={bottomSheetRef}
-        snapPoints={['60%']}
+        snapPoints={['60%', '65%']}
         closeSheet={closeModal}>
         <BottomSheetView style={styles.modalContent}>
-          <Text size="lg" weight="bold" color="neutral">
-            Enter fuel quantity
+          {/* Header */}
+          <Text
+            size="lg"
+            weight="bold"
+            color="neutral"
+            style={styles.modalTitle}>
+            Enter Fillup Quantity
           </Text>
 
+          <Divider height={24} />
+
+          {/* Tank Type Selection */}
           <CustomSelectInput
             name="tankType"
             label="Select Tank Type"
             control={control}
             errors={errors}
-            placeholder="Please select tank"
+            placeholder="Please select a tank"
             required
-            items={tankTypeOptions}
-            setChange={value => {
-              console.log('Tank type changed:', value);
-              // Find and store the selected tank type details
-              const selectedOption = tankTypeOptions.find(
-                option => option.value === value,
-              );
-              if (selectedOption) {
-                setSelectedTankType(selectedOption.tankTypeDetails);
-              }
+            items={tankTypeOptions.map(opt => ({
+              label: opt.label,
+              value: opt.value,
+            }))}
+            setChange={(value: any) => {
+              setValue('tankType', value);
             }}
-            renderObject={item => item}
-          />
-          <Divider height={5} />
-
-          <CustomBottomFormInput
-            name="fuelQuantity"
-            label="Enter fillup quantity"
-            control={control}
-            errors={errors}
-            placeholder="0"
-            required
-            keyboardType="numeric"
+            renderObject={(item: any) => item}
           />
 
+          <Divider height={20} />
+
+          {/* Quantity Input - Only show when tank is selected */}
+          {watchedTankType && (
+            <>
+              <CustomBottomFormInput
+                name="fillupQuantity"
+                label="Enter Fillup Quantity (in Litres)"
+                control={control}
+                errors={errors}
+                placeholder={`Max: ${
+                  maxCapacity === Number.MAX_SAFE_INTEGER ? 'N/A' : maxCapacity
+                } L`}
+                required
+                keyboardType="numeric"
+              />
+
+              <Divider height={32} />
+            </>
+          )}
+
+          {/* Action Buttons */}
           <View style={styles.modalButtons}>
             <TouchableOpacity style={styles.cancelButton} onPress={closeModal}>
               <Text size="base" weight="bold" color="white">
@@ -295,87 +357,82 @@ const FillupRequest: React.FC = () => {
             <TouchableOpacity
               style={[
                 styles.submitButton,
-                isFormValid ? styles.submitButtonActive : null,
+                isFormValid && !isSubmitting ? styles.submitButtonActive : null,
               ]}
-              onPress={handleSubmit(onSubmitFillupRequest)}>
+              onPress={handleSubmit(onSubmit)}
+              disabled={!isFormValid || isSubmitting}>
               <Text size="base" weight="bold" color="white">
-                Request Fillup
+                {isSubmitting ? 'Submitting...' : 'Request Fillup'}
               </Text>
             </TouchableOpacity>
           </View>
         </BottomSheetView>
       </SimpleBottomSheet>
-      <FullScreenLoader
-        showLoader={fillupLoaders.raiseFillupRequest}
-        loaderText="Raising fillup request"
-      />
-
-      {/* Fillup Details Modal */}
-      <FillupDetailsBottomSheet
-        bottomSheetRef={fillupDetailsSheetRef}
-        onClose={closeFillupDetailsModal}
-      />
     </HeaderAvoidingContainer>
   );
 };
 
-const styles = ScaledSheet.create({
-  containerTop: {
-    ...headerTransparentContainer,
+// --- STYLES ---
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 8,
+  },
+  infoText: {
+    paddingTop: 12,
+    marginLeft: 8,
+  },
+  list: {
+    flex: 1,
+    marginTop: ms(4),
   },
   fab: {
     position: 'absolute',
-    bottom: '20@vs',
-    right: '20@s',
-    paddingHorizontal: '16@s',
-    paddingVertical: '12@vs',
-    borderRadius: '25@s',
+    bottom: ms(20, 0.5),
+    right: ms(20, 0.5),
+    paddingHorizontal: ms(16),
+    paddingVertical: ms(12),
+    borderRadius: ms(25),
     backgroundColor: FBColors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 8,
-    shadowColor: FBColorPalette.black,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
   },
-  fabText: {},
   modalContent: {
-    padding: '20@s',
-    paddingBottom: '30@vs',
+    height: 400,
+    padding: ms(20),
   },
   modalTitle: {
-    marginBottom: '20@vs',
-    textAlign: 'center',
+    textAlign: 'left',
+  },
+  tankInfo: {
+    backgroundColor: '#F8F9FA',
+    padding: ms(12),
+    borderRadius: ms(8),
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
   },
   modalButtons: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: '20@vs',
-    gap: '12@s',
+    gap: ms(12),
   },
   cancelButton: {
     flex: 1,
     backgroundColor: FBColors.error,
-    paddingVertical: '12@vs',
-    borderRadius: '8@s',
+    paddingVertical: ms(12),
+    borderRadius: ms(8),
     alignItems: 'center',
   },
-  cancelButtonText: {},
   submitButton: {
     flex: 1,
-    backgroundColor: FBColors.steelBlue,
-    paddingVertical: '12@vs',
-    borderRadius: '8@s',
+    backgroundColor: FBColors.steelBlue, // Disabled color
+    paddingVertical: ms(12),
+    borderRadius: ms(8),
     alignItems: 'center',
   },
   submitButtonActive: {
-    backgroundColor: FBColors.primary,
+    backgroundColor: FBColors.primary, // Active color
   },
-  submitButtonText: {},
 });
 
 export default FillupRequest;

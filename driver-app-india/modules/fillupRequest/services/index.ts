@@ -57,6 +57,33 @@ import {
   FillupRequestByIdDocument,
   FillupRequestByIdQuery,
   FillupRequestByIdQueryVariables,
+
+  // fillup history
+  FillupHistoryQueryVariables,
+  FillupHistoryDocument,
+  FillupHistoryQuery,
+
+  // new indent upload APIs
+  UpdateFillupRequestStateDocument,
+  UpdateFillupRequestStateMutation,
+  UpdateFillupRequestStateMutationVariables,
+  AddIndentDocument,
+  AddIndentMutation,
+  AddIndentMutationVariables,
+  CheckIndentNumberExistsDocument,
+  CheckIndentNumberExistsQuery,
+  CheckIndentNumberExistsQueryVariables,
+  UpdatePartnerOrderItemStateDocument,
+  UpdatePartnerOrderItemStateMutation,
+  UpdatePartnerOrderItemStateMutationVariables,
+  UpdatePartnerOrderStateDocument,
+  UpdatePartnerOrderStateMutation,
+  UpdatePartnerOrderStateMutationVariables,
+
+  // enums
+  Fillup_Request_Status_Enum,
+  Partner_Order_Item_State_Enum,
+  Partner_Order_State_Enum,
 } from '@/generated/graphql';
 import {deliveryStore, locationStore} from '@/globalStore';
 import Toast from 'react-native-toast-message';
@@ -433,11 +460,82 @@ class FillupService {
         .getState()
         .setFillupRequestDetails(response?.fillup_request_by_pk || null);
       fillupStore.getState().stopLoader('fetchFillupRequestById');
-      return response;
+      return response.fillup_request_by_pk;
     } catch (error) {
       fillupStore.getState().stopLoader('fetchFillupRequestById');
       throw error;
     }
+  }
+
+  public async fetchFillupHistory(args: FillupHistoryQueryVariables) {
+    const response: FillupHistoryQuery = await callQuery({
+      queryDocument: FillupHistoryDocument,
+      variables: {
+        ...args,
+      },
+    });
+
+    fillupStore.setState(state => ({
+      ...state,
+      fillupHistory: response?.fillup_request,
+    }));
+
+    return response?.fillup_request;
+  }
+
+  public async checkIndentNumberExists(args: CheckIndentNumberExistsQueryVariables) {
+    const response: CheckIndentNumberExistsQuery = await callQuery({
+      queryDocument: CheckIndentNumberExistsDocument,
+      variables: {
+        ...args,
+      },
+    });
+
+    return response?.isPurchaseIndentNumberExits?.is_exit;
+  }
+
+  public async addIndent(args: AddIndentMutationVariables) {
+    const response: AddIndentMutation = await callMutation({
+      queryDocument: AddIndentDocument,
+      variables: {
+        ...args,
+      },
+    });
+
+    return response.insert_partner_order_item_value;
+  }
+
+  public async updateFillupRequestState(args: UpdateFillupRequestStateMutationVariables) {
+    const response: UpdateFillupRequestStateMutation = await callMutation({
+      queryDocument: UpdateFillupRequestStateDocument,
+      variables: {
+        ...args,
+      },
+    });
+
+    return response.update_fillup_request_by_pk;
+  }
+
+  public async updatePartnerOrderItemState(args: UpdatePartnerOrderItemStateMutationVariables) {
+    const response: UpdatePartnerOrderItemStateMutation = await callMutation({
+      queryDocument: UpdatePartnerOrderItemStateDocument,
+      variables: {
+        ...args,
+      },
+    });
+
+    return response.update_partner_order_item_by_pk;
+  }
+
+  public async updatePartnerOrderState(args: UpdatePartnerOrderStateMutationVariables) {
+    const response: UpdatePartnerOrderStateMutation = await callMutation({
+      queryDocument: UpdatePartnerOrderStateDocument,
+      variables: {
+        ...args,
+      },
+    });
+
+    return response.update_partner_order_by_pk;
   }
 }
 

@@ -7,6 +7,8 @@ import {
   AddShippingAddress,
   AddBillingAddress,
   FillupRequest as FillupRequestScreen,
+  FillupDetails,
+  FillupIndent,
 } from '@/modules/fillupRequest/screens';
 import {FillAsset} from '@/modules/order/screens';
 import {BackButtonArrow} from '@/components';
@@ -18,6 +20,8 @@ export type FillupRequestParamList = {
   'add-shipping-address': undefined;
   'add-billing-address': undefined;
   'fillup-request': undefined;
+  'fillup-details': {fillupId: string};
+  'fillup-indent': {fillupId: string};
   'search-location': undefined;
   'fill-asset': undefined;
 };
@@ -36,6 +40,16 @@ const FillupRequestNavigator: React.FC = () => {
         name="fillup-request"
         component={FillupRequestScreen}
         options={{headerTitle: 'Fillup Request'}}
+      />
+      <FillupRequestStack.Screen
+        name="fillup-details"
+        component={FillupDetails}
+        options={{headerTitle: 'Fillup Details'}}
+      />
+      <FillupRequestStack.Screen
+        name="fillup-indent"
+        component={FillupIndent}
+        options={{headerTitle: 'Upload Indent'}}
       />
       <FillupRequestStack.Screen
         name="add-shipping-address"

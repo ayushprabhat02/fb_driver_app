@@ -23,7 +23,10 @@ type LoaderTypes =
   | 'uploadVideo' // For actual file upload operations
   | 'liveStream' // For live streaming operations
   | 'chooseAsset' // For choose asset screen operations
-  | 'quantityBottomSheet'; // For quantity bottom sheet operations
+  | 'quantityBottomSheet' // For quantity bottom sheet operations
+  | 'cancelFillupOrder' // For fillup order cancellation
+  | 'fetchCancellationReasons' // For fetching cancellation reasons
+  | 'updateOrderState'; // For updating order state
 
 type Loaders = {
   totalizerImage: boolean;
@@ -38,11 +41,34 @@ type Loaders = {
   liveStream: boolean;
   chooseAsset: boolean;
   quantityBottomSheet: boolean;
+  cancelFillupOrder: boolean;
+  fetchCancellationReasons: boolean;
+  updateOrderState: boolean;
+};
+
+type FillupOrderStateFlow = {
+  state: string;
+  timestamp: string;
+  description: string;
+};
+
+type CancellationReason = {
+  id: string;
+  reason: string;
+  type: string;
 };
 
 type OrderStore = {
   cancellationReason: undefined;
   cancellationReasonsByReasonType: any;
+
+  // Enhanced fillup order management (Vue-inspired)
+  fillupOrderStateFlow: FillupOrderStateFlow[];
+  fillupCancellationReasons: CancellationReason[];
+  selectedCancellationReason: string;
+  cancellationComment: string;
+  isCancellationModalOpen: boolean;
+  isOrderDetailsModalOpen: boolean;
 
   // loading states
   loaders: Loaders;
@@ -122,6 +148,15 @@ type OrderActions = {
   // quantity tracking actions
   setFuelDispensedTillNow: (quantity: number) => void;
   setQuantityToBeDispensed: (quantity: number) => void;
+
+  // Enhanced fillup order management actions (Vue-inspired)
+  setFillupOrderStateFlow: (stateFlow: FillupOrderStateFlow[]) => void;
+  setFillupCancellationReasons: (reasons: CancellationReason[]) => void;
+  setSelectedCancellationReason: (reason: string) => void;
+  setCancellationComment: (comment: string) => void;
+  setCancellationModalOpen: (isOpen: boolean) => void;
+  setOrderDetailsModalOpen: (isOpen: boolean) => void;
+  updateFillupOrderState: (newState: string) => void;
 };
 
 /*
@@ -131,6 +166,14 @@ type OrderActions = {
 const orderInitialState: OrderStore = {
   cancellationReason: undefined,
   cancellationReasonsByReasonType: [],
+
+  // Enhanced fillup order management initial state
+  fillupOrderStateFlow: [],
+  fillupCancellationReasons: [],
+  selectedCancellationReason: '',
+  cancellationComment: '',
+  isCancellationModalOpen: false,
+  isOrderDetailsModalOpen: false,
 
   loaders: {
     totalizerImage: false,
@@ -145,6 +188,9 @@ const orderInitialState: OrderStore = {
     liveStream: false,
     chooseAsset: false,
     quantityBottomSheet: false,
+    cancelFillupOrder: false,
+    fetchCancellationReasons: false,
+    updateOrderState: false,
   },
 
   // bottom sheet
@@ -309,6 +355,51 @@ const orderStore = create<OrderStore & OrderActions>(set => ({
     set(state => ({
       ...state,
       driverVehicleDetails: details,
+    })),
+
+  // Enhanced fillup order management action implementations (Vue-inspired)
+  setFillupOrderStateFlow: (stateFlow: FillupOrderStateFlow[]) =>
+    set(state => ({
+      ...state,
+      fillupOrderStateFlow: stateFlow,
+    })),
+
+  setFillupCancellationReasons: (reasons: CancellationReason[]) =>
+    set(state => ({
+      ...state,
+      fillupCancellationReasons: reasons,
+    })),
+
+  setSelectedCancellationReason: (reason: string) =>
+    set(state => ({
+      ...state,
+      selectedCancellationReason: reason,
+    })),
+
+  setCancellationComment: (comment: string) =>
+    set(state => ({
+      ...state,
+      cancellationComment: comment,
+    })),
+
+  setCancellationModalOpen: (isOpen: boolean) =>
+    set(state => ({
+      ...state,
+      isCancellationModalOpen: isOpen,
+    })),
+
+  setOrderDetailsModalOpen: (isOpen: boolean) =>
+    set(state => ({
+      ...state,
+      isOrderDetailsModalOpen: isOpen,
+    })),
+
+  updateFillupOrderState: (newState: string) =>
+    set(state => ({
+      ...state,
+      currentFillupOrder: state.currentFillupOrder
+        ? { ...state.currentFillupOrder, state: newState }
+        : null,
     })),
 }));
 

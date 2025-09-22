@@ -4,7 +4,8 @@ import {ScaledSheet} from 'react-native-size-matters';
 import {Button} from '@/components';
 import {updateOrderQuantity} from '@/utils/orderUtil';
 import {retrieveCoordsFromString} from '@/utils/general';
-import {homeStore, orderStore} from '@/globalStore';
+import {orderStore} from '@/globalStore';
+import fillupStore from '@/modules/fillupRequest/store';
 import {useNavigation} from '@react-navigation/native';
 import {startTrip} from '@/utils/orderFlow';
 
@@ -12,7 +13,7 @@ interface FloatingActionButtonsProps {}
 
 const FloatingActionButtons: React.FC<FloatingActionButtonsProps> = () => {
   const navigation = useNavigation();
-  const fillupHistory = homeStore.use.fillupHistory();
+  const fillupHistory = fillupStore.use.fillupHistory();
   const currentFillupOrder = orderStore.use.currentFillupOrder();
   const currentDriverOrder = orderStore.use.currentDriverOrder();
 

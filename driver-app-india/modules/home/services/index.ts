@@ -31,10 +31,6 @@ import {
   FetchOrderForDriverNew2Document,
   FetchOrderForDriverNew2Query,
 
-  // fillup history
-  FillupHistoryQueryVariables,
-  FillupHistoryDocument,
-  FillupHistoryQuery,
 } from '@/generated/graphql';
 import {DeliveryStat} from '../types';
 
@@ -193,19 +189,6 @@ class HomeService {
     return response.task;
   }
 
-  public async fetchFillupHistory(args: FillupHistoryQueryVariables) {
-    const response: FillupHistoryQuery = await callQuery({
-      queryDocument: FillupHistoryDocument,
-      variables: {
-        ...args,
-      },
-    });
-
-    homeStore.setState(state => ({
-      ...state,
-      fillupHistory: response?.fillup_request,
-    }));
-  }
 }
 
 const homeService = HomeService.getInstance();

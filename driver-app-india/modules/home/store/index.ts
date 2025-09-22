@@ -15,14 +15,12 @@ import {DeliveryStat} from '../types';
 type LoaderTypes =
   | 'lastCustomerOrder'
   | 'driverOrderStats'
-  | 'driverCurrentOrder'
-  | 'fillupHistory';
+  | 'driverCurrentOrder';
 
 type Loaders = {
   driverOrderStats: boolean;
   lastCustomerOrder: boolean;
   driverCurrentOrder: boolean;
-  fillupHistory: boolean;
 };
 
 type HomeStore = {
@@ -33,7 +31,6 @@ type HomeStore = {
   deliveryStats: DeliveryStat[];
   driverOrderStats: FetchOrderStatsForDriverMutation['fetchOrderStatsForDriver'];
   driverOrders: FetchOrderForDriverNew2Query['task'] | null;
-  fillupHistory: any; // Assuming fillup history is also part of the home store
 
   userCoordinates: any;
   userLocationAddress: any;
@@ -63,14 +60,12 @@ const homeIntialState: HomeStore = {
   showRepeatOrder: false,
   driverOrderStats: null,
   driverOrders: null,
-  fillupHistory: null,
   selectedDate: new Date(),
 
   loaders: {
     lastCustomerOrder: false,
     driverOrderStats: false,
     driverCurrentOrder: false,
-    fillupHistory: false,
   },
 };
 
