@@ -128,61 +128,83 @@ const HomeLandingPage: React.FC = () => {
     }, [driverVehicleId]),
   );
 
-  // checking if user business lead exists
-  useEffect(() => {
-    if (loggedInUser?.length) {
-      UserService.checkIfUserExists({
-        phone_number: loggedInUser[0]?.phone_number,
-      })
-        .then(response => {
-          if (response.length === 3) {
-            const businessOrg = response[0]?.organization_users.filter(
-              orgUser => {
-                return orgUser.organization?.is_business;
-              },
-            );
-            if (
-              businessOrg?.length &&
-              !businessOrg[0]?.organization?.erp_code
-            ) {
-              polling();
-            }
+  // Refresh data when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      const refreshDataOnFocus = async () => {
+        if (driverVehicleId) {
+          try {
+            // Call all three APIs when screen focuses
+            await Promise.all([
+              fetchCurrentOrder(selectedDate, 0, false),
+              fetchFillupHistory(),
+              fetchOrderStats(),
+            ]);
+          } catch (error) {
+            console.error('Error refreshing data on focus:', error);
           }
-        })
-        .catch(() => {});
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+        }
+      };
 
-  const polling = () => {
-    setCheckBusinessLeadLoader(true);
-    const timerID = setInterval(async () => {
-      if (loggedInUser?.length) {
-        await UserService.checkIfUserExists({
-          phone_number: loggedInUser[0].phone_number,
-        })
-          .then(res => {
-            if (res.length) {
-              const businessOrg = res[0]?.organization_users.filter(orgUser => {
-                return orgUser.organization?.is_business;
-              });
+      refreshDataOnFocus();
+    }, [driverVehicleId, selectedDate]),
+  );
 
-              if (
-                businessOrg?.length &&
-                businessOrg[0]?.organization?.erp_code
-              ) {
-                clearInterval(timerID);
-                setCheckBusinessLeadLoader(false);
-              }
-            }
-          })
-          .catch(() => {
-            clearInterval(timerID);
-            setCheckBusinessLeadLoader(false);
-          });
-      }
-    }, 5000);
-  };
+  // checking if user business lead exists
+  // useEffect(() => {
+  //   if (loggedInUser?.length) {
+  //     UserService.checkIfUserExists({
+  //       phone_number: loggedInUser[0]?.phone_number,
+  //     })
+  //       .then(response => {
+  //         if (response.length === 3) {
+  //           const businessOrg = response[0]?.organization_users.filter(
+  //             orgUser => {
+  //               return orgUser.organization?.is_business;
+  //             },
+  //           );
+  //           if (
+  //             businessOrg?.length &&
+  //             !businessOrg[0]?.organization?.erp_code
+  //           ) {
+  //             polling();
+  //           }
+  //         }
+  //       })
+  //       .catch(() => {});
+  //   }
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, []);
+
+  // const polling = () => {
+  //   setCheckBusinessLeadLoader(true);
+  //   const timerID = setInterval(async () => {
+  //     if (loggedInUser?.length) {
+  //       await UserService.checkIfUserExists({
+  //         phone_number: loggedInUser[0].phone_number,
+  //       })
+  //         .then(res => {
+  //           if (res.length) {
+  //             const businessOrg = res[0]?.organization_users.filter(orgUser => {
+  //               return orgUser.organization?.is_business;
+  //             });
+
+  //             if (
+  //               businessOrg?.length &&
+  //               businessOrg[0]?.organization?.erp_code
+  //             ) {
+  //               clearInterval(timerID);
+  //               setCheckBusinessLeadLoader(false);
+  //             }
+  //           }
+  //         })
+  //         .catch(() => {
+  //           clearInterval(timerID);
+  //           setCheckBusinessLeadLoader(false);
+  //         });
+  //     }
+  //   }, 5000);
+  // };
 
   const fetchMyProfile = async () => {
     try {
@@ -298,7 +320,6 @@ const HomeLandingPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchOrderStats();
     fetchMyProfile();
   }, []);
 

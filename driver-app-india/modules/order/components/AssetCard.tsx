@@ -141,6 +141,29 @@ const AssetCard: React.FC<AssetCardProps> = ({
         qty: quantity,
       });
 
+      // 🎯 NEW: Mark order as dispensing when quantity is updated (if not already dispensing)
+      // This matches the Vue.js implementation behavior
+      if (quantity > 0 && selectedOrder?.state !== 'DISPENSING') {
+        try {
+          console.log('🔄 Marking order as dispensing due to quantity update');
+          await orderService.markOrderDispensing({id: selectedOrder.id});
+
+          // Update the current order state in the store
+          orderStore.setState(state => ({
+            ...state,
+            currentDriverOrder: state.currentDriverOrder
+              ? {
+                  ...state.currentDriverOrder,
+                  state: 'DISPENSING' as any,
+                }
+              : state.currentDriverOrder,
+          }));
+        } catch (dispensingError) {
+          console.error('Error marking order as dispensing:', dispensingError);
+          // Don't block the quantity update if this fails, just log the error
+        }
+      }
+
       // Update local store state to reflect the change immediately
       const updatedAssets = orderStore
         .getState()
@@ -210,14 +233,14 @@ const AssetCard: React.FC<AssetCardProps> = ({
     const isInPartiallyFilled = partiallyFilledAssetsArray.includes(assetId);
     const hasInterruptedRecording =
       assetsWithInterruptedRecording.includes(assetId);
-    
+
     // Debug logging
     console.log('AssetCard Debug:', {
       assetId,
       hasInterruptedRecording,
       assetsWithInterruptedRecording,
       hasUploadedVideo,
-      isInPartiallyFilled
+      isInPartiallyFilled,
     });
 
     // Priority 0: If order is completely dispensed, show Order Complete
