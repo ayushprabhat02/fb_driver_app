@@ -23,7 +23,7 @@ import {Button, Divider, Input, Text, TextButton} from '@/components';
 import {AddressService, LocationService} from '@/services';
 
 //stores
-import addressStore from '@/modules/fillupRequest/store';
+import fillupStore from '@/modules/fillupRequest/store';
 import {ScaledSheet, ms} from 'react-native-size-matters';
 
 //types
@@ -84,7 +84,7 @@ const AddShippingAddressForm: React.FC<Props> = ({
 
   const [buddyCanAvailable, setBuddyCanAvailable] = useState<boolean>(false);
 
-  const currentLocationAddress = addressStore.use.currentLocationAddress();
+  const currentLocationAddress = fillupStore.use.currentLocationAddress();
 
   const [showStateList, setShowStateList] = useState<boolean>(false);
   const [showCityList, setShowCityList] = useState<boolean>(false);

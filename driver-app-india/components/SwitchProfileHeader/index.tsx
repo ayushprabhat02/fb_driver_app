@@ -9,7 +9,7 @@ import {DateTime} from 'luxon';
 
 // store
 import {
-  addressStore,
+  fillupStore,
   businessStore,
   deliveryStore,
   homeStore,
@@ -41,7 +41,7 @@ const SwitchProfileHeader: React.FC = () => {
   const loader = businessStore.use.loaders();
   const startLoaderDelivery = deliveryStore.use.startLoader();
   const stopLoaderDelivery = deliveryStore.use.stopLoader();
-  const stopLoaderAddress = addressStore.use.stopLoader();
+  const stopLoaderAddress = fillupStore.use.stopLoader();
 
   const selectedShippingAddress = deliveryStore.use.selectedShippingAddress();
 
@@ -162,7 +162,7 @@ const SwitchProfileHeader: React.FC = () => {
 };
 
 const styles = ScaledSheet.create({
-  container: { alignItems: 'flex-end'},
+  container: {alignItems: 'flex-end'},
 
   settingsBtn: {
     width: 56,

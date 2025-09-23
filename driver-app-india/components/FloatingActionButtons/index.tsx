@@ -4,7 +4,7 @@ import {ScaledSheet} from 'react-native-size-matters';
 import {Button} from '@/components';
 import {updateOrderQuantity} from '@/utils/orderUtil';
 import {retrieveCoordsFromString} from '@/utils/general';
-import {homeStore, orderStore} from '@/globalStore';
+import {fillupStore, orderStore} from '@/globalStore';
 import {useNavigation} from '@react-navigation/native';
 import {startTrip} from '@/utils/orderFlow';
 
@@ -12,7 +12,7 @@ interface FloatingActionButtonsProps {}
 
 const FloatingActionButtons: React.FC<FloatingActionButtonsProps> = () => {
   const navigation = useNavigation();
-  const fillupHistory = homeStore.use.fillupHistory();
+  const fillupHistory = fillupStore.use.fillupHistory();
   const currentFillupOrder = orderStore.use.currentFillupOrder();
   const currentDriverOrder = orderStore.use.currentDriverOrder();
 
@@ -22,7 +22,8 @@ const FloatingActionButtons: React.FC<FloatingActionButtonsProps> = () => {
 
   // Get the current selected order (prioritize fillup over delivery)
   const selectedOrder = currentFillupOrder || currentDriverOrder;
-  const isFillupOrder = currentFillupOrder &&
+  const isFillupOrder =
+    currentFillupOrder &&
     (currentFillupOrder as any)?.fillup_requests &&
     (currentFillupOrder as any)?.fillup_requests.length > 0;
 
@@ -48,7 +49,7 @@ const FloatingActionButtons: React.FC<FloatingActionButtonsProps> = () => {
         type: 'continue',
         showNavigation: false,
         buttonText: 'Continue Order',
-        buttonStyle: 'full'
+        buttonStyle: 'full',
       };
     }
 
@@ -58,7 +59,7 @@ const FloatingActionButtons: React.FC<FloatingActionButtonsProps> = () => {
         type: 'start',
         showNavigation: false,
         buttonText: isFillupOrder ? 'Start Fillup' : 'Start Delivery',
-        buttonStyle: 'full'
+        buttonStyle: 'full',
       };
     }
 
@@ -68,7 +69,7 @@ const FloatingActionButtons: React.FC<FloatingActionButtonsProps> = () => {
         type: 'both',
         showNavigation: true,
         buttonText: isFillupOrder ? 'Start Fillup' : 'Start Delivery',
-        buttonStyle: 'half'
+        buttonStyle: 'half',
       };
     }
 
@@ -80,7 +81,7 @@ const FloatingActionButtons: React.FC<FloatingActionButtonsProps> = () => {
   const openExternalNavigation = (destLat: number, destLng: number) => {
     const scheme = Platform.select({
       ios: `maps://maps.apple.com/?q=${destLat},${destLng}&t=m&dirflg=d`,
-      android: `https://www.google.com/maps/dir/?api=1&dir_action=navigate&travelmode=driving&destination=${destLat},${destLng}`
+      android: `https://www.google.com/maps/dir/?api=1&dir_action=navigate&travelmode=driving&destination=${destLat},${destLng}`,
     });
 
     if (scheme) {
@@ -96,8 +97,13 @@ const FloatingActionButtons: React.FC<FloatingActionButtonsProps> = () => {
 
     try {
       // For delivery orders - use shipping address location
-      if (selectedOrder.customer_order?.organizationAddressByShippingAddressId?.location) {
-        const location = selectedOrder.customer_order.organizationAddressByShippingAddressId.location;
+      if (
+        selectedOrder.customer_order?.organizationAddressByShippingAddressId
+          ?.location
+      ) {
+        const location =
+          selectedOrder.customer_order.organizationAddressByShippingAddressId
+            .location;
         return retrieveCoordsFromString(location);
       }
 
@@ -107,12 +113,16 @@ const FloatingActionButtons: React.FC<FloatingActionButtonsProps> = () => {
 
         // Try driver vehicle location
         if (fillupRequest.driver_vehicle?.vehicle?.location) {
-          return retrieveCoordsFromString(fillupRequest.driver_vehicle.vehicle.location);
+          return retrieveCoordsFromString(
+            fillupRequest.driver_vehicle.vehicle.location,
+          );
         }
 
         // Try vehicle partner address location
         if (fillupRequest.driver_vehicle?.vehicle?.partner_address?.location) {
-          return retrieveCoordsFromString(fillupRequest.driver_vehicle.vehicle.partner_address.location);
+          return retrieveCoordsFromString(
+            fillupRequest.driver_vehicle.vehicle.partner_address.location,
+          );
         }
       }
 
@@ -155,10 +165,7 @@ const FloatingActionButtons: React.FC<FloatingActionButtonsProps> = () => {
   if (
     !selectedOrder ||
     !buttonConfig ||
-    !(
-      allFillupsCompleted ||
-      isFillupOrder
-    )
+    !(allFillupsCompleted || isFillupOrder)
   ) {
     return null;
   }
@@ -180,8 +187,10 @@ const FloatingActionButtons: React.FC<FloatingActionButtonsProps> = () => {
       <Button
         variant="solid"
         style={[
-          buttonConfig.buttonStyle === 'full' ? styles.fullWidthButton : styles.floatingButton,
-          styles.startTripButton
+          buttonConfig.buttonStyle === 'full'
+            ? styles.fullWidthButton
+            : styles.floatingButton,
+          styles.startTripButton,
         ]}
         textStyle={floatingButtonTextStyle}
         onPress={handleStartTrip}>

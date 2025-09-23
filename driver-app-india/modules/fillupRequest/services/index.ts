@@ -67,8 +67,13 @@ import {
   ActiveFillupCheckDocument,
   ActiveFillupCheckQuery,
   ActiveFillupCheckQueryVariables,
+
+  // Fillup history new
+  FillupHistoryNewDocument,
+  FillupHistoryNewQuery,
+  FillupHistoryNewQueryVariables,
 } from '@/generated/graphql';
-import {deliveryStore, locationStore, homeStore} from '@/globalStore';
+import {deliveryStore, locationStore} from '@/globalStore';
 import Toast from 'react-native-toast-message';
 
 // types
@@ -463,12 +468,30 @@ class FillupService {
       ...state,
       activeFillupHistory: response?.fillup_request,
     }));
+  }
 
-    // Also update home store for compatibility
-    homeStore.setState(state => ({
-      ...state,
-      fillupHistory: response?.fillup_request,
-    }));
+  public async fetchFillupHistoryNew(args: FillupHistoryNewQueryVariables) {
+    fillupStore.getState().startLoader('fetchFillupHistoryNew');
+    try {
+      const response: FillupHistoryNewQuery = await callQuery({
+        queryDocument: FillupHistoryNewDocument,
+        variables: {
+          ...args,
+        },
+      });
+
+      // Update fillup store
+      fillupStore.setState(state => ({
+        ...state,
+        fillupHistory: response?.fillup_request,
+      }));
+
+      fillupStore.getState().stopLoader('fetchFillupHistoryNew');
+      return response;
+    } catch (error) {
+      fillupStore.getState().stopLoader('fetchFillupHistoryNew');
+      throw error;
+    }
   }
 }
 

@@ -11,7 +11,7 @@ import {LoginForm} from '../components';
 
 // stores
 import {
-  addressStore,
+  fillupStore,
   assetStore,
   authStore,
   businessStore,
@@ -31,7 +31,7 @@ import {FocusAwareStatusBar} from '@/components';
 export type Props = StackScreenProps<AuthStackParamList, 'login'>;
 
 const Login: React.FC<Props> = ({navigation}: Props) => {
-  const resetFillupStore = addressStore.use.resetFillupStore();
+  const resetFillupStore = fillupStore.use.resetFillupStore();
   const resetAuthStore = authStore.use.resetAuthStore();
   const resetAssetStore = assetStore.use.resetAssetStore();
   const resetBusinessStore = businessStore.use.resetBusinessStore();

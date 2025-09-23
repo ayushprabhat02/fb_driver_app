@@ -15,7 +15,12 @@ import {
 } from '@/modules/fillupRequest/components';
 import {Button, Text, Divider} from '@/components';
 //stores
-import {deliveryStore, addressStore, homeStore} from '@/globalStore';
+import {
+  deliveryStore,
+  fillupStfillupStore,
+  ore,
+  homeStore,
+} from '@/globalStore';
 //services
 import AddressService from '@/modules/fillupRequest/services';
 //types
@@ -67,7 +72,7 @@ const BillingAddressForm: React.FC<Props> = ({onPress}) => {
   React.useEffect(() => {
     const fetchCountries = async () => {
       await AddressService.fetchAllCountries();
-      setStates(addressStore.getState().deliveryStates);
+      setStates(fillupStore.getState().deliveryStates);
     };
     fetchCountries();
   }, []);
@@ -75,7 +80,7 @@ const BillingAddressForm: React.FC<Props> = ({onPress}) => {
   React.useEffect(() => {
     if (selectedState) {
       setCities(
-        addressStore
+        fillupStore
           .getState()
           .deliveryCountry?.states?.find(
             (state: any) => state?.id === selectedState,
@@ -88,7 +93,7 @@ const BillingAddressForm: React.FC<Props> = ({onPress}) => {
           }),
       );
       setState(
-        addressStore
+        fillupStore
           .getState()
           .deliveryCountry?.states?.find(
             (s: any) => s?.id === selectedState,

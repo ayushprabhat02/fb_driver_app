@@ -50,7 +50,7 @@ const FillupRequest: React.FC = () => {
 
   // store
   const driverVehicleId = checkinStore.use.driverVehicleId();
-  const fillupHistoryData = homeStore.use.fillupHistory();
+  const fillupHistoryData = fillupStore.use.fillupHistory();
   const driverVehicleDetails = checkinStore.use.driverVehicleDetails();
   const selectedTankType = fillupStore.use.selectedTankType();
   const setSelectedTankType = fillupStore.use.setSelectedTankType();
@@ -179,15 +179,26 @@ const FillupRequest: React.FC = () => {
       return;
     }
 
-    startHomeLoader('fillupHistory');
-    homeService
-      .fetchFillupHistory({
+    // Get date range for today only (ensure local timezone)
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+
+    const startOfDay = `${year}-${month}-${day}T00:00:00`;
+    const endOfDay = `${year}-${month}-${day}T23:59:59`;
+
+    startFillupLoader('fetchFillupHistoryNew');
+    fillupService
+      .fetchFillupHistoryNew({
         limit: 5,
         offset: 0,
         driver_vehicle_id: driverVehicleId,
+        start_date: startOfDay,
+        end_date: endOfDay,
       })
       .finally(() => {
-        stopHomeLoader('fillupHistory');
+        stopFillupLoader('fetchFillupHistoryNew');
       });
   };
 
@@ -205,7 +216,7 @@ const FillupRequest: React.FC = () => {
     <HeaderAvoidingContainer>
       <View style={{flex: 1, padding: 8}}>
         {/* null check */}
-        {!homeLoaders.fillupHistory &&
+        {!fillupLoaders.fetchFillupHistoryNew &&
           (!fillupHistoryData || fillupHistoryData.length === 0) && (
             <Text
               size="sm"
@@ -233,7 +244,7 @@ const FillupRequest: React.FC = () => {
       </View>
 
       <FullScreenLoader
-        showLoader={homeLoaders.fillupHistory}
+        showLoader={fillupLoaders.fetchFillupHistoryNew}
         loaderText="Fetching fillup history"
       />
 

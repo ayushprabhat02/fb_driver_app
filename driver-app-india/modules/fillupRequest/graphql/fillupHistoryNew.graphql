@@ -1,0 +1,44 @@
+query fillupHistoryNew(
+  $limit: Int!
+  $offset: Int!
+  $driver_vehicle_id: uuid
+  $start_date: timestamp!
+  $end_date: timestamp!
+) {
+  fillup_request(
+    limit: $limit
+    offset: $offset
+    where: {
+      driver_vehicle_id: {_eq: $driver_vehicle_id}
+      created_at: {_gte: $start_date, _lte: $end_date}
+    }
+    order_by: {created_at: desc}
+  ) {
+    quantity
+    quantity_approved
+    id
+    state
+    created_at
+    fuel_request_type
+    vehicle_tank_type_product_variation {
+      product_variation {
+        product {
+          name
+        }
+      }
+    }
+    task {
+      category
+    }
+  }
+  fillup_request_aggregate(
+    where: {
+      driver_vehicle_id: {_eq: $driver_vehicle_id}
+      created_at: {_gte: $start_date, _lte: $end_date}
+    }
+  ) {
+    aggregate {
+      count
+    }
+  }
+}

@@ -14,13 +14,15 @@ type LoaderTypes =
   | 'fetchAddresses'
   | 'raiseFillupRequest'
   | 'fetchFillupRequestById'
-  | 'fetchActiveFillupHistory';
+  | 'fetchActiveFillupHistory'
+  | 'fetchFillupHistoryNew';
 
 type Loaders = {
   fetchAddresses: boolean;
   raiseFillupRequest: boolean;
   fetchFillupRequestById: boolean;
   fetchActiveFillupHistory: boolean;
+  fetchFillupHistoryNew: boolean;
 };
 
 type TankTypeDetails = {
@@ -55,6 +57,7 @@ type FillupStore = {
   selectedTankType: TankTypeDetails | null;
   fillupRequestDetails: any;
   activeFillupHistory: any[];
+  fillupHistory: any[];
 
   // loading states
   loaders: Loaders;
@@ -82,11 +85,13 @@ const addressInitialState: FillupStore = {
   selectedTankType: null,
   fillupRequestDetails: null,
   activeFillupHistory: [],
+  fillupHistory: [],
   loaders: {
     fetchAddresses: true,
     raiseFillupRequest: false,
     fetchFillupRequestById: false,
     fetchActiveFillupHistory: false,
+    fetchFillupHistoryNew: false,
   },
 };
 

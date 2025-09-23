@@ -43,6 +43,7 @@ import OrderSummaryCard from '../components/delivery/OrderSummaryCard';
 import homeService from '../services';
 import userService from '@/modules/user/services';
 import fillupService from '@/modules/fillupRequest/services';
+import fillupStore from '@/modules/fillupRequest/store';
 import {setupShiftValidation} from '@/utils/shiftValidation';
 
 const HomeLandingPage: React.FC = () => {
@@ -56,9 +57,9 @@ const HomeLandingPage: React.FC = () => {
   const loggedInUser = userStore.use.loggedInUser();
   const driverVehicleId = checkinStore.use.driverVehicleId();
   const driverOrders = homeStore.use.driverOrders();
-  const fillupHistory = homeStore.use.fillupHistory();
+  const fillupHistory = fillupStore.use.activeFillupHistory();
   const isLoadingOrder = homeStore.use.loaders().driverCurrentOrder;
-  const isLoadingFillupHistory = homeStore.use.loaders().fillupHistory;
+  const isLoadingFillupHistory = fillupStore.use.loaders().fetchActiveFillupHistory;
   const currentDriverOrder = orderStore.use.currentDriverOrder();
   const currentFillupOrder = orderStore.use.currentFillupOrder();
 
@@ -68,6 +69,8 @@ const HomeLandingPage: React.FC = () => {
 
   const startLoader = homeStore.use.startLoader();
   const stopLoader = homeStore.use.stopLoader();
+  const startFillupLoader = fillupStore.use.startLoader();
+  const stopFillupLoader = fillupStore.use.stopLoader();
 
   const resetDeliveryStore = deliveryStore.use.resetDeliveryStore();
 
@@ -308,7 +311,7 @@ const HomeLandingPage: React.FC = () => {
       return;
     }
 
-    startLoader('fillupHistory');
+    startFillupLoader('fetchActiveFillupHistory');
     fillupService
       .fetchActiveFillupCheck({
         limit: 5,
@@ -316,7 +319,7 @@ const HomeLandingPage: React.FC = () => {
         driver_vehicle_id: driverVehicleId,
       })
       .finally(() => {
-        stopLoader('fillupHistory');
+        stopFillupLoader('fetchActiveFillupHistory');
       });
   };
 
