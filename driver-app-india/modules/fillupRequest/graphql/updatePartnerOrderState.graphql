@@ -8,6 +8,5 @@ mutation updatePartnerOrderState(
 	) {
 		id
 		state
-		created_at
 	}
 }

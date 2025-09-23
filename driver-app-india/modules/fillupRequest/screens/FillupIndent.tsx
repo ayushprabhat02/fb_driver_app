@@ -61,7 +61,6 @@ const FillupIndent: React.FC = () => {
   const pollInterval = useRef<NodeJS.Timeout>();
 
   const fillupDetails = fillupStore.use.fillupRequestDetails();
-  const fillupLoaders = fillupStore.use.loaders();
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -78,44 +77,79 @@ const FillupIndent: React.FC = () => {
     fetchDetails();
   }, [fillupId]);
 
-  useEffect(() => {
-    if (fillupDetails) {
-      // Check current state and set appropriate flags
-      if (fillupDetails.state === 'AWAITING_INDENT_UPLOAD_AUTHORIZATION') {
-        setWaitingForApproval(true);
-        startApprovalPolling();
-      } else if (fillupDetails.state === 'PURCHASE_INVOICE_REQUEST') {
-        setWaitingForApproval(false);
-        setApproved(true);
-      }
-    }
-  }, [fillupDetails]);
-
+  // Cleanup interval on unmount
   useEffect(() => {
     return () => {
       if (pollInterval.current) {
         clearInterval(pollInterval.current);
+        pollInterval.current = undefined;
       }
     };
   }, []);
 
+  // Initialize component and check existing state (like Vue's onMounted)
+  useEffect(() => {
+    const initializeComponent = async () => {
+      if (fillupDetails) {
+        console.log('Initializing component with fillup state:', fillupDetails.state);
+
+        // Check if already waiting for approval
+        if (fillupDetails.state === 'AWAITING_INDENT_UPLOAD_AUTHORIZATION') {
+          console.log('Already awaiting approval, starting polling');
+          setWaitingForApproval(true);
+          startApprovalPolling();
+        }
+        // Check if already approved
+        else if (fillupDetails.state === 'PURCHASE_INVOICE_REQUEST') {
+          console.log('Already approved, showing mark complete button');
+          setWaitingForApproval(false);
+          setApproved(true);
+        }
+        // Check if rejected
+        else if (fillupDetails.state === 'INDENT_UPLOAD_REJECTED') {
+          console.log('Previously rejected, resetting for re-upload');
+          setWaitingForApproval(false);
+          setApproved(false);
+        }
+      }
+    };
+
+    initializeComponent();
+  }, [fillupDetails]);
+
   const startApprovalPolling = () => {
+    if (pollInterval.current) {
+      clearInterval(pollInterval.current);
+    }
+
     pollInterval.current = setInterval(async () => {
       try {
         await fillupService.fetchFillupRequestById({id: fillupId});
         const currentDetails = fillupStore.getState().fillupRequestDetails;
 
+        console.log('Polling - Current fillup state:', currentDetails?.state);
+
         if (currentDetails?.state === 'PURCHASE_INVOICE_REQUEST') {
+          console.log('Indent approved! Stopping polling and showing mark complete button');
           setWaitingForApproval(false);
           setApproved(true);
           if (pollInterval.current) {
             clearInterval(pollInterval.current);
+            pollInterval.current = undefined;
           }
+          // Show success alert like in Vue implementation
+          Alert.alert(
+            'Indent Approved!',
+            'Your indent has been approved. Click "Mark Complete" to finish the fillup order.',
+            [{text: 'OK'}]
+          );
         } else if (currentDetails?.state === 'INDENT_UPLOAD_REJECTED') {
+          console.log('Indent rejected! Stopping polling');
           setWaitingForApproval(false);
           setApproved(false);
           if (pollInterval.current) {
             clearInterval(pollInterval.current);
+            pollInterval.current = undefined;
           }
           Alert.alert('Indent Rejected', 'Please re-upload the indent.');
         }
@@ -348,64 +382,98 @@ const FillupIndent: React.FC = () => {
     try {
       setUploading(true);
 
-      // Update fillup request state to COMPLETE
+      console.log('Starting mark complete process...');
+      console.log('fillupDetails:', JSON.stringify(fillupDetails, null, 2));
+      console.log('completedFilledQuantity:', completedFilledQuantity);
+
+      // Check if order is already completed
+      if (fillupDetails?.state === 'COMPLETE') {
+        Alert.alert(
+          'Already Completed',
+          'This fillup order has already been marked as complete.',
+          [{text: 'OK'}]
+        );
+        return;
+      }
+
+      // Validate required data exists
+      const partnerOrderItemId = fillupDetails?.partner_order?.partner_order_items[0]?.id;
+      const partnerOrderId = fillupDetails?.partner_order?.id;
+      const productVariationId = fillupDetails?.partner_order?.partner_order_items[0]?.product_variation?.id;
+      const vehicleId = fillupDetails?.partner_order?.fillup_requests[0]?.vehicle_tank_type_product_variation?.vehicle_tank_type?.vehicle?.id;
+
+      console.log('Checking required data:');
+      console.log('- partnerOrderItemId:', partnerOrderItemId);
+      console.log('- partnerOrderId:', partnerOrderId);
+      console.log('- productVariationId:', productVariationId);
+      console.log('- vehicleId:', vehicleId);
+      console.log('- completedFilledQuantity:', completedFilledQuantity);
+
+      // Use quantity_approved as fallback if completedFilledQuantity is not available
+      const quantityToUse = completedFilledQuantity || fillupDetails?.quantity_approved?.toString() || '';
+
+      console.log('- quantityToUse (final):', quantityToUse);
+
+      // Check each field individually to see which one is missing
+      const missingFields = [];
+      if (!partnerOrderItemId) missingFields.push('partnerOrderItemId');
+      if (!partnerOrderId) missingFields.push('partnerOrderId');
+      if (!productVariationId) missingFields.push('productVariationId');
+      if (!vehicleId) missingFields.push('vehicleId');
+      if (!quantityToUse) missingFields.push('quantityToUse');
+
+      if (missingFields.length > 0) {
+        throw new Error(`Required data missing for completion: ${missingFields.join(', ')}`);
+      }
+
+      console.log('All required data found, proceeding with API calls...');
+
+      // Execute all updates - matching Vue implementation exactly
       await fillupService.updateFillupRequestState({
         id: fillupId,
         state: Fillup_Request_Status_Enum.Complete,
       });
+      console.log('✅ Fillup request state updated to COMPLETE');
 
-      // Update partner order item state to DELIVERED
-      const partnerOrderItemId =
-        fillupDetails?.partner_order?.partner_order_items[0]?.id;
-      if (partnerOrderItemId) {
-        await fillupService.updatePartnerOrderItemState({
-          id: partnerOrderItemId,
-          state: Partner_Order_Item_State_Enum.Delivered,
-        });
-      }
+      await fillupService.updatePartnerOrderItemState({
+        id: partnerOrderItemId,
+        state: Partner_Order_Item_State_Enum.Delivered,
+      });
+      console.log('✅ Partner order item state updated to DELIVERED');
 
-      // Update partner order state to DELIVERED
-      const partnerOrderId = fillupDetails?.partner_order?.id;
-      if (partnerOrderId) {
-        await fillupService.updatePartnerOrderState({
-          id: partnerOrderId,
-          state: Partner_Order_State_Enum.Delivered,
-        });
-      }
+      await fillupService.updatePartnerOrderState({
+        id: partnerOrderId,
+        state: Partner_Order_State_Enum.Delivered,
+      });
+      console.log('✅ Partner order state updated to DELIVERED');
 
-      // Add transaction logs
-      const productVariationId =
-        fillupDetails?.partner_order?.partner_order_items[0]?.product_variation
-          ?.id;
-      const vehicleId =
-        fillupDetails?.partner_order?.fillup_requests[0]
-          ?.vehicle_tank_type_product_variation?.vehicle_tank_type?.vehicle?.id;
+      await orderService.addTransactionLogs({
+        quantity: parseFloat(quantityToUse),
+        product_var_id: productVariationId,
+        fillup_request_id: fillupId,
+        customer_order_id: null,
+        vehicle_id: vehicleId,
+        transaction_type: 'IN',
+      });
+      console.log('✅ Transaction logs added');
 
-      if (productVariationId && vehicleId && completedFilledQuantity) {
-        await orderService.addTransactionLogs({
-          quantity: parseFloat(completedFilledQuantity),
-          product_var_id: productVariationId,
-          fillup_request_id: fillupId,
-          customer_order_id: null,
-          vehicle_id: vehicleId,
-          transaction_type: 'IN',
-        });
-      }
-
-      Alert.alert('Success', 'Fillup order marked as complete!', [
+      Alert.alert('Success!', 'Fillup order has been marked as complete!', [
         {
           text: 'OK',
           onPress: () => {
-            // @ts-ignore
-            navigation.navigate('home');
+            // Navigate to HomeLandingPage
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'HomeLandingPage' as never }],
+            });
           },
         },
       ]);
     } catch (error) {
-      console.error('Error marking complete:', error);
+      console.error('❌ Error marking complete:', error);
       Alert.alert(
         'Error',
-        'Failed to mark order as complete. Please try again.',
+        `Failed to mark order as complete: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`,
       );
     } finally {
       setUploading(false);
@@ -439,7 +507,7 @@ const FillupIndent: React.FC = () => {
     );
   }
 
-  if (loading || fillupLoaders.fetchFillupRequestById) {
+  if (loading) {
     return (
       <FullScreenLoader
         showLoader={true}
@@ -464,19 +532,34 @@ const FillupIndent: React.FC = () => {
           </View>
         ) : approved ? (
           <View style={styles.approvedContainer}>
-            <Text size="lg" weight="bold" color="primary">
+            <View style={styles.successIconContainer}>
+              <Text size="4xl" style={styles.checkMark}>✅</Text>
+            </View>
+            <Text size="xl" weight="bold" color="primary" style={styles.approvedTitle}>
               Indent Approved!
             </Text>
-            <Text size="base" color="neutral">
-              Your indent has been approved. Click below to mark the fillup as
-              complete.
+            <Text size="base" color="neutral" style={styles.approvedMessage}>
+              Great news! Your indent has been approved by the supervisor.
+              You can now mark this fillup order as complete.
             </Text>
+            <View style={styles.fillupDetailsCard}>
+              <Text size="sm" weight="600" color="steelBlue">
+                Fillup Details:
+              </Text>
+              <Text size="sm" color="neutral">
+                Approved Quantity: {fillupDetails?.quantity_approved} liters
+              </Text>
+              <Text size="sm" color="neutral">
+                Request ID: {fillupDetails?.id}
+              </Text>
+            </View>
             <TouchableOpacity
-              style={[styles.button, styles.completeButton]}
+              style={[styles.completeButton, uploading && styles.disabledButton]}
               onPress={markComplete}
-              disabled={uploading}>
-              <Text size="base" weight="bold" color="white">
-                {uploading ? 'Processing...' : 'Mark Complete'}
+              disabled={uploading}
+              activeOpacity={0.8}>
+              <Text size="lg" weight="bold" color="white" style={styles.completeButtonText}>
+                {uploading ? '⏳ Processing Order...' : '✅ Mark Order Complete'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -574,6 +657,32 @@ const styles = ScaledSheet.create({
     alignItems: 'center',
     padding: '20@s',
   },
+  successIconContainer: {
+    marginBottom: '20@vs',
+    alignItems: 'center',
+  },
+  checkMark: {
+    fontSize: '60@s',
+  },
+  approvedTitle: {
+    textAlign: 'center',
+    marginBottom: '16@vs',
+  },
+  approvedMessage: {
+    textAlign: 'center',
+    lineHeight: '22@s',
+    marginBottom: '24@vs',
+    paddingHorizontal: '10@s',
+  },
+  fillupDetailsCard: {
+    backgroundColor: FBBackground.input,
+    borderRadius: '12@s',
+    padding: '16@s',
+    marginBottom: '24@vs',
+    width: '100%',
+    borderLeftWidth: '4@s',
+    borderLeftColor: FBColors.primary,
+  },
   formContainer: {
     padding: '16@s',
     paddingBottom: '100@vs',
@@ -619,6 +728,25 @@ const styles = ScaledSheet.create({
   completeButton: {
     backgroundColor: FBColors.primary,
     marginTop: '24@vs',
+    paddingVertical: '20@vs',
+    paddingHorizontal: '32@s',
+    borderRadius: '16@s',
+    shadowColor: FBColors.primary,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
+    transform: [{scale: 1}],
+    minHeight: '56@vs',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  completeButtonText: {
+    textAlign: 'center',
+    letterSpacing: '0.5@s',
   },
   loadingIndicator: {
     alignItems: 'center',
