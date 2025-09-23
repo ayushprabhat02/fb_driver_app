@@ -8,112 +8,18 @@ query fillupHistory($limit: Int!, $offset: Int!, $driver_vehicle_id: uuid) {
     quantity
     quantity_approved
     id
-    is_active
     state
     created_at
+    fuel_request_type
     vehicle_tank_type_product_variation {
-      vehicle_tank_type {
-        tank_type {
-          name
-          id
-          is_active
-        }
-        vehicle {
-          name
-          location
-          fuel_tank_capacity
-          id
-        }
-      }
       product_variation {
         product {
-          id
-          is_active
-          hsn_code
-          description
-        }
-        variation {
-          description
-          id
-          is_active
-          pack_size
-        }
-      }
-    }
-    fuel_request_type
-    partner_order {
-      affiliation_amount
-      affiliation_user_id
-      amount
-      amount_paid
-      amount_to_be_paid
-      partner_address {
-        address_line1
-        address_line2
-        city_id
-        country_id
-        id
-        is_active
-        landMark
-        house_number
-      }
-      partner_order_items {
-        actual_amount
-        actual_qty
-        amount
-        partner_id
-        partner_order_id
-        state
-        qty
-        unit
-        unit_price
-        partner_order_item_values {
-          id
-          is_active
-          key
-          partner_order_item_id
-          url
-          value
+          name
         }
       }
     }
     task {
-      task_values {
-        id
-        key
-        url
-        value
-        quantity_dispensed
-      }
       category
-      driver_vehicle_id
-      customer_order_id
-      is_active
-      partner_address {
-        address_line1
-        address_line2
-        city_id
-        country_id
-        house_number
-        is_active
-        landMark
-      }
-      organization_address {
-        address_line1
-        address_line2
-        city {
-          id
-          name
-          state {
-            country_id
-            id
-            country {
-              id
-              name
-            }
-          }
-        }
-      }
     }
   }
   fillup_request_aggregate(
