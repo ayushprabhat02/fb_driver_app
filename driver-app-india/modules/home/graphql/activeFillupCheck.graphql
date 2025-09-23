@@ -1,0 +1,31 @@
+query activeFillupCheck($limit: Int!, $offset: Int!, $driver_vehicle_id: uuid) {
+  fillup_request(
+    limit: $limit
+    offset: $offset
+    where: {
+      driver_vehicle_id: {_eq: $driver_vehicle_id}
+      is_active: {_eq: true}
+      state: {_eq: PENDING}
+    }
+    order_by: {created_at: desc}
+  ) {
+    quantity
+    quantity_approved
+    id
+    is_active
+    state
+    created_at
+    fuel_request_type
+  }
+  fillup_request_aggregate(
+    where: {
+      driver_vehicle_id: {_eq: $driver_vehicle_id}
+      is_active: {_eq: true}
+      state: {_eq: PENDING}
+    }
+  ) {
+    aggregate {
+      count
+    }
+  }
+}

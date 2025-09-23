@@ -42,6 +42,7 @@ import {useFocusEffect} from '@react-navigation/native';
 import OrderSummaryCard from '../components/delivery/OrderSummaryCard';
 import homeService from '../services';
 import userService from '@/modules/user/services';
+import fillupService from '@/modules/fillupRequest/services';
 import {setupShiftValidation} from '@/utils/shiftValidation';
 
 const HomeLandingPage: React.FC = () => {
@@ -90,7 +91,7 @@ const HomeLandingPage: React.FC = () => {
     try {
       if (driverVehicleId) {
         await fetchCurrentOrder(selectedDate, 0, false);
-        await fetchFillupHistory();
+        await fetchActiveFillupCheck();
       }
     } catch (error) {
       console.error('Error refreshing data:', error);
@@ -137,7 +138,7 @@ const HomeLandingPage: React.FC = () => {
             // Call all three APIs when screen focuses
             await Promise.all([
               fetchCurrentOrder(selectedDate, 0, false),
-              fetchFillupHistory(),
+              fetchActiveFillupCheck(),
               fetchOrderStats(),
             ]);
           } catch (error) {
@@ -298,18 +299,18 @@ const HomeLandingPage: React.FC = () => {
     }
   };
 
-  const fetchFillupHistory = async () => {
+  const fetchActiveFillupCheck = async () => {
     // Check if driverVehicleId is available before making API call
     if (!driverVehicleId) {
       console.warn(
-        'Driver vehicle ID not available, skipping fillup history fetch',
+        'Driver vehicle ID not available, skipping active fillup check',
       );
       return;
     }
 
     startLoader('fillupHistory');
-    homeService
-      .fetchFillupHistory({
+    fillupService
+      .fetchActiveFillupCheck({
         limit: 5,
         offset: 0,
         driver_vehicle_id: driverVehicleId,
@@ -325,7 +326,7 @@ const HomeLandingPage: React.FC = () => {
 
   useEffect(() => {
     fetchCurrentOrder();
-    fetchFillupHistory();
+    fetchActiveFillupCheck();
   }, [driverVehicleId]);
 
   // Handle date changes with order preservation
