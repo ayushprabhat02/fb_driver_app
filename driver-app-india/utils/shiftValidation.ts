@@ -46,9 +46,13 @@ export const validateShiftPeriodically = async (
 
     const shiftSchedule = response.shift_schedule?.[0];
     if (!shiftSchedule) {
-      console.log('No active shift found, but allowing user to continue (may be future shift)');
-      // Don't logout immediately - user might have a future shift or network issues
-      // Let the user continue and rely on backend validation
+      console.log('No active shift found, logging out user instantly');
+      Toast.show({
+        type: 'info',
+        text1: 'No Active Shift',
+        text2: 'No shift found. Please log in again.',
+      });
+      signOut();
       return;
     }
 

@@ -29,7 +29,7 @@ import {Vehicle} from '../../../generated/graphql';
 import {callQuery, callMutation} from '@/utils/client';
 
 // store
-import {checkinStore, orderStore} from '@/globalStore';
+import {checkinStore, orderStore, authStore} from '@/globalStore';
 
 // graphql-documents
 
@@ -54,19 +54,8 @@ class CheckinService {
 
   public async fetchDriverVehicleId(args: FetchDriverVehicleIdQueryVariables) {
     try {
-      // Try to get driverVehicleId from local storage first
-      const storedDriverVehicleId = getDriverVehicleId();
-
-      if (storedDriverVehicleId) {
-        // If found in local storage, update the store
-        checkinStore.setState(state => ({
-          ...state,
-          driverVehicleId: storedDriverVehicleId,
-        }));
-        return [{driver_vehicle_id: storedDriverVehicleId}];
-      }
-
-      // If not found in local storage, fetch from API
+      // Always fetch from API to validate current shift status
+      // Don't rely on cached data as shift might have been deleted
       const response: FetchDriverVehicleIdQuery = await callQuery({
         queryDocument: FetchDriverVehicleIdDocument,
         variables: {...args},
@@ -78,9 +67,32 @@ class CheckinService {
 
       // Check for shift end conditions
       if (!driverVehicleId || !shiftSchedule) {
-        // No shift found at all - may be network issue
-        console.log('No shift found during login, allowing user to continue');
-        return response.shift_schedule;
+        // No shift found - clear cached data and logout
+        console.log('No shift found, clearing cached data and logging out');
+
+        // Clear cached driver vehicle ID since shift no longer exists
+        const storedDriverVehicleId = getDriverVehicleId();
+        if (storedDriverVehicleId) {
+          setDriverVehicleId(''); // Clear the cached ID
+          console.log('Cleared cached driver vehicle ID');
+        }
+
+        // Clear store state
+        checkinStore.setState(state => ({
+          ...state,
+          driverVehicleId: null,
+          isCheckedIn: false,
+        }));
+
+        Toast.show({
+          type: 'info',
+          text1: 'Access Restricted',
+          text2: 'Please contact your supervisor for shift assignment.',
+        });
+
+        // Handle logout gracefully without throwing errors
+        this.handleShiftEndLogout();
+        return []; // Return empty array instead of throwing
       }
 
       // Check if current time exceeds shift end time by more than 1 hour (grace period)
@@ -112,12 +124,31 @@ class CheckinService {
 
       return response.shift_schedule;
     } catch (error) {
-      console.error('Error fetching driver vehicle ID:', error);
+      console.warn('Error validating shift status:', error);
+
+      // Clear cached data on error
+      const storedDriverVehicleId = getDriverVehicleId();
+      if (storedDriverVehicleId) {
+        setDriverVehicleId(''); // Clear the cached ID
+        console.log('Cleared cached driver vehicle ID due to validation error');
+      }
+
+      // Clear store state
+      checkinStore.setState(state => ({
+        ...state,
+        driverVehicleId: null,
+        isCheckedIn: false,
+      }));
+
       Toast.show({
-        type: 'error',
-        text1: 'Connection Error',
-        text2: 'Unable to verify shift status. Please check your connection.',
+        type: 'info',
+        text1: 'Unable to Verify Shift',
+        text2: 'Please check your connection and try again.',
       });
+
+      // Handle logout gracefully without awaiting to avoid blocking
+      this.handleShiftEndLogout();
+
       // Return empty array to prevent app crash
       return [];
     }
@@ -127,17 +158,18 @@ class CheckinService {
    * @method handleShiftEndLogout
    * @description Handles automatic logout when shift ends
    */
-  private async handleShiftEndLogout() {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Error during automatic logout:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'Logout Error',
-        text2: 'Please try logging out manually.',
-      });
-    }
+  private handleShiftEndLogout() {
+    // Use setTimeout to avoid blocking the main thread
+    setTimeout(async () => {
+      try {
+        await signOut();
+        console.log('User logged out successfully');
+      } catch (error) {
+        console.warn('Logout process encountered an issue:', error);
+        // Don't show error toast to user - just log for debugging
+        // The app state has already been cleared, so user won't see cached data
+      }
+    }, 100);
   }
 
   public async fetchDriverVehicleDetailsById(
@@ -172,7 +204,6 @@ class CheckinService {
       );
 
       // Check if GraphQL client is available
-      const {authStore} = await import('@/globalStore');
       const graphQLClient = authStore.getState().graphQLClient;
       if (!graphQLClient) {
         throw new Error(
