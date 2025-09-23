@@ -54,8 +54,7 @@ class CheckinService {
 
   public async fetchDriverVehicleId(args: FetchDriverVehicleIdQueryVariables) {
     try {
-      // Always fetch from API to validate current shift status
-      // Don't rely on cached data as shift might have been deleted
+      // Always fetch fresh data from API to validate current shift status
       const response: FetchDriverVehicleIdQuery = await callQuery({
         queryDocument: FetchDriverVehicleIdDocument,
         variables: {...args},
