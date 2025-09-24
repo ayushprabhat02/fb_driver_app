@@ -6,8 +6,12 @@ import {FBBorders} from '@/types/styles';
 import {DateTime} from 'luxon';
 import {X} from 'phosphor-react-native';
 import orderStore from '../../store';
-import {homeStore} from '@/globalStore';
-import {canSelectOrder, getOrderValidationState, showOrderSelectionAlert} from '@/utils/orderValidation';
+import {fillupStore, homeStore} from '@/globalStore';
+import {
+  canSelectOrder,
+  getOrderValidationState,
+  showOrderSelectionAlert,
+} from '@/utils/orderValidation';
 
 interface Props {
   order: any; // type from your driverOrders API
@@ -19,10 +23,13 @@ const NormalOrderCard: React.FC<Props> = ({order}) => {
 
   // Get validation state from stores
   const driverOrders = homeStore.use.driverOrders();
-  const fillupHistory = homeStore.use.fillupHistory();
+  const fillupHistory = fillupStore.use.fillupHistory();
   const isLoadingOrder = homeStore.use.loaders().driverCurrentOrder;
 
-  const validationState = getOrderValidationState(driverOrders || [], fillupHistory || []);
+  const validationState = getOrderValidationState(
+    driverOrders || [],
+    fillupHistory || [],
+  );
   const canSelect = canSelectOrder(order, validationState, isLoadingOrder);
 
   const getOrderStateColor = (state: string) => {
@@ -128,7 +135,7 @@ const NormalOrderCard: React.FC<Props> = ({order}) => {
       style={[
         styles.orderListCardContainer,
         isSelected && styles.selectedCard,
-        !canSelect && styles.disabledCard
+        !canSelect && styles.disabledCard,
       ]}
       onPress={handleOrderSelect}
       activeOpacity={canSelect ? 0.7 : 1}>
