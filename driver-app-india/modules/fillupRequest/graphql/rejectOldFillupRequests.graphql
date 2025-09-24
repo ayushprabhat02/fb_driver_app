@@ -1,0 +1,17 @@
+mutation rejectOldFillupRequests($cutoff_time: timestamp!) {
+  update_fillup_request(
+    where: {created_at: {_lt: $cutoff_time}, state: {_neq: REJECTED}}
+    _set: {state: REJECTED}
+  ) {
+    affected_rows
+    returning {
+      id
+      state
+      created_at
+    }
+  }
+}
+
+# {
+#  "cutoff_time": "2025-09-22T02:58:00"
+#}

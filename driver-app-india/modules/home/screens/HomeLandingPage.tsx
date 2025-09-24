@@ -59,7 +59,8 @@ const HomeLandingPage: React.FC = () => {
   const driverOrders = homeStore.use.driverOrders();
   const fillupHistory = fillupStore.use.activeFillupHistory();
   const isLoadingOrder = homeStore.use.loaders().driverCurrentOrder;
-  const isLoadingFillupHistory = fillupStore.use.loaders().fetchActiveFillupHistory;
+  const isLoadingFillupHistory =
+    fillupStore.use.loaders().fetchActiveFillupHistory;
   const currentDriverOrder = orderStore.use.currentDriverOrder();
   const currentFillupOrder = orderStore.use.currentFillupOrder();
 
@@ -138,7 +139,10 @@ const HomeLandingPage: React.FC = () => {
       const refreshDataOnFocus = async () => {
         if (driverVehicleId) {
           try {
-            // Call all three APIs when screen focuses
+            // Call APIs when screen focuses - reject old fillup requests first
+            // await rejectOldFillupRequests();
+
+            // Call remaining APIs in parallel
             await Promise.all([
               fetchCurrentOrder(selectedDate, 0, false),
               fetchActiveFillupCheck(),
@@ -225,10 +229,10 @@ const HomeLandingPage: React.FC = () => {
     if (driverVehicleId) {
       startLoader('driverOrderStats');
       homeService
-        .fetchOrderStatsForDriver({
-          object: {
-            driver_vehicle_id: driverVehicleId,
-          },
+        .fetchOrderStatsForDriverV3({
+          driver_vehicle_id: driverVehicleId,
+          start_date: selectedDate.toISOString(),
+          end_date: selectedDate.toISOString(),
         })
         .finally(() => {
           stopLoader('driverOrderStats');
@@ -302,6 +306,30 @@ const HomeLandingPage: React.FC = () => {
     }
   };
 
+  const rejectOldFillupRequests = async () => {
+    try {
+      // Calculate cutoff time (24 hours ago)
+      const cutoffTime = new Date();
+      cutoffTime.setTime(cutoffTime.getTime() - 24 * 60 * 60 * 1000);
+
+      // Format as local timestamp for API (YYYY-MM-DD HH:MM:SS)
+      const year = cutoffTime.getFullYear();
+      const month = String(cutoffTime.getMonth() + 1).padStart(2, '0');
+      const day = String(cutoffTime.getDate()).padStart(2, '0');
+      const hours = String(cutoffTime.getHours()).padStart(2, '0');
+      const minutes = String(cutoffTime.getMinutes()).padStart(2, '0');
+      const seconds = String(cutoffTime.getSeconds()).padStart(2, '0');
+
+      const localTimestamp = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+
+      await fillupService.rejectOldFillupRequests({
+        cutoff_time: localTimestamp,
+      });
+    } catch (error) {
+      console.error('Error rejecting old fillup requests:', error);
+    }
+  };
+
   const fetchActiveFillupCheck = async () => {
     // Check if driverVehicleId is available before making API call
     if (!driverVehicleId) {
@@ -325,12 +353,17 @@ const HomeLandingPage: React.FC = () => {
 
   useEffect(() => {
     fetchMyProfile();
+    rejectOldFillupRequests();
   }, []);
 
-  useEffect(() => {
-    fetchCurrentOrder();
-    fetchActiveFillupCheck();
-  }, [driverVehicleId]);
+  // useEffect(() => {
+  //   const initializeDashboard = async () => {
+  //     await fetchCurrentOrder();
+  //     await fetchActiveFillupCheck();
+  //   };
+
+  //   initializeDashboard();
+  // }, [driverVehicleId]);
 
   // Handle date changes with order preservation
   const handleDateChange = async (newDate: Date) => {

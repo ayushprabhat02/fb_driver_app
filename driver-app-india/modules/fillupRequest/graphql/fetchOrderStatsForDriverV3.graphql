@@ -1,0 +1,15 @@
+mutation fetchOrderStatsForDriverV3(
+  $driver_vehicle_id: String!
+  $start_date: timestamp!
+  $end_date: timestamp!
+) {
+  fetchOrderStatsForDriverV3(
+    object: {
+      driver_vehicle_id: $driver_vehicle_id
+      start_date: $start_date
+      end_date: $end_date
+    }
+  ) {
+    data
+  }
+}

@@ -72,6 +72,11 @@ import {
   FillupHistoryNewDocument,
   FillupHistoryNewQuery,
   FillupHistoryNewQueryVariables,
+
+  // Reject old fillup requests
+  RejectOldFillupRequestsDocument,
+  RejectOldFillupRequestsMutation,
+  RejectOldFillupRequestsMutationVariables,
 } from '@/generated/graphql';
 import {deliveryStore, locationStore} from '@/globalStore';
 import Toast from 'react-native-toast-message';
@@ -490,6 +495,24 @@ class FillupService {
       return response;
     } catch (error) {
       fillupStore.getState().stopLoader('fetchFillupHistoryNew');
+      throw error;
+    }
+  }
+
+  public async rejectOldFillupRequests(args: RejectOldFillupRequestsMutationVariables) {
+    try {
+      const response: RejectOldFillupRequestsMutation = await callMutation({
+        queryDocument: RejectOldFillupRequestsDocument,
+        variables: {
+          ...args,
+        },
+      });
+
+      console.log(`Rejected ${response?.update_fillup_request?.affected_rows} old fillup requests`);
+
+      return response;
+    } catch (error) {
+      console.error('Error rejecting old fillup requests:', error);
       throw error;
     }
   }
