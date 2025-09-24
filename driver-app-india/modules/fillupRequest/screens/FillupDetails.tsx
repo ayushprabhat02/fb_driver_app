@@ -303,12 +303,19 @@ const FillupDetails: React.FC = () => {
     try {
       setNavigationLoading(true);
 
-      // Skip tests and proceed to next step based on Vue.js logic
-      const {fuel_request_type, state, category} = fillupDetails;
+      // Update fillup request state to AUTHORIZED when driver reaches the location
+      await fillupService.updateFillupRequestState({
+        id: fillupDetails.id,
+        state: Fillup_Request_Status_Enum.Authorized,
+      });
 
-      // Navigate based on state - similar to Vue.js openSteps function
-      switch (state) {
-        case Fillup_Request_Status_Enum.Approved:
+      // Refresh fillup details to get updated state
+      await fillupService.fetchFillupRequestById({id: fillupDetails.id});
+
+      // Navigate based on updated state - similar to Vue.js openSteps function
+      const {fuel_request_type, category} = fillupDetails;
+
+      switch (Fillup_Request_Status_Enum.Authorized) {
         case Fillup_Request_Status_Enum.Authorized:
         case 'ELOCKING_OPEN_REQUEST':
         case 'ELOCKING_OPEN_REQUEST_APPROVED':
@@ -330,7 +337,7 @@ const FillupDetails: React.FC = () => {
       }
     } catch (error) {
       console.error('Error in I Have Reached:', error);
-      Alert.alert('Error', 'Failed to proceed. Please try again.');
+      Alert.alert('Error', 'Failed to update fillup state. Please try again.');
     } finally {
       setNavigationLoading(false);
     }
