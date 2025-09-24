@@ -71,8 +71,6 @@ const FillupOrderCard: React.FC<Props> = ({order}) => {
         ...state,
         currentFillupOrder: order
       }));
-      // Navigate to fill-asset screen for fillup orders
-      navigation.navigate('fill-asset');
     }
   };
 
@@ -90,7 +88,7 @@ const FillupOrderCard: React.FC<Props> = ({order}) => {
   const handleNavigateToAssets = () => {
     setDetailsModalOpen(false);
     setOrderDetailsModalOpenStore(false);
-    navigation.navigate('fill-asset');
+    navigation.navigate('FillupWorkflow', {fillupId: order.id});
   };
 
   const handleCancelOrder = () => {
@@ -129,72 +127,95 @@ const FillupOrderCard: React.FC<Props> = ({order}) => {
         style={[styles.card, isSelected && styles.selectedCard]}
         onPress={handleOrderSelect}
         activeOpacity={0.7}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text weight="700" size="lg" color="neutral">
-            #{order.id.substring(0, 8)}
-          </Text>
-          <View style={[styles.statusChip, { backgroundColor: statusColor }]}>
-            <Text color="white" size="xs" weight="600">
-              {orderState}
+        {/* First Row: Order ID and Tank Type */}
+        <View style={styles.firstRow}>
+          <View style={styles.leftSection}>
+            <Text weight="600" size="sm">
+              Order ID:{' '}
             </Text>
-            <Clock size={12} color="white" style={{marginLeft: 4}} />
+            <Text weight="600" size="sm">
+              #{order.id.substring(0, 8)}
+            </Text>
+          </View>
+          <View style={styles.rightSection}>
+            <Text weight="600" size="sm">
+              Type: {order.fillup_requests[0]?.fuel_request_type || 'FUEL_TANK'}
+            </Text>
           </View>
         </View>
 
-      {/* Driver + Quantity */}
-      <View style={styles.row}>
-        <User size={14} color="#6B7280" />
-        <Text size="sm" style={{marginLeft: 4}}>
-          {order.fillup_requests[0]?.driver_vehicle?.user?.first_name ||
-            'Driver'}
-        </Text>
-        <Package size={14} color="#6B7280" style={styles.iconSpacing} />
-        <Text size="sm">
-          {(order.fillup_requests[0]?.quantity_approved ||
-            order.fillup_requests[0]?.quantity ||
-            0) + 'L'}
-        </Text>
-      </View>
+        <Divider height={6} />
 
-      {/* Product Type */}
-      <View style={styles.row}>
-        <Text size="sm" color="lightGray">
-          {order.fillup_requests[0]?.vehicle_tank_type_product_variation
-            ?.product_variation?.product?.name || 'Diesel'}
-        </Text>
-      </View>
+        {/* Status */}
+        <View style={styles.flexRow}>
+          <Text weight="600" size="sm">
+            Status:{' '}
+          </Text>
+          <View style={[styles.statusBadge, { backgroundColor: statusColor, borderColor: statusColor }]}>
+            <Text color="white" size="xs" weight="600">
+              {orderState}
+            </Text>
+          </View>
+        </View>
 
-      {/* Vehicle Information */}
-      <View style={styles.row}>
-        <Text size="sm" color="lightGray">
-          {order.fillup_requests[0]?.driver_vehicle?.vehicle?.name || 'Vehicle'}
-          -
-          {order.fillup_requests[0]?.driver_vehicle?.vehicle
-            ?.registration_number || 'N/A'}{' '}
-        </Text>
-      </View>
+        <Divider height={6} />
 
-      <Divider height={8} />
-
-      {/* Enhanced Footer with Actions */}
-      <View style={styles.footer}>
-        <View style={styles.deliveryChip}>
-          <Text color="lightGray" size="xs" weight="600">
-            FILL_UP
+        {/* Driver */}
+        <View style={styles.flexRow}>
+          <Text weight="600" size="sm">
+            Driver:{' '}
+          </Text>
+          <Text weight="400" size="sm" style={{flex: 1}}>
+            {order.fillup_requests[0]?.driver_vehicle?.user?.first_name || 'Driver'}
           </Text>
         </View>
 
-        <View style={styles.actionButtons}>
-          <TouchableOpacity
-            style={styles.detailsButton}
-            onPress={handleShowDetails}
-            activeOpacity={0.7}>
-            <Info size={12} color="#1E40AF" />
-            <Text size="xs" color="primary" style={styles.buttonText}>
-              Details
+        <Divider height={6} />
+
+        {/* Quantity */}
+        <View style={styles.flexRow}>
+          <Text weight="600" size="sm">
+            Quantity:{' '}
+          </Text>
+          <Text weight="600" size="sm" style={{flex: 1}}>
+            {(order.fillup_requests[0]?.quantity_approved ||
+              order.fillup_requests[0]?.quantity ||
+              0) + 'L'}
+          </Text>
+        </View>
+
+        <Divider height={6} />
+
+        {/* Product Type */}
+        <View style={styles.flexRow}>
+          <Text weight="600" size="sm">
+            Fuel Type:{' '}
+          </Text>
+          <Text weight="400" size="sm" style={{flex: 1}}>
+            {order.fillup_requests[0]?.vehicle_tank_type_product_variation
+              ?.product_variation?.product?.name || 'Diesel'}
+          </Text>
+        </View>
+
+        <Divider height={6} />
+
+        {/* Vehicle Information */}
+        <View style={styles.flexRow}>
+          <Text weight="600" size="sm">
+            Vehicle:{' '}
+          </Text>
+          <Text weight="400" size="sm" style={{flex: 1}}>
+            {order.fillup_requests[0]?.driver_vehicle?.vehicle?.name || 'Vehicle'} - {order.fillup_requests[0]?.driver_vehicle?.vehicle?.registration_number || 'N/A'}
+          </Text>
+        </View>
+
+        {/* Bottom Row: Delivery Badge and Actions */}
+        <View style={styles.bottomRow}>
+          <View style={styles.deliveryChip}>
+            <Text size="xs" weight="600" style={{color: '#4b5563'}}>
+              FILL_UP
             </Text>
-          </TouchableOpacity>
+          </View>
 
           {isCancellable && (
             <TouchableOpacity
@@ -207,7 +228,6 @@ const FillupOrderCard: React.FC<Props> = ({order}) => {
             </TouchableOpacity>
           )}
         </View>
-      </View>
     </TouchableOpacity>
 
     {/* Enhanced Modals (Vue-inspired) */}
@@ -233,48 +253,53 @@ const styles = ScaledSheet.create({
     padding: '10@s',
     borderRadius: '10@s',
     borderWidth: 1,
-    borderColor: '#28A745', // green border for fillup
-    marginBottom: '10@vs',
+    borderColor: '#28A745',
+    marginBottom: '0@vs',
     marginHorizontal: '0@s',
+    position: 'relative',
   },
   selectedCard: {
     backgroundColor: '#E8F5E8',
     borderColor: '#28A745',
     borderWidth: 2,
   },
-  header: {
+  firstRow: {
+    width: '100%',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '6@vs',
   },
-  statusChip: {
+  leftSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: '12@s',
+  },
+  rightSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  flexRow: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  statusBadge: {
+    borderRadius: '6@s',
+    borderWidth: 1,
     paddingHorizontal: '8@s',
     paddingVertical: '2@vs',
+    marginLeft: '8@s',
   },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: '4@vs',
-  },
-  iconSpacing: {
-    marginLeft: '10@s',
-    marginRight: '4@s',
-  },
-  footer: {
+  bottomRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: '6@vs',
+    marginTop: '8@vs',
   },
   deliveryChip: {
     backgroundColor: '#E8F5E8',
     borderRadius: '6@s',
-    paddingHorizontal: '6@s',
-    paddingVertical: '2@vs',
+    paddingHorizontal: '8@s',
+    paddingVertical: '4@vs',
   },
   actionButtons: {
     flexDirection: 'row',
