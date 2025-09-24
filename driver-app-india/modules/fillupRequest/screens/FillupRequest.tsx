@@ -6,6 +6,7 @@ import {
   Alert,
   StyleSheet,
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import {useFocusEffect} from '@react-navigation/native';
 import {BottomSheetModal, BottomSheetView} from '@gorhom/bottom-sheet';
 import {useForm} from 'react-hook-form';
@@ -203,10 +204,11 @@ const FillupRequest: React.FC = () => {
         fillup.state !== 'COMPLETE' && fillup.state !== 'REJECTED',
     );
     if (hasPendingFillups) {
-      Alert.alert(
-        'Request Denied',
-        'You cannot raise a new request while a previous one is still pending.',
-      );
+      Toast.show({
+        type: 'error',
+        text1: 'Request Denied',
+        text2: 'You cannot raise a new request while a previous one is still pending.',
+      });
       setIsSubmitting(false);
       return;
     }
@@ -215,18 +217,20 @@ const FillupRequest: React.FC = () => {
 
     // 2. Validate quantity against max capacity and ensure it's positive
     if (quantity <= 0) {
-      Alert.alert(
-        'Invalid Quantity',
-        'Fill-up quantity must be greater than zero.',
-      );
+      Toast.show({
+        type: 'error',
+        text1: 'Invalid Quantity',
+        text2: 'Fill-up quantity must be greater than zero.',
+      });
       setIsSubmitting(false);
       return;
     }
     if (maxCapacity && quantity > maxCapacity) {
-      Alert.alert(
-        'Invalid Quantity',
-        `Quantity cannot exceed the tank capacity of ${maxCapacity} litres.`,
-      );
+      Toast.show({
+        type: 'error',
+        text1: 'Invalid Quantity',
+        text2: `Quantity cannot exceed the tank capacity of ${maxCapacity} litres.`,
+      });
       setIsSubmitting(false);
       return;
     }
@@ -254,18 +258,25 @@ const FillupRequest: React.FC = () => {
     }
 
     // 4. Call the API
+    startFillupLoader('raiseFillupRequest');
     try {
       await fillupService.raiseFillupRequest({object: requestPayload});
-      Alert.alert('Success', 'Your fill-up request has been submitted.');
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Your fill-up request has been submitted.',
+      });
       closeModal();
       await getFillupHistory(); // Refresh history immediately after success
     } catch (error) {
       console.error('Error raising fill-up request:', error);
-      Alert.alert(
-        'Request Failed',
-        'Could not submit your request. Please try again.',
-      );
+      Toast.show({
+        type: 'error',
+        text1: 'Request Failed',
+        text2: 'Could not submit your request. Please try again.',
+      });
     } finally {
+      stopFillupLoader('raiseFillupRequest');
       setIsSubmitting(false);
     }
   };
@@ -274,6 +285,12 @@ const FillupRequest: React.FC = () => {
 
   return (
     <HeaderAvoidingContainer>
+      {fillupLoaders.raiseFillupRequest && (
+        <FullScreenLoader
+          loaderText="Submitting fillup request..."
+          showLoader={true}
+        />
+      )}
       <View style={styles.container}>
         {fillupLoaders.fetchFillupHistoryNew && !fillupHistory?.length ? (
           <FullScreenLoader

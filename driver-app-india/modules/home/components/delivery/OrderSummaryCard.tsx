@@ -6,6 +6,7 @@ import {homeStore} from '@/globalStore';
 const OrderSummaryCard: React.FC = () => {
   const driverOrderStats = homeStore.use.driverOrderStats();
   const isLoading = homeStore.use.loaders().driverOrderStats;
+  const selectedDate = homeStore.use.selectedDate();
 
   const totalOrders = driverOrderStats?.data?.total_assigned_orders || 0;
   const deliveredOrders =
@@ -22,8 +23,8 @@ const OrderSummaryCard: React.FC = () => {
     );
   }
 
-  const getCurrentDate = () => {
-    return new Date().toLocaleDateString('en-US', {
+  const getSelectedDate = () => {
+    return selectedDate.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
     });
@@ -36,7 +37,7 @@ const OrderSummaryCard: React.FC = () => {
           Today's Summary
         </Text>
         <Text size="sm" weight="500" color="neutral">
-          {getCurrentDate()}
+          {getSelectedDate()}
         </Text>
       </View>
 
@@ -93,6 +94,16 @@ const OrderSummaryCard: React.FC = () => {
         </View>
       </View>
 
+      {/* Full width progress bar */}
+      <View style={styles.progressBarContainer}>
+        <View
+          style={[
+            styles.progressBar,
+            {width: `${progressPercentage}%`}
+          ]}
+        />
+      </View>
+
       <FullScreenLoader showLoader={isLoading} />
     </View>
   );
@@ -138,6 +149,19 @@ const styles = StyleSheet.create({
     height: 40,
     backgroundColor: '#e0e0e0',
     marginHorizontal: 8,
+  },
+  progressBarContainer: {
+    width: '100%',
+    height: 6,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 3,
+    marginTop: 16,
+    overflow: 'hidden',
+  },
+  progressBar: {
+    height: '100%',
+    backgroundColor: '#007bff',
+    borderRadius: 3,
   },
 });
 
