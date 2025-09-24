@@ -394,6 +394,136 @@ export type PayThroughWalletOutput = {
   status?: Maybe<Scalars['String']['output']>;
 };
 
+export type PointOfContactDashboardData = {
+  __typename?: 'PointOfContactDashboardData';
+  cancelled_count?: Maybe<Scalars['Int']['output']>;
+  cancelled_qty?: Maybe<Scalars['Int']['output']>;
+  delivered_orders?: Maybe<Scalars['Int']['output']>;
+  delivered_qty?: Maybe<Scalars['Int']['output']>;
+  order_count?: Maybe<Scalars['Int']['output']>;
+  ordered_qty?: Maybe<Scalars['Int']['output']>;
+  planned_orders?: Maybe<Scalars['Int']['output']>;
+  planned_qty?: Maybe<Scalars['Int']['output']>;
+};
+
+export type PointOfContactDashboardInput = {
+  city?: InputMaybe<Scalars['String']['input']>;
+  delivered_date?: InputMaybe<Scalars['String']['input']>;
+  ordered_date?: InputMaybe<Scalars['String']['input']>;
+  org_id: Scalars['String']['input'];
+  point_of_contact?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type PointOfContactDashboardOutput = {
+  __typename?: 'PointOfContactDashboardOutput';
+  data: Array<PointOfContactDashboardData>;
+};
+
+export type PointOfContactDashboardRescheduleData = {
+  __typename?: 'PointOfContactDashboardRescheduleData';
+  rescheduled_count?: Maybe<Scalars['Int']['output']>;
+  rescheduled_qty?: Maybe<Scalars['Int']['output']>;
+};
+
+export type PointOfContactDashboardRescheduleInput = {
+  city?: InputMaybe<Scalars['String']['input']>;
+  delivered_date?: InputMaybe<Scalars['String']['input']>;
+  ordered_date?: InputMaybe<Scalars['String']['input']>;
+  org_id: Scalars['String']['input'];
+  point_of_contact?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type PointOfContactDashboardRescheduleOutput = {
+  __typename?: 'PointOfContactDashboardRescheduleOutput';
+  data: Array<PointOfContactDashboardRescheduleData>;
+};
+
+export type PointOfContactDetailedReportData = {
+  __typename?: 'PointOfContactDetailedReportData';
+  actual_delivery_date?: Maybe<Scalars['String']['output']>;
+  app_order_code?: Maybe<Scalars['String']['output']>;
+  backend_order_status?: Maybe<Scalars['String']['output']>;
+  city?: Maybe<Scalars['String']['output']>;
+  customer_name?: Maybe<Scalars['String']['output']>;
+  delivery_slot?: Maybe<Scalars['String']['output']>;
+  erp_order_code?: Maybe<Scalars['String']['output']>;
+  erp_order_status?: Maybe<Scalars['String']['output']>;
+  first_name?: Maybe<Scalars['String']['output']>;
+  last_name?: Maybe<Scalars['String']['output']>;
+  order_amount?: Maybe<Scalars['Float']['output']>;
+  order_date?: Maybe<Scalars['String']['output']>;
+  order_delivered_qty?: Maybe<Scalars['Float']['output']>;
+  order_qty?: Maybe<Scalars['Float']['output']>;
+  phone_number?: Maybe<Scalars['String']['output']>;
+  shipping_address?: Maybe<Scalars['String']['output']>;
+};
+
+export type PointOfContactDetailedReportInput = {
+  city?: InputMaybe<Scalars['String']['input']>;
+  delivered_date?: InputMaybe<Scalars['String']['input']>;
+  ordered_date?: InputMaybe<Scalars['String']['input']>;
+  org_id: Scalars['String']['input'];
+  point_of_contact?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type PointOfContactDetailedReportOutput = {
+  __typename?: 'PointOfContactDetailedReportOutput';
+  data: Array<PointOfContactDetailedReportData>;
+};
+
+export type PointOfContactInvoiceReportData = {
+  __typename?: 'PointOfContactInvoiceReportData';
+  app_order_code?: Maybe<Scalars['String']['output']>;
+  city?: Maybe<Scalars['String']['output']>;
+  delivered_date?: Maybe<Scalars['String']['output']>;
+  erp_order_code?: Maybe<Scalars['String']['output']>;
+  first_name?: Maybe<Scalars['String']['output']>;
+  invoice?: Maybe<Scalars['String']['output']>;
+  last_name?: Maybe<Scalars['String']['output']>;
+  order_amount?: Maybe<Scalars['Float']['output']>;
+  order_date?: Maybe<Scalars['String']['output']>;
+  order_delivered_qty?: Maybe<Scalars['Float']['output']>;
+  order_qty?: Maybe<Scalars['Float']['output']>;
+  phone_number?: Maybe<Scalars['String']['output']>;
+  shipping_address?: Maybe<Scalars['String']['output']>;
+};
+
+export type PointOfContactInvoiceReportInput = {
+  city?: InputMaybe<Scalars['String']['input']>;
+  delivered_date?: InputMaybe<Scalars['String']['input']>;
+  ordered_date?: InputMaybe<Scalars['String']['input']>;
+  org_id: Scalars['String']['input'];
+  point_of_contact?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type PointOfContactInvoiceReportOutput = {
+  __typename?: 'PointOfContactInvoiceReportOutput';
+  data: Array<PointOfContactInvoiceReportData>;
+};
+
+export type PointOfContactPaymentReportData = {
+  __typename?: 'PointOfContactPaymentReportData';
+  allowed_credit_breach?: Maybe<Scalars['String']['output']>;
+  credit_limit?: Maybe<Scalars['Float']['output']>;
+  customer_id?: Maybe<Scalars['String']['output']>;
+  customer_name?: Maybe<Scalars['String']['output']>;
+  outstanding_amount?: Maybe<Scalars['Float']['output']>;
+  overdue_amount?: Maybe<Scalars['Float']['output']>;
+};
+
+export type PointOfContactPaymentReportInput = {
+  city?: InputMaybe<Scalars['String']['input']>;
+  delivered_date?: InputMaybe<Scalars['String']['input']>;
+  ordered_date?: InputMaybe<Scalars['String']['input']>;
+  org_id: Scalars['String']['input'];
+  point_of_contact?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type PointOfContactPaymentReportOutput = {
+  __typename?: 'PointOfContactPaymentReportOutput';
+  data: Array<PointOfContactPaymentReportData>;
+};
+
 export type RescheduleTaskInput = {
   driver_vehicle_id: Scalars['uuid']['input'];
   task_id: Scalars['uuid']['input'];
@@ -5382,6 +5512,7 @@ export type Customer_Asset = {
   customer_order_customer_assets_aggregate: Customer_Order_Customer_Asset_Aggregate;
   description?: Maybe<Scalars['String']['output']>;
   erp_code?: Maybe<Scalars['String']['output']>;
+  flespi_channel_code?: Maybe<Scalars['String']['output']>;
   id: Scalars['uuid']['output'];
   /** An array relationship */
   invoiced_items: Array<Invoiced_Item>;
@@ -5418,6 +5549,9 @@ export type Customer_Asset = {
   product?: Maybe<Product>;
   product_id?: Maybe<Scalars['uuid']['output']>;
   registration_number?: Maybe<Scalars['String']['output']>;
+  /** An object relationship */
+  sensorTypeBySensorType?: Maybe<Sensor_Type>;
+  sensor_type?: Maybe<Sensor_Type_Enum>;
   slug?: Maybe<Scalars['String']['output']>;
   /** An object relationship */
   state?: Maybe<State>;
@@ -5760,6 +5894,7 @@ export type Customer_Asset_Bool_Exp = {
   customer_order_customer_assets_aggregate?: InputMaybe<Customer_Order_Customer_Asset_Aggregate_Bool_Exp>;
   description?: InputMaybe<String_Comparison_Exp>;
   erp_code?: InputMaybe<String_Comparison_Exp>;
+  flespi_channel_code?: InputMaybe<String_Comparison_Exp>;
   id?: InputMaybe<Uuid_Comparison_Exp>;
   invoiced_items?: InputMaybe<Invoiced_Item_Bool_Exp>;
   invoiced_items_aggregate?: InputMaybe<Invoiced_Item_Aggregate_Bool_Exp>;
@@ -5784,6 +5919,8 @@ export type Customer_Asset_Bool_Exp = {
   product?: InputMaybe<Product_Bool_Exp>;
   product_id?: InputMaybe<Uuid_Comparison_Exp>;
   registration_number?: InputMaybe<String_Comparison_Exp>;
+  sensorTypeBySensorType?: InputMaybe<Sensor_Type_Bool_Exp>;
+  sensor_type?: InputMaybe<Sensor_Type_Enum_Comparison_Exp>;
   slug?: InputMaybe<String_Comparison_Exp>;
   state?: InputMaybe<State_Bool_Exp>;
   state_id?: InputMaybe<Uuid_Comparison_Exp>;
@@ -6587,6 +6724,7 @@ export type Customer_Asset_Insert_Input = {
   customer_order_customer_assets?: InputMaybe<Customer_Order_Customer_Asset_Arr_Rel_Insert_Input>;
   description?: InputMaybe<Scalars['String']['input']>;
   erp_code?: InputMaybe<Scalars['String']['input']>;
+  flespi_channel_code?: InputMaybe<Scalars['String']['input']>;
   id?: InputMaybe<Scalars['uuid']['input']>;
   invoiced_items?: InputMaybe<Invoiced_Item_Arr_Rel_Insert_Input>;
   is_active?: InputMaybe<Scalars['Boolean']['input']>;
@@ -6606,6 +6744,8 @@ export type Customer_Asset_Insert_Input = {
   product?: InputMaybe<Product_Obj_Rel_Insert_Input>;
   product_id?: InputMaybe<Scalars['uuid']['input']>;
   registration_number?: InputMaybe<Scalars['String']['input']>;
+  sensorTypeBySensorType?: InputMaybe<Sensor_Type_Obj_Rel_Insert_Input>;
+  sensor_type?: InputMaybe<Sensor_Type_Enum>;
   slug?: InputMaybe<Scalars['String']['input']>;
   state?: InputMaybe<State_Obj_Rel_Insert_Input>;
   state_id?: InputMaybe<Scalars['uuid']['input']>;
@@ -7095,6 +7235,7 @@ export type Customer_Asset_Max_Fields = {
   created_at?: Maybe<Scalars['timestamp']['output']>;
   description?: Maybe<Scalars['String']['output']>;
   erp_code?: Maybe<Scalars['String']['output']>;
+  flespi_channel_code?: Maybe<Scalars['String']['output']>;
   id?: Maybe<Scalars['uuid']['output']>;
   last_modified?: Maybe<Scalars['timestamp']['output']>;
   last_modified_by?: Maybe<Scalars['uuid']['output']>;
@@ -7118,6 +7259,7 @@ export type Customer_Asset_Max_Order_By = {
   created_at?: InputMaybe<Order_By>;
   description?: InputMaybe<Order_By>;
   erp_code?: InputMaybe<Order_By>;
+  flespi_channel_code?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
   last_modified?: InputMaybe<Order_By>;
   last_modified_by?: InputMaybe<Order_By>;
@@ -7142,6 +7284,7 @@ export type Customer_Asset_Min_Fields = {
   created_at?: Maybe<Scalars['timestamp']['output']>;
   description?: Maybe<Scalars['String']['output']>;
   erp_code?: Maybe<Scalars['String']['output']>;
+  flespi_channel_code?: Maybe<Scalars['String']['output']>;
   id?: Maybe<Scalars['uuid']['output']>;
   last_modified?: Maybe<Scalars['timestamp']['output']>;
   last_modified_by?: Maybe<Scalars['uuid']['output']>;
@@ -7165,6 +7308,7 @@ export type Customer_Asset_Min_Order_By = {
   created_at?: InputMaybe<Order_By>;
   description?: InputMaybe<Order_By>;
   erp_code?: InputMaybe<Order_By>;
+  flespi_channel_code?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
   last_modified?: InputMaybe<Order_By>;
   last_modified_by?: InputMaybe<Order_By>;
@@ -7218,6 +7362,7 @@ export type Customer_Asset_Order_By = {
   customer_order_customer_assets_aggregate?: InputMaybe<Customer_Order_Customer_Asset_Aggregate_Order_By>;
   description?: InputMaybe<Order_By>;
   erp_code?: InputMaybe<Order_By>;
+  flespi_channel_code?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
   invoiced_items_aggregate?: InputMaybe<Invoiced_Item_Aggregate_Order_By>;
   is_active?: InputMaybe<Order_By>;
@@ -7237,6 +7382,8 @@ export type Customer_Asset_Order_By = {
   product?: InputMaybe<Product_Order_By>;
   product_id?: InputMaybe<Order_By>;
   registration_number?: InputMaybe<Order_By>;
+  sensorTypeBySensorType?: InputMaybe<Sensor_Type_Order_By>;
+  sensor_type?: InputMaybe<Order_By>;
   slug?: InputMaybe<Order_By>;
   state?: InputMaybe<State_Order_By>;
   state_id?: InputMaybe<Order_By>;
@@ -7267,6 +7414,8 @@ export enum Customer_Asset_Select_Column {
   /** column name */
   ErpCode = 'erp_code',
   /** column name */
+  FlespiChannelCode = 'flespi_channel_code',
+  /** column name */
   Id = 'id',
   /** column name */
   IsActive = 'is_active',
@@ -7290,6 +7439,8 @@ export enum Customer_Asset_Select_Column {
   ProductId = 'product_id',
   /** column name */
   RegistrationNumber = 'registration_number',
+  /** column name */
+  SensorType = 'sensor_type',
   /** column name */
   Slug = 'slug',
   /** column name */
@@ -7327,6 +7478,7 @@ export type Customer_Asset_Set_Input = {
   created_at?: InputMaybe<Scalars['timestamp']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
   erp_code?: InputMaybe<Scalars['String']['input']>;
+  flespi_channel_code?: InputMaybe<Scalars['String']['input']>;
   id?: InputMaybe<Scalars['uuid']['input']>;
   is_active?: InputMaybe<Scalars['Boolean']['input']>;
   is_collect_odometer_reading?: InputMaybe<Scalars['Boolean']['input']>;
@@ -7339,6 +7491,7 @@ export type Customer_Asset_Set_Input = {
   organization_user_id?: InputMaybe<Scalars['uuid']['input']>;
   product_id?: InputMaybe<Scalars['uuid']['input']>;
   registration_number?: InputMaybe<Scalars['String']['input']>;
+  sensor_type?: InputMaybe<Sensor_Type_Enum>;
   slug?: InputMaybe<Scalars['String']['input']>;
   state_id?: InputMaybe<Scalars['uuid']['input']>;
   tag_id?: InputMaybe<Scalars['String']['input']>;
@@ -7361,6 +7514,7 @@ export type Customer_Asset_Stream_Cursor_Value_Input = {
   created_at?: InputMaybe<Scalars['timestamp']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
   erp_code?: InputMaybe<Scalars['String']['input']>;
+  flespi_channel_code?: InputMaybe<Scalars['String']['input']>;
   id?: InputMaybe<Scalars['uuid']['input']>;
   is_active?: InputMaybe<Scalars['Boolean']['input']>;
   is_collect_odometer_reading?: InputMaybe<Scalars['Boolean']['input']>;
@@ -7373,6 +7527,7 @@ export type Customer_Asset_Stream_Cursor_Value_Input = {
   organization_user_id?: InputMaybe<Scalars['uuid']['input']>;
   product_id?: InputMaybe<Scalars['uuid']['input']>;
   registration_number?: InputMaybe<Scalars['String']['input']>;
+  sensor_type?: InputMaybe<Sensor_Type_Enum>;
   slug?: InputMaybe<Scalars['String']['input']>;
   state_id?: InputMaybe<Scalars['uuid']['input']>;
   tag_id?: InputMaybe<Scalars['String']['input']>;
@@ -7672,6 +7827,8 @@ export enum Customer_Asset_Update_Column {
   /** column name */
   ErpCode = 'erp_code',
   /** column name */
+  FlespiChannelCode = 'flespi_channel_code',
+  /** column name */
   Id = 'id',
   /** column name */
   IsActive = 'is_active',
@@ -7695,6 +7852,8 @@ export enum Customer_Asset_Update_Column {
   ProductId = 'product_id',
   /** column name */
   RegistrationNumber = 'registration_number',
+  /** column name */
+  SensorType = 'sensor_type',
   /** column name */
   Slug = 'slug',
   /** column name */
@@ -8197,6 +8356,8 @@ export type Customer_Order = {
   erp_cancellation_log?: Maybe<Scalars['String']['output']>;
   erp_code?: Maybe<Scalars['String']['output']>;
   id: Scalars['uuid']['output'];
+  /** An object relationship */
+  indus_customer_order_scheduler_log?: Maybe<Indus_Customer_Order_Scheduler_Logs>;
   /** An array relationship */
   indus_customer_order_scheduler_logs: Array<Indus_Customer_Order_Scheduler_Logs>;
   /** An aggregate relationship */
@@ -8711,6 +8872,7 @@ export type Customer_Order_Bool_Exp = {
   erp_cancellation_log?: InputMaybe<String_Comparison_Exp>;
   erp_code?: InputMaybe<String_Comparison_Exp>;
   id?: InputMaybe<Uuid_Comparison_Exp>;
+  indus_customer_order_scheduler_log?: InputMaybe<Indus_Customer_Order_Scheduler_Logs_Bool_Exp>;
   indus_customer_order_scheduler_logs?: InputMaybe<Indus_Customer_Order_Scheduler_Logs_Bool_Exp>;
   indus_customer_order_scheduler_logs_aggregate?: InputMaybe<Indus_Customer_Order_Scheduler_Logs_Aggregate_Bool_Exp>;
   instruction?: InputMaybe<String_Comparison_Exp>;
@@ -9253,6 +9415,7 @@ export type Customer_Order_Insert_Input = {
   erp_cancellation_log?: InputMaybe<Scalars['String']['input']>;
   erp_code?: InputMaybe<Scalars['String']['input']>;
   id?: InputMaybe<Scalars['uuid']['input']>;
+  indus_customer_order_scheduler_log?: InputMaybe<Indus_Customer_Order_Scheduler_Logs_Obj_Rel_Insert_Input>;
   indus_customer_order_scheduler_logs?: InputMaybe<Indus_Customer_Order_Scheduler_Logs_Arr_Rel_Insert_Input>;
   instruction?: InputMaybe<Scalars['String']['input']>;
   inventories?: InputMaybe<Inventory_Arr_Rel_Insert_Input>;
@@ -14410,6 +14573,7 @@ export type Customer_Order_Order_By = {
   erp_cancellation_log?: InputMaybe<Order_By>;
   erp_code?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
+  indus_customer_order_scheduler_log?: InputMaybe<Indus_Customer_Order_Scheduler_Logs_Order_By>;
   indus_customer_order_scheduler_logs_aggregate?: InputMaybe<Indus_Customer_Order_Scheduler_Logs_Aggregate_Order_By>;
   instruction?: InputMaybe<Order_By>;
   inventories_aggregate?: InputMaybe<Inventory_Aggregate_Order_By>;
@@ -17832,7 +17996,31 @@ export type Day_Type_Updates = {
 export type Delivered_To = {
   __typename?: 'delivered_to';
   comment: Scalars['String']['output'];
+  /** An array relationship */
+  fuel_deliveries: Array<Fuel_Delivery>;
+  /** An aggregate relationship */
+  fuel_deliveries_aggregate: Fuel_Delivery_Aggregate;
   value: Scalars['String']['output'];
+};
+
+
+/** columns and relationships of "delivered_to" */
+export type Delivered_ToFuel_DeliveriesArgs = {
+  distinct_on?: InputMaybe<Array<Fuel_Delivery_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Fuel_Delivery_Order_By>>;
+  where?: InputMaybe<Fuel_Delivery_Bool_Exp>;
+};
+
+
+/** columns and relationships of "delivered_to" */
+export type Delivered_ToFuel_Deliveries_AggregateArgs = {
+  distinct_on?: InputMaybe<Array<Fuel_Delivery_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Fuel_Delivery_Order_By>>;
+  where?: InputMaybe<Fuel_Delivery_Bool_Exp>;
 };
 
 /** aggregated selection of "delivered_to" */
@@ -17863,6 +18051,8 @@ export type Delivered_To_Bool_Exp = {
   _not?: InputMaybe<Delivered_To_Bool_Exp>;
   _or?: InputMaybe<Array<Delivered_To_Bool_Exp>>;
   comment?: InputMaybe<String_Comparison_Exp>;
+  fuel_deliveries?: InputMaybe<Fuel_Delivery_Bool_Exp>;
+  fuel_deliveries_aggregate?: InputMaybe<Fuel_Delivery_Aggregate_Bool_Exp>;
   value?: InputMaybe<String_Comparison_Exp>;
 };
 
@@ -17897,6 +18087,7 @@ export type Delivered_To_Enum_Comparison_Exp = {
 /** input type for inserting data into table "delivered_to" */
 export type Delivered_To_Insert_Input = {
   comment?: InputMaybe<Scalars['String']['input']>;
+  fuel_deliveries?: InputMaybe<Fuel_Delivery_Arr_Rel_Insert_Input>;
   value?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -17923,6 +18114,13 @@ export type Delivered_To_Mutation_Response = {
   returning: Array<Delivered_To>;
 };
 
+/** input type for inserting object relation for remote table "delivered_to" */
+export type Delivered_To_Obj_Rel_Insert_Input = {
+  data: Delivered_To_Insert_Input;
+  /** upsert condition */
+  on_conflict?: InputMaybe<Delivered_To_On_Conflict>;
+};
+
 /** on_conflict condition type for table "delivered_to" */
 export type Delivered_To_On_Conflict = {
   constraint: Delivered_To_Constraint;
@@ -17933,6 +18131,7 @@ export type Delivered_To_On_Conflict = {
 /** Ordering options when selecting data from "delivered_to". */
 export type Delivered_To_Order_By = {
   comment?: InputMaybe<Order_By>;
+  fuel_deliveries_aggregate?: InputMaybe<Fuel_Delivery_Aggregate_Order_By>;
   value?: InputMaybe<Order_By>;
 };
 
@@ -23842,6 +24041,31 @@ export type FetchAddressTitleForIndusOutput = {
   data?: Maybe<Scalars['jsonb']['output']>;
 };
 
+export type FetchAllSiteCountsInput = {
+  circle?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  city?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+};
+
+export type FetchAllSiteCountsOutput = {
+  __typename?: 'fetchAllSiteCountsOutput';
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
+export type FetchAllTrucksWithSiteIdInput = {
+  address_title?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  circle?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  city_id?: InputMaybe<Scalars['uuid']['input']>;
+  end_date?: InputMaybe<Scalars['timestamp']['input']>;
+  start_date?: InputMaybe<Scalars['timestamp']['input']>;
+  task_states?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+};
+
+export type FetchAllTrucksWithSiteIdOutput = {
+  __typename?: 'fetchAllTrucksWithSiteIdOutput';
+  count?: Maybe<Scalars['Int']['output']>;
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
 export type FetchAvailableInventoryForTowerReportInput = {
   registration_number?: InputMaybe<Array<Scalars['String']['input']>>;
 };
@@ -24075,6 +24299,30 @@ export type FetchCustomersNameForTeamReportOutput = {
   data?: Maybe<Scalars['jsonb']['output']>;
 };
 
+export type FetchDeliveredAgingCityReportInput = {
+  circle?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  city?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  end_date: Scalars['timestamp']['input'];
+  start_date: Scalars['timestamp']['input'];
+};
+
+export type FetchDeliveredAgingCityReportOutput = {
+  __typename?: 'fetchDeliveredAgingCityReportOutput';
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
+export type FetchDeliveredAgingReportInput = {
+  circle?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  city?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  end_date: Scalars['timestamp']['input'];
+  start_date: Scalars['timestamp']['input'];
+};
+
+export type FetchDeliveredAgingReportOutput = {
+  __typename?: 'fetchDeliveredAgingReportOutput';
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
 export type FetchDriverAndTruckLevelForTowerBussinessReportInput = {
   end_date: Scalars['timestamp']['input'];
   start_date: Scalars['timestamp']['input'];
@@ -24121,6 +24369,20 @@ export type FetchDriverVehicleLocationByIdsOutput = {
   data?: Maybe<Scalars['jsonb']['output']>;
 };
 
+export type FetchDriverVehicleLocationsWithFiltersInput = {
+  circle?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  city_id?: InputMaybe<Scalars['uuid']['input']>;
+  end_date?: InputMaybe<Scalars['timestamp']['input']>;
+  start_date?: InputMaybe<Scalars['timestamp']['input']>;
+  task_states?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+};
+
+export type FetchDriverVehicleLocationsWithFiltersOutput = {
+  __typename?: 'fetchDriverVehicleLocationsWithFiltersOutput';
+  count?: Maybe<Scalars['Int']['output']>;
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
 export type FetchErpBalanceQtyByVehicleRegNumberInput = {
   vehicle_reg_numbers?: InputMaybe<Scalars['String']['input']>;
 };
@@ -24134,7 +24396,9 @@ export type FetchErpBalanceQtyByVehicleRegNumberOutput = {
 
 export type FetchFilteredOrdersByCityInput = {
   city_id?: InputMaybe<Scalars['uuid']['input']>;
+  driver_vehicle_id?: InputMaybe<Array<InputMaybe<Scalars['uuid']['input']>>>;
   end_date?: InputMaybe<Scalars['timestamp']['input']>;
+  registration_number?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
   start_date?: InputMaybe<Scalars['timestamp']['input']>;
   task_states?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
 };
@@ -24142,6 +24406,18 @@ export type FetchFilteredOrdersByCityInput = {
 export type FetchFilteredOrdersByCityOutput = {
   __typename?: 'fetchFilteredOrdersByCityOutput';
   count?: Maybe<Scalars['Int']['output']>;
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
+export type FetchFilteredOrdersByTruckAndTaskStateInput = {
+  end_date?: InputMaybe<Scalars['timestamp']['input']>;
+  registration_number?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  start_date?: InputMaybe<Scalars['timestamp']['input']>;
+  task_states?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+};
+
+export type FetchFilteredOrdersByTruckAndTaskStateOutput = {
+  __typename?: 'fetchFilteredOrdersByTruckAndTaskStateOutput';
   data?: Maybe<Scalars['jsonb']['output']>;
 };
 
@@ -24367,6 +24643,30 @@ export type FetchNewCustomerOrdersOutput = {
   metadata?: Maybe<Scalars['jsonb']['output']>;
 };
 
+export type FetchNonDeliveredAgingCityReportInput = {
+  circle?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  city?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  end_date: Scalars['timestamp']['input'];
+  start_date: Scalars['timestamp']['input'];
+};
+
+export type FetchNonDeliveredAgingCityReportOutput = {
+  __typename?: 'fetchNonDeliveredAgingCityReportOutput';
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
+export type FetchNonDeliveredAgingReportInput = {
+  circle?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  city?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  end_date: Scalars['timestamp']['input'];
+  start_date: Scalars['timestamp']['input'];
+};
+
+export type FetchNonDeliveredAgingReportOutput = {
+  __typename?: 'fetchNonDeliveredAgingReportOutput';
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
 export type FetchOrderCountForPartnerInput = {
   end_date: Scalars['timestamp']['input'];
   end_time?: InputMaybe<Scalars['timetz']['input']>;
@@ -24492,6 +24792,18 @@ export type FetchOrderCountForUserOutput = {
   rescheduled_count?: Maybe<Scalars['String']['output']>;
 };
 
+export type FetchOrderDeliveryAnalyticsInput = {
+  circle?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  city?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  end_date: Scalars['timestamp']['input'];
+  start_date: Scalars['timestamp']['input'];
+};
+
+export type FetchOrderDeliveryAnalyticsOutput = {
+  __typename?: 'fetchOrderDeliveryAnalyticsOutput';
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
 export type FetchOrderDetailsForDashboardInput = {
   address_title?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
   circle?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
@@ -24544,6 +24856,17 @@ export type FetchOrderStatsForDriverV2Input = {
 
 export type FetchOrderStatsForDriverV2Output = {
   __typename?: 'fetchOrderStatsForDriverV2Output';
+  data: Scalars['jsonb']['output'];
+};
+
+export type FetchOrderStatsForDriverV3Input = {
+  driver_vehicle_id: Scalars['String']['input'];
+  end_date: Scalars['timestamp']['input'];
+  start_date: Scalars['timestamp']['input'];
+};
+
+export type FetchOrderStatsForDriverV3Output = {
+  __typename?: 'fetchOrderStatsForDriverV3Output';
   data: Scalars['jsonb']['output'];
 };
 
@@ -24640,6 +24963,18 @@ export type FetchPumpsWithinAreaOutput = {
   data: Scalars['jsonb']['output'];
 };
 
+export type FetchRawDataSummaryReportInput = {
+  circle?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  city?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  end_date: Scalars['timestamp']['input'];
+  start_date: Scalars['timestamp']['input'];
+};
+
+export type FetchRawDataSummaryReportOutput = {
+  __typename?: 'fetchRawDataSummaryReportOutput';
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
 export type FetchRoDocsInput = {
   mobile_no: Scalars['String']['input'];
 };
@@ -24668,6 +25003,35 @@ export type FetchSenselDataForPartnerOutput = {
 
 export type FetchSenselDataForPartnerV1Output = {
   __typename?: 'fetchSenselDataForPartnerV1Output';
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
+export type FetchSiteCircleAggregatedDataInput = {
+  circle?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+};
+
+export type FetchSiteCircleAggregatedDataOutput = {
+  __typename?: 'fetchSiteCircleAggregatedDataOutput';
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
+export type FetchSiteCityAggregatedDataInput = {
+  circle?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  city?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+};
+
+export type FetchSiteCityAggregatedDataOutput = {
+  __typename?: 'fetchSiteCityAggregatedDataOutput';
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
+export type FetchSiteOrgCircleDataInput = {
+  circle?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  city?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+};
+
+export type FetchSiteOrgCircleDataOutput = {
+  __typename?: 'fetchSiteOrgCircleDataOutput';
   data?: Maybe<Scalars['jsonb']['output']>;
 };
 
@@ -24799,6 +25163,20 @@ export type FetchThirdPartyDataForPartnerInput = {
 
 export type FetchThirdPartyDataForPartnerOutput = {
   __typename?: 'fetchThirdPartyDataForPartnerOutput';
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
+export type FetchTrucksByCityInput = {
+  circle?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  city_id?: InputMaybe<Scalars['uuid']['input']>;
+  end_date?: InputMaybe<Scalars['timestamp']['input']>;
+  start_date?: InputMaybe<Scalars['timestamp']['input']>;
+  task_states?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+};
+
+export type FetchTrucksByCityOutput = {
+  __typename?: 'fetchTrucksByCityOutput';
+  count?: Maybe<Scalars['Int']['output']>;
   data?: Maybe<Scalars['jsonb']['output']>;
 };
 
@@ -28101,6 +28479,8 @@ export type Float8_Comparison_Exp = {
 export type Fuel_Delivery = {
   __typename?: 'fuel_delivery';
   created_at?: Maybe<Scalars['timestamp']['output']>;
+  /** An object relationship */
+  deliveredToByDeliveredTo: Delivered_To;
   delivered_to: Delivered_To_Enum;
   id: Scalars['uuid']['output'];
   is_active: Scalars['Boolean']['output'];
@@ -28209,6 +28589,7 @@ export type Fuel_Delivery_Bool_Exp = {
   _not?: InputMaybe<Fuel_Delivery_Bool_Exp>;
   _or?: InputMaybe<Array<Fuel_Delivery_Bool_Exp>>;
   created_at?: InputMaybe<Timestamp_Comparison_Exp>;
+  deliveredToByDeliveredTo?: InputMaybe<Delivered_To_Bool_Exp>;
   delivered_to?: InputMaybe<Delivered_To_Enum_Comparison_Exp>;
   id?: InputMaybe<Uuid_Comparison_Exp>;
   is_active?: InputMaybe<Boolean_Comparison_Exp>;
@@ -28236,6 +28617,7 @@ export type Fuel_Delivery_Inc_Input = {
 /** input type for inserting data into table "fuel_delivery" */
 export type Fuel_Delivery_Insert_Input = {
   created_at?: InputMaybe<Scalars['timestamp']['input']>;
+  deliveredToByDeliveredTo?: InputMaybe<Delivered_To_Obj_Rel_Insert_Input>;
   delivered_to?: InputMaybe<Delivered_To_Enum>;
   id?: InputMaybe<Scalars['uuid']['input']>;
   is_active?: InputMaybe<Scalars['Boolean']['input']>;
@@ -28312,6 +28694,7 @@ export type Fuel_Delivery_On_Conflict = {
 /** Ordering options when selecting data from "fuel_delivery". */
 export type Fuel_Delivery_Order_By = {
   created_at?: InputMaybe<Order_By>;
+  deliveredToByDeliveredTo?: InputMaybe<Delivered_To_Order_By>;
   delivered_to?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
   is_active?: InputMaybe<Order_By>;
@@ -37934,6 +38317,10 @@ export type Mutation_Root = {
   delete_scripts?: Maybe<Scripts_Mutation_Response>;
   /** delete single row from the table: "scripts" */
   delete_scripts_by_pk?: Maybe<Scripts>;
+  /** delete data from the table: "sensor_type" */
+  delete_sensor_type?: Maybe<Sensor_Type_Mutation_Response>;
+  /** delete single row from the table: "sensor_type" */
+  delete_sensor_type_by_pk?: Maybe<Sensor_Type>;
   /** delete data from the table: "services" */
   delete_services?: Maybe<Services_Mutation_Response>;
   /** delete single row from the table: "services" */
@@ -38160,6 +38547,7 @@ export type Mutation_Root = {
   fetchOrderStatsForDriver?: Maybe<FetchOrderStatsForDriverOutput>;
   fetchOrderStatsForDriverV1?: Maybe<FetchOrderStatsForDriverV1Output>;
   fetchOrderStatsForDriverV2?: Maybe<FetchOrderStatsForDriverV2Output>;
+  fetchOrderStatsForDriverV3?: Maybe<FetchOrderStatsForDriverV3Output>;
   /** This will fetch all pending invoice for postpaid customer */
   fetchPostpaidInvoice: PostpaidInvoiceOutput;
   fetchRoDocs: FetchRoDocsOuput;
@@ -38944,6 +39332,10 @@ export type Mutation_Root = {
   insert_scripts?: Maybe<Scripts_Mutation_Response>;
   /** insert a single row into the table: "scripts" */
   insert_scripts_one?: Maybe<Scripts>;
+  /** insert data into the table: "sensor_type" */
+  insert_sensor_type?: Maybe<Sensor_Type_Mutation_Response>;
+  /** insert a single row into the table: "sensor_type" */
+  insert_sensor_type_one?: Maybe<Sensor_Type>;
   /** insert data into the table: "services" */
   insert_services?: Maybe<Services_Mutation_Response>;
   /** insert data into the table: "services_category" */
@@ -40341,6 +40733,12 @@ export type Mutation_Root = {
   update_scripts_by_pk?: Maybe<Scripts>;
   /** update multiples rows of table: "scripts" */
   update_scripts_many?: Maybe<Array<Maybe<Scripts_Mutation_Response>>>;
+  /** update data of the table: "sensor_type" */
+  update_sensor_type?: Maybe<Sensor_Type_Mutation_Response>;
+  /** update single row of the table: "sensor_type" */
+  update_sensor_type_by_pk?: Maybe<Sensor_Type>;
+  /** update multiples rows of table: "sensor_type" */
+  update_sensor_type_many?: Maybe<Array<Maybe<Sensor_Type_Mutation_Response>>>;
   /** update data of the table: "services" */
   update_services?: Maybe<Services_Mutation_Response>;
   /** update single row of the table: "services" */
@@ -43153,6 +43551,18 @@ export type Mutation_RootDelete_Scripts_By_PkArgs = {
 
 
 /** mutation root */
+export type Mutation_RootDelete_Sensor_TypeArgs = {
+  where: Sensor_Type_Bool_Exp;
+};
+
+
+/** mutation root */
+export type Mutation_RootDelete_Sensor_Type_By_PkArgs = {
+  value: Scalars['String']['input'];
+};
+
+
+/** mutation root */
 export type Mutation_RootDelete_ServicesArgs = {
   where: Services_Bool_Exp;
 };
@@ -43851,6 +44261,12 @@ export type Mutation_RootFetchOrderStatsForDriverV1Args = {
 /** mutation root */
 export type Mutation_RootFetchOrderStatsForDriverV2Args = {
   object: FetchOrderStatsForDriverV2Input;
+};
+
+
+/** mutation root */
+export type Mutation_RootFetchOrderStatsForDriverV3Args = {
+  object: FetchOrderStatsForDriverV3Input;
 };
 
 
@@ -46617,6 +47033,20 @@ export type Mutation_RootInsert_ScriptsArgs = {
 export type Mutation_RootInsert_Scripts_OneArgs = {
   object: Scripts_Insert_Input;
   on_conflict?: InputMaybe<Scripts_On_Conflict>;
+};
+
+
+/** mutation root */
+export type Mutation_RootInsert_Sensor_TypeArgs = {
+  objects: Array<Sensor_Type_Insert_Input>;
+  on_conflict?: InputMaybe<Sensor_Type_On_Conflict>;
+};
+
+
+/** mutation root */
+export type Mutation_RootInsert_Sensor_Type_OneArgs = {
+  object: Sensor_Type_Insert_Input;
+  on_conflict?: InputMaybe<Sensor_Type_On_Conflict>;
 };
 
 
@@ -51502,6 +51932,26 @@ export type Mutation_RootUpdate_Scripts_By_PkArgs = {
 /** mutation root */
 export type Mutation_RootUpdate_Scripts_ManyArgs = {
   updates: Array<Scripts_Updates>;
+};
+
+
+/** mutation root */
+export type Mutation_RootUpdate_Sensor_TypeArgs = {
+  _set?: InputMaybe<Sensor_Type_Set_Input>;
+  where: Sensor_Type_Bool_Exp;
+};
+
+
+/** mutation root */
+export type Mutation_RootUpdate_Sensor_Type_By_PkArgs = {
+  _set?: InputMaybe<Sensor_Type_Set_Input>;
+  pk_columns: Sensor_Type_Pk_Columns_Input;
+};
+
+
+/** mutation root */
+export type Mutation_RootUpdate_Sensor_Type_ManyArgs = {
+  updates: Array<Sensor_Type_Updates>;
 };
 
 
@@ -89195,6 +89645,8 @@ export type Query_Root = {
   fetchActiveZones?: Maybe<FetchActiveZonesOutput>;
   fetchActiveZonesv1?: Maybe<FetchActiveZonesv1Output>;
   fetchAddressTitleForIndus?: Maybe<FetchAddressTitleForIndusOutput>;
+  fetchAllSiteCounts?: Maybe<FetchAllSiteCountsOutput>;
+  fetchAllTrucksWithSiteId?: Maybe<FetchAllTrucksWithSiteIdOutput>;
   fetchAvailableInventoryForTowerReport?: Maybe<FetchAvailableInventoryForTowerReportOutput>;
   fetchCircleForCustomer?: Maybe<FetchCircleForCustomerOutput>;
   fetchCircleForTeamReport?: Maybe<FetchCircleForTeamReportOutput>;
@@ -89216,6 +89668,8 @@ export type Query_Root = {
   fetchCustomerOrganizationOrders?: Maybe<FetchCustomerOrganizationOrdersOutput>;
   fetchCustomerRecordStreamData?: Maybe<FetchCustomerRecordStreamDataOutput>;
   fetchCustomersNameForTeamReport?: Maybe<FetchCustomersNameForTeamReportOutput>;
+  fetchDeliveredAgingCityReport?: Maybe<FetchDeliveredAgingCityReportOutput>;
+  fetchDeliveredAgingReport?: Maybe<FetchDeliveredAgingReportOutput>;
   /** This will fetch delivery fees for an item */
   fetchDeliveryFees: DeliveryFeesOutput;
   fetchDriverAndTruckLevelForTowerBussinessReport?: Maybe<FetchDriverAndTruckLevelForTowerBussinessReportOutput>;
@@ -89223,9 +89677,11 @@ export type Query_Root = {
   /** fetchCustomerOrderItemSlotsById */
   fetchDriverDutyLogs?: Maybe<FetchDriverDutyLogsOutput>;
   fetchDriverVehicleLocationByIds?: Maybe<FetchDriverVehicleLocationByIdsOutput>;
+  fetchDriverVehicleLocationsWithFilters?: Maybe<FetchDriverVehicleLocationsWithFiltersOutput>;
   fetchERPBalanceQtyByVehicleRegNumber?: Maybe<FetchErpBalanceQtyByVehicleRegNumberOutput>;
   fetchFile?: Maybe<FileOutput>;
   fetchFilteredOrdersByCity?: Maybe<FetchFilteredOrdersByCityOutput>;
+  fetchFilteredOrdersByTruckAndTaskState?: Maybe<FetchFilteredOrdersByTruckAndTaskStateOutput>;
   fetchGpsDataForVehicleIds?: Maybe<FetchGpsDataForVehicleIdsOutput>;
   fetchIndusIdsReport?: Maybe<FetchIndusIdsReportOutput>;
   fetchIndustryDeviatedOrdersAnalysisReport?: Maybe<FetchIndustryDeviatedOrdersAnalysisReportOutput>;
@@ -89242,11 +89698,14 @@ export type Query_Root = {
   fetchNearFillingStation?: Maybe<FetchNearFillingStationOutput>;
   fetchNearbyPartners?: Maybe<FetchNearbyPartnersOutput>;
   fetchNewCustomerOrders?: Maybe<FetchNewCustomerOrdersOutput>;
+  fetchNonDeliveredAgingCityReport?: Maybe<FetchNonDeliveredAgingCityReportOutput>;
+  fetchNonDeliveredAgingReport?: Maybe<FetchNonDeliveredAgingReportOutput>;
   fetchOrderCountForPartner?: Maybe<FetchOrderCountForPartnerOutput>;
   fetchOrderCountForPartnerV1?: Maybe<FetchOrderCountForPartnerV1Output>;
   fetchOrderCountForPartnerV2?: Maybe<FetchOrderCountForPartnerV2Output>;
   fetchOrderCountForPartnerV3?: Maybe<FetchOrderCountForPartnerV3Output>;
   fetchOrderCountForUser?: Maybe<FetchOrderCountForUserOutput>;
+  fetchOrderDeliveryAnalytics?: Maybe<FetchOrderDeliveryAnalyticsOutput>;
   fetchOrderDetailsForDashboard?: Maybe<FetchOrderDetailsForDashboardOutput>;
   fetchOrderItemStatus?: Maybe<FetchOrderItemStatusOutput>;
   fetchOrderStats?: Maybe<OrderStatsOutput>;
@@ -89260,17 +89719,22 @@ export type Query_Root = {
   fetchPartnerBasedOnLocalitiesPrice?: Maybe<FetchPartnerBasedOnLocalitiesPriceOutput>;
   fetchPaymentCards?: Maybe<FetchPaymentCardsOutput>;
   fetchPumpsWithinArea?: Maybe<FetchPumpsWithinAreaOutput>;
+  fetchRawDataSummaryReport?: Maybe<FetchRawDataSummaryReportOutput>;
   fetchSalesInvoicePdf: SalesInvoicePdfOutput;
   /** fetchSenselDataByVehicle */
   fetchSenselDataByVehicle?: Maybe<FetchSenselDataByVehicleOutput>;
   fetchSenselDataForPartner?: Maybe<FetchSenselDataForPartnerOutput>;
   fetchSenselDataForPartnerV1?: Maybe<FetchSenselDataForPartnerV1Output>;
+  fetchSiteCircleAggregatedData?: Maybe<FetchSiteCircleAggregatedDataOutput>;
+  fetchSiteCityAggregatedData?: Maybe<FetchSiteCityAggregatedDataOutput>;
+  fetchSiteOrgCircleData?: Maybe<FetchSiteOrgCircleDataOutput>;
   fetchSiteTypeForUser?: Maybe<FetchSiteTypeForUserOutput>;
   fetchStockBalanceV4?: Maybe<FetchStockBalanceV4Output>;
   fetchSupplierVehicleForTowerBussinessReport?: Maybe<FetchSupplierVehicleForTowerBussinessReportOutput>;
   fetchTaskValueForCustomerAsset?: Maybe<FetchTaskValueForCustomerAssetOutput>;
   fetchTasksOrderQtyByVehicleId?: Maybe<FetchTasksOrderQtyByVehicleIdOutput>;
   fetchThirdPartyDataForPartner?: Maybe<FetchThirdPartyDataForPartnerOutput>;
+  fetchTrucksByCity?: Maybe<FetchTrucksByCityOutput>;
   fetchUserDetails?: Maybe<UserDetailsOutput>;
   fetchUserLedgerData?: Maybe<UserLedgerDataOutput>;
   fetchVaultVehicleLiveInfoAndOrderStats?: Maybe<FetchVaultVehicleLiveInfoAndOrderStatsOutput>;
@@ -89950,6 +90414,11 @@ export type Query_Root = {
   poc_to_add_aggregate: Poc_To_Add_Aggregate;
   /** fetch data from the table: "poc_to_add" using primary key columns */
   poc_to_add_by_pk?: Maybe<Poc_To_Add>;
+  pointOfContactDashboard?: Maybe<PointOfContactDashboardOutput>;
+  pointOfContactDashboardReschedule?: Maybe<PointOfContactDashboardRescheduleOutput>;
+  pointOfContactDetailedReport?: Maybe<PointOfContactDetailedReportOutput>;
+  pointOfContactInvoiceReport?: Maybe<PointOfContactInvoiceReportOutput>;
+  pointOfContactPaymentReport?: Maybe<PointOfContactPaymentReportOutput>;
   /** fetch data from the table: "product" */
   product: Array<Product>;
   /** fetch aggregated fields from the table: "product" */
@@ -90046,6 +90515,7 @@ export type Query_Root = {
   reasons_aggregate: Reasons_Aggregate;
   /** fetch data from the table: "reasons" using primary key columns */
   reasons_by_pk?: Maybe<Reasons>;
+  rescheduledOrdersReport?: Maybe<RescheduledOrdersReportOutput>;
   /** fetch data from the table: "role" */
   role: Array<Role>;
   /** fetch aggregated fields from the table: "role" */
@@ -90082,6 +90552,12 @@ export type Query_Root = {
   scripts_aggregate: Scripts_Aggregate;
   /** fetch data from the table: "scripts" using primary key columns */
   scripts_by_pk?: Maybe<Scripts>;
+  /** fetch data from the table: "sensor_type" */
+  sensor_type: Array<Sensor_Type>;
+  /** fetch aggregated fields from the table: "sensor_type" */
+  sensor_type_aggregate: Sensor_Type_Aggregate;
+  /** fetch data from the table: "sensor_type" using primary key columns */
+  sensor_type_by_pk?: Maybe<Sensor_Type>;
   /** fetch data from the table: "services" */
   services: Array<Services>;
   /** fetch aggregated fields from the table: "services" */
@@ -92089,6 +92565,16 @@ export type Query_RootFetchActiveZonesv1Args = {
 };
 
 
+export type Query_RootFetchAllSiteCountsArgs = {
+  object: FetchAllSiteCountsInput;
+};
+
+
+export type Query_RootFetchAllTrucksWithSiteIdArgs = {
+  object: FetchAllTrucksWithSiteIdInput;
+};
+
+
 export type Query_RootFetchAvailableInventoryForTowerReportArgs = {
   object?: InputMaybe<FetchAvailableInventoryForTowerReportInput>;
 };
@@ -92174,6 +92660,16 @@ export type Query_RootFetchCustomersNameForTeamReportArgs = {
 };
 
 
+export type Query_RootFetchDeliveredAgingCityReportArgs = {
+  object: FetchDeliveredAgingCityReportInput;
+};
+
+
+export type Query_RootFetchDeliveredAgingReportArgs = {
+  object: FetchDeliveredAgingReportInput;
+};
+
+
 export type Query_RootFetchDeliveryFeesArgs = {
   object: DeliveryFeesInput;
 };
@@ -92199,6 +92695,11 @@ export type Query_RootFetchDriverVehicleLocationByIdsArgs = {
 };
 
 
+export type Query_RootFetchDriverVehicleLocationsWithFiltersArgs = {
+  object: FetchDriverVehicleLocationsWithFiltersInput;
+};
+
+
 export type Query_RootFetchErpBalanceQtyByVehicleRegNumberArgs = {
   object?: InputMaybe<FetchErpBalanceQtyByVehicleRegNumberInput>;
 };
@@ -92211,6 +92712,11 @@ export type Query_RootFetchFileArgs = {
 
 export type Query_RootFetchFilteredOrdersByCityArgs = {
   object: FetchFilteredOrdersByCityInput;
+};
+
+
+export type Query_RootFetchFilteredOrdersByTruckAndTaskStateArgs = {
+  object: FetchFilteredOrdersByTruckAndTaskStateInput;
 };
 
 
@@ -92289,6 +92795,16 @@ export type Query_RootFetchNewCustomerOrdersArgs = {
 };
 
 
+export type Query_RootFetchNonDeliveredAgingCityReportArgs = {
+  object: FetchNonDeliveredAgingCityReportInput;
+};
+
+
+export type Query_RootFetchNonDeliveredAgingReportArgs = {
+  object: FetchNonDeliveredAgingReportInput;
+};
+
+
 export type Query_RootFetchOrderCountForPartnerArgs = {
   object: FetchOrderCountForPartnerInput;
 };
@@ -92311,6 +92827,11 @@ export type Query_RootFetchOrderCountForPartnerV3Args = {
 
 export type Query_RootFetchOrderCountForUserArgs = {
   object: FetchOrderCountForUserInput;
+};
+
+
+export type Query_RootFetchOrderDeliveryAnalyticsArgs = {
+  object: FetchOrderDeliveryAnalyticsInput;
 };
 
 
@@ -92374,6 +92895,11 @@ export type Query_RootFetchPumpsWithinAreaArgs = {
 };
 
 
+export type Query_RootFetchRawDataSummaryReportArgs = {
+  object: FetchRawDataSummaryReportInput;
+};
+
+
 export type Query_RootFetchSalesInvoicePdfArgs = {
   object: SalesInvoicePdfInput;
 };
@@ -92381,6 +92907,21 @@ export type Query_RootFetchSalesInvoicePdfArgs = {
 
 export type Query_RootFetchSenselDataByVehicleArgs = {
   object: FetchSenselDataByVehicleInput;
+};
+
+
+export type Query_RootFetchSiteCircleAggregatedDataArgs = {
+  object: FetchSiteCircleAggregatedDataInput;
+};
+
+
+export type Query_RootFetchSiteCityAggregatedDataArgs = {
+  object: FetchSiteCityAggregatedDataInput;
+};
+
+
+export type Query_RootFetchSiteOrgCircleDataArgs = {
+  object: FetchSiteOrgCircleDataInput;
 };
 
 
@@ -92401,6 +92942,11 @@ export type Query_RootFetchTasksOrderQtyByVehicleIdArgs = {
 
 export type Query_RootFetchThirdPartyDataForPartnerArgs = {
   object: FetchThirdPartyDataForPartnerInput;
+};
+
+
+export type Query_RootFetchTrucksByCityArgs = {
+  object: FetchTrucksByCityInput;
 };
 
 
@@ -95053,6 +95599,31 @@ export type Query_RootPoc_To_Add_By_PkArgs = {
 };
 
 
+export type Query_RootPointOfContactDashboardArgs = {
+  object: PointOfContactDashboardInput;
+};
+
+
+export type Query_RootPointOfContactDashboardRescheduleArgs = {
+  object: PointOfContactDashboardRescheduleInput;
+};
+
+
+export type Query_RootPointOfContactDetailedReportArgs = {
+  object: PointOfContactDetailedReportInput;
+};
+
+
+export type Query_RootPointOfContactInvoiceReportArgs = {
+  object: PointOfContactInvoiceReportInput;
+};
+
+
+export type Query_RootPointOfContactPaymentReportArgs = {
+  object: PointOfContactPaymentReportInput;
+};
+
+
 export type Query_RootProductArgs = {
   distinct_on?: InputMaybe<Array<Product_Select_Column>>;
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -95421,6 +95992,11 @@ export type Query_RootReasons_By_PkArgs = {
 };
 
 
+export type Query_RootRescheduledOrdersReportArgs = {
+  object: RescheduledOrdersReportInput;
+};
+
+
 export type Query_RootRoleArgs = {
   distinct_on?: InputMaybe<Array<Role_Select_Column>>;
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -95556,6 +96132,29 @@ export type Query_RootScripts_AggregateArgs = {
 
 export type Query_RootScripts_By_PkArgs = {
   id: Scalars['uuid']['input'];
+};
+
+
+export type Query_RootSensor_TypeArgs = {
+  distinct_on?: InputMaybe<Array<Sensor_Type_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Sensor_Type_Order_By>>;
+  where?: InputMaybe<Sensor_Type_Bool_Exp>;
+};
+
+
+export type Query_RootSensor_Type_AggregateArgs = {
+  distinct_on?: InputMaybe<Array<Sensor_Type_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Sensor_Type_Order_By>>;
+  where?: InputMaybe<Sensor_Type_Bool_Exp>;
+};
+
+
+export type Query_RootSensor_Type_By_PkArgs = {
+  value: Scalars['String']['input'];
 };
 
 
@@ -97733,6 +98332,21 @@ export type RescheduleOrderOutput = {
   data: Scalars['jsonb']['output'];
 };
 
+export type RescheduledOrdersReportInput = {
+  address?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  circle?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  cities?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  customer_ids?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  end_date: Scalars['timestamp']['input'];
+  site_type?: InputMaybe<Scalars['String']['input']>;
+  start_date: Scalars['timestamp']['input'];
+};
+
+export type RescheduledOrdersReportOutput = {
+  __typename?: 'rescheduledOrdersReportOutput';
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
 export type RoDocLinkObj = {
   __typename?: 'roDocLinkObj';
   bank_statement_of_6_months?: Maybe<Scalars['String']['output']>;
@@ -99722,6 +100336,197 @@ export type Scripts_Updates = {
   _set?: InputMaybe<Scripts_Set_Input>;
   /** filter the rows which have to be updated */
   where: Scripts_Bool_Exp;
+};
+
+/** columns and relationships of "sensor_type" */
+export type Sensor_Type = {
+  __typename?: 'sensor_type';
+  comment?: Maybe<Scalars['String']['output']>;
+  /** An array relationship */
+  customer_assets: Array<Customer_Asset>;
+  /** An aggregate relationship */
+  customer_assets_aggregate: Customer_Asset_Aggregate;
+  value: Scalars['String']['output'];
+};
+
+
+/** columns and relationships of "sensor_type" */
+export type Sensor_TypeCustomer_AssetsArgs = {
+  distinct_on?: InputMaybe<Array<Customer_Asset_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Customer_Asset_Order_By>>;
+  where?: InputMaybe<Customer_Asset_Bool_Exp>;
+};
+
+
+/** columns and relationships of "sensor_type" */
+export type Sensor_TypeCustomer_Assets_AggregateArgs = {
+  distinct_on?: InputMaybe<Array<Customer_Asset_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Customer_Asset_Order_By>>;
+  where?: InputMaybe<Customer_Asset_Bool_Exp>;
+};
+
+/** aggregated selection of "sensor_type" */
+export type Sensor_Type_Aggregate = {
+  __typename?: 'sensor_type_aggregate';
+  aggregate?: Maybe<Sensor_Type_Aggregate_Fields>;
+  nodes: Array<Sensor_Type>;
+};
+
+/** aggregate fields of "sensor_type" */
+export type Sensor_Type_Aggregate_Fields = {
+  __typename?: 'sensor_type_aggregate_fields';
+  count: Scalars['Int']['output'];
+  max?: Maybe<Sensor_Type_Max_Fields>;
+  min?: Maybe<Sensor_Type_Min_Fields>;
+};
+
+
+/** aggregate fields of "sensor_type" */
+export type Sensor_Type_Aggregate_FieldsCountArgs = {
+  columns?: InputMaybe<Array<Sensor_Type_Select_Column>>;
+  distinct?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+/** Boolean expression to filter rows from the table "sensor_type". All fields are combined with a logical 'AND'. */
+export type Sensor_Type_Bool_Exp = {
+  _and?: InputMaybe<Array<Sensor_Type_Bool_Exp>>;
+  _not?: InputMaybe<Sensor_Type_Bool_Exp>;
+  _or?: InputMaybe<Array<Sensor_Type_Bool_Exp>>;
+  comment?: InputMaybe<String_Comparison_Exp>;
+  customer_assets?: InputMaybe<Customer_Asset_Bool_Exp>;
+  customer_assets_aggregate?: InputMaybe<Customer_Asset_Aggregate_Bool_Exp>;
+  value?: InputMaybe<String_Comparison_Exp>;
+};
+
+/** unique or primary key constraints on table "sensor_type" */
+export enum Sensor_Type_Constraint {
+  /** unique or primary key constraint on columns "value" */
+  SensorTypePkey = 'sensor_type_pkey'
+}
+
+export enum Sensor_Type_Enum {
+  /** Active-Control  - Analog */
+  ActiveControlAnalog = 'ACTIVE_CONTROL_ANALOG',
+  /** Blazon Labs - Analog */
+  BlazonLabsAnalog = 'BLAZON_LABS_ANALOG',
+  /** Escorts 150 BLE */
+  Escorts_150Ble = 'ESCORTS_150_BLE',
+  /** Escorts BLE - Digital */
+  EscortsBleDigital = 'ESCORTS_BLE_DIGITAL',
+  /** Truman - Analog */
+  TrumanAnalog = 'TRUMAN_ANALOG'
+}
+
+/** Boolean expression to compare columns of type "sensor_type_enum". All fields are combined with logical 'AND'. */
+export type Sensor_Type_Enum_Comparison_Exp = {
+  _eq?: InputMaybe<Sensor_Type_Enum>;
+  _in?: InputMaybe<Array<Sensor_Type_Enum>>;
+  _is_null?: InputMaybe<Scalars['Boolean']['input']>;
+  _neq?: InputMaybe<Sensor_Type_Enum>;
+  _nin?: InputMaybe<Array<Sensor_Type_Enum>>;
+};
+
+/** input type for inserting data into table "sensor_type" */
+export type Sensor_Type_Insert_Input = {
+  comment?: InputMaybe<Scalars['String']['input']>;
+  customer_assets?: InputMaybe<Customer_Asset_Arr_Rel_Insert_Input>;
+  value?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** aggregate max on columns */
+export type Sensor_Type_Max_Fields = {
+  __typename?: 'sensor_type_max_fields';
+  comment?: Maybe<Scalars['String']['output']>;
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** aggregate min on columns */
+export type Sensor_Type_Min_Fields = {
+  __typename?: 'sensor_type_min_fields';
+  comment?: Maybe<Scalars['String']['output']>;
+  value?: Maybe<Scalars['String']['output']>;
+};
+
+/** response of any mutation on the table "sensor_type" */
+export type Sensor_Type_Mutation_Response = {
+  __typename?: 'sensor_type_mutation_response';
+  /** number of rows affected by the mutation */
+  affected_rows: Scalars['Int']['output'];
+  /** data from the rows affected by the mutation */
+  returning: Array<Sensor_Type>;
+};
+
+/** input type for inserting object relation for remote table "sensor_type" */
+export type Sensor_Type_Obj_Rel_Insert_Input = {
+  data: Sensor_Type_Insert_Input;
+  /** upsert condition */
+  on_conflict?: InputMaybe<Sensor_Type_On_Conflict>;
+};
+
+/** on_conflict condition type for table "sensor_type" */
+export type Sensor_Type_On_Conflict = {
+  constraint: Sensor_Type_Constraint;
+  update_columns?: Array<Sensor_Type_Update_Column>;
+  where?: InputMaybe<Sensor_Type_Bool_Exp>;
+};
+
+/** Ordering options when selecting data from "sensor_type". */
+export type Sensor_Type_Order_By = {
+  comment?: InputMaybe<Order_By>;
+  customer_assets_aggregate?: InputMaybe<Customer_Asset_Aggregate_Order_By>;
+  value?: InputMaybe<Order_By>;
+};
+
+/** primary key columns input for table: sensor_type */
+export type Sensor_Type_Pk_Columns_Input = {
+  value: Scalars['String']['input'];
+};
+
+/** select columns of table "sensor_type" */
+export enum Sensor_Type_Select_Column {
+  /** column name */
+  Comment = 'comment',
+  /** column name */
+  Value = 'value'
+}
+
+/** input type for updating data in table "sensor_type" */
+export type Sensor_Type_Set_Input = {
+  comment?: InputMaybe<Scalars['String']['input']>;
+  value?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** Streaming cursor of the table "sensor_type" */
+export type Sensor_Type_Stream_Cursor_Input = {
+  /** Stream column input with initial value */
+  initial_value: Sensor_Type_Stream_Cursor_Value_Input;
+  /** cursor ordering */
+  ordering?: InputMaybe<Cursor_Ordering>;
+};
+
+/** Initial value of the column from where the streaming should start */
+export type Sensor_Type_Stream_Cursor_Value_Input = {
+  comment?: InputMaybe<Scalars['String']['input']>;
+  value?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** update columns of table "sensor_type" */
+export enum Sensor_Type_Update_Column {
+  /** column name */
+  Comment = 'comment',
+  /** column name */
+  Value = 'value'
+}
+
+export type Sensor_Type_Updates = {
+  /** sets the columns of the filtered rows to the given values */
+  _set?: InputMaybe<Sensor_Type_Set_Input>;
+  /** filter the rows which have to be updated */
+  where: Sensor_Type_Bool_Exp;
 };
 
 /** columns and relationships of "services" */
@@ -104004,6 +104809,14 @@ export type Subscription_Root = {
   scripts_by_pk?: Maybe<Scripts>;
   /** fetch data from the table in a streaming manner: "scripts" */
   scripts_stream: Array<Scripts>;
+  /** fetch data from the table: "sensor_type" */
+  sensor_type: Array<Sensor_Type>;
+  /** fetch aggregated fields from the table: "sensor_type" */
+  sensor_type_aggregate: Sensor_Type_Aggregate;
+  /** fetch data from the table: "sensor_type" using primary key columns */
+  sensor_type_by_pk?: Maybe<Sensor_Type>;
+  /** fetch data from the table in a streaming manner: "sensor_type" */
+  sensor_type_stream: Array<Sensor_Type>;
   /** fetch data from the table: "services" */
   services: Array<Services>;
   /** fetch aggregated fields from the table: "services" */
@@ -110419,6 +111232,36 @@ export type Subscription_RootScripts_StreamArgs = {
   batch_size: Scalars['Int']['input'];
   cursor: Array<InputMaybe<Scripts_Stream_Cursor_Input>>;
   where?: InputMaybe<Scripts_Bool_Exp>;
+};
+
+
+export type Subscription_RootSensor_TypeArgs = {
+  distinct_on?: InputMaybe<Array<Sensor_Type_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Sensor_Type_Order_By>>;
+  where?: InputMaybe<Sensor_Type_Bool_Exp>;
+};
+
+
+export type Subscription_RootSensor_Type_AggregateArgs = {
+  distinct_on?: InputMaybe<Array<Sensor_Type_Select_Column>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  order_by?: InputMaybe<Array<Sensor_Type_Order_By>>;
+  where?: InputMaybe<Sensor_Type_Bool_Exp>;
+};
+
+
+export type Subscription_RootSensor_Type_By_PkArgs = {
+  value: Scalars['String']['input'];
+};
+
+
+export type Subscription_RootSensor_Type_StreamArgs = {
+  batch_size: Scalars['Int']['input'];
+  cursor: Array<InputMaybe<Sensor_Type_Stream_Cursor_Input>>;
+  where?: InputMaybe<Sensor_Type_Bool_Exp>;
 };
 
 
@@ -129491,6 +130334,15 @@ export type FetchDeliveryProductsWithPricesQueryVariables = Exact<{
 
 export type FetchDeliveryProductsWithPricesQuery = { __typename?: 'query_root', product_partner_localities_price: Array<{ __typename?: 'product_partner_localities_price', id: any, sale_price?: any | null, parent_id?: any | null, product_variation_id: any, product_variation: { __typename?: 'product_variation', variation: { __typename?: 'variation', pack_size: string, id: any, slug: string, variation_type?: Variation_Type_Enum | null }, product: { __typename?: 'product', id: any, hsn_code: string, description: string, name: string } }, partner_locality: { __typename?: 'partner_localities', partner_id: any } }> };
 
+export type ActiveFillupCheckQueryVariables = Exact<{
+  limit: Scalars['Int']['input'];
+  offset: Scalars['Int']['input'];
+  driver_vehicle_id?: InputMaybe<Scalars['uuid']['input']>;
+}>;
+
+
+export type ActiveFillupCheckQuery = { __typename?: 'query_root', fillup_request: Array<{ __typename?: 'fillup_request', quantity: any, quantity_approved?: any | null, id: any, is_active: boolean, state: Fillup_Request_Status_Enum, created_at?: any | null, fuel_request_type?: Fuel_Request_Type_Enum | null }>, fillup_request_aggregate: { __typename?: 'fillup_request_aggregate', aggregate?: { __typename?: 'fillup_request_aggregate_fields', count: number } | null } };
+
 export type AddIndentMutationVariables = Exact<{
   objects: Array<Partner_Order_Item_Value_Insert_Input> | Partner_Order_Item_Value_Insert_Input;
 }>;
@@ -129581,6 +130433,15 @@ export type FetchAllCountriesQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type FetchAllCountriesQuery = { __typename?: 'query_root', country: Array<{ __typename?: 'country', id: any, alpha_code3?: string | null, alpha_code2?: string | null, name?: string | null, official_state?: string | null, numeric_code_id?: number | null, states: Array<{ __typename?: 'state', country_id: any, name?: string | null, numeric_code_id?: string | null, id: any, cities: Array<{ __typename?: 'city', code?: string | null, district?: string | null, id: any, name?: string | null, state_id: any }> }> }> };
 
+export type FetchOrderStatsForDriverV3MutationVariables = Exact<{
+  driver_vehicle_id: Scalars['String']['input'];
+  start_date: Scalars['timestamp']['input'];
+  end_date: Scalars['timestamp']['input'];
+}>;
+
+
+export type FetchOrderStatsForDriverV3Mutation = { __typename?: 'mutation_root', fetchOrderStatsForDriverV3?: { __typename?: 'fetchOrderStatsForDriverV3Output', data: any } | null };
+
 export type FillupHistoryQueryVariables = Exact<{
   limit: Scalars['Int']['input'];
   offset: Scalars['Int']['input'];
@@ -129589,6 +130450,17 @@ export type FillupHistoryQueryVariables = Exact<{
 
 
 export type FillupHistoryQuery = { __typename?: 'query_root', fillup_request: Array<{ __typename?: 'fillup_request', quantity: any, quantity_approved?: any | null, id: any, is_active: boolean, state: Fillup_Request_Status_Enum, created_at?: any | null, fuel_request_type?: Fuel_Request_Type_Enum | null, vehicle_tank_type_product_variation?: { __typename?: 'vehicle_tank_type_product_variation', vehicle_tank_type: { __typename?: 'vehicle_tank_type', tank_type: { __typename?: 'tank_type', name?: string | null, id: any, is_active: boolean }, vehicle: { __typename?: 'vehicle', name: string, location?: any | null, fuel_tank_capacity?: number | null, id: any } }, product_variation: { __typename?: 'product_variation', product: { __typename?: 'product', id: any, is_active: boolean, hsn_code: string, description: string }, variation: { __typename?: 'variation', description: string, id: any, is_active: boolean, pack_size: string } } } | null, partner_order?: { __typename?: 'partner_order', affiliation_amount?: any | null, affiliation_user_id?: any | null, amount?: any | null, amount_paid?: any | null, amount_to_be_paid?: any | null, partner_address: { __typename?: 'partner_address', address_line1: string, address_line2: string, city_id?: any | null, country_id?: string | null, id: any, is_active: boolean, landMark?: string | null, house_number: string }, partner_order_items: Array<{ __typename?: 'partner_order_item', actual_amount?: any | null, actual_qty: any, amount?: any | null, partner_id?: any | null, partner_order_id: any, state: Partner_Order_Item_State_Enum, qty: any, unit: string, unit_price?: any | null, partner_order_item_values: Array<{ __typename?: 'partner_order_item_value', id: any, is_active: boolean, key: string, partner_order_item_id: any, url?: string | null, value: string }> }> } | null, task?: { __typename?: 'task', category: Task_Type_Enum, driver_vehicle_id: any, customer_order_id?: any | null, is_active: boolean, task_values: Array<{ __typename?: 'task_value', id: any, key: string, url?: string | null, value: string, quantity_dispensed?: any | null }>, partner_address?: { __typename?: 'partner_address', address_line1: string, address_line2: string, city_id?: any | null, country_id?: string | null, house_number: string, is_active: boolean, landMark?: string | null } | null, organization_address?: { __typename?: 'organization_address', address_line1?: string | null, address_line2?: string | null, city: { __typename?: 'city', id: any, name?: string | null, state: { __typename?: 'state', country_id: any, id: any, country: { __typename?: 'country', id: any, name?: string | null } } } } | null } | null }>, fillup_request_aggregate: { __typename?: 'fillup_request_aggregate', aggregate?: { __typename?: 'fillup_request_aggregate_fields', count: number } | null } };
+
+export type FillupHistoryNewQueryVariables = Exact<{
+  limit: Scalars['Int']['input'];
+  offset: Scalars['Int']['input'];
+  driver_vehicle_id?: InputMaybe<Scalars['uuid']['input']>;
+  start_date: Scalars['timestamp']['input'];
+  end_date: Scalars['timestamp']['input'];
+}>;
+
+
+export type FillupHistoryNewQuery = { __typename?: 'query_root', fillup_request: Array<{ __typename?: 'fillup_request', quantity: any, quantity_approved?: any | null, id: any, state: Fillup_Request_Status_Enum, created_at?: any | null, fuel_request_type?: Fuel_Request_Type_Enum | null, vehicle_tank_type_product_variation?: { __typename?: 'vehicle_tank_type_product_variation', product_variation: { __typename?: 'product_variation', product: { __typename?: 'product', name: string } } } | null, task?: { __typename?: 'task', category: Task_Type_Enum } | null }>, fillup_request_aggregate: { __typename?: 'fillup_request_aggregate', aggregate?: { __typename?: 'fillup_request_aggregate_fields', count: number } | null } };
 
 export type FillupRequestByIdQueryVariables = Exact<{
   id: Scalars['uuid']['input'];
@@ -129611,6 +130483,13 @@ export type RaiseFillupRequestMutationVariables = Exact<{
 
 
 export type RaiseFillupRequestMutation = { __typename?: 'mutation_root', insert_fillup_request_one?: { __typename?: 'fillup_request', id: any, is_active: boolean, quantity: any, state: Fillup_Request_Status_Enum, unit?: string | null, otp?: number | null, product_variation_id?: any | null, fuel_request_type?: Fuel_Request_Type_Enum | null, task_id?: any | null, driver_vehicle?: { __typename?: 'driver_vehicle', driver_id: any, state?: Login_Type_Enum | null, status?: Partner_Vehicle_State_Enum | null, vehicle_id: any } | null } | null };
+
+export type RejectOldFillupRequestsMutationVariables = Exact<{
+  cutoff_time: Scalars['timestamp']['input'];
+}>;
+
+
+export type RejectOldFillupRequestsMutation = { __typename?: 'mutation_root', update_fillup_request?: { __typename?: 'fillup_request_mutation_response', affected_rows: number, returning: Array<{ __typename?: 'fillup_request', id: any, state: Fillup_Request_Status_Enum, created_at?: any | null }> } | null };
 
 export type ToggleAddressActivationMutationVariables = Exact<{
   orgAddressId?: InputMaybe<Scalars['uuid']['input']>;
@@ -130176,6 +131055,7 @@ export const FetchDeliveryDatesWithSlotsDocument = {"kind":"Document","definitio
 export const FetchDeliveryFeesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"fetchDeliveryFees"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"object"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"deliveryFeesInput"}},"defaultValue":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"organization_user_id"},"value":{"kind":"StringValue","value":"","block":false}},{"kind":"ObjectField","name":{"kind":"Name","value":"product_variation_id"},"value":{"kind":"StringValue","value":"","block":false}},{"kind":"ObjectField","name":{"kind":"Name","value":"qty"},"value":{"kind":"StringValue","value":"","block":false}},{"kind":"ObjectField","name":{"kind":"Name","value":"shipping_address_id"},"value":{"kind":"StringValue","value":"","block":false}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"fetchDeliveryFees"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"object"},"value":{"kind":"Variable","name":{"kind":"Name","value":"object"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"delivery_fees"}},{"kind":"Field","name":{"kind":"Name","value":"discount"}},{"kind":"Field","name":{"kind":"Name","value":"error"}},{"kind":"Field","name":{"kind":"Name","value":"message"}},{"kind":"Field","name":{"kind":"Name","value":"tax_amount"}},{"kind":"Field","name":{"kind":"Name","value":"total_amount"}},{"kind":"Field","name":{"kind":"Name","value":"custom_cgst"}},{"kind":"Field","name":{"kind":"Name","value":"custom_igst"}},{"kind":"Field","name":{"kind":"Name","value":"custom_sgst"}}]}}]}}]} as unknown as DocumentNode<FetchDeliveryFeesQuery, FetchDeliveryFeesQueryVariables>;
 export const FetchDeliveryOrderByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"fetchDeliveryOrderById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"OrderId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"uuid"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"customer_order"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"id"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_eq"},"value":{"kind":"Variable","name":{"kind":"Name","value":"OrderId"}}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"order_code"}},{"kind":"Field","name":{"kind":"Name","value":"tax"}},{"kind":"Field","name":{"kind":"Name","value":"delivery_fee"}},{"kind":"Field","name":{"kind":"Name","value":"voucher_discount"}},{"kind":"Field","name":{"kind":"Name","value":"invoices"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"invoiced_items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"actual_amount"}},{"kind":"Field","name":{"kind":"Name","value":"actual_qty"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"customer_asset"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"capacity"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"invoiced_items_aggregate"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"aggregate"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"sum"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"actual_amount"}},{"kind":"Field","name":{"kind":"Name","value":"actual_qty"}}]}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"amount"}},{"kind":"Field","name":{"kind":"Name","value":"amount_paid"}},{"kind":"Field","name":{"kind":"Name","value":"amount_to_be_paid"}},{"kind":"Field","name":{"kind":"Name","value":"otp"}},{"kind":"Field","name":{"kind":"Name","value":"is_otp_required"}},{"kind":"Field","name":{"kind":"Name","value":"customer_order_customer_assets"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"customer_asset"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"capacity"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"registration_number"}},{"kind":"Field","name":{"kind":"Name","value":"asset_type_id"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"billing_address_id"}},{"kind":"Field","name":{"kind":"Name","value":"delivery_fee"}},{"kind":"Field","name":{"kind":"Name","value":"delivery_preference"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"instruction"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"is_prepaid"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"order_date"}},{"kind":"Field","name":{"kind":"Name","value":"service_tax"}},{"kind":"Field","name":{"kind":"Name","value":"shipping_address_id"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"tax"}},{"kind":"Field","name":{"kind":"Name","value":"customer_order_items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"voucher_discount"}},{"kind":"Field","name":{"kind":"Name","value":"unit_price"}},{"kind":"Field","name":{"kind":"Name","value":"actual_amount"}},{"kind":"Field","name":{"kind":"Name","value":"actual_delivery_date"}},{"kind":"Field","name":{"kind":"Name","value":"actual_qty"}},{"kind":"Field","name":{"kind":"Name","value":"amount"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"delivery_fee"}},{"kind":"Field","name":{"kind":"Name","value":"estimate_delivery_date"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"order_id"}},{"kind":"Field","name":{"kind":"Name","value":"product_variation_id"}},{"kind":"Field","name":{"kind":"Name","value":"product_variation"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"product"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"category"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"sku"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}}]}},{"kind":"Field","name":{"kind":"Name","value":"variation"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}},{"kind":"Field","name":{"kind":"Name","value":"expiry_date"}}]}},{"kind":"Field","name":{"kind":"Name","value":"qty"}},{"kind":"Field","name":{"kind":"Name","value":"service_tax"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"task_id"}},{"kind":"Field","name":{"kind":"Name","value":"task"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"task_values"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"task_id"}},{"kind":"Field","name":{"kind":"Name","value":"key"}},{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"quantity_dispensed"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"customer_asset"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"color"}},{"kind":"Field","name":{"kind":"Name","value":"capacity"}},{"kind":"Field","name":{"kind":"Name","value":"registration_number"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"modal"}},{"kind":"Field","name":{"kind":"Name","value":"invoiced_items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"actual_amount"}},{"kind":"Field","name":{"kind":"Name","value":"actual_qty"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"driver_vehicle"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"driver_id"}},{"kind":"Field","name":{"kind":"Name","value":"vehicle"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"registration_number"}}]}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"first_name"}},{"kind":"Field","name":{"kind":"Name","value":"middle_name"}},{"kind":"Field","name":{"kind":"Name","value":"last_name"}},{"kind":"Field","name":{"kind":"Name","value":"phone_number"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"tax"}},{"kind":"Field","name":{"kind":"Name","value":"unit"}},{"kind":"Field","name":{"kind":"Name","value":"product_variation_partner_localities_slot"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"start_time"}},{"kind":"Field","name":{"kind":"Name","value":"day_date"}},{"kind":"Field","name":{"kind":"Name","value":"end_time"}},{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"organization_address"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"house_number"}},{"kind":"Field","name":{"kind":"Name","value":"address_line1"}},{"kind":"Field","name":{"kind":"Name","value":"address_line2"}},{"kind":"Field","name":{"kind":"Name","value":"address_type"}},{"kind":"Field","name":{"kind":"Name","value":"landMark"}},{"kind":"Field","name":{"kind":"Name","value":"pincode"}},{"kind":"Field","name":{"kind":"Name","value":"locality"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}},{"kind":"Field","name":{"kind":"Name","value":"street_address"}},{"kind":"Field","name":{"kind":"Name","value":"city"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"city_id"}},{"kind":"Field","name":{"kind":"Name","value":"country_id"}},{"kind":"Field","name":{"kind":"Name","value":"country"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"alpha_code2"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"location"}},{"kind":"Field","name":{"kind":"Name","value":"instruction"}},{"kind":"Field","name":{"kind":"Name","value":"state"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"organization_user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"first_name"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"last_name"}},{"kind":"Field","name":{"kind":"Name","value":"middle_name"}},{"kind":"Field","name":{"kind":"Name","value":"pan_number"}},{"kind":"Field","name":{"kind":"Name","value":"phone_number"}},{"kind":"Field","name":{"kind":"Name","value":"profile_pic"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"organizationAddressByShippingAddressId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"house_number"}},{"kind":"Field","name":{"kind":"Name","value":"address_line1"}},{"kind":"Field","name":{"kind":"Name","value":"address_line2"}},{"kind":"Field","name":{"kind":"Name","value":"address_type"}},{"kind":"Field","name":{"kind":"Name","value":"landMark"}},{"kind":"Field","name":{"kind":"Name","value":"pincode"}},{"kind":"Field","name":{"kind":"Name","value":"locality"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}},{"kind":"Field","name":{"kind":"Name","value":"street_address"}},{"kind":"Field","name":{"kind":"Name","value":"city"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"city_id"}},{"kind":"Field","name":{"kind":"Name","value":"country_id"}},{"kind":"Field","name":{"kind":"Name","value":"country"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"alpha_code2"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"location"}},{"kind":"Field","name":{"kind":"Name","value":"instruction"}},{"kind":"Field","name":{"kind":"Name","value":"state"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]} as unknown as DocumentNode<FetchDeliveryOrderByIdQuery, FetchDeliveryOrderByIdQueryVariables>;
 export const FetchDeliveryProductsWithPricesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"fetchDeliveryProductsWithPrices"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"uuid"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"productname"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}},"defaultValue":{"kind":"StringValue","value":"Diesel","block":false}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"product_partner_localities_price"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"id"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_eq"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}},{"kind":"ObjectField","name":{"kind":"Name","value":"product_variation"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"product"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"name"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_eq"},"value":{"kind":"Variable","name":{"kind":"Name","value":"productname"}}}]}}]}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"sale_price"}},{"kind":"Field","name":{"kind":"Name","value":"parent_id"}},{"kind":"Field","name":{"kind":"Name","value":"product_variation_id"}},{"kind":"Field","name":{"kind":"Name","value":"product_variation"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"variation"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"pack_size"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"variation_type"}}]}},{"kind":"Field","name":{"kind":"Name","value":"product"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"hsn_code"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"parent_id"}},{"kind":"Field","name":{"kind":"Name","value":"partner_locality"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"partner_id"}}]}}]}}]}}]} as unknown as DocumentNode<FetchDeliveryProductsWithPricesQuery, FetchDeliveryProductsWithPricesQueryVariables>;
+export const ActiveFillupCheckDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"activeFillupCheck"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"offset"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"driver_vehicle_id"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"uuid"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"fillup_request"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"offset"},"value":{"kind":"Variable","name":{"kind":"Name","value":"offset"}}},{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"driver_vehicle_id"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_eq"},"value":{"kind":"Variable","name":{"kind":"Name","value":"driver_vehicle_id"}}}]}},{"kind":"ObjectField","name":{"kind":"Name","value":"is_active"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_eq"},"value":{"kind":"BooleanValue","value":true}}]}},{"kind":"ObjectField","name":{"kind":"Name","value":"state"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_eq"},"value":{"kind":"EnumValue","value":"PENDING"}}]}}]}},{"kind":"Argument","name":{"kind":"Name","value":"order_by"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"created_at"},"value":{"kind":"EnumValue","value":"desc"}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"quantity"}},{"kind":"Field","name":{"kind":"Name","value":"quantity_approved"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"fuel_request_type"}}]}},{"kind":"Field","name":{"kind":"Name","value":"fillup_request_aggregate"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"driver_vehicle_id"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_eq"},"value":{"kind":"Variable","name":{"kind":"Name","value":"driver_vehicle_id"}}}]}},{"kind":"ObjectField","name":{"kind":"Name","value":"is_active"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_eq"},"value":{"kind":"BooleanValue","value":true}}]}},{"kind":"ObjectField","name":{"kind":"Name","value":"state"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_eq"},"value":{"kind":"EnumValue","value":"PENDING"}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"aggregate"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"count"}}]}}]}}]}}]} as unknown as DocumentNode<ActiveFillupCheckQuery, ActiveFillupCheckQueryVariables>;
 export const AddIndentDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"addIndent"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"objects"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"partner_order_item_value_insert_input"}}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"insert_partner_order_item_value"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"objects"},"value":{"kind":"Variable","name":{"kind":"Name","value":"objects"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"affected_rows"}},{"kind":"Field","name":{"kind":"Name","value":"returning"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"partner_order_item_id"}},{"kind":"Field","name":{"kind":"Name","value":"key"}},{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}}]}}]}}]}}]} as unknown as DocumentNode<AddIndentMutation, AddIndentMutationVariables>;
 export const AddNewBillingAddressDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"addNewBillingAddress"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"address_line1"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"address_line2"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"city_id"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"uuid"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"country_id"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"uuid"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"house_number"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"is_active"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"landMark"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"location"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"point"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"pincode"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"organization_user_id"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"uuid"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"state_id"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"uuid"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"street_address"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"name"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"instruction"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"address_type"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"address_type_enum"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"gst_number"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"ownership"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"insert_organization_address"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"objects"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"address_line1"},"value":{"kind":"Variable","name":{"kind":"Name","value":"address_line1"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"address_line2"},"value":{"kind":"Variable","name":{"kind":"Name","value":"address_line2"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"country_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"country_id"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"house_number"},"value":{"kind":"Variable","name":{"kind":"Name","value":"house_number"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"is_active"},"value":{"kind":"Variable","name":{"kind":"Name","value":"is_active"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"landMark"},"value":{"kind":"Variable","name":{"kind":"Name","value":"landMark"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"location"},"value":{"kind":"Variable","name":{"kind":"Name","value":"location"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"pincode"},"value":{"kind":"Variable","name":{"kind":"Name","value":"pincode"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"organization_user_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"organization_user_id"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"state_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"state_id"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"city_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"city_id"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"street_address"},"value":{"kind":"Variable","name":{"kind":"Name","value":"street_address"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"name"},"value":{"kind":"Variable","name":{"kind":"Name","value":"name"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"instruction"},"value":{"kind":"Variable","name":{"kind":"Name","value":"instruction"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"address_type"},"value":{"kind":"Variable","name":{"kind":"Name","value":"address_type"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"gst_number"},"value":{"kind":"Variable","name":{"kind":"Name","value":"gst_number"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"ownership"},"value":{"kind":"Variable","name":{"kind":"Name","value":"ownership"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"returning"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"address_line1"}},{"kind":"Field","name":{"kind":"Name","value":"address_line2"}},{"kind":"Field","name":{"kind":"Name","value":"house_number"}},{"kind":"Field","name":{"kind":"Name","value":"city"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"district"}},{"kind":"Field","name":{"kind":"Name","value":"organization_addresses"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"address_line1"}},{"kind":"Field","name":{"kind":"Name","value":"address_line2"}},{"kind":"Field","name":{"kind":"Name","value":"city_id"}},{"kind":"Field","name":{"kind":"Name","value":"country"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"alpha_code2"}},{"kind":"Field","name":{"kind":"Name","value":"alpha_code3"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"numeric_code_id"}},{"kind":"Field","name":{"kind":"Name","value":"official_state"}}]}},{"kind":"Field","name":{"kind":"Name","value":"country_id"}},{"kind":"Field","name":{"kind":"Name","value":"house_number"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"landMark"}},{"kind":"Field","name":{"kind":"Name","value":"location"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"organization_user_id"}},{"kind":"Field","name":{"kind":"Name","value":"pincode"}},{"kind":"Field","name":{"kind":"Name","value":"state_id"}},{"kind":"Field","name":{"kind":"Name","value":"street_address"}},{"kind":"Field","name":{"kind":"Name","value":"address_type"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"city_id"}},{"kind":"Field","name":{"kind":"Name","value":"country"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"alpha_code2"}},{"kind":"Field","name":{"kind":"Name","value":"alpha_code3"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"official_state"}},{"kind":"Field","name":{"kind":"Name","value":"numeric_code_id"}}]}},{"kind":"Field","name":{"kind":"Name","value":"country_id"}},{"kind":"Field","name":{"kind":"Name","value":"house_number"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"landMark"}},{"kind":"Field","name":{"kind":"Name","value":"localities_id"}},{"kind":"Field","name":{"kind":"Name","value":"location"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"organization_user_id"}},{"kind":"Field","name":{"kind":"Name","value":"pincode"}},{"kind":"Field","name":{"kind":"Name","value":"instruction"}},{"kind":"Field","name":{"kind":"Name","value":"state_id"}},{"kind":"Field","name":{"kind":"Name","value":"street_address"}},{"kind":"Field","name":{"kind":"Name","value":"address_type"}},{"kind":"Field","name":{"kind":"Name","value":"ownership"}},{"kind":"Field","name":{"kind":"Name","value":"location"}},{"kind":"Field","name":{"kind":"Name","value":"pincode"}},{"kind":"Field","name":{"kind":"Name","value":"state"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"country_id"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"numeric_code_id"}}]}}]}}]}}]}}]} as unknown as DocumentNode<AddNewBillingAddressMutation, AddNewBillingAddressMutationVariables>;
 export const AddNewCustomerAddressDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"addNewCustomerAddress"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"object"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"addCustomerAddressInput"}},"defaultValue":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"city_id"},"value":{"kind":"StringValue","value":"","block":false}},{"kind":"ObjectField","name":{"kind":"Name","value":"country_id"},"value":{"kind":"StringValue","value":"","block":false}},{"kind":"ObjectField","name":{"kind":"Name","value":"organization_user_id"},"value":{"kind":"StringValue","value":"","block":false}},{"kind":"ObjectField","name":{"kind":"Name","value":"ownership"},"value":{"kind":"StringValue","value":"","block":false}},{"kind":"ObjectField","name":{"kind":"Name","value":"state_id"},"value":{"kind":"StringValue","value":"","block":false}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"addCustomerAddress"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"object"},"value":{"kind":"Variable","name":{"kind":"Name","value":"object"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"address"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"error"}},{"kind":"Field","name":{"kind":"Name","value":"message"}}]}}]}}]} as unknown as DocumentNode<AddNewCustomerAddressQuery, AddNewCustomerAddressQueryVariables>;
@@ -130185,10 +131065,13 @@ export const CheckIndentNumberExistsDocument = {"kind":"Document","definitions":
 export const FetchAddressByNameDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"fetchAddressByName"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"address_type"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"address_type_enum"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"organization_user_id"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"uuid"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"name"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"organization_address"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"address_type"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_eq"},"value":{"kind":"Variable","name":{"kind":"Name","value":"address_type"}}}]}},{"kind":"ObjectField","name":{"kind":"Name","value":"organization_user_id"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_eq"},"value":{"kind":"Variable","name":{"kind":"Name","value":"organization_user_id"}}}]}},{"kind":"ObjectField","name":{"kind":"Name","value":"is_active"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_eq"},"value":{"kind":"BooleanValue","value":true}}]}},{"kind":"ObjectField","name":{"kind":"Name","value":"_or"},"value":{"kind":"ListValue","values":[{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"house_number"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_ilike"},"value":{"kind":"Variable","name":{"kind":"Name","value":"name"}}}]}}]},{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"address_line1"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_ilike"},"value":{"kind":"Variable","name":{"kind":"Name","value":"name"}}}]}}]},{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"address_line2"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_ilike"},"value":{"kind":"Variable","name":{"kind":"Name","value":"name"}}}]}}]},{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"pincode"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_ilike"},"value":{"kind":"Variable","name":{"kind":"Name","value":"name"}}}]}}]}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"address_line1"}},{"kind":"Field","name":{"kind":"Name","value":"address_line2"}},{"kind":"Field","name":{"kind":"Name","value":"house_number"}},{"kind":"Field","name":{"kind":"Name","value":"organization_address_payment_methods"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"customer_payment_method"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"value"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"city"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"state_id"}}]}},{"kind":"Field","name":{"kind":"Name","value":"city_id"}},{"kind":"Field","name":{"kind":"Name","value":"country"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"country_id"}},{"kind":"Field","name":{"kind":"Name","value":"house_number"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"organization_address_payment_methods"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"customer_payment_method"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"value"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"localities_id"}},{"kind":"Field","name":{"kind":"Name","value":"location"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"organization_user_id"}},{"kind":"Field","name":{"kind":"Name","value":"pincode"}},{"kind":"Field","name":{"kind":"Name","value":"state_id"}},{"kind":"Field","name":{"kind":"Name","value":"street_address"}},{"kind":"Field","name":{"kind":"Name","value":"address_type"}},{"kind":"Field","name":{"kind":"Name","value":"state"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"country_id"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"numeric_code_id"}}]}}]}}]}}]} as unknown as DocumentNode<FetchAddressByNameQuery, FetchAddressByNameQueryVariables>;
 export const FetchAddressByTypeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"fetchAddressByType"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"address_type"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"address_type_enum"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"organization_user_id"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"uuid"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"organization_address"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"address_type"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_eq"},"value":{"kind":"Variable","name":{"kind":"Name","value":"address_type"}}}]}},{"kind":"ObjectField","name":{"kind":"Name","value":"organization_user_id"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_eq"},"value":{"kind":"Variable","name":{"kind":"Name","value":"organization_user_id"}}}]}}]}},{"kind":"Argument","name":{"kind":"Name","value":"order_by"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"created_at"},"value":{"kind":"EnumValue","value":"desc"}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"address_line1"}},{"kind":"Field","name":{"kind":"Name","value":"address_line2"}},{"kind":"Field","name":{"kind":"Name","value":"house_number"}},{"kind":"Field","name":{"kind":"Name","value":"address_type"}},{"kind":"Field","name":{"kind":"Name","value":"city"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"code"}}]}},{"kind":"Field","name":{"kind":"Name","value":"country"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"alpha_code3"}},{"kind":"Field","name":{"kind":"Name","value":"alpha_code2"}}]}},{"kind":"Field","name":{"kind":"Name","value":"country_id"}},{"kind":"Field","name":{"kind":"Name","value":"house_number"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"organization_address_payment_methods"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"customer_payment_method"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"value"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"instruction"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"landMark"}},{"kind":"Field","name":{"kind":"Name","value":"location"}},{"kind":"Field","name":{"kind":"Name","value":"localities_id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"locality"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"area"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"pincode"}},{"kind":"Field","name":{"kind":"Name","value":"organization_user_id"}},{"kind":"Field","name":{"kind":"Name","value":"state"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"street_address"}},{"kind":"Field","name":{"kind":"Name","value":"gst_number"}}]}}]}}]} as unknown as DocumentNode<FetchAddressByTypeQuery, FetchAddressByTypeQueryVariables>;
 export const FetchAllCountriesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"fetchAllCountries"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"country"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"10"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"alpha_code3"}},{"kind":"Field","name":{"kind":"Name","value":"alpha_code2"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"official_state"}},{"kind":"Field","name":{"kind":"Name","value":"states"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"order_by"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"name"},"value":{"kind":"EnumValue","value":"asc_nulls_last"}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"cities"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"district"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"state_id"}}]}},{"kind":"Field","name":{"kind":"Name","value":"country_id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"numeric_code_id"}},{"kind":"Field","name":{"kind":"Name","value":"id"}}]}},{"kind":"Field","name":{"kind":"Name","value":"numeric_code_id"}}]}}]}}]} as unknown as DocumentNode<FetchAllCountriesQuery, FetchAllCountriesQueryVariables>;
+export const FetchOrderStatsForDriverV3Document = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"fetchOrderStatsForDriverV3"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"driver_vehicle_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"start_date"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"timestamp"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"end_date"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"timestamp"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"fetchOrderStatsForDriverV3"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"object"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"driver_vehicle_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"driver_vehicle_id"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"start_date"},"value":{"kind":"Variable","name":{"kind":"Name","value":"start_date"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"end_date"},"value":{"kind":"Variable","name":{"kind":"Name","value":"end_date"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"data"}}]}}]}}]} as unknown as DocumentNode<FetchOrderStatsForDriverV3Mutation, FetchOrderStatsForDriverV3MutationVariables>;
 export const FillupHistoryDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"fillupHistory"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"offset"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"driver_vehicle_id"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"uuid"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"fillup_request"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"offset"},"value":{"kind":"Variable","name":{"kind":"Name","value":"offset"}}},{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"driver_vehicle_id"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_eq"},"value":{"kind":"Variable","name":{"kind":"Name","value":"driver_vehicle_id"}}}]}}]}},{"kind":"Argument","name":{"kind":"Name","value":"order_by"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"created_at"},"value":{"kind":"EnumValue","value":"desc"}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"quantity"}},{"kind":"Field","name":{"kind":"Name","value":"quantity_approved"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"vehicle_tank_type_product_variation"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"vehicle_tank_type"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"tank_type"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}}]}},{"kind":"Field","name":{"kind":"Name","value":"vehicle"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"location"}},{"kind":"Field","name":{"kind":"Name","value":"fuel_tank_capacity"}},{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"product_variation"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"product"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"hsn_code"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}},{"kind":"Field","name":{"kind":"Name","value":"variation"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"pack_size"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"fuel_request_type"}},{"kind":"Field","name":{"kind":"Name","value":"partner_order"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"affiliation_amount"}},{"kind":"Field","name":{"kind":"Name","value":"affiliation_user_id"}},{"kind":"Field","name":{"kind":"Name","value":"amount"}},{"kind":"Field","name":{"kind":"Name","value":"amount_paid"}},{"kind":"Field","name":{"kind":"Name","value":"amount_to_be_paid"}},{"kind":"Field","name":{"kind":"Name","value":"partner_address"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"address_line1"}},{"kind":"Field","name":{"kind":"Name","value":"address_line2"}},{"kind":"Field","name":{"kind":"Name","value":"city_id"}},{"kind":"Field","name":{"kind":"Name","value":"country_id"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"landMark"}},{"kind":"Field","name":{"kind":"Name","value":"house_number"}}]}},{"kind":"Field","name":{"kind":"Name","value":"partner_order_items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"actual_amount"}},{"kind":"Field","name":{"kind":"Name","value":"actual_qty"}},{"kind":"Field","name":{"kind":"Name","value":"amount"}},{"kind":"Field","name":{"kind":"Name","value":"partner_id"}},{"kind":"Field","name":{"kind":"Name","value":"partner_order_id"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"qty"}},{"kind":"Field","name":{"kind":"Name","value":"unit"}},{"kind":"Field","name":{"kind":"Name","value":"unit_price"}},{"kind":"Field","name":{"kind":"Name","value":"partner_order_item_values"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"key"}},{"kind":"Field","name":{"kind":"Name","value":"partner_order_item_id"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"value"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"task"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"task_values"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"key"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"quantity_dispensed"}}]}},{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"driver_vehicle_id"}},{"kind":"Field","name":{"kind":"Name","value":"customer_order_id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"partner_address"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"address_line1"}},{"kind":"Field","name":{"kind":"Name","value":"address_line2"}},{"kind":"Field","name":{"kind":"Name","value":"city_id"}},{"kind":"Field","name":{"kind":"Name","value":"country_id"}},{"kind":"Field","name":{"kind":"Name","value":"house_number"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"landMark"}}]}},{"kind":"Field","name":{"kind":"Name","value":"organization_address"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"address_line1"}},{"kind":"Field","name":{"kind":"Name","value":"address_line2"}},{"kind":"Field","name":{"kind":"Name","value":"city"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"state"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"country_id"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"country"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"fillup_request_aggregate"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"driver_vehicle_id"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_eq"},"value":{"kind":"Variable","name":{"kind":"Name","value":"driver_vehicle_id"}}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"aggregate"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"count"}}]}}]}}]}}]} as unknown as DocumentNode<FillupHistoryQuery, FillupHistoryQueryVariables>;
+export const FillupHistoryNewDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"fillupHistoryNew"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"offset"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"driver_vehicle_id"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"uuid"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"start_date"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"timestamp"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"end_date"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"timestamp"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"fillup_request"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"offset"},"value":{"kind":"Variable","name":{"kind":"Name","value":"offset"}}},{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"driver_vehicle_id"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_eq"},"value":{"kind":"Variable","name":{"kind":"Name","value":"driver_vehicle_id"}}}]}},{"kind":"ObjectField","name":{"kind":"Name","value":"created_at"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_gte"},"value":{"kind":"Variable","name":{"kind":"Name","value":"start_date"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"_lte"},"value":{"kind":"Variable","name":{"kind":"Name","value":"end_date"}}}]}}]}},{"kind":"Argument","name":{"kind":"Name","value":"order_by"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"created_at"},"value":{"kind":"EnumValue","value":"desc"}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"quantity"}},{"kind":"Field","name":{"kind":"Name","value":"quantity_approved"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"fuel_request_type"}},{"kind":"Field","name":{"kind":"Name","value":"vehicle_tank_type_product_variation"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"product_variation"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"product"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"task"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"category"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"fillup_request_aggregate"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"driver_vehicle_id"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_eq"},"value":{"kind":"Variable","name":{"kind":"Name","value":"driver_vehicle_id"}}}]}},{"kind":"ObjectField","name":{"kind":"Name","value":"created_at"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_gte"},"value":{"kind":"Variable","name":{"kind":"Name","value":"start_date"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"_lte"},"value":{"kind":"Variable","name":{"kind":"Name","value":"end_date"}}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"aggregate"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"count"}}]}}]}}]}}]} as unknown as DocumentNode<FillupHistoryNewQuery, FillupHistoryNewQueryVariables>;
 export const FillupRequestByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"fillupRequestById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"uuid"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"fillup_request_by_pk"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"purchase_order_erp_code"}},{"kind":"Field","name":{"kind":"Name","value":"purchase_invoice_erp_code"}},{"kind":"Field","name":{"kind":"Name","value":"grn_erp_code"}},{"kind":"Field","name":{"kind":"Name","value":"driver_vehicle_id"}},{"kind":"Field","name":{"kind":"Name","value":"fuel_request_type"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"partner_order_id"}},{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"partner_order"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"affiliation_amount"}},{"kind":"Field","name":{"kind":"Name","value":"amount"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"partner_user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"partner"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"about"}},{"kind":"Field","name":{"kind":"Name","value":"location"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"partner_order_items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"product_variation"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"product"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"variation"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"variation_name"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"partner_address"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"address_line1"}},{"kind":"Field","name":{"kind":"Name","value":"address_line2"}},{"kind":"Field","name":{"kind":"Name","value":"city_id"}},{"kind":"Field","name":{"kind":"Name","value":"address_type"}},{"kind":"Field","name":{"kind":"Name","value":"country_id"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"location"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"landMark"}},{"kind":"Field","name":{"kind":"Name","value":"house_number"}},{"kind":"Field","name":{"kind":"Name","value":"pincode"}},{"kind":"Field","name":{"kind":"Name","value":"street_address"}}]}},{"kind":"Field","name":{"kind":"Name","value":"fillup_requests"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"quantity_approved"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"vehicle_tank_type_product_variation"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"product_variation"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"expiry_date"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"product"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"hsn_code"}},{"kind":"Field","name":{"kind":"Name","value":"sku"}},{"kind":"Field","name":{"kind":"Name","value":"product_type"}}]}},{"kind":"Field","name":{"kind":"Name","value":"variation"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"pack_size"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"vehicle_tank_type"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"tank_type"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}}]}},{"kind":"Field","name":{"kind":"Name","value":"vehicle"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"device_id"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"fuel_tank_capacity"}},{"kind":"Field","name":{"kind":"Name","value":"insurance_expire_date"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"is_mothership"}},{"kind":"Field","name":{"kind":"Name","value":"location"}},{"kind":"Field","name":{"kind":"Name","value":"model"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"fuel_request_type"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"driver_vehicle_id"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"task"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"partner_address"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"pincode"}},{"kind":"Field","name":{"kind":"Name","value":"address_type"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"landMark"}},{"kind":"Field","name":{"kind":"Name","value":"city_id"}},{"kind":"Field","name":{"kind":"Name","value":"country_id"}},{"kind":"Field","name":{"kind":"Name","value":"location"}},{"kind":"Field","name":{"kind":"Name","value":"address_line1"}},{"kind":"Field","name":{"kind":"Name","value":"address_line2"}},{"kind":"Field","name":{"kind":"Name","value":"street_address"}},{"kind":"Field","name":{"kind":"Name","value":"house_number"}}]}},{"kind":"Field","name":{"kind":"Name","value":"fillup_requests"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"driver_vehicle_id"}},{"kind":"Field","name":{"kind":"Name","value":"fuel_request_type"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"product_variation_id"}},{"kind":"Field","name":{"kind":"Name","value":"quantity_approved"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"task_id"}},{"kind":"Field","name":{"kind":"Name","value":"unit"}},{"kind":"Field","name":{"kind":"Name","value":"driver_vehicle"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"driver_id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"first_name"}},{"kind":"Field","name":{"kind":"Name","value":"last_name"}},{"kind":"Field","name":{"kind":"Name","value":"license_number"}},{"kind":"Field","name":{"kind":"Name","value":"middle_name"}},{"kind":"Field","name":{"kind":"Name","value":"pan_number"}},{"kind":"Field","name":{"kind":"Name","value":"phone_number"}},{"kind":"Field","name":{"kind":"Name","value":"referral_code"}}]}},{"kind":"Field","name":{"kind":"Name","value":"vehicle"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"insurance_expire_date"}},{"kind":"Field","name":{"kind":"Name","value":"fuel_tank_capacity"}},{"kind":"Field","name":{"kind":"Name","value":"model"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"partner_address_id"}},{"kind":"Field","name":{"kind":"Name","value":"location"}},{"kind":"Field","name":{"kind":"Name","value":"tanker_capacity"}},{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"registration_number"}},{"kind":"Field","name":{"kind":"Name","value":"rc_expire_date"}},{"kind":"Field","name":{"kind":"Name","value":"rfid"}},{"kind":"Field","name":{"kind":"Name","value":"tanker_compartment_number"}},{"kind":"Field","name":{"kind":"Name","value":"year"}},{"kind":"Field","name":{"kind":"Name","value":"device_id"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"partner_address"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"address_line1"}},{"kind":"Field","name":{"kind":"Name","value":"address_line2"}},{"kind":"Field","name":{"kind":"Name","value":"address_type"}},{"kind":"Field","name":{"kind":"Name","value":"city_id"}},{"kind":"Field","name":{"kind":"Name","value":"country_id"}},{"kind":"Field","name":{"kind":"Name","value":"house_number"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"location"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"pincode"}},{"kind":"Field","name":{"kind":"Name","value":"street_address"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"vehicle_tank_type_product_variation"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"vehicle_tank_type_id"}},{"kind":"Field","name":{"kind":"Name","value":"vehicle_tank_type"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"vehicle_id"}},{"kind":"Field","name":{"kind":"Name","value":"vehicle"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"device_id"}},{"kind":"Field","name":{"kind":"Name","value":"fuel_tank_capacity"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"insurance_expire_date"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"is_mothership"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"model"}},{"kind":"Field","name":{"kind":"Name","value":"location"}}]}},{"kind":"Field","name":{"kind":"Name","value":"tank_type"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"product_variation"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"expiry_date"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"product"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"hsn_code"}},{"kind":"Field","name":{"kind":"Name","value":"sku"}},{"kind":"Field","name":{"kind":"Name","value":"product_type"}}]}},{"kind":"Field","name":{"kind":"Name","value":"variation"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"pack_size"}}]}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"customer_order_id"}},{"kind":"Field","name":{"kind":"Name","value":"driver_vehicle"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"driver_id"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"vehicle_id"}}]}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"is_done_locally"}},{"kind":"Field","name":{"kind":"Name","value":"organization_address"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"address_line1"}},{"kind":"Field","name":{"kind":"Name","value":"address_line2"}},{"kind":"Field","name":{"kind":"Name","value":"address_type"}},{"kind":"Field","name":{"kind":"Name","value":"city_id"}},{"kind":"Field","name":{"kind":"Name","value":"country"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"alpha_code2"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"quantity_approved"}},{"kind":"Field","name":{"kind":"Name","value":"state"}}]}}]}}]} as unknown as DocumentNode<FillupRequestByIdQuery, FillupRequestByIdQueryVariables>;
 export const IsValidateGstinDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"isValidateGstin"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"state_id"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"uuid"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"gstin"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"isValidateGstin"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"object"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"gstin"},"value":{"kind":"Variable","name":{"kind":"Name","value":"gstin"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"state_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"state_id"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"gstin"}},{"kind":"Field","name":{"kind":"Name","value":"status"}}]}}]}}]} as unknown as DocumentNode<IsValidateGstinQuery, IsValidateGstinQueryVariables>;
 export const RaiseFillupRequestDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"raiseFillupRequest"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"object"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"fillup_request_insert_input"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"insert_fillup_request_one"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"object"},"value":{"kind":"Variable","name":{"kind":"Name","value":"object"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"quantity"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"unit"}},{"kind":"Field","name":{"kind":"Name","value":"otp"}},{"kind":"Field","name":{"kind":"Name","value":"product_variation_id"}},{"kind":"Field","name":{"kind":"Name","value":"fuel_request_type"}},{"kind":"Field","name":{"kind":"Name","value":"driver_vehicle"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"driver_id"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"vehicle_id"}}]}},{"kind":"Field","name":{"kind":"Name","value":"task_id"}}]}}]}}]} as unknown as DocumentNode<RaiseFillupRequestMutation, RaiseFillupRequestMutationVariables>;
+export const RejectOldFillupRequestsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"rejectOldFillupRequests"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"cutoff_time"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"timestamp"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"update_fillup_request"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"created_at"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_lt"},"value":{"kind":"Variable","name":{"kind":"Name","value":"cutoff_time"}}}]}},{"kind":"ObjectField","name":{"kind":"Name","value":"state"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_neq"},"value":{"kind":"EnumValue","value":"REJECTED"}}]}}]}},{"kind":"Argument","name":{"kind":"Name","value":"_set"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"state"},"value":{"kind":"EnumValue","value":"REJECTED"}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"affected_rows"}},{"kind":"Field","name":{"kind":"Name","value":"returning"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}}]}}]}}]}}]} as unknown as DocumentNode<RejectOldFillupRequestsMutation, RejectOldFillupRequestsMutationVariables>;
 export const ToggleAddressActivationDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"toggleAddressActivation"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"orgAddressId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"uuid"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"is_Active"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Boolean"}},"defaultValue":{"kind":"BooleanValue","value":false}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"update_organization_address"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"id"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_eq"},"value":{"kind":"Variable","name":{"kind":"Name","value":"orgAddressId"}}}]}}]}},{"kind":"Argument","name":{"kind":"Name","value":"_set"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"is_active"},"value":{"kind":"Variable","name":{"kind":"Name","value":"is_Active"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"returning"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}}]}}]}}]}}]} as unknown as DocumentNode<ToggleAddressActivationMutation, ToggleAddressActivationMutationVariables>;
 export const UpdateFillupRequestStateDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"updateFillupRequestState"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"uuid"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"state"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"fillup_request_status_enum"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"update_fillup_request_by_pk"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"pk_columns"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}},{"kind":"Argument","name":{"kind":"Name","value":"_set"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"state"},"value":{"kind":"Variable","name":{"kind":"Name","value":"state"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}}]}}]}}]} as unknown as DocumentNode<UpdateFillupRequestStateMutation, UpdateFillupRequestStateMutationVariables>;
 export const UpdatePartnerOrderItemStateDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"updatePartnerOrderItemState"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"uuid"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"state"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"partner_order_item_state_enum"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"update_partner_order_item_by_pk"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"pk_columns"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}},{"kind":"Argument","name":{"kind":"Name","value":"_set"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"state"},"value":{"kind":"Variable","name":{"kind":"Name","value":"state"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}}]}}]}}]} as unknown as DocumentNode<UpdatePartnerOrderItemStateMutation, UpdatePartnerOrderItemStateMutationVariables>;

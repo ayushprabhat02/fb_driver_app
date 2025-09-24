@@ -58,12 +58,27 @@ import {
   FillupRequestByIdQuery,
   FillupRequestByIdQueryVariables,
 
-  // fillup history
-  FillupHistoryQueryVariables,
+  //  Fillup history
   FillupHistoryDocument,
   FillupHistoryQuery,
+  FillupHistoryQueryVariables,
 
-  // new indent upload APIs
+  // Active fillup check
+  ActiveFillupCheckDocument,
+  ActiveFillupCheckQuery,
+  ActiveFillupCheckQueryVariables,
+
+  // Fillup history new
+  FillupHistoryNewDocument,
+  FillupHistoryNewQuery,
+  FillupHistoryNewQueryVariables,
+
+  // Reject old fillup requests
+  RejectOldFillupRequestsDocument,
+  RejectOldFillupRequestsMutation,
+  RejectOldFillupRequestsMutationVariables,
+
+  // Indent upload APIs
   UpdateFillupRequestStateDocument,
   UpdateFillupRequestStateMutation,
   UpdateFillupRequestStateMutationVariables,
@@ -80,7 +95,7 @@ import {
   UpdatePartnerOrderStateMutation,
   UpdatePartnerOrderStateMutationVariables,
 
-  // enums
+  // Enums
   Fillup_Request_Status_Enum,
   Partner_Order_Item_State_Enum,
   Partner_Order_State_Enum,
@@ -460,27 +475,68 @@ class FillupService {
         .getState()
         .setFillupRequestDetails(response?.fillup_request_by_pk || null);
       fillupStore.getState().stopLoader('fetchFillupRequestById');
-      return response.fillup_request_by_pk;
+      return response;
     } catch (error) {
       fillupStore.getState().stopLoader('fetchFillupRequestById');
       throw error;
     }
   }
 
-  public async fetchFillupHistory(args: FillupHistoryQueryVariables) {
-    const response: FillupHistoryQuery = await callQuery({
-      queryDocument: FillupHistoryDocument,
+  public async fetchActiveFillupCheck(args: ActiveFillupCheckQueryVariables) {
+    const response: ActiveFillupCheckQuery = await callQuery({
+      queryDocument: ActiveFillupCheckDocument,
       variables: {
         ...args,
       },
     });
 
+    // Update fillup store
     fillupStore.setState(state => ({
       ...state,
-      fillupHistory: response?.fillup_request,
+      activeFillupHistory: response?.fillup_request,
     }));
+  }
 
-    return response?.fillup_request;
+  public async fetchFillupHistoryNew(args: FillupHistoryNewQueryVariables) {
+    fillupStore.getState().startLoader('fetchFillupHistoryNew');
+    try {
+      const response: FillupHistoryNewQuery = await callQuery({
+        queryDocument: FillupHistoryNewDocument,
+        variables: {
+          ...args,
+        },
+      });
+
+      // Update fillup store
+      fillupStore.setState(state => ({
+        ...state,
+        fillupHistory: response?.fillup_request,
+      }));
+
+      fillupStore.getState().stopLoader('fetchFillupHistoryNew');
+      return response;
+    } catch (error) {
+      fillupStore.getState().stopLoader('fetchFillupHistoryNew');
+      throw error;
+    }
+  }
+
+  public async rejectOldFillupRequests(args: RejectOldFillupRequestsMutationVariables) {
+    try {
+      const response: RejectOldFillupRequestsMutation = await callMutation({
+        queryDocument: RejectOldFillupRequestsDocument,
+        variables: {
+          ...args,
+        },
+      });
+
+      console.log(`Rejected ${response?.update_fillup_request?.affected_rows} old fillup requests`);
+
+      return response;
+    } catch (error) {
+      console.error('Error rejecting old fillup requests:', error);
+      throw error;
+    }
   }
 
   public async checkIndentNumberExists(args: CheckIndentNumberExistsQueryVariables) {

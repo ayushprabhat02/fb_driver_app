@@ -31,6 +31,10 @@ import {
   FetchOrderForDriverNew2Document,
   FetchOrderForDriverNew2Query,
 
+  // fetch order stats for driver v3
+  FetchOrderStatsForDriverV3MutationVariables,
+  FetchOrderStatsForDriverV3Document,
+  FetchOrderStatsForDriverV3Mutation,
 } from '@/generated/graphql';
 import {DeliveryStat} from '../types';
 
@@ -157,11 +161,27 @@ class HomeService {
     return response.customer_order_item;
   }
 
-  public async fetchOrderStatsForDriver(
-    args: FetchOrderStatsForDriverMutationVariables,
+  // public async fetchOrderStatsForDriver(
+  //   args: FetchOrderStatsForDriverMutationVariables,
+  // ) {
+  //   const response: FetchOrderStatsForDriverMutation = await callMutation({
+  //     queryDocument: FetchOrderStatsForDriverDocument,
+  //     variables: {
+  //       ...args,
+  //     },
+  //   });
+
+  //   homeStore.setState(state => ({
+  //     ...state,
+  //     driverOrderStats: response?.fetchOrderStatsForDriver,
+  //   }));
+  // }
+
+  public async fetchOrderStatsForDriverV3(
+    args: FetchOrderStatsForDriverV3MutationVariables,
   ) {
-    const response: FetchOrderStatsForDriverMutation = await callMutation({
-      queryDocument: FetchOrderStatsForDriverDocument,
+    const response: FetchOrderStatsForDriverV3Mutation = await callMutation({
+      queryDocument: FetchOrderStatsForDriverV3Document,
       variables: {
         ...args,
       },
@@ -169,7 +189,7 @@ class HomeService {
 
     homeStore.setState(state => ({
       ...state,
-      driverOrderStats: response?.fetchOrderStatsForDriver,
+      driverOrderStats: response?.fetchOrderStatsForDriverV3,
     }));
   }
 
@@ -188,7 +208,6 @@ class HomeService {
     }));
     return response.task;
   }
-
 }
 
 const homeService = HomeService.getInstance();

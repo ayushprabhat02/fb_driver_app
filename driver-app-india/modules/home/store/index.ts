@@ -1,5 +1,8 @@
 // dependencies
-import {FetchOrderStatsForDriverMutation} from '@/generated/graphql';
+import {
+  FetchOrderStatsForDriverMutation,
+  FetchOrderStatsForDriverV3Mutation,
+} from '@/generated/graphql';
 import {create} from 'zustand';
 
 // utils
@@ -29,7 +32,9 @@ type HomeStore = {
     | null;
 
   deliveryStats: DeliveryStat[];
-  driverOrderStats: FetchOrderStatsForDriverMutation['fetchOrderStatsForDriver'];
+  driverOrderStats:
+    | FetchOrderStatsForDriverV3Mutation['fetchOrderStatsForDriverV3']
+    | null;
   driverOrders: FetchOrderForDriverNew2Query['task'] | null;
 
   userCoordinates: any;

@@ -133,20 +133,35 @@ const FillupRequest: React.FC = () => {
 
   // --- DATA FETCHING & LIFECYCLE HOOKS ---
 
-  // Function to fetch fillup history
+  // Function to fetch fillup history - optimized for today's data
   const getFillupHistory = useCallback(async () => {
-    if (!driverVehicleId) return;
-    startFillupLoader('fillupHistory');
+    if (!driverVehicleId) {
+      console.warn('Driver vehicle ID not available, cannot fetch fillup history');
+      return;
+    }
+
+    // Get date range for today only (ensure local timezone)
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+
+    const startOfDay = `${year}-${month}-${day}T00:00:00`;
+    const endOfDay = `${year}-${month}-${day}T23:59:59`;
+
+    startFillupLoader('fetchFillupHistoryNew');
     try {
-      await fillupService.fetchFillupHistory({
-        limit: 10, // Fetch a reasonable number of recent items
+      await fillupService.fetchFillupHistoryNew({
+        limit: 5,
         offset: 0,
         driver_vehicle_id: driverVehicleId,
+        start_date: startOfDay,
+        end_date: endOfDay,
       });
     } catch (error) {
       console.error('Failed to fetch fillup history:', error);
     } finally {
-      stopFillupLoader('fillupHistory');
+      stopFillupLoader('fetchFillupHistoryNew');
     }
   }, [driverVehicleId, startFillupLoader, stopFillupLoader]);
 
@@ -260,7 +275,7 @@ const FillupRequest: React.FC = () => {
   return (
     <HeaderAvoidingContainer>
       <View style={styles.container}>
-        {fillupLoaders.fillupHistory && !fillupHistory?.length ? (
+        {fillupLoaders.fetchFillupHistoryNew && !fillupHistory?.length ? (
           <FullScreenLoader
             loaderText="Fetching fillup history..."
             showLoader={false}

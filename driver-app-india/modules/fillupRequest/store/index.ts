@@ -10,13 +10,19 @@ import {
   FetchAddressByNameQuery,
 } from '@/generated/graphql';
 
-type LoaderTypes = 'fetchAddresses' | 'raiseFillupRequest' | 'fetchFillupRequestById' | 'fillupHistory';
+type LoaderTypes =
+  | 'fetchAddresses'
+  | 'raiseFillupRequest'
+  | 'fetchFillupRequestById'
+  | 'fetchActiveFillupHistory'
+  | 'fetchFillupHistoryNew';
 
 type Loaders = {
   fetchAddresses: boolean;
   raiseFillupRequest: boolean;
   fetchFillupRequestById: boolean;
-  fillupHistory: boolean;
+  fetchActiveFillupHistory: boolean;
+  fetchFillupHistoryNew: boolean;
 };
 
 type TankTypeDetails = {
@@ -50,7 +56,8 @@ type FillupStore = {
   deliveryStates: any;
   selectedTankType: TankTypeDetails | null;
   fillupRequestDetails: any;
-  fillupHistory: any;
+  activeFillupHistory: any[];
+  fillupHistory: any[];
 
   // loading states
   loaders: Loaders;
@@ -77,12 +84,14 @@ const addressInitialState: FillupStore = {
   deliveryStates: [],
   selectedTankType: null,
   fillupRequestDetails: null,
-  fillupHistory: null,
+  activeFillupHistory: [],
+  fillupHistory: [],
   loaders: {
     fetchAddresses: true,
     raiseFillupRequest: false,
     fetchFillupRequestById: false,
-    fillupHistory: false,
+    fetchActiveFillupHistory: false,
+    fetchFillupHistoryNew: false,
   },
 };
 

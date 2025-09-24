@@ -91,7 +91,10 @@ const FillupIndent: React.FC = () => {
   useEffect(() => {
     const initializeComponent = async () => {
       if (fillupDetails) {
-        console.log('Initializing component with fillup state:', fillupDetails.state);
+        console.log(
+          'Initializing component with fillup state:',
+          fillupDetails.state,
+        );
 
         // Check if already waiting for approval
         if (fillupDetails.state === 'AWAITING_INDENT_UPLOAD_AUTHORIZATION') {
@@ -130,7 +133,9 @@ const FillupIndent: React.FC = () => {
         console.log('Polling - Current fillup state:', currentDetails?.state);
 
         if (currentDetails?.state === 'PURCHASE_INVOICE_REQUEST') {
-          console.log('Indent approved! Stopping polling and showing mark complete button');
+          console.log(
+            'Indent approved! Stopping polling and showing mark complete button',
+          );
           setWaitingForApproval(false);
           setApproved(true);
           if (pollInterval.current) {
@@ -141,7 +146,7 @@ const FillupIndent: React.FC = () => {
           Alert.alert(
             'Indent Approved!',
             'Your indent has been approved. Click "Mark Complete" to finish the fillup order.',
-            [{text: 'OK'}]
+            [{text: 'OK'}],
           );
         } else if (currentDetails?.state === 'INDENT_UPLOAD_REJECTED') {
           console.log('Indent rejected! Stopping polling');
@@ -391,16 +396,21 @@ const FillupIndent: React.FC = () => {
         Alert.alert(
           'Already Completed',
           'This fillup order has already been marked as complete.',
-          [{text: 'OK'}]
+          [{text: 'OK'}],
         );
         return;
       }
 
       // Validate required data exists
-      const partnerOrderItemId = fillupDetails?.partner_order?.partner_order_items[0]?.id;
+      const partnerOrderItemId =
+        fillupDetails?.partner_order?.partner_order_items[0]?.id;
       const partnerOrderId = fillupDetails?.partner_order?.id;
-      const productVariationId = fillupDetails?.partner_order?.partner_order_items[0]?.product_variation?.id;
-      const vehicleId = fillupDetails?.partner_order?.fillup_requests[0]?.vehicle_tank_type_product_variation?.vehicle_tank_type?.vehicle?.id;
+      const productVariationId =
+        fillupDetails?.partner_order?.partner_order_items[0]?.product_variation
+          ?.id;
+      const vehicleId =
+        fillupDetails?.partner_order?.fillup_requests[0]
+          ?.vehicle_tank_type_product_variation?.vehicle_tank_type?.vehicle?.id;
 
       console.log('Checking required data:');
       console.log('- partnerOrderItemId:', partnerOrderItemId);
@@ -410,7 +420,10 @@ const FillupIndent: React.FC = () => {
       console.log('- completedFilledQuantity:', completedFilledQuantity);
 
       // Use quantity_approved as fallback if completedFilledQuantity is not available
-      const quantityToUse = completedFilledQuantity || fillupDetails?.quantity_approved?.toString() || '';
+      const quantityToUse =
+        completedFilledQuantity ||
+        fillupDetails?.quantity_approved?.toString() ||
+        '';
 
       console.log('- quantityToUse (final):', quantityToUse);
 
@@ -423,7 +436,9 @@ const FillupIndent: React.FC = () => {
       if (!quantityToUse) missingFields.push('quantityToUse');
 
       if (missingFields.length > 0) {
-        throw new Error(`Required data missing for completion: ${missingFields.join(', ')}`);
+        throw new Error(
+          `Required data missing for completion: ${missingFields.join(', ')}`,
+        );
       }
 
       console.log('All required data found, proceeding with API calls...');
@@ -461,10 +476,10 @@ const FillupIndent: React.FC = () => {
         {
           text: 'OK',
           onPress: () => {
-            // Navigate to HomeLandingPage
+            // Navigate to Home
             navigation.reset({
               index: 0,
-              routes: [{ name: 'HomeLandingPage' as never }],
+              routes: [{name: 'home' as never}],
             });
           },
         },
@@ -473,7 +488,9 @@ const FillupIndent: React.FC = () => {
       console.error('❌ Error marking complete:', error);
       Alert.alert(
         'Error',
-        `Failed to mark order as complete: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`,
+        `Failed to mark order as complete: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }. Please try again.`,
       );
     } finally {
       setUploading(false);
@@ -533,14 +550,20 @@ const FillupIndent: React.FC = () => {
         ) : approved ? (
           <View style={styles.approvedContainer}>
             <View style={styles.successIconContainer}>
-              <Text size="4xl" style={styles.checkMark}>✅</Text>
+              <Text size="4xl" style={styles.checkMark}>
+                ✅
+              </Text>
             </View>
-            <Text size="xl" weight="bold" color="primary" style={styles.approvedTitle}>
+            <Text
+              size="xl"
+              weight="bold"
+              color="primary"
+              style={styles.approvedTitle}>
               Indent Approved!
             </Text>
             <Text size="base" color="neutral" style={styles.approvedMessage}>
-              Great news! Your indent has been approved by the supervisor.
-              You can now mark this fillup order as complete.
+              Great news! Your indent has been approved by the supervisor. You
+              can now mark this fillup order as complete.
             </Text>
             <View style={styles.fillupDetailsCard}>
               <Text size="sm" weight="600" color="steelBlue">
@@ -554,12 +577,21 @@ const FillupIndent: React.FC = () => {
               </Text>
             </View>
             <TouchableOpacity
-              style={[styles.completeButton, uploading && styles.disabledButton]}
+              style={[
+                styles.completeButton,
+                uploading && styles.disabledButton,
+              ]}
               onPress={markComplete}
               disabled={uploading}
               activeOpacity={0.8}>
-              <Text size="lg" weight="bold" color="white" style={styles.completeButtonText}>
-                {uploading ? '⏳ Processing Order...' : '✅ Mark Order Complete'}
+              <Text
+                size="lg"
+                weight="bold"
+                color="white"
+                style={styles.completeButtonText}>
+                {uploading
+                  ? '⏳ Processing Order...'
+                  : '✅ Mark Order Complete'}
               </Text>
             </TouchableOpacity>
           </View>

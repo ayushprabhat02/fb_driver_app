@@ -33,7 +33,6 @@ import {
   orderStore,
   userStore,
 } from '@/globalStore';
-import fillupStore from '@/modules/fillupRequest/store';
 
 import {Task_State_Enum} from '@/generated/graphql';
 import {OrderListCard} from '@/modules/order/delivery/components';
@@ -42,8 +41,9 @@ import {FBBackground} from '@/types/styles';
 import {useFocusEffect} from '@react-navigation/native';
 import OrderSummaryCard from '../components/delivery/OrderSummaryCard';
 import homeService from '../services';
-import fillupService from '@/modules/fillupRequest/services';
 import userService from '@/modules/user/services';
+import fillupService from '@/modules/fillupRequest/services';
+import fillupStore from '@/modules/fillupRequest/store';
 import {setupShiftValidation} from '@/utils/shiftValidation';
 
 const HomeLandingPage: React.FC = () => {
@@ -57,9 +57,10 @@ const HomeLandingPage: React.FC = () => {
   const loggedInUser = userStore.use.loggedInUser();
   const driverVehicleId = checkinStore.use.driverVehicleId();
   const driverOrders = homeStore.use.driverOrders();
-  const fillupHistory = fillupStore.use.fillupHistory();
+  const fillupHistory = fillupStore.use.activeFillupHistory();
   const isLoadingOrder = homeStore.use.loaders().driverCurrentOrder;
-  const isLoadingFillupHistory = fillupStore.use.loaders().fillupHistory;
+  const isLoadingFillupHistory =
+    fillupStore.use.loaders().fetchActiveFillupHistory;
   const currentDriverOrder = orderStore.use.currentDriverOrder();
   const currentFillupOrder = orderStore.use.currentFillupOrder();
 
@@ -94,7 +95,7 @@ const HomeLandingPage: React.FC = () => {
     try {
       if (driverVehicleId) {
         await fetchCurrentOrder(selectedDate, 0, false);
-        await fetchFillupHistory();
+        await fetchActiveFillupCheck();
       }
     } catch (error) {
       console.error('Error refreshing data:', error);
@@ -132,61 +133,86 @@ const HomeLandingPage: React.FC = () => {
     }, [driverVehicleId]),
   );
 
-  // checking if user business lead exists
-  useEffect(() => {
-    if (loggedInUser?.length) {
-      UserService.checkIfUserExists({
-        phone_number: loggedInUser[0]?.phone_number,
-      })
-        .then(response => {
-          if (response.length === 3) {
-            const businessOrg = response[0]?.organization_users.filter(
-              orgUser => {
-                return orgUser.organization?.is_business;
-              },
-            );
-            if (
-              businessOrg?.length &&
-              !businessOrg[0]?.organization?.erp_code
-            ) {
-              polling();
-            }
+  // Refresh data when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      const refreshDataOnFocus = async () => {
+        if (driverVehicleId) {
+          try {
+            // Call APIs when screen focuses - reject old fillup requests first
+            // await rejectOldFillupRequests();
+
+            // Call remaining APIs in parallel
+            await Promise.all([
+              fetchCurrentOrder(selectedDate, 0, false),
+              fetchActiveFillupCheck(),
+              fetchOrderStats(),
+            ]);
+          } catch (error) {
+            console.error('Error refreshing data on focus:', error);
           }
-        })
-        .catch(() => {});
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+        }
+      };
 
-  const polling = () => {
-    setCheckBusinessLeadLoader(true);
-    const timerID = setInterval(async () => {
-      if (loggedInUser?.length) {
-        await UserService.checkIfUserExists({
-          phone_number: loggedInUser[0].phone_number,
-        })
-          .then(res => {
-            if (res.length) {
-              const businessOrg = res[0]?.organization_users.filter(orgUser => {
-                return orgUser.organization?.is_business;
-              });
+      refreshDataOnFocus();
+    }, [driverVehicleId, selectedDate]),
+  );
 
-              if (
-                businessOrg?.length &&
-                businessOrg[0]?.organization?.erp_code
-              ) {
-                clearInterval(timerID);
-                setCheckBusinessLeadLoader(false);
-              }
-            }
-          })
-          .catch(() => {
-            clearInterval(timerID);
-            setCheckBusinessLeadLoader(false);
-          });
-      }
-    }, 5000);
-  };
+  // checking if user business lead exists
+  // useEffect(() => {
+  //   if (loggedInUser?.length) {
+  //     UserService.checkIfUserExists({
+  //       phone_number: loggedInUser[0]?.phone_number,
+  //     })
+  //       .then(response => {
+  //         if (response.length === 3) {
+  //           const businessOrg = response[0]?.organization_users.filter(
+  //             orgUser => {
+  //               return orgUser.organization?.is_business;
+  //             },
+  //           );
+  //           if (
+  //             businessOrg?.length &&
+  //             !businessOrg[0]?.organization?.erp_code
+  //           ) {
+  //             polling();
+  //           }
+  //         }
+  //       })
+  //       .catch(() => {});
+  //   }
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, []);
+
+  // const polling = () => {
+  //   setCheckBusinessLeadLoader(true);
+  //   const timerID = setInterval(async () => {
+  //     if (loggedInUser?.length) {
+  //       await UserService.checkIfUserExists({
+  //         phone_number: loggedInUser[0].phone_number,
+  //       })
+  //         .then(res => {
+  //           if (res.length) {
+  //             const businessOrg = res[0]?.organization_users.filter(orgUser => {
+  //               return orgUser.organization?.is_business;
+  //             });
+
+  //             if (
+  //               businessOrg?.length &&
+  //               businessOrg[0]?.organization?.erp_code
+  //             ) {
+  //               clearInterval(timerID);
+  //               setCheckBusinessLeadLoader(false);
+  //             }
+  //           }
+  //         })
+  //         .catch(() => {
+  //           clearInterval(timerID);
+  //           setCheckBusinessLeadLoader(false);
+  //         });
+  //     }
+  //   }, 5000);
+  // };
 
   const fetchMyProfile = async () => {
     try {
@@ -203,10 +229,10 @@ const HomeLandingPage: React.FC = () => {
     if (driverVehicleId) {
       startLoader('driverOrderStats');
       homeService
-        .fetchOrderStatsForDriver({
-          object: {
-            driver_vehicle_id: driverVehicleId,
-          },
+        .fetchOrderStatsForDriverV3({
+          driver_vehicle_id: driverVehicleId,
+          start_date: selectedDate.toISOString(),
+          end_date: selectedDate.toISOString(),
         })
         .finally(() => {
           stopLoader('driverOrderStats');
@@ -280,36 +306,64 @@ const HomeLandingPage: React.FC = () => {
     }
   };
 
-  const fetchFillupHistory = async () => {
+  const rejectOldFillupRequests = async () => {
+    try {
+      // Calculate cutoff time (24 hours ago)
+      const cutoffTime = new Date();
+      cutoffTime.setTime(cutoffTime.getTime() - 24 * 60 * 60 * 1000);
+
+      // Format as local timestamp for API (YYYY-MM-DD HH:MM:SS)
+      const year = cutoffTime.getFullYear();
+      const month = String(cutoffTime.getMonth() + 1).padStart(2, '0');
+      const day = String(cutoffTime.getDate()).padStart(2, '0');
+      const hours = String(cutoffTime.getHours()).padStart(2, '0');
+      const minutes = String(cutoffTime.getMinutes()).padStart(2, '0');
+      const seconds = String(cutoffTime.getSeconds()).padStart(2, '0');
+
+      const localTimestamp = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+
+      await fillupService.rejectOldFillupRequests({
+        cutoff_time: localTimestamp,
+      });
+    } catch (error) {
+      console.error('Error rejecting old fillup requests:', error);
+    }
+  };
+
+  const fetchActiveFillupCheck = async () => {
     // Check if driverVehicleId is available before making API call
     if (!driverVehicleId) {
       console.warn(
-        'Driver vehicle ID not available, skipping fillup history fetch',
+        'Driver vehicle ID not available, skipping active fillup check',
       );
       return;
     }
 
-    startFillupLoader('fillupHistory');
+    startFillupLoader('fetchActiveFillupHistory');
     fillupService
-      .fetchFillupHistory({
+      .fetchActiveFillupCheck({
         limit: 5,
         offset: 0,
         driver_vehicle_id: driverVehicleId,
       })
       .finally(() => {
-        stopFillupLoader('fillupHistory');
+        stopFillupLoader('fetchActiveFillupHistory');
       });
   };
 
   useEffect(() => {
-    fetchOrderStats();
     fetchMyProfile();
+    rejectOldFillupRequests();
   }, []);
 
-  useEffect(() => {
-    fetchCurrentOrder();
-    fetchFillupHistory();
-  }, [driverVehicleId]);
+  // useEffect(() => {
+  //   const initializeDashboard = async () => {
+  //     await fetchCurrentOrder();
+  //     await fetchActiveFillupCheck();
+  //   };
+
+  //   initializeDashboard();
+  // }, [driverVehicleId]);
 
   // Handle date changes with order preservation
   const handleDateChange = async (newDate: Date) => {
