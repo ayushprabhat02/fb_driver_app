@@ -53,14 +53,24 @@ const FillupHistoryCard: React.FC<FillupHistoryCardProps> = ({item}) => {
 
   const isStateAllowed = allowedStates.includes(item.state?.toUpperCase());
 
-  // Navigate to fillup details - based on Vue.js goToFillUp function
+  // Navigate based on fuel request type - based on Vue.js logic
   const goToFillup = () => {
     if (isStateAllowed) {
-      // @ts-ignore
-      navigation.navigate('address', {
-        screen: 'fillup-details',
-        params: {fillupId: item.id},
-      });
+      // Check if this is a fuel tank request - should navigate to HomeLandingPage
+      if (item.fuel_request_type === 'FUEL_TANK') {
+        // Navigate to HomeLandingPage where FillupOrderCard will be displayed
+        // @ts-ignore
+        navigation.navigate('home', {
+          screen: 'HomeLandingPage'
+        });
+      } else {
+        // For other types (BOWSERS_TANK, ROTATIONAL_FLOW, etc.), navigate to fillup details
+        // @ts-ignore
+        navigation.navigate('address', {
+          screen: 'fillup-details',
+          params: {fillupId: item.id},
+        });
+      }
     }
   };
 
