@@ -93,6 +93,7 @@ type OrderStore = {
   challanUploadedUrl: string | null;
   technicianUploadedUrl: string | null;
   imapUploadedUrl: string | null;
+  totalizerUploadedUrl: string | null;
 
   // totalizer readings
   totalizerBeforeReading: number;
@@ -211,6 +212,7 @@ const orderInitialState: OrderStore = {
   challanUploadedUrl: null,
   technicianUploadedUrl: null,
   imapUploadedUrl: null,
+  totalizerUploadedUrl: null,
 
   // totalizer readings initial state
   totalizerBeforeReading: 0,
@@ -398,7 +400,7 @@ const orderStore = create<OrderStore & OrderActions>(set => ({
     set(state => ({
       ...state,
       currentFillupOrder: state.currentFillupOrder
-        ? { ...state.currentFillupOrder, state: newState }
+        ? { ...state.currentFillupOrder, state: newState as any }
         : null,
     })),
 }));

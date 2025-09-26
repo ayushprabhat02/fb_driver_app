@@ -1,4 +1,4 @@
-import React, {useRef, useState, useEffect} from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -7,27 +7,33 @@ import {
   TextInput,
   TouchableOpacity,
 } from 'react-native';
-import {Button, Divider, HeaderAvoidingContainer, Text} from '@/components';
-import {FBBackground, FBColors} from '@/types/styles';
-import {commonInputStyles} from '@/styles';
-import {orderStore} from '@/globalStore';
-import {ImageContainer} from '@/modules/checkin/components';
-import {RNCamera} from 'react-native-camera';
-import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
+import { Button, Divider, HeaderAvoidingContainer, Text } from '@/components';
+import { FBBackground, FBColors } from '@/types/styles';
+import { commonInputStyles } from '@/styles';
+import { orderStore, checkinStore } from '@/globalStore';
+import { ImageContainer } from '@/modules/checkin/components';
+import { RNCamera } from 'react-native-camera';
+import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import supportService from '@/modules/support/services';
-import orderStoreModule from '@/modules/order/store';
-type LoaderTypes = 'totalizerImage' | 'quantityImage';
-import {useNavigation} from '@react-navigation/native';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import orderService from '../services';
+import Toast from 'react-native-toast-message';
+type LoaderTypes = 'totalizerImage' | 'quantityImage';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+
+// utils
+import { getCurrentLocation } from '@/utils/location';
 
 type RootStackParamList = {
   home: undefined;
+  order: {
+    screen: string;
+  };
 };
 
 const UploadImageAsset: React.FC = () => {
   const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    useNavigation<StackNavigationProp<RootStackParamList>>();
 
   const cameraRef = useRef<RNCamera | null>(null);
   const [showCamera, setShowCamera] = useState(false);
@@ -36,71 +42,141 @@ const UploadImageAsset: React.FC = () => {
   const [imageType, setImageType] = useState<ImageCaptureType | null>(null);
   const [totalizerReading, setTotalizerReading] = useState('');
   const [quantityDispensed, setQuantityDispensed] = useState('');
-  const [taskId, setTaskId] = useState<string>(
-    '1fba7895-235b-49d0-8e67-060662de395c',
-  ); // Example task ID
+  const [disableButton, setDisableButton] = useState(false);
 
   // Use orderStore for image data
   const totalizerImageData = orderStore.use.totalizerImageData();
   const quantityImageData = orderStore.use.quantityImageData();
+  const totalizerUploadedUrl = orderStore.use.totalizerUploadedUrl();
   const totalizerImageUploading = orderStore.use.loaders().totalizerImage;
   const quantityImageUploading = orderStore.use.loaders().quantityImage;
-  const currentDriverOrder = orderStore.use.currentDriverOrder();
+  const currentFillupOrder = orderStore.use.currentFillupOrder();
+  const currentAssetForDispense = orderStore.use.currentAssetForDispense();
+  const driverVehicleDetails = checkinStore.use.driverVehicleDetails();
+  const startLoader = orderStore.use.startLoader();
+  const stopLoader = orderStore.use.stopLoader();
 
-  // Fetch task value on component mount
+  // Initialize component (following Vue.js pattern)
   useEffect(() => {
-    const fetchTaskData = async () => {
-      try {
-        const response = await orderService.fetchTaskValue({
-          task_id: currentDriverOrder?.[0]?.id,
-        });
-        if (response.task_value && response.task_value.length > 0) {
-          const totalizerData = response.task_value.find(
-            item => item.key === 'TOTALIZER_BEFORE_READING',
-          );
-          if (totalizerData && totalizerData.value) {
-            setTotalizerReading(totalizerData.value);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching task value:', error);
+    if (!currentFillupOrder) {
+      Alert.alert('Error', 'No order assigned');
+      // @ts-ignore
+      navigation.replace('home');
+    } else {
+      // Pre-fill totalizer reading from vehicle details if available
+      if (driverVehicleDetails?.totalizer_reading !== undefined) {
+        setTotalizerReading(driverVehicleDetails.totalizer_reading.toString());
       }
-    };
-
-    if (taskId) {
-      fetchTaskData();
     }
-  }, [taskId]);
+  }, [currentFillupOrder, driverVehicleDetails]);
 
-  const validateAndSubmit = () => {
-    if (
-      !totalizerImageData ||
-      !quantityImageData ||
-      !totalizerReading ||
-      !quantityDispensed
-    ) {
-      Alert.alert('Error', 'Please fill all required fields and upload images');
-      return;
+  // Next step function (following Vue.js totalizer-before-manual logic)
+  const nextStep = async () => {
+    // Validation (following Vue.js pattern)
+    if (!currentFillupOrder?.is_enable_totalizer_reading_image_upload) {
+      if (!totalizerReading) {
+        Alert.alert('Error', 'Please enter totalizer reading');
+        return;
+      }
+    } else {
+      if (!totalizerReading && !totalizerImageData) {
+        Alert.alert('Error', 'Please enter both reading and upload image');
+        return;
+      } else if (!totalizerImageData) {
+        Alert.alert('Error', 'Please click totalizer image');
+        return;
+      } else if (!totalizerReading) {
+        Alert.alert('Error', 'Please enter totalizer reading');
+        return;
+      }
     }
 
     try {
-      // Prepare fillup data for submission
-      const fillupData = {
-        totalizerReading: parseFloat(totalizerReading),
-        quantityDispensed: parseFloat(quantityDispensed),
-        totalizerImageUrl: totalizerImageData,
-        quantityImageUrl: quantityImageData,
-        timestamp: new Date().toISOString(),
+      setDisableButton(true);
+      startLoader('upsertTaskAction');
+
+      // Set current asset for dispense (following Vue.js pattern)
+      const updatedAsset = {
+        ...currentAssetForDispense,
+        totalizerBefore: {
+          reading: parseFloat(totalizerReading),
+          storeURL: totalizerUploadedUrl || totalizerImageData || '',
+        },
       };
 
-      // Store in localStorage for now (replace with actual API call)
-      localStorage.setItem('fillupData', JSON.stringify(fillupData));
+      orderStore.setState(state => ({
+        ...state,
+        currentAssetForDispense: updatedAsset,
+      }));
 
-      Alert.alert('Success', 'Fillup data submitted successfully!');
-      navigation.goBack();
+      const coordinates = await getCurrentLocation();
+
+      // Upsert step task action (following Vue.js pattern)
+      await orderService.upsertStepTaskAction({
+        object: {
+          key: 'TOTALIZER_BEFORE_READING',
+          url: totalizerUploadedUrl || totalizerImageData || '',
+          value: totalizerReading,
+          task_id: currentFillupOrder?.id,
+          ...(currentFillupOrder?.category === 'DELIVERY'
+            ? { customer_asset_id: currentAssetForDispense?.id }
+            : { vehicle_id: currentAssetForDispense?.id || driverVehicleDetails?.id }
+          ),
+          location: {
+            type: 'Point',
+            coordinates: [coordinates.longitude, coordinates.latitude],
+          },
+        }
+      });
+
+      // Update totalizer reading for vehicle (following Vue.js pattern)
+      if (driverVehicleDetails?.id) {
+        await orderService.updateTotalizerReading({
+          totalizer_reading: parseFloat(totalizerReading),
+          vehicle_id: driverVehicleDetails.id,
+        });
+      } else {
+        console.warn('Vehicle ID not available for updateTotalizerReading');
+        Toast.show({
+          type: 'error',
+          text1: 'Warning',
+          text2: 'Vehicle information not available. Totalizer reading not updated.',
+        });
+      }
+
+      // Mark order dispensing if arrived (following Vue.js pattern)
+      if (currentFillupOrder?.state === 'ARRIVED') {
+        await orderService.markOrderDispensing({ id: currentFillupOrder?.id });
+      }
+
+      // Set totalizer before reading in store
+      orderStore.setState(state => ({
+        ...state,
+        totalizerBeforeReading: parseFloat(totalizerReading),
+      }));
+
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Totalizer reading saved successfully',
+      });
+
+      // Navigate to totalizer after manual (next step)
+      // @ts-ignore
+      navigation.navigate('order', {
+        screen: 'totalizer-after-manual',
+      });
+
     } catch (error) {
-      console.error('Error submitting data:', error);
-      Alert.alert('Error', 'Failed to submit fillup data');
+      console.error('Error in nextStep function:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to proceed to next step. Please try again.',
+      });
+    } finally {
+      setDisableButton(false);
+      stopLoader('upsertTaskAction');
     }
   };
 
@@ -119,7 +195,7 @@ const UploadImageAsset: React.FC = () => {
 
   const handleTakePhoto = async () => {
     if (cameraRef.current && imageType) {
-      const options = {quality: 0.5, base64: true};
+      const options = { quality: 0.5, base64: true };
       const data = await cameraRef.current.takePictureAsync(options);
       setShowCamera(false);
       let loaderType: LoaderTypes | null = null;
@@ -154,12 +230,17 @@ const UploadImageAsset: React.FC = () => {
   ) => {
     try {
       const blob = await (await fetch(uri)).blob();
-      const {src, storeUrl} = await supportService.uploadFile({
+      const { src, storeUrl } = await supportService.uploadFile({
         fileName: `${type}.jpg`,
         contentType: 'image/jpeg',
         fileData: blob,
       });
-      console.log('Image uploaded:', {src, storeUrl});
+      console.log('Image uploaded:', { src, storeUrl });
+
+      // Store the upload URL for API calls but keep the local URI for display
+      if (type === 'totalizer') {
+        orderStore.setState({ totalizerUploadedUrl: storeUrl || src });
+      }
     } catch (error) {
       console.error('Upload error:', error);
     } finally {
@@ -221,67 +302,34 @@ const UploadImageAsset: React.FC = () => {
         <Divider height={10} />
 
         <ImageContainer
-          label="Totalizer Reading"
+          label="Start Totalizer"
           imageData={totalizerImageData}
           isUploading={totalizerImageUploading}
           onCameraPress={() => openCamera('totalizer')}
           uploadingText="Uploading totalizer image..."
-          required={true}
+          required={currentFillupOrder?.is_enable_totalizer_reading_image_upload || false}
         />
         <Divider height={10} />
-        <View>
-          <Text
-            size="base"
-            weight="normal"
-            color="secondary"
-            style={styles.requiredLabel}>
-            Enter Quantity Dispensed *
-          </Text>
-          <TextInput
-            editable={true}
-            keyboardType="numeric"
-            style={[
-              styles.inputStyle,
-              !quantityDispensed && styles.requiredInput,
-            ]}
-            placeholder="Enter quantity dispensed"
-            placeholderTextColor={FBColors.placeHolderPrimary}
-            value={quantityDispensed}
-            onChangeText={setQuantityDispensed}
-          />
-        </View>
-        <Divider height={10} />
-
-        <ImageContainer
-          label="Quantity Dispensed"
-          imageData={quantityImageData}
-          isUploading={quantityImageUploading}
-          onCameraPress={() => openCamera('quantity')}
-          uploadingText="Uploading quantity image..."
-          required={true}
-        />
+        {/* Remove quantity dispensed section for totalizer before reading */}
       </ScrollView>
 
       <View style={styles.buttonContainer}>
         <Button
           style={[
             styles.button,
-            (!totalizerImageData ||
-              !quantityImageData ||
-              !totalizerReading ||
-              !quantityDispensed) &&
-              styles.disabledButton,
+            (!totalizerReading ||
+              (currentFillupOrder?.is_enable_totalizer_reading_image_upload && !totalizerImageData)) &&
+            styles.disabledButton,
           ]}
           variant="solid"
-          onPress={validateAndSubmit}
-          loading={false}
+          onPress={nextStep}
+          loading={disableButton}
           disabled={
-            !totalizerImageData ||
-            !quantityImageData ||
+            disableButton ||
             !totalizerReading ||
-            !quantityDispensed
+            (currentFillupOrder?.is_enable_totalizer_reading_image_upload && !totalizerImageData)
           }>
-          {'Submit Fillup Data'}
+          {'Next'}
         </Button>
       </View>
     </HeaderAvoidingContainer>
@@ -370,7 +418,7 @@ const styles = StyleSheet.create({
     padding: 8,
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 2,
   },
@@ -394,7 +442,7 @@ const styles = StyleSheet.create({
     padding: 8,
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 2,
   },

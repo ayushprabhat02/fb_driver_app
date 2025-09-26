@@ -10,6 +10,7 @@ import {
 } from '@/modules/order/delivery/screens';
 import FillAsset from '@/modules/order/screens/FillAsset';
 import UploadImageAsset from '@/modules/order/screens/UploadImageAsset';
+import TotalizerAfterManual from '@/modules/order/screens/TotalizerAfterManual';
 import LiveStreamScreen from '@/modules/order/screens/LiveStreamScreen';
 import ChooseAssetScreen from '@/modules/order/screens/ChooseAssetScreen';
 import ReachLocationScreen from '@/modules/order/screens/ReachLocationScreen';
@@ -33,6 +34,7 @@ export type OrderStackParamList = {
   'reach-location': undefined;
   'fill-asset': undefined;
   'upload-image-asset': undefined;
+  'totalizer-after-manual': undefined;
   'live-stream': undefined;
   'delivery-challan': undefined;
   'buddy-challan': undefined;
@@ -107,7 +109,14 @@ const OrderNavigator: React.FC = () => {
         name="upload-image-asset"
         component={UploadImageAsset}
         options={{
-          title: 'Upload Fillup Images',
+          title: 'Start Totalizer Reading',
+        }}
+      />
+      <OrderStack.Screen
+        name="totalizer-after-manual"
+        component={TotalizerAfterManual}
+        options={{
+          title: 'End Totalizer Reading',
         }}
       />
       <OrderStack.Screen

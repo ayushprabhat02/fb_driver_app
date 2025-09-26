@@ -56,14 +56,21 @@ export const startTrip = async (order: any): Promise<OrderFlowResult> => {
 
 /**
  * @function updateOrderState
- * @description Updates order state from ASSIGNED to IN_TRANSIT if needed
+ * @description Updates order state from ASSIGNED to IN_TRANSIT for delivery orders and to ARRIVED for fillup orders
  */
 const updateOrderState = async (order: any): Promise<boolean> => {
   try {
     const isAssigned = order.state === 'ASSIGNED';
 
     if (isAssigned) {
-      const response = await orderService.markOrderInTransit({id: order.id});
+      // For fillup orders, directly change state to ARRIVED
+      // For delivery orders, change state to IN_TRANSIT
+      let response;
+      if (order.category === 'FILL_UP') {
+        response = await orderService.markOrderArrived({id: order.id});
+      } else {
+        response = await orderService.markOrderInTransit({id: order.id});
+      }
 
       if (!response) {
         Alert.alert('Error', 'Failed to update order state. Please try again.');
@@ -78,7 +85,11 @@ const updateOrderState = async (order: any): Promise<boolean> => {
         );
         if (updatedOrder) {
           // Update the order object with new state
-          updatedOrder.state = 'IN_TRANSIT' as any;
+          if (order.category === 'FILL_UP') {
+            updatedOrder.state = 'ARRIVED' as any;
+          } else {
+            updatedOrder.state = 'IN_TRANSIT' as any;
+          }
 
           if (order.category === 'DELIVERY') {
             orderStore.setState(state => ({

@@ -127,6 +127,11 @@ import {
   FuelDeliveryToMutation,
   FuelDeliveryToDocument,
   FuelDeliveryToMutationVariables,
+  
+  // update totalizer reading
+  UpdateTotalizerReadingDocument,
+  UpdateTotalizerReadingMutation,
+  UpdateTotalizerReadingMutationVariables,
 } from '@/generated/graphql';
 
 /**
@@ -468,6 +473,7 @@ class OrderService {
       if (updatedAsset) {
         const currentState = orderStore.getState();
         const updatedAssets = currentState.orderAssets.map(asset =>
+          // @ts-ignore - Type issue with generated GraphQL types
           asset.customer_asset?.id === updatedAsset.customer_asset?.id
             ? {...asset, quantity_dispensed: updatedAsset.quantity_dispensed}
             : asset,
@@ -512,14 +518,16 @@ class OrderService {
       // Log the API call for debugging
       console.log('UpdateTotalizerReading API call:', args);
 
-      // TODO: Implement when GraphQL types are available and generated
-      // For now, return mock response
-      console.log('UpdateTotalizerReading - using mock response');
+      // Use imported GraphQL document
+      const response: UpdateTotalizerReadingMutation = await callMutation({
+        queryDocument: UpdateTotalizerReadingDocument,
+        variables: {
+          totalizer_reading: args.totalizer_reading,
+          vehicle_id: args.vehicle_id,
+        },
+      });
 
-      // Return mock response for now - will be replaced with actual API call
-      return {
-        totalizer_reading: args.totalizer_reading,
-      };
+      return response.update_vehicle?.returning[0];
     } catch (error) {
       console.error('Error updating totalizer reading:', error);
       throw new Error('Failed to update totalizer reading');
@@ -843,6 +851,63 @@ class OrderService {
     });
 
     return response.insert_fuel_delivery_one;
+  }
+
+  /**
+   * @method fetchCompletelyFilledAsset
+   * @description Fetches completely filled asset data
+   * @args {task_id: string, key: string, vehicle_id: string}
+   */
+  public async fetchCompletelyFilledAsset(args: {
+    task_id: string;
+    key: string;
+    vehicle_id: string;
+  }) {
+    try {
+      console.log('FetchCompletelyFilledAsset API call:', args);
+      
+      // Use existing fetchTaskValue method
+      const response = await this.fetchTaskValue({ task_id: args.task_id });
+      
+      // Filter for the specific key and vehicle
+      const filteredValues = response.task_value?.filter(
+        (value: any) => 
+          value.key === args.key && 
+          value.customer_asset_id === args.vehicle_id
+      );
+      
+      return filteredValues?.[0] || null;
+    } catch (error) {
+      console.error('Error fetching completely filled asset:', error);
+      throw new Error('Failed to fetch completely filled asset');
+    }
+  }
+
+  /**
+   * @method addStockEntryForFillupOnErp
+   * @description Adds stock entry for fillup on ERP system
+   * @args {state: string, task_id: string}
+   */
+  public async addStockEntryForFillupOnErp(args: {
+    state: string;
+    task_id: string;
+  }) {
+    try {
+      console.log('AddStockEntryForFillupOnErp API call:', args);
+      
+      // This would be implemented when the actual GraphQL mutation is available
+      // For now, return a mock response
+      console.log('AddStockEntryForFillupOnErp - using mock response');
+      
+      return {
+        success: true,
+        state: args.state,
+        task_id: args.task_id,
+      };
+    } catch (error) {
+      console.error('Error adding stock entry for fillup on ERP:', error);
+      throw new Error('Failed to add stock entry for fillup on ERP');
+    }
   }
 }
 
