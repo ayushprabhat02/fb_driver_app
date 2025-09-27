@@ -1,13 +1,9 @@
-import {DateTime} from 'luxon';
+import { DateTime } from 'luxon';
 import Toast from 'react-native-toast-message';
-import {
-  FetchDriverVehicleIdDocument,
-  FetchDriverVehicleIdQuery,
-} from '@/generated/graphql';
-import {callQuery} from '@/utils/client';
-import {signOut} from '@/modules/auth/services';
-import {getDriverVehicleId} from '@/utils/localStorage';
-import {authStore} from '@/globalStore';
+import { signOut } from '@/modules/auth/services';
+import { getDriverVehicleId } from '@/utils/localStorage';
+import { authStore } from '@/globalStore';
+import checkinService from '@/modules/checkin/services';
 
 /**
  * @description Validates the current shift status and logs out user if shift has ended
@@ -37,18 +33,21 @@ export const validateShiftPeriodically = async (
       return;
     }
 
-    // Fetch current shift schedule to validate
+    // Fetch current shift schedule to validate using the service
     const currentTime = new Date().toISOString();
-    const response: FetchDriverVehicleIdQuery = await callQuery({
-      queryDocument: FetchDriverVehicleIdDocument,
-      variables: {dateTime: currentTime},
+    const shiftScheduleArray = await checkinService.fetchDriverVehicleId({
+      dateTime: currentTime,
     });
 
-    const shiftSchedule = response.shift_schedule?.[0];
+    const shiftSchedule = shiftScheduleArray?.[0];
     if (!shiftSchedule) {
-      console.log('No active shift found, but allowing user to continue (may be future shift)');
-      // Don't logout immediately - user might have a future shift or network issues
-      // Let the user continue and rely on backend validation
+      console.log('No active shift found, logging out user instantly');
+      Toast.show({
+        type: 'info',
+        text1: 'No Active Shift',
+        text2: 'No shift found. Please log in again.',
+      });
+      signOut();
       return;
     }
 
@@ -82,17 +81,14 @@ export const setupShiftValidation = (
   driverVehicleId: string | null,
   intervalRef: React.MutableRefObject<NodeJS.Timeout | null>,
 ): (() => void) | undefined => {
-  const {AppState} = require('react-native');
+  const { AppState } = require('react-native');
   const graphqlClient = authStore.getState().graphQLClient;
 
   if (!graphqlClient || !driverVehicleId) {
     return undefined;
   }
 
-  // Run validation immediately
-  validateShiftPeriodically(driverVehicleId);
-
-  // Set up periodic validation every 5 minutes
+  // Set up periodic validation every 5 minutes (don't run immediately on setup)
   intervalRef.current = setInterval(() => {
     validateShiftPeriodically(driverVehicleId);
   }, 300000);

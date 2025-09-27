@@ -165,13 +165,13 @@ const CheckinPage: React.FC = () => {
       try {
         startLoader('isDriverVehicleIdLoading');
         const dateTime = new Date().toISOString();
-        
+
         // Fetch driver vehicle ID first
         await checkinService.fetchDriverVehicleId({dateTime});
-        
+
         // Get the updated driverVehicleId from store
         const currentDriverVehicleId = checkinStore.getState().driverVehicleId;
-        
+
         // If we have the ID, fetch details immediately
         if (currentDriverVehicleId) {
           await checkinService.fetchDriverVehicleDetailsById({

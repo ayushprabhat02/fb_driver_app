@@ -103,7 +103,7 @@ const initializeAuthListener = () => {
         );
         setIsNewUser(isNew);
         setXHasuraId(hasuraIdExists.hasuraId);
-        
+
         const token = await user.getIdToken();
         setAuthToken(token);
         setFirebaseUser(user);
