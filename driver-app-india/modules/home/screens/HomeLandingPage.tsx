@@ -48,13 +48,10 @@ import {setupShiftValidation} from '@/utils/shiftValidation';
 
 const HomeLandingPage: React.FC = () => {
   const [refreshing, setRefreshing] = React.useState(false);
-  const [checkBusinessLeadLoader, setCheckBusinessLeadLoader] =
-    useState<boolean>(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [currentOffset, setCurrentOffset] = useState(0);
   const [hasMoreData, setHasMoreData] = useState(true);
   const selectedDate = homeStore.use.selectedDate();
-  const loggedInUser = userStore.use.loggedInUser();
   const driverVehicleId = checkinStore.use.driverVehicleId();
   const driverOrders = homeStore.use.driverOrders();
   const fillupHistory = fillupStore.use.activeFillupHistory();
@@ -96,6 +93,7 @@ const HomeLandingPage: React.FC = () => {
       if (driverVehicleId) {
         await fetchCurrentOrder(selectedDate, 0, false);
         await fetchActiveFillupCheck();
+        await fetchOrderStats();
       }
     } catch (error) {
       console.error('Error refreshing data:', error);
@@ -158,62 +156,6 @@ const HomeLandingPage: React.FC = () => {
     }, [driverVehicleId, selectedDate]),
   );
 
-  // checking if user business lead exists
-  // useEffect(() => {
-  //   if (loggedInUser?.length) {
-  //     UserService.checkIfUserExists({
-  //       phone_number: loggedInUser[0]?.phone_number,
-  //     })
-  //       .then(response => {
-  //         if (response.length === 3) {
-  //           const businessOrg = response[0]?.organization_users.filter(
-  //             orgUser => {
-  //               return orgUser.organization?.is_business;
-  //             },
-  //           );
-  //           if (
-  //             businessOrg?.length &&
-  //             !businessOrg[0]?.organization?.erp_code
-  //           ) {
-  //             polling();
-  //           }
-  //         }
-  //       })
-  //       .catch(() => {});
-  //   }
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, []);
-
-  // const polling = () => {
-  //   setCheckBusinessLeadLoader(true);
-  //   const timerID = setInterval(async () => {
-  //     if (loggedInUser?.length) {
-  //       await UserService.checkIfUserExists({
-  //         phone_number: loggedInUser[0].phone_number,
-  //       })
-  //         .then(res => {
-  //           if (res.length) {
-  //             const businessOrg = res[0]?.organization_users.filter(orgUser => {
-  //               return orgUser.organization?.is_business;
-  //             });
-
-  //             if (
-  //               businessOrg?.length &&
-  //               businessOrg[0]?.organization?.erp_code
-  //             ) {
-  //               clearInterval(timerID);
-  //               setCheckBusinessLeadLoader(false);
-  //             }
-  //           }
-  //         })
-  //         .catch(() => {
-  //           clearInterval(timerID);
-  //           setCheckBusinessLeadLoader(false);
-  //         });
-  //     }
-  //   }, 5000);
-  // };
-
   const fetchMyProfile = async () => {
     try {
       await userService.fetchMyProfile();
@@ -228,11 +170,19 @@ const HomeLandingPage: React.FC = () => {
   const fetchOrderStats = async () => {
     if (driverVehicleId) {
       startLoader('driverOrderStats');
+      // Create start and end dates for the full day in UTC
+      const year = selectedDate.getFullYear();
+      const month = selectedDate.getMonth();
+      const day = selectedDate.getDate();
+
+      const startOfDay = new Date(Date.UTC(year, month, day, 0, 0, 0, 0)); // 00:00:00.000 UTC
+      const endOfDay = new Date(Date.UTC(year, month, day, 23, 59, 59, 999)); // 23:59:59.999 UTC
+
       homeService
         .fetchOrderStatsForDriverV3({
           driver_vehicle_id: driverVehicleId,
-          start_date: selectedDate.toISOString(),
-          end_date: selectedDate.toISOString(),
+          start_date: startOfDay.toISOString(),
+          end_date: endOfDay.toISOString(),
         })
         .finally(() => {
           stopLoader('driverOrderStats');

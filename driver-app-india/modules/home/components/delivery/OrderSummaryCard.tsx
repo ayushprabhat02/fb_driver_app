@@ -8,9 +8,9 @@ const OrderSummaryCard: React.FC = () => {
   const isLoading = homeStore.use.loaders().driverOrderStats;
   const selectedDate = homeStore.use.selectedDate();
 
-  const totalOrders = driverOrderStats?.data?.total_assigned_orders || 0;
+  const totalOrders = driverOrderStats?.data?.total_orders || 0;
   const deliveredOrders =
-    driverOrderStats?.data?.total_delivered_orders_today || 0;
+    driverOrderStats?.data?.total_delivered_orders || 0;
   const pendingOrders = driverOrderStats?.data?.total_pending_orders || 0;
   const progressPercentage =
     totalOrders > 0 ? Math.round((deliveredOrders / totalOrders) * 100) : 0;
@@ -50,7 +50,7 @@ const OrderSummaryCard: React.FC = () => {
             {totalOrders}
           </Text>
           <Text size="xs" weight="500" color="neutral">
-            {driverOrderStats?.data?.total_assigned_qty || 0}L
+            {driverOrderStats?.data?.total_orders_qty || 0}L
           </Text>
         </View>
 
@@ -64,7 +64,7 @@ const OrderSummaryCard: React.FC = () => {
             {deliveredOrders}
           </Text>
           <Text size="xs" weight="500" color="neutral">
-            {driverOrderStats?.data?.total_delivered_qty_today || 0}L
+            {driverOrderStats?.data?.total_delivered_qty || 0}L
           </Text>
         </View>
 

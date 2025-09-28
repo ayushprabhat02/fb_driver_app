@@ -1,29 +1,25 @@
-import React, {useState, useLayoutEffect, useEffect, useCallback} from 'react';
-import {useDebounce} from 'use-debounce';
-import {View, Alert, ViewStyle, FlatList} from 'react-native';
-import {ScaledSheet} from 'react-native-size-matters';
-import {useNavigation, useFocusEffect} from '@react-navigation/native';
-import type {StackNavigationProp} from '@react-navigation/stack';
 import type {OrderStackParamList} from '@/navigator/containers/Order';
+import {useFocusEffect, useNavigation} from '@react-navigation/native';
+import type {StackNavigationProp} from '@react-navigation/stack';
+import React, {useCallback, useEffect, useLayoutEffect, useState} from 'react';
+import {Alert, FlatList, View, ViewStyle} from 'react-native';
+import {ScaledSheet} from 'react-native-size-matters';
+import {useDebounce} from 'use-debounce';
 
 // components
-import {FocusAwareStatusBar, FullScreenLoader, Button} from '@/components';
+import {Button, FocusAwareStatusBar, FullScreenLoader} from '@/components';
 import {
-  AssetSummaryCard,
-  AssetSearchBar,
   AssetCard,
+  AssetSearchBar,
+  AssetSummaryCard,
   OrderInfoCard,
 } from '../components';
 import OrderCancellationRequest from '../components/OrderCancellationRequest';
 
 // styles
+import {orderStore} from '@/globalStore';
 import {FBBackground, FBColorPalette} from '@/types/styles';
 import orderService from '../services';
-import {orderStore} from '@/globalStore';
-import {
-  getAssetIdsWithUploadedVideosForTask,
-  getAssetIdsWithInterruptedRecording,
-} from '@/utils/streamStorage';
 
 const ChooseAssetScreen: React.FC = () => {
   const navigation = useNavigation<StackNavigationProp<OrderStackParamList>>();
@@ -32,8 +28,6 @@ const ChooseAssetScreen: React.FC = () => {
   const currentFillupOrder = orderStore.use.currentFillupOrder();
   const currentDriverOrder = orderStore.use.currentDriverOrder();
   const orderAssets = orderStore.use.orderAssets();
-  const fuelDispensedTillNow = orderStore.use.fuelDispensedTillNow();
-  const quantityToBeDispensed = orderStore.use.quantityToBeDispensed();
 
   const stopLoader = orderStore.use.stopLoader();
   const startLoader = orderStore.use.startLoader();
@@ -65,10 +59,12 @@ const ChooseAssetScreen: React.FC = () => {
 
     // Sort assets to show active ones on top (have uploaded videos)
     return mapped.sort((a, b) => {
-      const aIsActive = assetsWithUploadedVideos.includes(a.id) ||
-                       assetsWithInterruptedRecording.includes(a.id);
-      const bIsActive = assetsWithUploadedVideos.includes(b.id) ||
-                       assetsWithInterruptedRecording.includes(b.id);
+      const aIsActive =
+        assetsWithUploadedVideos.includes(a.id) ||
+        assetsWithInterruptedRecording.includes(a.id);
+      const bIsActive =
+        assetsWithUploadedVideos.includes(b.id) ||
+        assetsWithInterruptedRecording.includes(b.id);
 
       if (aIsActive && !bIsActive) return -1;
       if (!aIsActive && bIsActive) return 1;
@@ -86,7 +82,6 @@ const ChooseAssetScreen: React.FC = () => {
     0,
   );
   const pendingQuantity = totalQuantity - filledQuantity;
-
 
   const handleDispense = (assetId: string) => {
     Alert.alert('Start Dispense', `Start dispensing for asset ${assetId}?`, [
@@ -254,10 +249,13 @@ const ChooseAssetScreen: React.FC = () => {
     return orderAssets.some((asset: any) => {
       const assetId = getAssetIdFromAsset(asset);
       const hasUploadedVideo = assetsWithUploadedVideos.includes(assetId);
-      const hasInterruptedRecording = assetsWithInterruptedRecording.includes(assetId);
+      const hasInterruptedRecording =
+        assetsWithInterruptedRecording.includes(assetId);
       const hasQuantityDispensed = (asset.quantity_dispensed || 0) > 0;
 
-      return (hasUploadedVideo || hasInterruptedRecording) && !hasQuantityDispensed;
+      return (
+        (hasUploadedVideo || hasInterruptedRecording) && !hasQuantityDispensed
+      );
     });
   }, [orderAssets, assetsWithUploadedVideos, assetsWithInterruptedRecording]);
 
@@ -266,10 +264,13 @@ const ChooseAssetScreen: React.FC = () => {
     (asset: any) => {
       const assetId = getAssetIdFromAsset(asset);
       const hasUploadedVideo = assetsWithUploadedVideos.includes(assetId);
-      const hasInterruptedRecording = assetsWithInterruptedRecording.includes(assetId);
+      const hasInterruptedRecording =
+        assetsWithInterruptedRecording.includes(assetId);
       const hasQuantityDispensed = (asset.quantity_dispensed || 0) > 0;
 
-      return (hasUploadedVideo || hasInterruptedRecording) && !hasQuantityDispensed;
+      return (
+        (hasUploadedVideo || hasInterruptedRecording) && !hasQuantityDispensed
+      );
     },
     [assetsWithUploadedVideos, assetsWithInterruptedRecording],
   );
@@ -301,7 +302,8 @@ const ChooseAssetScreen: React.FC = () => {
     });
 
     // Show PROCEED when any asset has activity (quantity dispensed or video uploaded)
-    const hasAnyDispensingActivity = hasAssetWithQuantityDispensed || assetsWithUploadedVideos.length > 0;
+    const hasAnyDispensingActivity =
+      hasAssetWithQuantityDispensed || assetsWithUploadedVideos.length > 0;
 
     const showCancelRequest = !hasAnyDispensingActivity;
     const showProceed = hasAnyDispensingActivity;
@@ -327,7 +329,6 @@ const ChooseAssetScreen: React.FC = () => {
     };
   }, [orderAssets, assetsWithUploadedVideos]);
 
-
   // Memoize the renderItem function to prevent unnecessary re-renders
   const renderAssetItem = React.useCallback(
     ({item, index}: {item: any; index: number}) => {
@@ -342,7 +343,6 @@ const ChooseAssetScreen: React.FC = () => {
       // regardless of total quantity satisfaction
       const hasOtherAssetWithFillRemaining =
         hasAnyAssetWithFillRemaining && !currentAssetHasFillRemaining;
-
 
       return (
         <AssetCard
@@ -359,7 +359,6 @@ const ChooseAssetScreen: React.FC = () => {
     },
     [orderAssets, hasAnyAssetWithFillRemaining, assetHasFillRemaining],
   );
-
 
   // DEPRECATED: Function not used in current implementation
   // const getCancellationButtonText = useCallback(() => { ... }
