@@ -8,7 +8,7 @@ import {Text} from '@/components';
 // components
 import {
   AddressNavigator,
-  AssetsNavigator,
+  // AssetsNavigator, // Assets module deleted
   DeliveryNavigator,
   HomeNavigator,
   LocationNavigator,
@@ -31,7 +31,7 @@ const ProtectedStack = createStackNavigator();
 export type ProtectedStackParamList = {
   home: undefined;
   delivery: any;
-  assets: undefined;
+  // assets: undefined; // Assets module deleted
   location: undefined;
   address: undefined;
   order: undefined;
@@ -63,13 +63,11 @@ const ProtectedNavigator: React.FC<Props> = () => {
           component={HomeNavigator as React.ComponentType}
         />
         <ProtectedStack.Screen name="delivery" component={DeliveryNavigator} />
-        <ProtectedStack.Screen name="assets" component={AssetsNavigator} />
         <ProtectedStack.Screen
           name="location"
           component={LocationNavigator}
           options={{headerShown: false}}
         />
-
         <ProtectedStack.Screen name="address" component={AddressNavigator} />
         <ProtectedStack.Screen
           name="settings"

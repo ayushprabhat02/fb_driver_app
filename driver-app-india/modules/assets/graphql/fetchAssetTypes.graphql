@@ -1,9 +1,0 @@
-query fetchAssetTypes($limit: Int, $offset: Int) {
-  asset_type(limit: $limit, offset: $offset, order_by: {rank_id: asc}) {
-    id
-    name
-    slug
-    description
-    rank_id
-  }
-}

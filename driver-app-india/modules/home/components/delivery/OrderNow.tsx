@@ -26,7 +26,8 @@ import ProductInput from '../delivery/ProductInput';
 import Nozzle from '@/assets/home/nozzle.svg';
 
 // services
-import {AssetService, BusinessService, UserService} from '@/services';
+import {UserService} from '@/services';
+// import {AssetService, BusinessService} from '@/services'; // Asset and Business modules deleted
 import {getActiveDelOrgUserId} from '@/utils/localStorage';
 import {checkPermissions} from '@/utils/permissions';
 import {getBusinessRole} from '@/utils/general';
@@ -34,7 +35,7 @@ import {getBusinessRole} from '@/utils/general';
 // store
 import {
   addressStore,
-  businessStore,
+  // businessStore, // Business module deleted
   deliveryStore,
   userStore,
 } from '@/globalStore';
@@ -217,10 +218,11 @@ const OrderNow: React.FC<Props> = ({scrollToPosition, openBottomSheet}) => {
 
     if (!selectedAssetsForDelivery.length) {
       startLoader('fetchCustomerAssets');
-      const response = await AssetService.getAllCustomerAssets({
-        organization_user_id: getActiveDelOrgUserId(),
-        search_key: '%%',
-      });
+      // const response = await AssetService.getAllCustomerAssets({ // Asset module deleted
+      //   organization_user_id: getActiveDelOrgUserId(),
+      //   search_key: '%%',
+      // });
+      const response = []; // Mock for deleted asset module
 
       const activeAssets = response.filter(asset => asset.is_active);
 
@@ -234,7 +236,11 @@ const OrderNow: React.FC<Props> = ({scrollToPosition, openBottomSheet}) => {
       }, 1000);
 
       if (!activeAssets.length) {
-        navigation.navigate('delivery', {screen: 'add-asset-new-user'});
+        // navigation.navigate('delivery', {screen: 'add-asset-new-user'}); // Asset feature unavailable
+        Toast.show({
+          type: 'info',
+          text1: 'Asset features unavailable',
+        });
         setTimeout(() => {
           stopLoader('fetchCustomerAssets');
         }, 1000);

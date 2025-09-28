@@ -24,7 +24,8 @@ import {addressStore, deliveryStore, homeStore} from '@/globalStore';
 // types
 import {FBColors} from '@/types/styles';
 import {getActiveDelOrgUserId} from '@/utils/localStorage';
-import {AssetService, LocationService} from '@/services';
+import {LocationService} from '@/services';
+// import {AssetService} from '@/services'; // Asset module deleted
 import {retrieveCoordsFromString} from '@/utils/general';
 
 type Props = {
@@ -83,10 +84,11 @@ const RepeatLastOrderCard: React.FC<Props> = ({scrollToOrderNow}) => {
       closeDateTimeBottomSheet();
     }, 50);
 
-    const response = await AssetService.getAllCustomerAssets({
-      organization_user_id: getActiveDelOrgUserId(),
-      search_key: '%%',
-    });
+    // const response = await AssetService.getAllCustomerAssets({ // Asset module deleted
+    //   organization_user_id: getActiveDelOrgUserId(),
+    //   search_key: '%%',
+    // });
+    const response = []; // Mock for deleted asset module
 
     deliveryStore.setState(state => ({
       ...state,

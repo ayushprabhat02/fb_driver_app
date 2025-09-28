@@ -9,15 +9,16 @@ import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
 import {useNavigation} from '@react-navigation/native';
 
 // services
-import {AssetService} from '@/services';
+// import {AssetService} from '@/services'; // Asset module deleted
 import {getActiveDelOrgUserId} from '@/utils/localStorage';
 
 // store
-import {assetStore, deliveryStore} from '@/globalStore';
+import {deliveryStore} from '@/globalStore';
+// import {assetStore} from '@/globalStore'; // Asset module deleted
 
 // components
 import {Button, Divider, Text} from '@/components';
-import {AssetTypeTabs} from '@/modules/assets/delivery/components';
+// import {AssetTypeTabs} from '@/modules/assets/delivery/components'; // Asset module deleted
 
 // styles and types
 import {FBBorders, FBColors} from '@/types/styles';
@@ -38,13 +39,17 @@ const schema = z.object({
 const AddressFormBottomSheet: React.FC = () => {
   const navigation = useNavigation();
 
-  const selectedAssetType = assetStore.use.selectedAssetType();
+  // const selectedAssetType = assetStore.use.selectedAssetType(); // Asset module deleted
+  const selectedAssetType = null; // Mock for deleted asset module
   const selectedAssetsForDelivery =
     deliveryStore.use.selectedAssetsForDeliveryDetails();
 
-  const stopLoader = assetStore.use.stopLoader();
-  const startLoader = assetStore.use.startLoader();
-  const loaders = assetStore.use.loaders();
+  // const stopLoader = assetStore.use.stopLoader(); // Asset module deleted
+  // const startLoader = assetStore.use.startLoader(); // Asset module deleted
+  // const loaders = assetStore.use.loaders(); // Asset module deleted
+  const stopLoader = () => {}; // Mock for deleted asset module
+  const startLoader = () => {}; // Mock for deleted asset module
+  const loaders = {addAsset: false}; // Mock for deleted asset module
 
   const {
     control,
@@ -61,58 +66,63 @@ const AddressFormBottomSheet: React.FC = () => {
   };
 
   const saveAndAddMore = async (data: FormData) => {
-    startLoader('addAsset');
+    // startLoader('addAsset'); // Asset module deleted
 
     Keyboard.dismiss();
-    await AssetService.addCustomerAsset({
-      asset_type_id: selectedAssetType?.id,
-      capacity: data.assetCapacity,
-      description: data.identificationNo,
-      slug: data.identificationNo,
-      name: data.assetName,
-      color: '',
-      is_active: true,
-      organization_user_id: getActiveDelOrgUserId() as string,
-      make: '',
-      modal: '',
-      registration_number: data.identificationNo,
-      state_id: '56e84cb7-d4e7-435e-82dc-2eee6cc7e186',
-    })
-      .then(() => {
-        reset();
-        Toast.show({
-          type: 'success',
-          text1: 'Asset added successfully',
-        });
+    // await AssetService.addCustomerAsset({ // Asset module deleted
+    //   asset_type_id: selectedAssetType?.id,
+    //   capacity: data.assetCapacity,
+    //   description: data.identificationNo,
+    //   slug: data.identificationNo,
+    //   name: data.assetName,
+    //   color: '',
+    //   is_active: true,
+    //   organization_user_id: getActiveDelOrgUserId() as string,
+    //   make: '',
+    //   modal: '',
+    //   registration_number: data.identificationNo,
+    //   state_id: '56e84cb7-d4e7-435e-82dc-2eee6cc7e186',
+    // })
+    //   .then(() => {
+    //     reset();
+    //     Toast.show({
+    //       type: 'success',
+    //       text1: 'Asset added successfully',
+    //     });
 
-        startLoader('fetchAssets');
+    //     startLoader('fetchAssets');
 
-        AssetService.getAllCustomerAssets({
-          organization_user_id: getActiveDelOrgUserId(),
-          search_key: '%%',
-        }).then(assets => {
-          assetStore.setState(state => ({
-            ...state,
-            currentAssetsInView: assets,
-          }));
+    //     AssetService.getAllCustomerAssets({
+    //       organization_user_id: getActiveDelOrgUserId(),
+    //       search_key: '%%',
+    //     }).then(assets => {
+    //       assetStore.setState(state => ({
+    //         ...state,
+    //         currentAssetsInView: assets,
+    //       }));
 
-          deliveryStore.setState(state => ({
-            ...state,
-            selectedAssetsForDeliveryDetails: assets,
-          }));
-        });
-      })
-      .catch(err => {
-        Toast.show({
-          type: 'error',
-          text1: 'Failed to add asset. Please try again.',
-        });
-        throw new Error(err);
-      })
-      .finally(() => {
-        stopLoader('fetchAssets');
-        stopLoader('addAsset');
-      });
+    //       deliveryStore.setState(state => ({
+    //         ...state,
+    //         selectedAssetsForDeliveryDetails: assets,
+    //       }));
+    //     });
+    //   })
+    //   .catch(err => {
+    //     Toast.show({
+    //       type: 'error',
+    //       text1: 'Failed to add asset. Please try again.',
+    //     });
+    //     throw new Error(err);
+    //   })
+    //   .finally(() => {
+    //     stopLoader('fetchAssets');
+    //     stopLoader('addAsset');
+    //   });
+
+    Toast.show({
+      type: 'info',
+      text1: 'Asset features unavailable',
+    });
   };
 
   return (
@@ -134,7 +144,8 @@ const AddressFormBottomSheet: React.FC = () => {
               </Text>
             </Text>
             <View>
-              <AssetTypeTabs />
+              {/* <AssetTypeTabs /> */} {/* Asset module deleted */}
+              <Text style={{padding: 10, textAlign: 'center'}}>Asset type selection unavailable</Text>
             </View>
           </View>
           <Divider height={16} />

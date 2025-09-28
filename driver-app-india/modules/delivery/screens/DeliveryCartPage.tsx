@@ -25,14 +25,15 @@ import {
   DateTime,
   SelectAssets,
 } from '../components/cart';
-import {AssetTypeTabs} from '@/modules/assets/delivery/components';
-import {AddDeliveryAssetForm} from '@/modules/assets/delivery/components';
+// import {AssetTypeTabs} from '@/modules/assets/delivery/components'; // Asset module deleted
+// import {AddDeliveryAssetForm} from '@/modules/assets/delivery/components'; // Asset module deleted
 
 // store
-import {assetStore, deliveryStore} from '@/globalStore';
+import {deliveryStore} from '@/globalStore';
+// import {assetStore} from '@/globalStore'; // Asset module deleted
 
 // service
-import {AssetService} from '@/services';
+// import {AssetService} from '@/services'; // Asset module deleted
 
 // local storage
 import {getActiveDelOrgUserId} from '@/utils/localStorage';
@@ -50,7 +51,8 @@ export type Props = StackScreenProps<DeliveryStackParamList, 'delivery-cart'>;
 type AssetTypeTabss = 'genset' | 'tank' | 'dot' | 'others';
 
 const DeliveryCart: React.FC<Props> = ({navigation}) => {
-  const allAssets = assetStore.use.allCustomerAssets();
+  // const allAssets = assetStore.use.allCustomerAssets(); // Asset module deleted
+  const allAssets = []; // Mock for deleted asset module
   const selectedAssetsForDelivery =
     deliveryStore.use.selectedAssetsForDelivery();
 
@@ -79,23 +81,23 @@ const DeliveryCart: React.FC<Props> = ({navigation}) => {
   }, []);
 
   useEffect(() => {
-    AssetService.getAllCustomerAssets({
-      organization_user_id: getActiveDelOrgUserId(),
-      search_key: '%%',
-    }).then(response => {
-      /**
-       * Here we filter all the fetched assets by asset type for the first time and set it to currentAssetsInView
-       * This is done to show the assets of the selected tab initially
-       * If we skip this, no the assets will be shown initially until the user manually selects a tab
-       * This is done only once when the component mounts
-       */
-      assetStore.setState(state => ({
-        ...state,
-        currentAssetsInView: response.filter(asset => {
-          return asset.asset_type?.slug === selectedTab;
-        }),
-      }));
-    });
+    // AssetService.getAllCustomerAssets({ // Asset module deleted
+    //   organization_user_id: getActiveDelOrgUserId(),
+    //   search_key: '%%',
+    // }).then(response => {
+    //   /**
+    //    * Here we filter all the fetched assets by asset type for the first time and set it to currentAssetsInView
+    //    * This is done to show the assets of the selected tab initially
+    //    * If we skip this, no the assets will be shown initially until the user manually selects a tab
+    //    * This is done only once when the component mounts
+    //    */
+    //   assetStore.setState(state => ({
+    //     ...state,
+    //     currentAssetsInView: response.filter(asset => {
+    //       return asset.asset_type?.slug === selectedTab;
+    //     }),
+    //   }));
+    // });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -104,14 +106,14 @@ const DeliveryCart: React.FC<Props> = ({navigation}) => {
    * This effect is used to filter the assets based on the selected tab
    */
   useEffect(() => {
-    if (selectedTab) {
-      assetStore.setState(state => ({
-        ...state,
-        currentAssetsInView: state.allCustomerAssets.filter(asset => {
-          return asset.asset_type?.slug === selectedTab;
-        }),
-      }));
-    }
+    // if (selectedTab) { // Asset module deleted
+    //   assetStore.setState(state => ({
+    //     ...state,
+    //     currentAssetsInView: state.allCustomerAssets.filter(asset => {
+    //       return asset.asset_type?.slug === selectedTab;
+    //     }),
+    //   }));
+    // }
   }, [selectedTab]);
 
   return (
@@ -215,18 +217,21 @@ const DeliveryCart: React.FC<Props> = ({navigation}) => {
                     {addAssetsFormVisible ? 'Add new asset' : 'Select Assets'}
                   </Text>
                 </View>
-                <AssetTypeTabs />
+                {/* <AssetTypeTabs /> */} {/* Asset module deleted */}
               </View>
               <View style={{paddingHorizontal: s(20)}}>
                 {addAssetsFormVisible ? (
-                  <AddDeliveryAssetForm
-                    formContainerStyles={styles.formContainter}
-                    selectedTab={selectedTab}
-                    closeModal={() => {
-                      closeBottomSheet();
-                      setAddAssetsFormVisible(false);
-                    }}
-                  />
+                  // <AddDeliveryAssetForm // Asset module deleted
+                  //   formContainerStyles={styles.formContainter}
+                  //   selectedTab={selectedTab}
+                  //   closeModal={() => {
+                  //     closeBottomSheet();
+                  //     setAddAssetsFormVisible(false);
+                  //   }}
+                  // />
+                  <View style={{padding: 20}}>
+                    <Text>Asset features unavailable</Text>
+                  </View>
                 ) : (
                   <SelectAssets
                     onButtonPress={(state: boolean) => {

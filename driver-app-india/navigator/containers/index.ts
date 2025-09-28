@@ -1,6 +1,6 @@
 export {default as DeliveryNavigator} from './Delivery';
 export {default as HomeNavigator} from './Home';
-export {default as AssetsNavigator} from './Assets';
+// export {default as AssetsNavigator} from './Assets'; // Assets module deleted
 export {default as LocationNavigator} from './Location';
 export {default as AddressNavigator} from './FillupRequest';
 export {default as SettingsNavigator} from './Settings';

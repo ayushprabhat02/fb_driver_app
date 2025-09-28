@@ -2,7 +2,7 @@ export { default as authStore } from '@/modules/auth/store';
 export { default as homeStore } from '@/modules/home/store';
 export { default as addressStore } from '@/modules/fillupRequest/store';
 export { default as deliveryStore } from '@/modules/delivery/store';
-export { default as assetStore } from '@/modules/assets/store';
+// export { default as assetStore } from '@/modules/assets/store'; // Asset module deleted
 export { default as userStore } from '@/modules/user/store';
 export { default as orderStore } from '@/modules/order/store';
 export { default as splashStore } from '@/modules/splash/store';

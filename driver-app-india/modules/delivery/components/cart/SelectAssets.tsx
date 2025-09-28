@@ -18,7 +18,8 @@ import {
 } from '@/components';
 
 // store
-import {assetStore, deliveryStore} from '@/globalStore';
+import {deliveryStore} from '@/globalStore';
+// import {assetStore} from '@/globalStore'; // Asset module deleted
 
 // styles
 import {FBBackground, FBBorders, FBColors, FontSizeEnum} from '@/types/styles';
@@ -90,9 +91,10 @@ const SelectAssets: React.FC<SelectAssetsProps> = () => {
  * used to select assets on the delivery cart page
  */
 const AssetList: React.FC = () => {
-  const assetsList = assetStore.use
-    .allCustomerAssets()
-    .filter(asset => asset.is_active);
+  // const assetsList = assetStore.use // Asset module deleted
+  //   .allCustomerAssets()
+  //   .filter(asset => asset.is_active);
+  const assetsList = []; // Mock for deleted asset module
   const selectedAssetsForDelivery =
     deliveryStore.use.selectedAssetsForDeliveryDetails();
 
