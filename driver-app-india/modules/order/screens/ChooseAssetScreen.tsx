@@ -1,21 +1,29 @@
-import React, { useState, useLayoutEffect, useEffect, useCallback } from 'react';
-import { useDebounce } from 'use-debounce';
-import { View, Alert, ViewStyle, FlatList } from 'react-native';
-import { ScaledSheet } from 'react-native-size-matters';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import type { StackNavigationProp } from '@react-navigation/stack';
-import type { OrderStackParamList } from '@/navigator/containers/Order';
+import React, {useState, useLayoutEffect, useEffect, useCallback} from 'react';
+import {useDebounce} from 'use-debounce';
+import {View, Alert, ViewStyle, FlatList} from 'react-native';
+import {ScaledSheet} from 'react-native-size-matters';
+import {useNavigation, useFocusEffect} from '@react-navigation/native';
+import type {StackNavigationProp} from '@react-navigation/stack';
+import type {OrderStackParamList} from '@/navigator/containers/Order';
 
 // components
-import { FocusAwareStatusBar, FullScreenLoader, Button } from '@/components';
-import { AssetSummaryCard, AssetSearchBar, AssetCard, OrderInfoCard } from '../components';
+import {FocusAwareStatusBar, FullScreenLoader, Button} from '@/components';
+import {
+  AssetSummaryCard,
+  AssetSearchBar,
+  AssetCard,
+  OrderInfoCard,
+} from '../components';
 import OrderCancellationRequest from '../components/OrderCancellationRequest';
 
 // styles
-import { FBBackground, FBColorPalette } from '@/types/styles';
+import {FBBackground, FBColorPalette} from '@/types/styles';
 import orderService from '../services';
-import { orderStore } from '@/globalStore';
-import { getAssetIdsWithUploadedVideosForTask, getAssetIdsWithInterruptedRecording } from '@/utils/streamStorage';
+import {orderStore} from '@/globalStore';
+import {
+  getAssetIdsWithUploadedVideosForTask,
+  getAssetIdsWithInterruptedRecording,
+} from '@/utils/streamStorage';
 
 const ChooseAssetScreen: React.FC = () => {
   const navigation = useNavigation<StackNavigationProp<OrderStackParamList>>();
@@ -31,10 +39,10 @@ const ChooseAssetScreen: React.FC = () => {
   const startLoader = orderStore.use.startLoader();
   const orderLoader = orderStore.use.loaders();
 
-  // Get partially filled assets and assets with uploaded videos from store
-  const partiallyFilledAssetsArray =
-    orderStore.use.partiallyFilledAssetsArray();
+  // Get assets with videos uploaded but no quantity entered (need "Fill Remaining")
   const assetsWithUploadedVideos = orderStore.use.assetsWithUploadedVideos();
+  const assetsWithInterruptedRecording =
+    orderStore.use.assetsWithInterruptedRecording();
 
   // Set navigation options
   useLayoutEffect(() => {
@@ -47,14 +55,26 @@ const ChooseAssetScreen: React.FC = () => {
   // Map orderAssets to the expected format for AssetCard
   // Use useMemo to ensure this recalculates when orderAssets changes
   const mappedAssets = React.useMemo(() => {
-    return (orderAssets || []).map((orderAsset: any) => ({
+    const mapped = (orderAssets || []).map((orderAsset: any) => ({
       id: orderAsset.customer_asset?.id || '',
       name: orderAsset.customer_asset?.name || '',
       code: orderAsset.customer_asset?.description,
       requestedQuantity: orderAsset.quantity_requested || 0,
       filledQuantity: orderAsset.quantity_dispensed || 0,
     }));
-  }, [orderAssets]);
+
+    // Sort assets to show active ones on top (have uploaded videos)
+    return mapped.sort((a, b) => {
+      const aIsActive = assetsWithUploadedVideos.includes(a.id) ||
+                       assetsWithInterruptedRecording.includes(a.id);
+      const bIsActive = assetsWithUploadedVideos.includes(b.id) ||
+                       assetsWithInterruptedRecording.includes(b.id);
+
+      if (aIsActive && !bIsActive) return -1;
+      if (!aIsActive && bIsActive) return 1;
+      return 0;
+    });
+  }, [orderAssets, assetsWithUploadedVideos, assetsWithInterruptedRecording]);
 
   // Calculate totals
   const totalQuantity = mappedAssets.reduce(
@@ -67,10 +87,11 @@ const ChooseAssetScreen: React.FC = () => {
   );
   const pendingQuantity = totalQuantity - filledQuantity;
 
+
   const handleDispense = (assetId: string) => {
     Alert.alert('Start Dispense', `Start dispensing for asset ${assetId}?`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Start', onPress: () => console.log('Dispense started') },
+      {text: 'Cancel', style: 'cancel'},
+      {text: 'Start', onPress: () => console.log('Dispense started')},
     ]);
   };
 
@@ -156,50 +177,9 @@ const ChooseAssetScreen: React.FC = () => {
     navigation.goBack();
   };
 
-  const restoreAssetsWithUploadedVideos = useCallback(async () => {
-    const selectedOrder = currentFillupOrder || currentDriverOrder;
-    if (!selectedOrder?.id) return;
-
-    try {
-      // Get persisted asset IDs with uploaded videos
-      const persistedAssetIds = await getAssetIdsWithUploadedVideosForTask(selectedOrder.id);
-      
-      if (persistedAssetIds.length > 0) {
-        // Update store with persisted asset IDs
-        orderStore.setState(state => ({
-          ...state,
-          assetsWithUploadedVideos: [...new Set([...state.assetsWithUploadedVideos, ...persistedAssetIds])],
-        }));
-      }
-    } catch (error) {
-      console.error('Failed to restore assets with uploaded videos:', error);
-    }
-  }, [currentFillupOrder, currentDriverOrder]);
-
-  const restoreInterruptedRecordingSessions = useCallback(async () => {
-    const selectedOrder = currentFillupOrder || currentDriverOrder;
-    if (!selectedOrder?.id) {
-      console.log('No selected order for interrupted recording restoration');
-      return;
-    }
-
-    try {
-      console.log('Restoring interrupted recording sessions for order:', selectedOrder.id);
-      const interruptedAssetIds = await getAssetIdsWithInterruptedRecording(selectedOrder.id);
-      
-      console.log('Found interrupted asset IDs:', interruptedAssetIds);
-      
-      if (interruptedAssetIds.length > 0) {
-        orderStore.setState(state => ({
-          ...state,
-          assetsWithInterruptedRecording: [...new Set([...state.assetsWithInterruptedRecording, ...interruptedAssetIds])],
-        }));
-        console.log('Updated store with interrupted recording assets:', interruptedAssetIds);
-      }
-    } catch (error) {
-      console.error('Failed to restore interrupted recording sessions:', error);
-    }
-  }, [currentFillupOrder, currentDriverOrder]);
+  // DEPRECATED: Replaced with API-based state management
+  // const restoreAssetsWithUploadedVideos = useCallback(async () => { ... }
+  // const restoreInterruptedRecordingSessions = useCallback(async () => { ... }
 
   const getCustomerOrderAssets = useCallback(async () => {
     // Get the selected order (fillup order takes priority)
@@ -231,11 +211,11 @@ const ChooseAssetScreen: React.FC = () => {
         custOrderId: customerOrderId,
         searchKey: searchKey,
       });
-      
-      // Restore assets with uploaded videos after fetching assets
-      await restoreAssetsWithUploadedVideos();
-      // Restore interrupted recording sessions
-      await restoreInterruptedRecordingSessions();
+
+      // NEW: Use API-based state sync instead of localStorage restoration
+      await orderService.syncAssetStatesWithStore(selectedOrder.id);
+
+      console.log('✅ Assets and states loaded from API');
     } catch (error) {
       console.error('Error fetching assets:', error);
     } finally {
@@ -247,8 +227,6 @@ const ChooseAssetScreen: React.FC = () => {
     debouncedSearchQuery,
     startLoader,
     stopLoader,
-    restoreAssetsWithUploadedVideos,
-    restoreInterruptedRecordingSessions,
   ]);
 
   useEffect(() => {
@@ -269,28 +247,31 @@ const ChooseAssetScreen: React.FC = () => {
     );
   };
 
+  // Check if any asset has video uploaded but no quantity entered
   const hasAnyAssetWithFillRemaining = React.useMemo(() => {
     if (!orderAssets) return false;
 
     return orderAssets.some((asset: any) => {
       const assetId = getAssetIdFromAsset(asset);
-      return (
-        partiallyFilledAssetsArray.includes(assetId) ||
-        assetsWithUploadedVideos.includes(assetId)
-      );
-    });
-  }, [orderAssets, partiallyFilledAssetsArray, assetsWithUploadedVideos]);
+      const hasUploadedVideo = assetsWithUploadedVideos.includes(assetId);
+      const hasInterruptedRecording = assetsWithInterruptedRecording.includes(assetId);
+      const hasQuantityDispensed = (asset.quantity_dispensed || 0) > 0;
 
-  // Function to check if a specific asset has fill remaining (for current asset exclusion)
+      return (hasUploadedVideo || hasInterruptedRecording) && !hasQuantityDispensed;
+    });
+  }, [orderAssets, assetsWithUploadedVideos, assetsWithInterruptedRecording]);
+
+  // Check if specific asset has fill remaining
   const assetHasFillRemaining = React.useCallback(
     (asset: any) => {
       const assetId = getAssetIdFromAsset(asset);
-      return (
-        partiallyFilledAssetsArray.includes(assetId) ||
-        assetsWithUploadedVideos.includes(assetId)
-      );
+      const hasUploadedVideo = assetsWithUploadedVideos.includes(assetId);
+      const hasInterruptedRecording = assetsWithInterruptedRecording.includes(assetId);
+      const hasQuantityDispensed = (asset.quantity_dispensed || 0) > 0;
+
+      return (hasUploadedVideo || hasInterruptedRecording) && !hasQuantityDispensed;
     },
-    [partiallyFilledAssetsArray, assetsWithUploadedVideos],
+    [assetsWithUploadedVideos, assetsWithInterruptedRecording],
   );
 
   /**
@@ -319,36 +300,23 @@ const ChooseAssetScreen: React.FC = () => {
       return quantity !== null && quantity !== undefined && quantity > 0;
     });
 
-    // 2️⃣ Check if ANY asset is in partially filled state
-    const hasPartiallyFilledAsset = partiallyFilledAssetsArray.length > 0;
-
-    // 3️⃣ Check if ANY asset has uploaded video (streaming done but no quantity entered yet)
-    const hasAssetWithUploadedVideo = assetsWithUploadedVideos.length > 0;
-
-    // 📊 Simplified Button Logic:
-    //
-    // Show CANCEL REQUEST when: NO dispensing activity has started
-    // Show PROCEED when: ANY dispensing activity has started
-    const hasAnyDispensingActivity =
-      hasAssetWithQuantityDispensed ||
-      hasPartiallyFilledAsset ||
-      hasAssetWithUploadedVideo;
+    // Show PROCEED when any asset has activity (quantity dispensed or video uploaded)
+    const hasAnyDispensingActivity = hasAssetWithQuantityDispensed || assetsWithUploadedVideos.length > 0;
 
     const showCancelRequest = !hasAnyDispensingActivity;
     const showProceed = hasAnyDispensingActivity;
 
-    // PROCEED BUTTON enabled when: at least one asset dispensed AND no pending fill remaining
-    const isProceedEnabled = hasAssetWithQuantityDispensed && !hasAssetWithUploadedVideo;
+    // PROCEED BUTTON enabled when: total dispensed quantity meets or exceeds total required quantity
+    const isProceedEnabled =
+      hasAssetWithQuantityDispensed && filledQuantity >= totalQuantity;
 
-    // Debug information for developers
+    // Simple debug info
     const debugInfo = {
       hasAssetWithQuantityDispensed,
-      hasPartiallyFilledAsset,
-      hasAssetWithUploadedVideo,
       hasAnyDispensingActivity,
-      partiallyFilledCount: partiallyFilledAssetsArray.length,
-      uploadedVideoCount: assetsWithUploadedVideos.length,
-      totalAssets: orderAssets.length,
+      totalQuantity,
+      filledQuantity,
+      isProceedEnabled,
     };
 
     return {
@@ -357,19 +325,12 @@ const ChooseAssetScreen: React.FC = () => {
       isProceedEnabled,
       debugInfo,
     };
-  }, [orderAssets, partiallyFilledAssetsArray, assetsWithUploadedVideos]);
+  }, [orderAssets, assetsWithUploadedVideos]);
 
-  // 🐛 Debug logging (can be removed in production)
-  console.log('🎯 Button States:', {
-    showCancel: buttonStates.showCancelRequest,
-    showProceed: buttonStates.showProceed,
-    proceedEnabled: buttonStates.isProceedEnabled,
-    debug: buttonStates.debugInfo,
-  });
 
   // Memoize the renderItem function to prevent unnecessary re-renders
   const renderAssetItem = React.useCallback(
-    ({ item, index }: { item: any; index: number }) => {
+    ({item, index}: {item: any; index: number}) => {
       // Find the original asset data
       const originalAsset = orderAssets?.[index];
       if (!originalAsset) return null;
@@ -377,9 +338,11 @@ const ChooseAssetScreen: React.FC = () => {
       // Check if this specific asset has fill remaining status
       const currentAssetHasFillRemaining = assetHasFillRemaining(originalAsset);
 
-      // Determine if other assets have fill remaining (exclude current asset)
+      // Vue.js Logic: Disable asset if ANY other asset is partially filled
+      // regardless of total quantity satisfaction
       const hasOtherAssetWithFillRemaining =
         hasAnyAssetWithFillRemaining && !currentAssetHasFillRemaining;
+
 
       return (
         <AssetCard
@@ -397,35 +360,12 @@ const ChooseAssetScreen: React.FC = () => {
     [orderAssets, hasAnyAssetWithFillRemaining, assetHasFillRemaining],
   );
 
-  // Get data from store for cancellation reason logic
-  const orderAssetsForCancellation = orderStore.use.orderAssets();
-  const partiallyFilledAssetsArrayForCancellation =
-    orderStore.use.partiallyFilledAssetsArray();
-  const assetsWithUploadedVideosForCancellation =
-    orderStore.use.assetsWithUploadedVideos();
 
-  // Get context-aware button text
-  const getCancellationButtonText = useCallback(() => {
-    const hasDispenseStarted = orderAssetsForCancellation?.some(
-      (asset: any) =>
-        asset.quantity_dispensed > 0 ||
-        partiallyFilledAssetsArrayForCancellation.includes(
-          asset?.customer_asset?.id,
-        ) ||
-        assetsWithUploadedVideosForCancellation.includes(
-          asset?.customer_asset?.id,
-        ),
-    );
-
-    return hasDispenseStarted ? 'Report Issue' : 'Cancel Request';
-  }, [
-    orderAssetsForCancellation,
-    partiallyFilledAssetsArrayForCancellation,
-    assetsWithUploadedVideosForCancellation,
-  ]);
+  // DEPRECATED: Function not used in current implementation
+  // const getCancellationButtonText = useCallback(() => { ... }
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{flex: 1}}>
       <FocusAwareStatusBar
         backgroundColor={FBBackground.primary}
         barStyle="dark-content"
@@ -447,7 +387,7 @@ const ChooseAssetScreen: React.FC = () => {
             `${item.id}-${item.filledQuantity}-${index}`
           } // Include filledQuantity in key to force re-render
           renderItem={renderAssetItem}
-          contentContainerStyle={{ paddingBottom: 100 }} // 👈 ensures space for buttons
+          contentContainerStyle={{paddingBottom: 100}} // 👈 ensures space for buttons
           extraData={orderAssets} // Force re-render when orderAssets changes
         />
       </View>
@@ -461,12 +401,9 @@ const ChooseAssetScreen: React.FC = () => {
           <Button
             onPress={handleCancel}
             variant="outlined"
-            style={[
-              { flex: 1 },
-              { borderColor: FBColorPalette.error }
-            ]}
+            style={[{flex: 1}, {borderColor: FBColorPalette.error}]}
             textStyle={{
-              color: FBColorPalette.error
+              color: FBColorPalette.error,
             }}>
             Cancel Request
           </Button>
@@ -475,18 +412,18 @@ const ChooseAssetScreen: React.FC = () => {
             onPress={handleProceed}
             variant="solid"
             style={[
-              { flex: 1 },
+              {flex: 1},
               buttonStates.isProceedEnabled
                 ? {}
                 : {
-                  backgroundColor: FBColorPalette.disabledInputText,
-                  opacity: 0.6,
-                }
+                    backgroundColor: FBColorPalette.disabledInputText,
+                    opacity: 0.6,
+                  },
             ]}
             textStyle={{
               color: buttonStates.isProceedEnabled
                 ? 'white'
-                : FBColorPalette.disabledInputText
+                : FBColorPalette.disabledInputText,
             }}
             disabled={!buttonStates.isProceedEnabled}>
             Proceed
@@ -502,7 +439,10 @@ const ChooseAssetScreen: React.FC = () => {
       />
 
       {/* FullScreen Loader */}
-      <FullScreenLoader showLoader={orderLoader.chooseAsset} loaderText="Loading assets..." />
+      <FullScreenLoader
+        showLoader={orderLoader.chooseAsset}
+        loaderText="Loading assets..."
+      />
     </View>
   );
 };

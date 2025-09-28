@@ -126,40 +126,12 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
     const totalOrderQuantity =
       quantityToBeDispensed > 0 ? quantityToBeDispensed : orderQuantity;
 
-    // Calculate how much can still be dispensed (total order - already dispensed + current asset existing)
-    const availableQuantity =
-      totalOrderQuantity - fuelDispensedTillNow + existingQuantity;
+    // Vue.js-style validation logic: Calculate total without current asset, then add new quantity
+    const totalDispensedWithoutCurrent = fuelDispensedTillNow - existingQuantity;
+    const newTotalDispensed = totalDispensedWithoutCurrent + quantityNum;
 
-    // If filling remaining, validate the additional quantity doesn't exceed available
-    if (isFillingRemaining) {
-      const maxAdditional = availableQuantity - existingQuantity;
-      if (quantityNum > maxAdditional) {
-        Toast.show({
-          type: 'error',
-          text1: 'Quantity Exceeds Available',
-          text2: `The entered quantity exceeds the available quantity of ${maxAdditional}L`,
-        });
-        return;
-      }
-      // Add to existing quantity for final validation
-      quantityNum = existingQuantity + quantityNum;
-    } else {
-      // For normal dispensing or editing, check against available quantity
-      if (quantityNum > availableQuantity) {
-        Toast.show({
-          type: 'error',
-          text1: 'Quantity Exceeds Available',
-          text2: `The entered quantity exceeds the available quantity of ${availableQuantity}L`,
-        });
-        return;
-      }
-    }
 
-    // Final validation: check if new total dispensed quantity exceeds the total order quantity
-    // When editing, we need to subtract the existing quantity and add the new quantity
-    const newTotalDispensed =
-      fuelDispensedTillNow - existingQuantity + quantityNum;
-
+    // Simple validation: new total should not exceed order quantity
     if (totalOrderQuantity > 0 && newTotalDispensed > totalOrderQuantity) {
       Toast.show({
         type: 'error',

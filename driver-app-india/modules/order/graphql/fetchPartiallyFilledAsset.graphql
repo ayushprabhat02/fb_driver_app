@@ -1,0 +1,21 @@
+query fetchPartiallyFilledAsset(
+  $task_id: uuid
+  $customer_asset_id: uuid
+  $key: String
+) {
+  task_value(
+    where: {
+      task_id: { _eq: $task_id }
+      customer_asset_id: { _eq: $customer_asset_id }
+      key: { _eq: $key }
+    }
+  ) {
+    customer_asset_id
+    id
+    key
+    quantity_dispensed
+    value
+    url
+    task_id
+  }
+}

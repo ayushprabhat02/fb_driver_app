@@ -965,6 +965,199 @@ class OrderService {
       throw new Error("Error publishing driver location");
     }
   }
+
+  /**
+   * @method fetchPartiallyFilledAsset
+   * @description Fetch specific task value for a partially filled asset
+   */
+  public async fetchPartiallyFilledAsset(args: {
+    task_id: string;
+    customer_asset_id: string;
+    key: string;
+  }) {
+    try {
+      const response = await this.fetchTaskValue({ task_id: args.task_id });
+
+      // Filter for the specific asset and key
+      const filteredValues = response.task_value?.filter(
+        (value: any) =>
+          value.customer_asset_id === args.customer_asset_id &&
+          value.key === args.key
+      );
+
+      return filteredValues?.[0] || null;
+    } catch (error) {
+      console.error('Error fetching partially filled asset:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * @method checkPartiallyFilledAssets
+   * @description Get all task values for a task to check for partially filled assets
+   */
+  public async checkPartiallyFilledAssets(taskId: string) {
+    try {
+      const response = await this.fetchTaskValue({ task_id: taskId });
+      return response;
+    } catch (error) {
+      console.error('Error checking partially filled assets:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * @method getPartiallyFilledAssetIds
+   * @description Get asset IDs that are partially filled (has TOTALIZER_BEFORE_READING but no TOTALIZER_AFTER_READING)
+   */
+  public async getPartiallyFilledAssetIds(taskId: string): Promise<string[]> {
+    try {
+      const task = await this.checkPartiallyFilledAssets(taskId);
+
+      if (!task?.task_value) {
+        return [];
+      }
+
+      const partiallyFilledAssetIds = task.task_value
+        .filter((obj: any) =>
+          obj.key === "TOTALIZER_BEFORE_READING" &&
+          !task.task_value.some((innerObj: any) =>
+            innerObj.customer_asset_id === obj.customer_asset_id &&
+            innerObj.key === "TOTALIZER_AFTER_READING"
+          )
+        )
+        .map((obj: any) => obj.customer_asset_id);
+
+      console.log('📊 Partially filled assets found:', partiallyFilledAssetIds);
+      return partiallyFilledAssetIds;
+    } catch (error) {
+      console.error('❌ Error getting partially filled asset IDs:', error);
+      return [];
+    }
+  }
+
+  /**
+   * @method getAssetsWithUploadedVideos
+   * @description Get asset IDs that have uploaded videos (has VIDEO_UPLOADED or LIVE_STREAM_RECORDING but no QUANTITY_ENTERED)
+   */
+  public async getAssetsWithUploadedVideos(taskId: string): Promise<string[]> {
+    try {
+      const task = await this.checkPartiallyFilledAssets(taskId);
+
+      if (!task?.task_value) {
+        return [];
+      }
+
+      const assetsWithVideos = task.task_value
+        .filter((obj: any) =>
+          // Check for either VIDEO_UPLOADED or LIVE_STREAM_RECORDING
+          (obj.key === "VIDEO_UPLOADED" || obj.key === "LIVE_STREAM_RECORDING") &&
+          !task.task_value.some((innerObj: any) =>
+            innerObj.customer_asset_id === obj.customer_asset_id &&
+            innerObj.key === "QUANTITY_ENTERED"
+          )
+        )
+        .map((obj: any) => obj.customer_asset_id);
+
+      console.log('📹 Assets with uploaded videos found:', assetsWithVideos);
+      return assetsWithVideos;
+    } catch (error) {
+      console.error('❌ Error getting assets with uploaded videos:', error);
+      return [];
+    }
+  }
+
+  /**
+   * @method getAssetsWithInterruptedRecording
+   * @description Get asset IDs that have interrupted recording sessions (stream started/paused but not stopped)
+   */
+  public async getAssetsWithInterruptedRecording(taskId: string): Promise<string[]> {
+    try {
+      const task = await this.checkPartiallyFilledAssets(taskId);
+
+      if (!task?.task_value) {
+        return [];
+      }
+
+      // Group task values by asset ID
+      const assetGroups: { [assetId: string]: any[] } = {};
+      task.task_value.forEach((tv: any) => {
+        if (!assetGroups[tv.customer_asset_id]) {
+          assetGroups[tv.customer_asset_id] = [];
+        }
+        assetGroups[tv.customer_asset_id].push(tv);
+      });
+
+      const interruptedAssets: string[] = [];
+
+      // Check each asset for interrupted recording
+      Object.entries(assetGroups).forEach(([assetId, taskValues]) => {
+        // Get stream events for this asset
+        const streamEvents = taskValues
+          .filter(tv => [
+            'STREAM_STARTED',
+            'STREAM_PAUSED',
+            'STREAM_RESUMED',
+            'STREAM_STOPPED'
+          ].includes(tv.key))
+          .sort((a, b) => new Date(a.created_at || a.value).getTime() - new Date(b.created_at || b.value).getTime());
+
+        // Check if quantity is entered (if yes, asset is completed)
+        const hasQuantity = taskValues.some(tv => tv.key === 'QUANTITY_ENTERED');
+
+        // Check if video recording is completed
+        const hasVideoRecording = taskValues.some(tv => tv.key === 'LIVE_STREAM_RECORDING');
+
+        if (streamEvents.length > 0 && !hasQuantity) {
+          const latestEvent = streamEvents[streamEvents.length - 1];
+
+          // If stream is stopped and video is recorded, it's not interrupted (it's ready for quantity entry)
+          // If latest event is not STREAM_STOPPED, it's interrupted
+          if (latestEvent.key !== 'STREAM_STOPPED' && !hasVideoRecording) {
+            interruptedAssets.push(assetId);
+          }
+        }
+      });
+
+      console.log('📹 Assets with interrupted recording found:', interruptedAssets);
+      return interruptedAssets;
+    } catch (error) {
+      console.error('❌ Error getting assets with interrupted recording:', error);
+      return [];
+    }
+  }
+
+  /**
+   * @method syncAssetStatesWithStore
+   * @description Sync asset states from API with store (replaces localStorage approach)
+   */
+  public async syncAssetStatesWithStore(taskId: string): Promise<void> {
+    try {
+      console.log('🔄 Syncing asset states from API...');
+
+      const [partiallyFilledIds, videosUploadedIds, interruptedRecordingIds] = await Promise.all([
+        this.getPartiallyFilledAssetIds(taskId),
+        this.getAssetsWithUploadedVideos(taskId),
+        this.getAssetsWithInterruptedRecording(taskId),
+      ]);
+
+      // Update store with API data
+      orderStore.setState(state => ({
+        ...state,
+        partiallyFilledAssetsArray: partiallyFilledIds,
+        assetsWithUploadedVideos: videosUploadedIds,
+        assetsWithInterruptedRecording: interruptedRecordingIds,
+      }));
+
+      console.log('✅ Asset states synced successfully:', {
+        partiallyFilled: partiallyFilledIds.length,
+        videosUploaded: videosUploadedIds.length,
+        interruptedRecording: interruptedRecordingIds.length,
+      });
+    } catch (error) {
+      console.error('❌ Error syncing asset states:', error);
+    }
+  }
 }
 
 const orderService = OrderService.getInstance();

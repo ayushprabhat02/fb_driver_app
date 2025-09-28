@@ -47,12 +47,6 @@ const AssetCard: React.FC<AssetCardProps> = ({
   const navigation = useNavigation();
   const [showQuantityBottomSheet, setShowQuantityBottomSheet] = useState(false);
 
-  // Get partially filled assets from store
-  const partiallyFilledAssetsArray =
-    orderStore.use.partiallyFilledAssetsArray();
-  const addPartiallyFilledAsset = orderStore.use.addPartiallyFilledAsset();
-  const removePartiallyFilledAsset =
-    orderStore.use.removePartiallyFilledAsset();
   // Get assets with uploaded videos
   const assetsWithUploadedVideos = orderStore.use.assetsWithUploadedVideos();
   const removeAssetWithUploadedVideo =
@@ -76,13 +70,10 @@ const AssetCard: React.FC<AssetCardProps> = ({
     );
   };
 
-  // Helper function to check if asset is partially filled
+  // Check if asset needs "Fill Remaining" (has video but no quantity)
   const isAssetPartiallyFilled = () => {
     const assetId = getAssetId();
-    return (
-      partiallyFilledAssetsArray.includes(assetId) ||
-      assetsWithUploadedVideos.includes(assetId)
-    );
+    return assetsWithUploadedVideos.includes(assetId);
   };
 
   // Helper function to check if asset has interrupted recording
@@ -142,27 +133,46 @@ const AssetCard: React.FC<AssetCardProps> = ({
       });
 
       // Update local store state to reflect the change immediately
-      const updatedAssets = orderStore
-        .getState()
-        .orderAssets?.map((orderAsset: any) => {
-          const orderAssetId =
-            orderAsset.customer_asset?.id ||
-            orderAsset.id ||
-            orderAsset.customer_asset_id;
-          if (orderAssetId === assetId) {
-            return {
-              ...orderAsset,
-              quantity_dispensed: quantity,
-            };
-          }
-          return orderAsset;
-        });
+      const currentState = orderStore.getState();
+      console.log('🔍 Before quantity update:', {
+        assetId,
+        oldQuantity: filledQuantity,
+        newQuantity: quantity,
+        currentAssets: currentState.orderAssets?.map((a: any) => ({
+          id: a.customer_asset?.id || a.id || a.customer_asset_id,
+          quantity_dispensed: a.quantity_dispensed || 0,
+        })),
+        currentTotal: currentState.fuelDispensedTillNow,
+      });
+
+      const updatedAssets = currentState.orderAssets?.map((orderAsset: any) => {
+        const orderAssetId =
+          orderAsset.customer_asset?.id ||
+          orderAsset.id ||
+          orderAsset.customer_asset_id;
+        if (orderAssetId === assetId) {
+          return {
+            ...orderAsset,
+            quantity_dispensed: quantity,
+          };
+        }
+        return orderAsset;
+      });
 
       // Calculate new total fuel dispensed
       const newFuelDispensedTillNow =
         updatedAssets?.reduce((total: number, asset: any) => {
           return total + (asset.quantity_dispensed || 0);
         }, 0) || 0;
+
+      console.log('🔍 After quantity update calculation:', {
+        assetId,
+        updatedAssets: updatedAssets?.map((a: any) => ({
+          id: a.customer_asset?.id || a.id || a.customer_asset_id,
+          quantity_dispensed: a.quantity_dispensed || 0,
+        })),
+        newTotal: newFuelDispensedTillNow,
+      });
 
       // Update the store with the new asset data and total fuel dispensed
       orderStore.setState(state => ({
@@ -171,19 +181,23 @@ const AssetCard: React.FC<AssetCardProps> = ({
         fuelDispensedTillNow: newFuelDispensedTillNow,
       }));
 
-      // Remove from uploaded videos array since quantity is now entered
+      // Remove from tracking arrays when quantity is entered
       removeAssetWithUploadedVideo(assetId);
-
-      // Also remove from persistent storage
+      removeAssetWithInterruptedRecording(assetId);
       await removeAssetFromPersistentStorage(selectedOrder.id, assetId);
 
-      // Update partially filled assets array based on the new quantity
-      if (quantity > 0 && quantity < requestedQuantity) {
-        // Asset is now partially filled
-        addPartiallyFilledAsset(assetId);
-      } else if (quantity >= requestedQuantity) {
-        // Asset is now complete, remove from partially filled array
-        removePartiallyFilledAsset(assetId);
+      // Mark order as dispensing when quantity is entered (first-time quantity entry)
+      if (quantity > 0 && filledQuantity === 0) {
+        try {
+          await orderService.markOrderDispensing({id: selectedOrder.id});
+          console.log('✅ Order marked as DISPENSING after quantity entry');
+        } catch (orderStateError) {
+          console.error(
+            '❌ Failed to mark order as dispensing:',
+            orderStateError,
+          );
+          // Don't block the quantity update if order state update fails
+        }
       }
 
       setShowQuantityBottomSheet(false);
@@ -207,37 +221,29 @@ const AssetCard: React.FC<AssetCardProps> = ({
   const getButtonText = () => {
     const assetId = getAssetId();
     const hasUploadedVideo = assetsWithUploadedVideos.includes(assetId);
-    const isInPartiallyFilled = partiallyFilledAssetsArray.includes(assetId);
+    const isInPartiallyFilled = false; // Simplified: no longer using partiallyFilledAssetsArray
     const hasInterruptedRecording =
       assetsWithInterruptedRecording.includes(assetId);
-    
-    // Debug logging
-    console.log('AssetCard Debug:', {
-      assetId,
-      hasInterruptedRecording,
-      assetsWithInterruptedRecording,
-      hasUploadedVideo,
-      isInPartiallyFilled
-    });
+
 
     // Priority 0: If order is completely dispensed, show Order Complete
     if (isOrderCompletelyDispensed) {
       return 'Order Complete';
     }
 
-    // Priority 1: If has interrupted recording session, show Continue Recording
+    // Priority 1: If has interrupted recording session, show Resume Recording
     if (hasInterruptedRecording) {
-      return 'Continue Recording';
+      return 'Resume Recording';
     }
 
-    // Priority 2: If streaming done but no quantity OR partially filled with quantity, show Fill Remaining
-    if (hasUploadedVideo || isInPartiallyFilled) {
-      return 'Fill Remaining';
-    }
-
-    // Priority 3: If dispensing is complete (filled quantity >= requested quantity), show Complete
+    // Priority 2: If dispensing is complete (filled quantity >= requested quantity), show Complete
     if (filledQuantity >= requestedQuantity && filledQuantity > 0) {
       return 'Complete';
+    }
+
+    // Priority 3: If streaming done but no quantity OR partially filled with quantity, show Fill Remaining
+    if (hasUploadedVideo || isInPartiallyFilled) {
+      return 'Fill Remaining';
     }
 
     // Priority 4: If no streaming done and no quantity, show Start Dispense
@@ -258,7 +264,7 @@ const AssetCard: React.FC<AssetCardProps> = ({
   const isDisabledDueToOtherFillRemaining = () => {
     const assetId = getAssetId();
     const hasUploadedVideo = assetsWithUploadedVideos.includes(assetId);
-    const isInPartiallyFilled = partiallyFilledAssetsArray.includes(assetId);
+    const isInPartiallyFilled = false; // Simplified: no longer using partiallyFilledAssetsArray
     const currentAssetHasFillRemaining =
       hasUploadedVideo || isInPartiallyFilled;
 
@@ -333,8 +339,8 @@ const AssetCard: React.FC<AssetCardProps> = ({
           styles.dispenseButton as ViewStyle,
           getButtonText() === 'Fill Remaining' &&
             (styles.fillRemainingButton as ViewStyle),
-          getButtonText() === 'Continue Recording' &&
-            (styles.continueRecordingButton as ViewStyle),
+          getButtonText() === 'Resume Recording' &&
+            (styles.resumeRecordingButton as ViewStyle),
           (disabled ||
             getButtonText() === 'Complete' ||
             getButtonText() === 'Order Complete' ||
@@ -379,7 +385,7 @@ const AssetCard: React.FC<AssetCardProps> = ({
         onProceed={handleQuantityUpdate}
         orderQuantity={requestedQuantity}
         existingQuantity={filledQuantity}
-        isFillingRemaining={isAssetPartiallyFilled()}
+        isFillingRemaining={isAssetPartiallyFilled() && filledQuantity === 0}
       />
     </View>
   );
@@ -452,9 +458,9 @@ const styles = ScaledSheet.create({
     backgroundColor: '#FF8C00', // Orange background for Fill Remaining
     borderColor: '#FF8C00',
   },
-  continueRecordingButton: {
-    backgroundColor: '#4CAF50', // Green background for Continue Recording
-    borderColor: '#4CAF50',
+  resumeRecordingButton: {
+    backgroundColor: '#2196F3', // Blue background for Resume Recording
+    borderColor: '#2196F3',
   },
   editHint: {
     fontStyle: 'italic',
