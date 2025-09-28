@@ -19,7 +19,7 @@ import {SafeAreaProvider, SafeAreaView} from 'react-native-safe-area-context';
 import {createStackNavigator} from '@react-navigation/stack';
 
 // store
-import {splashStore, authStore, checkinStore} from './globalStore';
+import {splashStore, authStore, checkinStore, locationTrackingStore} from './globalStore';
 
 // services
 import {signOut} from './modules/auth/services';
@@ -48,6 +48,8 @@ function App(): React.JSX.Element {
 
   useEffect(() => {
     initializeSplash();
+    // Initialize location tracking
+    locationTrackingStore.getState().initialize();
   }, [initializeSplash]);
 
   // Periodic shift validation moved to HomeLandingPage.tsx to only run when on home screen
@@ -59,8 +61,6 @@ function App(): React.JSX.Element {
   if (isLoading) {
     return <SplashScreen />;
   }
-
-
 
   return (
     <SafeAreaProvider>

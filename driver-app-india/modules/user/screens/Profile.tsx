@@ -85,14 +85,12 @@ const Profile: React.FC = () => {
 
   //default values for fields
   const defaultValues = {
-    firstName: loggedInUser?.length ? loggedInUser[0]?.first_name : '',
-    lastName: loggedInUser?.length ? loggedInUser[0]?.last_name : '',
-    phoneNumber: loggedInUser?.length ? loggedInUser[0]?.phone_number : '',
-    customerSegmentation: loggedInUser?.length
-      ? loggedInUser[0]?.customer_segmentation?.id
-      : '',
-    pan: loggedInUser?.length ? loggedInUser[0]?.pan_number : '',
-    email: loggedInUser?.length ? loggedInUser[0]?.email : '',
+    firstName: loggedInUser?.first_name || '',
+    lastName: loggedInUser?.last_name || '',
+    phoneNumber: loggedInUser?.phone_number || '',
+    customerSegmentation: '',
+    pan: loggedInUser?.pan_number || '',
+    email: '',
   };
 
   const {
@@ -111,7 +109,7 @@ const Profile: React.FC = () => {
    * This is done so that first-time users can update their profiles without having to click on update
    */
   const [isEditabled, setIsEditabled] = useState(
-    loggedInUser && loggedInUser.length > 0 && loggedInUser[0]?.first_name
+    loggedInUser && loggedInUser?.first_name
       ? false
       : true,
   );
@@ -170,10 +168,9 @@ const Profile: React.FC = () => {
   useEffect(() => {
     UserService.fetchCustomerSegmentation().then(response => {
       if (loggedInUser) {
-        const currentSegmentation = response.find(segment => {
-          return segment.id === loggedInUser[0]?.customer_segmentation?.id;
-        });
-        setSelectedSegmentType(currentSegmentation);
+        // Note: fetchUserDetails doesn't include customer_segmentation in the response
+        // This logic needs to be updated based on actual data structure
+        setSelectedSegmentType(undefined);
       }
     });
   }, [loggedInUser]);
@@ -241,8 +238,8 @@ const Profile: React.FC = () => {
             variant="rounded"
             buttonStyle={styles.avatarStyle}
             buttonTextSize="4xl"
-            fullName={`${loggedInUser ? loggedInUser[0]?.first_name : ''} ${
-              loggedInUser ? loggedInUser[0]?.last_name : ''
+            fullName={`${loggedInUser ? loggedInUser?.first_name : ''} ${
+              loggedInUser ? loggedInUser?.last_name : ''
             }`}
           />
           <View style={styles.form}>
@@ -288,8 +285,8 @@ const Profile: React.FC = () => {
               errors={errors}
               required={false}
               editable={
-                loggedInUser?.length
-                  ? !loggedInUser[0]?.pan_number && isEditabled
+                loggedInUser
+                  ? !loggedInUser?.pan_number && isEditabled
                     ? true
                     : false
                   : false
@@ -311,8 +308,7 @@ const Profile: React.FC = () => {
               <Pressable
                 onPress={() => {
                   if (
-                    loggedInUser?.length &&
-                    !loggedInUser[0]?.customer_segmentation?.id &&
+                    loggedInUser &&
                     isEditabled
                   ) {
                     showOrgSegmentation();
@@ -332,15 +328,9 @@ const Profile: React.FC = () => {
               label="Email"
               control={control}
               errors={errors}
-              required={true}
-              editable={
-                loggedInUser?.length
-                  ? !loggedInUser[0]?.email && isEditabled
-                    ? true
-                    : false
-                  : false
-              }
-              placeholder={'Email'}
+              required={false}
+              editable={false}
+              placeholder={'Email (not editable)'}
               keyboardType={'email-address'}
             />
 

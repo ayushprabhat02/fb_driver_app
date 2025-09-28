@@ -70,6 +70,9 @@ type OrderStore = {
   isCancellationModalOpen: boolean;
   isOrderDetailsModalOpen: boolean;
 
+  // Live location tracking properties (Vue.js inspired)
+  scheduleShiftIdTracking: string | null;
+
   // loading states
   loaders: Loaders;
 
@@ -175,6 +178,9 @@ const orderInitialState: OrderStore = {
   cancellationComment: '',
   isCancellationModalOpen: false,
   isOrderDetailsModalOpen: false,
+
+  // Live location tracking initial state
+  scheduleShiftIdTracking: null,
 
   loaders: {
     totalizerImage: false,
@@ -359,6 +365,16 @@ const orderStore = create<OrderStore & OrderActions>(set => ({
       driverVehicleDetails: details,
     })),
 
+  // Live location tracking actions
+  setScheduleShiftIdTracking: (id: string | null) =>
+    set(state => {
+      console.log('Setting scheduleShiftIdTracking:', id);
+      return {
+        ...state,
+        scheduleShiftIdTracking: id,
+      };
+    }),
+
   // Enhanced fillup order management action implementations (Vue-inspired)
   setFillupOrderStateFlow: (stateFlow: FillupOrderStateFlow[]) =>
     set(state => ({
@@ -404,5 +420,15 @@ const orderStore = create<OrderStore & OrderActions>(set => ({
         : null,
     })),
 }));
+
+// Add a listener to log when scheduleShiftIdTracking changes
+const unsub = orderStore.subscribe((state, prevState) => {
+  if (state.scheduleShiftIdTracking !== prevState.scheduleShiftIdTracking) {
+    console.log('scheduleShiftIdTracking changed:', {
+      old: prevState.scheduleShiftIdTracking,
+      new: state.scheduleShiftIdTracking
+    });
+  }
+});
 
 export default createSelectors(orderStore);

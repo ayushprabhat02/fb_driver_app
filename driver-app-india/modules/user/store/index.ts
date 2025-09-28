@@ -6,7 +6,7 @@ import createSelectors from '@/utils/selectors';
 
 // types
 import {
-  FetchUserProfileQuery,
+  MyProfileQuery,
   FetchCustomerSegmentationListQuery,
 } from '@/generated/graphql';
 
@@ -17,7 +17,7 @@ type Loaders = {
 };
 
 type UserStore = {
-  loggedInUser: FetchUserProfileQuery['user'] | null | undefined;
+  loggedInUser: MyProfileQuery['fetchUserDetails'] | null | undefined;
   customerSegmentationList: FetchCustomerSegmentationListQuery['customer_segmentation'];
 
   // loading states
@@ -59,7 +59,20 @@ const userStore = create<UserStore & UserActions>(set => ({
     }),
 
   // reset user store
-  resetUserStore: () => set(userInitialState),
+  resetUserStore: () => {
+    console.log('Resetting user store');
+    set(userInitialState);
+  },
 }));
+
+// Add a listener to log when loggedInUser changes
+const unsub = userStore.subscribe((state, prevState) => {
+  if (state.loggedInUser !== prevState.loggedInUser) {
+    console.log('loggedInUser changed:', {
+      old: prevState.loggedInUser?.id,
+      new: state.loggedInUser?.id
+    });
+  }
+});
 
 export default createSelectors(userStore);

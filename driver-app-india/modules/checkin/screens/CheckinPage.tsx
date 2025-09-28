@@ -7,13 +7,12 @@ import {
   HeaderAvoidingContainer,
   Text,
 } from '@/components';
-import {checkinStore} from '@/globalStore';
+import {checkinStore, locationTrackingStore, orderStore, userStore} from '@/globalStore';
 import supportService from '@/modules/support/services';
 import {commonInputStyles} from '@/styles';
 import {FBBackground, FBBorders, FBColors} from '@/types/styles';
 import {getCurrentLocation} from '@/utils/location';
 import {useNavigation} from '@react-navigation/native';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import React, {useEffect, useRef, useState} from 'react';
 import {
   Alert,
@@ -28,15 +27,13 @@ import {RNCamera} from 'react-native-camera';
 import {check, PERMISSIONS, request, RESULTS} from 'react-native-permissions';
 import {ImageContainer} from '../components';
 import checkinService from '../services';
-import {LoaderTypes} from '../store';
 
 type RootStackParamList = {
   home: undefined;
 };
 
 const CheckinPage: React.FC = () => {
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation: any = useNavigation();
   const driverVehicleId = checkinStore.use.driverVehicleId();
   const isCheckedIn = checkinStore.use.isCheckedIn();
 
@@ -206,7 +203,13 @@ const CheckinPage: React.FC = () => {
       const options = {quality: 0.5, base64: true};
       const data = await cameraRef.current.takePictureAsync(options);
       setShowCamera(false);
-      let loaderType: LoaderTypes | null = null;
+      let loaderType: 
+        | 'isRefuellerImageUploading'
+        | 'isOdometerImageUploading'
+        | 'isTotalizerImageUploading'
+        | 'isCheckingIn'
+        | 'isDriverVehicleIdLoading'
+        | null = null;
       switch (imageType) {
         case 'refueller':
           loaderType = 'isRefuellerImageUploading';
@@ -251,7 +254,12 @@ const CheckinPage: React.FC = () => {
   const uploadImage = async (
     uri: string,
     type: string,
-    loaderType: LoaderTypes,
+    loaderType: 
+        | 'isRefuellerImageUploading'
+        | 'isOdometerImageUploading'
+        | 'isTotalizerImageUploading'
+        | 'isCheckingIn'
+        | 'isDriverVehicleIdLoading',
   ) => {
     try {
       const blob = await (await fetch(uri)).blob();

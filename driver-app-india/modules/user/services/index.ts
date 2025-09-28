@@ -174,11 +174,14 @@ class UserService {
         variables: {},
       });
 
+      console.log('User profile response:', JSON.stringify(response, null, 2));
+
       if (response?.fetchUserDetails) {
         userStore.setState(state => ({
           ...state,
           loggedInUser: response.fetchUserDetails,
         }));
+        console.log('User profile set in store:', response.fetchUserDetails?.id);
         return response.fetchUserDetails;
       }
     } catch (error) {

@@ -909,6 +909,62 @@ class OrderService {
       throw new Error('Failed to add stock entry for fillup on ERP');
     }
   }
+
+  /**
+   * @method sendDriverLocation
+   * @description Sends driver location to tracking API
+   * @args {driverId: string, deviceId: string, driverVehicleId: string, shiftScheduleId: string, latitude: number, longitude: number, timestamp?: string, source?: string}
+   */
+  public async sendDriverLocation(args: {
+    driverId: string;
+    deviceId: string;
+    driverVehicleId: string;
+    shiftScheduleId: string;
+    latitude: number;
+    longitude: number;
+    timestamp?: string;
+    source?: string;
+  }) {
+    // Using the same API key as in Vue.js implementation
+    const apiKey = "3a1223c3a%$!%2!2a1c!$c$1bb2!2$ab";
+
+    // The direct API endpoint from the working curl command
+    const apiUrl =
+      "https://track-api.fuelbuddy.in/api/v1/publish-driver-location";
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "x-api-key": apiKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          driverId: args.driverId,
+          deviceId: args.deviceId,
+          driverVehicleId: args.driverVehicleId,
+          shiftScheduleId: args.shiftScheduleId,
+          latitude: args.latitude,
+          longitude: args.longitude,
+          timestamp: args.timestamp || new Date().toISOString(),
+          source: args.source || "driver_app",
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(
+          `Failed to send location: ${response.status} ${response.statusText} - ${errorData}`,
+        );
+      }
+
+      // Assuming the API returns JSON on success
+      return await response.json();
+    } catch (err) {
+      console.error('Error publishing driver location:', err);
+      throw new Error("Error publishing driver location");
+    }
+  }
 }
 
 const orderService = OrderService.getInstance();

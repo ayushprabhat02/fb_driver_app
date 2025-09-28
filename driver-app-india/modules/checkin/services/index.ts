@@ -15,21 +15,21 @@ import {
   Partner_Vehicle_State_Enum,
   Photo_Type_Enum,
 } from './../../../generated/graphql';
-import {setDriverVehicleId, getDriverVehicleId} from '@/utils/localStorage';
-import {DateTime} from 'luxon';
-import {signOut} from '../../auth/services';
+import { setDriverVehicleId, getDriverVehicleId } from '@/utils/localStorage';
+import { DateTime } from 'luxon';
+import { signOut } from '../../auth/services';
 import Toast from 'react-native-toast-message';
-import {Vehicle} from '../../../generated/graphql';
+import { Vehicle } from '../../../generated/graphql';
 /**
  * @module Checkin
  * @description This is the service file for the checkin module.
  */
 
 // dependencies
-import {callQuery, callMutation} from '@/utils/client';
+import { callQuery, callMutation } from '@/utils/client';
 
 // store
-import {checkinStore, orderStore, authStore} from '@/globalStore';
+import { checkinStore, orderStore, authStore } from '@/globalStore';
 
 // graphql-documents
 
@@ -57,12 +57,23 @@ class CheckinService {
       // Always fetch fresh data from API to validate current shift status
       const response: FetchDriverVehicleIdQuery = await callQuery({
         queryDocument: FetchDriverVehicleIdDocument,
-        variables: {...args},
+        variables: { ...args },
       });
+
+      console.log('FetchDriverVehicleId response:', JSON.stringify(response, null, 2));
 
       const shiftSchedule = response.shift_schedule[0];
       const driverVehicleId = shiftSchedule?.driver_vehicle_id;
+      const shiftScheduleId = shiftSchedule?.id; // Get the shift schedule ID for tracking
       const shiftEndTime = shiftSchedule?.end_time;
+
+      // Log the extracted data
+      console.log('Extracted data:', {
+        shiftSchedule,
+        driverVehicleId,
+        shiftScheduleId,
+        shiftEndTime
+      });
 
       // Check for shift end conditions
       if (!driverVehicleId || !shiftSchedule) {
@@ -80,6 +91,7 @@ class CheckinService {
         checkinStore.setState(state => ({
           ...state,
           driverVehicleId: null,
+          shiftSchedule: null,
           isCheckedIn: false,
         }));
 
@@ -92,6 +104,17 @@ class CheckinService {
         // Handle logout gracefully without throwing errors
         this.handleShiftEndLogout();
         return []; // Return empty array instead of throwing
+      }
+
+      // Set the schedule shift ID for tracking in the order store
+      if (shiftScheduleId) {
+        console.log('Setting scheduleShiftIdTracking:', shiftScheduleId);
+        (orderStore.getState() as any).setScheduleShiftIdTracking(shiftScheduleId);
+      }
+
+      // Set the shift schedule in the checkin store
+      if (shiftSchedule) {
+        checkinStore.getState().setShiftSchedule(shiftSchedule);
       }
 
       // Check if current time exceeds shift end time by more than 1 hour (grace period)
@@ -136,6 +159,7 @@ class CheckinService {
       checkinStore.setState(state => ({
         ...state,
         driverVehicleId: null,
+        shiftSchedule: null,
         isCheckedIn: false,
       }));
 
@@ -176,7 +200,7 @@ class CheckinService {
   ) {
     const response: GetDriverVehicleDetailsByIdQuery = await callQuery({
       queryDocument: GetDriverVehicleDetailsByIdDocument,
-      variables: {...args},
+      variables: { ...args },
     });
 
     // Use type assertion to ensure the vehicle data matches the expected Vehicle type
@@ -186,6 +210,7 @@ class CheckinService {
     checkinStore.setState(state => ({
       ...state,
       driverVehicleDetails: vehicleData,
+      driverDetails: response.driver_vehicle_by_pk?.user
     }));
 
     return response.driver_vehicle_by_pk;
@@ -212,7 +237,7 @@ class CheckinService {
 
       const response: DriverCheckInMutation = await callMutation({
         queryDocument: DriverCheckInDocument,
-        variables: {...args},
+        variables: { ...args },
       });
 
       if (response && response.insert_driver_duty_log_one) {
@@ -229,9 +254,8 @@ class CheckinService {
       Toast.show({
         type: 'error',
         text1: 'Check-in Failed',
-        text2: `Unable to complete check-in: ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`,
+        text2: `Unable to complete check-in: ${error instanceof Error ? error.message : 'Unknown error'
+          }`,
       });
       throw error;
     }
@@ -253,7 +277,7 @@ class CheckinService {
       const response: UpdateDriverVehicleStateByIdMutation = await callMutation(
         {
           queryDocument: UpdateDriverVehicleStateByIdDocument,
-          variables: {...args},
+          variables: { ...args },
         },
       );
 
@@ -279,11 +303,11 @@ class CheckinService {
    */
   public async completeCheckIn(checkInData: {
     refuellerStoreUrl: string;
-    location: {lat: number; lng: number};
+    location: { lat: number; lng: number };
     driverVehicleId: string;
   }) {
     try {
-      const {refuellerStoreUrl, location, driverVehicleId} = checkInData;
+      const { refuellerStoreUrl, location, driverVehicleId } = checkInData;
 
       console.log('Starting check-in process with data:', checkInData);
 
