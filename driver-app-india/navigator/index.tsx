@@ -14,12 +14,9 @@ import {
   HomeNavigator,
   LocationNavigator,
   OrderNavigator,
-  PickupNavigator,
   SettingsNavigator,
   SupportNavigator,
   UserNavigator,
-  WalletNavigator,
-  ReportNavigator,
   CheckinNavigator,
 } from './containers';
 
@@ -35,13 +32,11 @@ const ProtectedStack = createStackNavigator();
 export type ProtectedStackParamList = {
   home: undefined;
   delivery: any;
-  pickup: undefined;
   assets: undefined;
   location: undefined;
   address: undefined;
   order: undefined;
   settings: undefined;
-  wallet: undefined;
   user: undefined;
 };
 export type Props = StackScreenProps<ProtectedStackParamList, 'home'>;
@@ -69,7 +64,6 @@ const ProtectedNavigator: React.FC<Props> = () => {
           component={HomeNavigator as React.ComponentType}
         />
         <ProtectedStack.Screen name="delivery" component={DeliveryNavigator} />
-        <ProtectedStack.Screen name="pickup" component={PickupNavigator} />
         <ProtectedStack.Screen name="assets" component={AssetsNavigator} />
         <ProtectedStack.Screen
           name="location"
@@ -77,17 +71,7 @@ const ProtectedNavigator: React.FC<Props> = () => {
           options={{headerShown: false}}
         />
 
-        <ProtectedStack.Screen name="reports" component={ReportNavigator} />
         <ProtectedStack.Screen name="address" component={AddressNavigator} />
-        <ProtectedStack.Screen
-          name="wallet"
-          component={WalletNavigator}
-          // options={{
-          //   title: '',
-          //   ...commonHeaderStyles,
-          //   headerTintColor: FBColors.primary,
-          // }}
-        />
         <ProtectedStack.Screen
           name="settings"
           component={SettingsNavigator}

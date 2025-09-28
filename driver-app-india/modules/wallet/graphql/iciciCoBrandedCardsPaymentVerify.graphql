@@ -1,9 +1,0 @@
-mutation iciciCoBrandedCardsPaymentVerify(
-  $object: iciciCoBrandedCardsPaymentVerifyInput!
-) {
-  iciciCoBrandedCardsPaymentVerify(object: $object) {
-    status
-    wallet_id
-    wallet_transaction_id
-  }
-}

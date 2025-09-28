@@ -7,12 +7,11 @@ import {
   businessStore,
   deliveryStore,
   orderStore,
-  walletStore,
 } from '@/globalStore';
 
 // services
 import {formatAmountInternational, getBusinessRole} from '@/utils/general';
-import {DeliveryService, OrderService, WalletService} from '@/services';
+import {DeliveryService, OrderService} from '@/services';
 
 // components
 import {Button, Text} from '@/components';
@@ -33,13 +32,12 @@ const PayViaWalletButton: React.FC<Props> = ({
 }) => {
   const navigation = useNavigation();
   const totalAmount = deliveryStore.use.totalAmount();
-  const currentInvoice = walletStore.use.pendingInvoice();
+  // const currentInvoice = walletStore.use.pendingInvoice(); // Wallet module deleted
   const billingAddress = deliveryStore.use.selectedBillingAddress();
   const selectedAssetsForDelivery =
     deliveryStore.use.selectedAssetsForDeliveryDetails();
   const selectedPaymentMethod = deliveryStore.use.selectedPaymentMethod();
-  const deliveryWalletAmountExists =
-    walletStore.use.deliveryWalletAmountExists();
+  // const deliveryWalletAmountExists = walletStore.use.deliveryWalletAmountExists(); // Wallet module deleted
   const isPostpaidAllowed = deliveryStore.use.isPostpaid();
   const activeDeliveryOrgUser = businessStore.use.activeDeliveryOrgUser();
   const isOwner =
@@ -75,29 +73,32 @@ const PayViaWalletButton: React.FC<Props> = ({
       });
       console.log('------Order_Paid_Event------');
 
-      WalletService.payForOrderViaWallet({
-        amount: response.insert_customer_order_one?.amount_to_be_paid,
-        order_id: response.insert_customer_order_one?.id,
-        wallet_id: walletStore.getState().currentWallet?.wallet_id,
-      })
-        .then(async () => {
-          await OrderService.fetchCustomerOrderById({
-            OrderId: response.insert_customer_order_one?.id,
-          });
+      // TODO: Replace with wallet payment functionality when wallet module is restored
+      // WalletService.payForOrderViaWallet({
+      //   amount: response.insert_customer_order_one?.amount_to_be_paid,
+      //   order_id: response.insert_customer_order_one?.id,
+      //   wallet_id: walletStore.getState().currentWallet?.wallet_id,
+      // })
+      //   .then(async () => {
 
-          stopLoader('paymentSuccess');
-          navigation.replace('payment-successful');
-        })
-        .catch(error => {
-          Toast.show({
-            type: 'error',
-            text1: 'Please clear previous cheque',
-            text2: 'Previous cheque against shipping address not cleared yet',
-          });
+      // For now, just complete the order without wallet payment
+      await OrderService.fetchCustomerOrderById({
+        OrderId: response.insert_customer_order_one?.id,
+      });
 
-          stopLoader('createDeliveryOrder');
-          stopLoader('paymentSuccess');
-        });
+      stopLoader('paymentSuccess');
+      navigation.replace('payment-successful');
+      //   })
+      //   .catch(error => {
+      //     Toast.show({
+      //       type: 'error',
+      //       text1: 'Please clear previous cheque',
+      //       text2: 'Previous cheque against shipping address not cleared yet',
+      //     });
+
+      //     stopLoader('createDeliveryOrder');
+      //     stopLoader('paymentSuccess');
+      //   });
 
       /**
        * if order created, we need to fetch the newly created order's details
@@ -151,7 +152,7 @@ const PayViaWalletButton: React.FC<Props> = ({
       );
     }
 
-    if (selectedPaymentMethod === 'COD' && !currentInvoice?.totalPendingAmt) {
+    if (selectedPaymentMethod === 'COD') {
       return (
         <Button
           variant="solid"
@@ -163,45 +164,16 @@ const PayViaWalletButton: React.FC<Props> = ({
         </Button>
       );
     }
-
-    if (
-      selectedPaymentMethod === 'COD' &&
-      currentInvoice?.totalPendingAmt &&
-      !deliveryWalletAmountExists
-    ) {
-      return (
-        <Button
-          textStyle={{fontSize: 14}}
-          variant="solid"
-          onPress={() => {
-            if (isOwner) {
-              navigation.navigate('wallet', {screen: 'user-invoices'});
-            } else {
-              Toast.show({
-                type: 'error',
-                text1: 'Clear overdues',
-                text2: 'Please ask owner to clear overdues',
-              });
-            }
-          }}
-          style={{
-            backgroundColor: FBColorPalette.error,
-            flexDirection: 'column',
-          }}>
-          Please clear overdue
-        </Button>
-      );
-    }
   }
 
-  if (selectedPaymentMethod === 'fb-wallet' && deliveryWalletAmountExists) {
+  if (selectedPaymentMethod === 'fb-wallet') {
     return (
       <Button
         variant="solid"
-        onPress={createDeliveryOrder}
-        disabled={loaders.paymentSuccess}>
+        disabled
+        style={{ backgroundColor: FBColorPalette.error }}>
         <Text color="white" weight="600">
-          Pay {`${formatAmountInternational(totalAmount)}`}
+          Wallet Feature Unavailable
         </Text>
       </Button>
     );
@@ -209,24 +181,6 @@ const PayViaWalletButton: React.FC<Props> = ({
 
   // Check if the payment method is POD or COD
   const isPODorCOD = selectedPaymentMethod === 'COD';
-
-  // If insufficient balance
-  if (!deliveryWalletAmountExists) {
-    return (
-      <Button
-        textStyle={{fontSize: 14}}
-        variant="solid"
-        onPress={openBottomSheet}
-        style={{
-          backgroundColor: FBColorPalette.error,
-          flexDirection: 'column',
-        }}>
-        {/* do not change this formatting */}
-        {`Insufficient Balance
-Please Recharge`}
-      </Button>
-    );
-  }
 
   // Main return: All conditions met, show the payment button
   return (

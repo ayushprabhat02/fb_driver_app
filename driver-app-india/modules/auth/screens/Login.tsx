@@ -19,7 +19,6 @@ import {
   homeStore,
   orderStore,
   userStore,
-  walletStore,
   checkinStore,
 } from '@/globalStore';
 
@@ -39,7 +38,6 @@ const Login: React.FC<Props> = ({navigation}: Props) => {
   const resetHomeStore = homeStore.use.resetHomeStore();
   const resetOrderStore = orderStore.use.resetOrderStore();
   const resetUserStore = userStore.use.resetUserStore();
-  const resetWalletStore = walletStore.use.resetWalletStore();
   const resetCheckinStore = checkinStore.use.resetCheckinStore();
   // import second from '@/assets/auth/login-banner.png'
   useEffect(() => {
@@ -52,7 +50,6 @@ const Login: React.FC<Props> = ({navigation}: Props) => {
     resetHomeStore();
     resetOrderStore();
     resetUserStore();
-    resetWalletStore();
     resetCheckinStore();
 
     // eslint-disable-next-line react-hooks/exhaustive-deps

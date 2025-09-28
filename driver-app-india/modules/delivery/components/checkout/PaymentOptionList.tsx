@@ -1,6 +1,6 @@
 import React, {useMemo} from 'react';
 import {formatAmountInternational} from '@/utils/general';
-import {deliveryStore, walletStore} from '@/globalStore';
+import {deliveryStore} from '@/globalStore';
 import {PaymentMethods} from '../../types';
 import PaymentOption from './PaymentOption';
 
@@ -11,11 +11,11 @@ interface PaymentOptionItem {
 }
 
 const PaymentOptionList: React.FC = () => {
-  const currentWallet = walletStore.use.currentWallet();
+  // const currentWallet = walletStore.use.currentWallet(); // Wallet module deleted
   const selectedShippingAddress = deliveryStore.use.selectedShippingAddress();
   const selectedPaymentMethod = deliveryStore.use.selectedPaymentMethod();
   const isPostpaid = deliveryStore.use.isPostpaid();
-  const paymentCards = walletStore.use.paymentCards();
+  // const paymentCards = walletStore.use.paymentCards(); // Wallet module deleted
 
   // if (paymentCards?.length) {
   //   paymentCards.forEach((obj: any) => {
@@ -50,10 +50,8 @@ const PaymentOptionList: React.FC = () => {
       paymentMethods = [
         {
           value: 'fb-wallet',
-          title: `FB Wallet (${formatAmountInternational(
-            currentWallet?.available_balance ?? 0,
-          )})`,
-          description: 'Pay with wallet',
+          title: `FB Wallet (Unavailable)`,
+          description: 'Wallet feature has been disabled',
         },
         {
           value: 'online',
@@ -61,28 +59,28 @@ const PaymentOptionList: React.FC = () => {
           description: 'We accept all major credit cards.',
         },
       ];
-      if (paymentCards?.length) {
-        paymentCards.forEach((obj: any) => {
-          Object.keys(obj).forEach(key => {
-            if (obj[key] === 1 && key !== 'axis_cobranded_card') {
-              const formattedKey = key.replace(/_/g, ' ');
-              paymentMethods.push({
-                title: formattedKey.toUpperCase(),
-                value: key as PaymentMethods,
-                description:
-                  `Pay using ${formattedKey}` as PaymentOptionItem['description'],
-              });
-            }
-          });
-        });
-      }
+      // if (paymentCards?.length) { // Wallet module deleted
+      //   paymentCards.forEach((obj: any) => {
+      //     Object.keys(obj).forEach(key => {
+      //       if (obj[key] === 1 && key !== 'axis_cobranded_card') {
+      //         const formattedKey = key.replace(/_/g, ' ');
+      //         paymentMethods.push({
+      //           title: formattedKey.toUpperCase(),
+      //           value: key as PaymentMethods,
+      //           description:
+      //             `Pay using ${formattedKey}` as PaymentOptionItem['description'],
+      //         });
+      //       }
+      //     });
+      //   });
+      // }
     }
 
     return paymentMethods;
   }, [
-    currentWallet?.available_balance,
+    // currentWallet?.available_balance, // Wallet module deleted
     isPostpaid,
-    paymentCards,
+    // paymentCards, // Wallet module deleted
     selectedShippingAddress?.organization_address_payment_methods,
   ]);
 

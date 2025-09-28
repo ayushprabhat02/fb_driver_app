@@ -11,7 +11,6 @@ import PaymentOptionList from './PaymentOptionList';
 import PayViaWalletButton from './PayViaWalletButton';
 import PayOnlineButton from './PayOnlineButton';
 import {FullScreenLoader, SimpleBottomSheet, Text} from '@/components';
-import {WalletForm} from '@/modules/wallet/components';
 import {Button} from '@/components';
 
 // store
@@ -19,11 +18,10 @@ import {
   businessStore,
   deliveryStore,
   orderStore,
-  walletStore,
 } from '@/globalStore';
 
 // services
-import {DeliveryService, OrderService, WalletService} from '@/services';
+import {DeliveryService, OrderService} from '@/services';
 
 // types and styles
 import {FBBackground, FBColorPalette} from '@/types/styles';
@@ -57,7 +55,7 @@ const PaymentSummary: React.FC<Props> = ({scrollToBillingAddress}) => {
   const setBottomSheetRefOtp = orderStore.use.setBottomSheetRefOtp();
 
   const selectedPaymentMethod = deliveryStore.use.selectedPaymentMethod();
-  const currentWallet = walletStore.use.currentWallet();
+  // const currentWallet = walletStore.use.currentWallet(); // Wallet module deleted
 
   const totalAmount = deliveryStore.use.totalAmount();
 
@@ -81,17 +79,18 @@ const PaymentSummary: React.FC<Props> = ({scrollToBillingAddress}) => {
 
     if (response) {
       /**
+       * TODO: Wallet payment functionality needs to be restored
        * if order created, we need to deduct the order amount from the wallet
        */
-      await WalletService.payForOrderViaWallet({
-        amount: response.insert_customer_order_one?.amount_to_be_paid,
-        order_id: response.insert_customer_order_one?.id,
-        wallet_id: walletStore.getState().currentWallet?.wallet_id,
-      }).finally(() => {
-        setTimeout(() => {
-          stopLoader('createDeliveryOrder');
-        }, 1000);
-      });
+      // await WalletService.payForOrderViaWallet({
+      //   amount: response.insert_customer_order_one?.amount_to_be_paid,
+      //   order_id: response.insert_customer_order_one?.id,
+      //   wallet_id: walletStore.getState().currentWallet?.wallet_id,
+      // }).finally(() => {
+      //   setTimeout(() => {
+      //     stopLoader('createDeliveryOrder');
+      //   }, 1000);
+      // });
       /**
        * if order created, we need to fetch the newly created order's details
        */
@@ -107,10 +106,11 @@ const PaymentSummary: React.FC<Props> = ({scrollToBillingAddress}) => {
   };
 
   useEffect(() => {
-    if (currentWallet) {
+    // TODO: Replace with proper wallet check when wallet module is restored
+    // if (currentWallet) {
       setLoading(false);
-    }
-  }, [currentWallet]);
+    // }
+  }, []); // Removed currentWallet dependency
 
   // optBottomsheet ref
 
@@ -230,14 +230,19 @@ const PaymentSummary: React.FC<Props> = ({scrollToBillingAddress}) => {
               <View>
                 <PaymentOptionList />
               </View>
-              {selectedPaymentMethod === 'fb-wallet' ||
-              selectedPaymentMethod === 'POD' ||
+              {selectedPaymentMethod === 'POD' ||
               selectedPaymentMethod === 'COD' ? (
                 <PayViaWalletButton
                   scrollToBillingAddress={scrollToBillingAddress}
                   openBottomSheet={openBottomSheet}
                   newlyConfirmedOrder={newlyConfirmedOrder}
                 />
+              ) : selectedPaymentMethod === 'fb-wallet' ? (
+                <Button variant="solid" disabled>
+                  <Text color="white" weight="600">
+                    Wallet Feature Unavailable
+                  </Text>
+                </Button>
               ) : (
                 <PayOnlineButton
                   scrollToBillingAddress={scrollToBillingAddress}
@@ -263,18 +268,20 @@ const PaymentSummary: React.FC<Props> = ({scrollToBillingAddress}) => {
         snapPoints={['50%']}
         closeSheet={closeBottomSheet}>
         <BottomSheetView style={commonBottomSheetView}>
-          <WalletForm
-            callback={createDeliveryOrder}
-            receivedAmount={
-              totalAmount - currentWallet?.available_balance > 0
-                ? `${(totalAmount - currentWallet?.available_balance).toFixed(
-                    2,
-                  )}`
-                : `${totalAmount}`
-            }
-            currentWallet={currentWallet}
-            onClose={closeBottomSheet}
-          />
+          <View style={{padding: 20, alignItems: 'center'}}>
+            <Text size="lg" weight="600" color="red">
+              Wallet Feature Unavailable
+            </Text>
+            <Text style={{marginTop: 10, textAlign: 'center'}}>
+              The wallet module has been removed. Please use alternative payment methods.
+            </Text>
+            <Button
+              variant="solid"
+              onPress={closeBottomSheet}
+              style={{marginTop: 20}}>
+              <Text color="white" weight="600">Close</Text>
+            </Button>
+          </View>
         </BottomSheetView>
       </SimpleBottomSheet>
       <SimpleBottomSheet
