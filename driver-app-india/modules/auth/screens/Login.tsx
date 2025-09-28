@@ -14,7 +14,6 @@ import {
   addressStore,
   assetStore,
   authStore,
-  businessStore,
   deliveryStore,
   homeStore,
   orderStore,
@@ -33,7 +32,6 @@ const Login: React.FC<Props> = ({navigation}: Props) => {
   const resetFillupStore = addressStore.use.resetFillupStore();
   const resetAuthStore = authStore.use.resetAuthStore();
   const resetAssetStore = assetStore.use.resetAssetStore();
-  const resetBusinessStore = businessStore.use.resetBusinessStore();
   const resetDeliveryStore = deliveryStore.use.resetDeliveryStore();
   const resetHomeStore = homeStore.use.resetHomeStore();
   const resetOrderStore = orderStore.use.resetOrderStore();
@@ -45,7 +43,6 @@ const Login: React.FC<Props> = ({navigation}: Props) => {
     resetFillupStore();
     resetAuthStore();
     resetAssetStore();
-    resetBusinessStore();
     resetDeliveryStore();
     resetHomeStore();
     resetOrderStore();

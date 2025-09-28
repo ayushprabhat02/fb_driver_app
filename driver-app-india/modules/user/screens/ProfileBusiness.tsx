@@ -4,7 +4,7 @@ import {ScrollView, View} from 'react-native';
 import {ScaledSheet} from 'react-native-size-matters';
 
 // store
-import {businessStore} from '@/globalStore';
+// import {businessStore} from '@/globalStore'; // Business module deleted
 
 // components
 import {Avatar, Divider, HeaderAvoidingContainer, Text} from '@/components';
@@ -14,7 +14,8 @@ import {Avatar, Divider, HeaderAvoidingContainer, Text} from '@/components';
 import {FBBorders, FBColorPalette} from '@/types/styles';
 
 const Profile: React.FC = () => {
-  const activeDeliveryOrgUser = businessStore.use.activeDeliveryOrgUser();
+  // const activeDeliveryOrgUser = businessStore.use.activeDeliveryOrgUser(); // Business module deleted
+  const activeDeliveryOrgUser = null; // Mock for deleted business module
 
   return (
     <HeaderAvoidingContainer>

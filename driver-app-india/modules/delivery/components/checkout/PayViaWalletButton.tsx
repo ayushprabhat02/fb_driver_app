@@ -4,7 +4,6 @@ import analytics from '@react-native-firebase/analytics';
 
 // store
 import {
-  businessStore,
   deliveryStore,
   orderStore,
 } from '@/globalStore';
@@ -39,10 +38,8 @@ const PayViaWalletButton: React.FC<Props> = ({
   const selectedPaymentMethod = deliveryStore.use.selectedPaymentMethod();
   // const deliveryWalletAmountExists = walletStore.use.deliveryWalletAmountExists(); // Wallet module deleted
   const isPostpaidAllowed = deliveryStore.use.isPostpaid();
-  const activeDeliveryOrgUser = businessStore.use.activeDeliveryOrgUser();
-  const isOwner =
-    getBusinessRole(activeDeliveryOrgUser) === 'owner' ||
-    getBusinessRole(activeDeliveryOrgUser) === 'individual';
+  // const activeDeliveryOrgUser = businessStore.use.activeDeliveryOrgUser(); // Business module deleted
+  const isOwner = true; // Default to true since business module deleted
   const loaders = deliveryStore.use.loaders();
   const startLoader = deliveryStore.use.startLoader();
   const stopLoader = deliveryStore.use.stopLoader();

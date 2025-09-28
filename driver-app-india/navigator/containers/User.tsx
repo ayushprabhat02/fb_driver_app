@@ -12,7 +12,7 @@ import {BackButtonArrow, TextButton} from '@/components';
 
 // styles
 import {commonHeaderStyles} from '@/styles';
-import {businessStore} from '@/globalStore';
+// import {businessStore} from '@/globalStore'; // Business module deleted
 import {getBusinessRole} from '@/utils/general';
 import {useNavigation} from '@react-navigation/native';
 
@@ -25,7 +25,8 @@ export type UserStackParamList = {
 const UserStack = createStackNavigator<UserStackParamList>();
 
 const UserNavigator: React.FC = () => {
-  const activeDeliveryOrgUser = businessStore.use.activeDeliveryOrgUser();
+  // const activeDeliveryOrgUser = businessStore.use.activeDeliveryOrgUser(); // Business module deleted
+  const activeDeliveryOrgUser = null; // Mock for deleted business module
   const userRole = getBusinessRole(activeDeliveryOrgUser);
 
   return (

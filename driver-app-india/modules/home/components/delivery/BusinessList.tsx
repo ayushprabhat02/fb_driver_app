@@ -11,7 +11,7 @@ import {
   FetchAllOrgUsersByTypeQuery,
   Organization_User,
 } from '@/generated/graphql';
-import {BusinessCard} from '@/modules/business/components';
+// import {BusinessCard} from '@/modules/business/components'; // Business module deleted
 
 interface Props {
   deliveryBusinessOrgs: FetchAllOrgUsersByTypeQuery['organization_user'];
@@ -49,11 +49,14 @@ const BusinessList: React.FC<Props> = ({
           keyExtractor={item => item.id}
           ItemSeparatorComponent={Divider}
           renderItem={({item}) => (
-            <BusinessCard
-              orgUser={item}
-              switchToOrg={switchToOrg}
-              closeBottomSheet={closeBottomSheet}
-            />
+            <View style={styles.businessCard}>
+              <Text weight="600" size="md">
+                {item?.organization?.brand || 'Business'}
+              </Text>
+              <Text size="sm" color="gray" style={{marginTop: 4}}>
+                Business features unavailable
+              </Text>
+            </View>
           )}
         />
       </View>
@@ -71,5 +74,11 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
     borderBottomWidth: 1,
     borderBottomColor: FBBorders.secondary,
+  },
+  businessCard: {
+    padding: 16,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 8,
+    marginVertical: 4,
   },
 });

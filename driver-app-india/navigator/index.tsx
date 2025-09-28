@@ -9,7 +9,6 @@ import {Text} from '@/components';
 import {
   AddressNavigator,
   AssetsNavigator,
-  BusinessNavigator,
   DeliveryNavigator,
   HomeNavigator,
   LocationNavigator,
@@ -84,7 +83,6 @@ const ProtectedNavigator: React.FC<Props> = () => {
         <ProtectedStack.Screen name="order" component={OrderNavigator} />
         <ProtectedStack.Screen name="support" component={SupportNavigator} />
         <ProtectedStack.Screen name="user" component={UserNavigator} />
-        <ProtectedStack.Screen name="business" component={BusinessNavigator} />
         <ProtectedStack.Screen name="checkin" component={CheckinNavigator} />
       </ProtectedStack.Navigator>
     </Provider>

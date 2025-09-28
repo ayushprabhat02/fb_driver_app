@@ -15,7 +15,6 @@ import {Button} from '@/components';
 
 // store
 import {
-  businessStore,
   deliveryStore,
   orderStore,
 } from '@/globalStore';
@@ -43,12 +42,11 @@ const PaymentSummary: React.FC<Props> = ({scrollToBillingAddress}) => {
   const stopLoader = deliveryStore.use.stopLoader();
   const startOrderLoader = orderStore.use.startLoader();
   const stopOrderLoader = orderStore.use.stopLoader();
-  const activeDeliveryOrgUser = businessStore.use.activeDeliveryOrgUser();
+  // const activeDeliveryOrgUser = businessStore.use.activeDeliveryOrgUser(); // Business module deleted
   const upComingOrders = orderStore.use.upcomingOrders();
   const isUpComingOrderVerify = orderStore.use.upcomingOrdersVerify();
-  const isOwner = activeDeliveryOrgUser?.is_owner;
-  // getBusinessRole(activeDeliveryOrgUser) === 'owner' ||
-  // getBusinessRole(activeDeliveryOrgUser) === 'individual';
+  // const isOwner = activeDeliveryOrgUser?.is_owner; // Business module deleted
+  const isOwner = true; // Default to true since business module deleted
   const resetDeliveryStore = deliveryStore.use.resetDeliveryStore();
   // bottom sheet
   const bottomSheetRefOtp = useRef<BottomSheetModal>(null);
@@ -224,7 +222,8 @@ const PaymentSummary: React.FC<Props> = ({scrollToBillingAddress}) => {
       {!loading ? (
         <>
           {isOwner ||
-          !activeDeliveryOrgUser?.organization?.is_otp_required_placed_order ||
+          // !activeDeliveryOrgUser?.organization?.is_otp_required_placed_order || // Business module deleted
+          true || // Simplified since business module deleted
           isUpComingOrderVerify?.is_verified ? (
             <>
               <View>

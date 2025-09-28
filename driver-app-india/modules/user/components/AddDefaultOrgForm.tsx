@@ -12,14 +12,14 @@ import * as z from 'zod';
 //imports and components
 import {Button, Divider, Text} from '@/components';
 import {CustomBottomFormInput} from '@/modules/fillupRequest/components';
-import OrganisationSegmentList from '@/modules/business/components/common/OrganisationSegmentList';
+// import OrganisationSegmentList from '@/modules/business/components/common/OrganisationSegmentList'; // Business module deleted
 import UserSegmentationList from '../components/UserSegmentationList';
 
 //stores
-import {authStore, businessStore, userStore} from '@/globalStore';
+import {authStore, userStore} from '@/globalStore';
 
 //services
-import {BusinessService, UserService} from '@/services';
+import {UserService} from '@/services';
 import {
   CreateNewBusinessOrganizationMutationVariables,
   FetchCustomerSegmentationListQuery,
@@ -34,8 +34,8 @@ import {
 import {setActiveDelOrgUserId} from '@/utils/localStorage';
 import {BottomSheetTextInput} from '@gorhom/bottom-sheet';
 import {useNavigation} from '@react-navigation/native';
-import AddingBusinessLoader from '@/modules/business/components/CreateBusiness/AddingBusinessLoader';
-import SetupBusinessProfileLoader from '@/modules/business/components/CreateBusiness/SetupBusinessProfileLoader';
+// import AddingBusinessLoader from '@/modules/business/components/CreateBusiness/AddingBusinessLoader'; // Business module deleted
+// import SetupBusinessProfileLoader from '@/modules/business/components/CreateBusiness/SetupBusinessProfileLoader'; // Business module deleted
 import {CaretDown} from 'phosphor-react-native';
 
 //zod schema for validation
@@ -72,11 +72,10 @@ const CreateBusinessForm: React.FC<Props> = ({closeBottomSheet}) => {
   const user = userStore.use.loggedInUser();
   const customerSegmentationList = userStore.use.customerSegmentationList();
   const xHasuraId = authStore.use.xHasuraId();
-  const organizationSegments =
-    businessStore.getState().fetchedOrganizationSegmentations;
-  const loaders = businessStore.use.loaders();
-  const startLoader = businessStore.use.startLoader();
-  const stopLoader = businessStore.use.stopLoader();
+  // const organizationSegments = businessStore.getState().fetchedOrganizationSegmentations; // Business module deleted
+  // const loaders = businessStore.use.loaders(); // Business module deleted
+  // const startLoader = businessStore.use.startLoader(); // Business module deleted
+  // const stopLoader = businessStore.use.stopLoader(); // Business module deleted
 
   const [selectedBusinessType, setSelectedBusinessType] = useState<
     | FetchOrganizationSegmentationQuery['organization_segmentation'][0]
@@ -114,23 +113,31 @@ const CreateBusinessForm: React.FC<Props> = ({closeBottomSheet}) => {
 
   //submit function
   const createBusiness = async (data: FormFields) => {
-    startLoader('createDefaultBusiness');
-    //to check if same pan already exists for another org
-    const response = await BusinessService.checkIfPanAlreadyExists({
-      object: {
-        organization_user_type: 'DELIVERY',
-        pan_number: data.panNumber.toUpperCase()?.trim(),
-      },
+    // Business module deleted - showing unavailable message
+    Toast.show({
+      type: 'error',
+      text1: 'Business Feature Unavailable',
+      text2: 'Business module has been removed',
     });
+    return;
 
-    if (response) {
-      stopLoader('createDefaultBusiness');
-      Toast.show({
-        type: 'error',
-        text1: 'Entered PAN number already exists for this organization type',
-      });
-      return;
-    }
+    // startLoader('createDefaultBusiness'); // Business module deleted
+    //to check if same pan already exists for another org
+    // const response = await // BusinessService. // Business module deletedcheckIfPanAlreadyExists({
+    //   object: {
+    //     organization_user_type: 'DELIVERY',
+    //     pan_number: data.panNumber.toUpperCase()?.trim(),
+    //   },
+    // });
+
+    // if (response) {
+    //   stopLoader('createDefaultBusiness');
+    //   Toast.show({
+    //     type: 'error',
+    //     text1: 'Entered PAN number already exists for this organization type',
+    //   });
+    //   return;
+    // }
 
     Keyboard.dismiss();
 
@@ -155,7 +162,7 @@ const CreateBusinessForm: React.FC<Props> = ({closeBottomSheet}) => {
         });
       }
 
-      stopLoader('createDefaultBusiness');
+      // stopLoader('createDefaultBusiness'); // Business module deleted
       return;
     }
 
@@ -196,66 +203,66 @@ const CreateBusinessForm: React.FC<Props> = ({closeBottomSheet}) => {
       },
     };
 
-    setTimeout(() => {
-      BusinessService.createNewBusinessOrganization(payload)
-        .then(async newBusiness => {
-          setCurrentLoaderView('updating-profile');
-          setTimeout(() => {
-            closeBottomSheet();
-            stopLoader('createDefaultBusiness');
-            setCurrentLoaderView('please-wait');
-            Toast.show({
-              type: 'success',
-              text1: 'Created business organization successfully',
-            });
-            navigation.reset({
-              index: 0,
-              routes: [{name: 'home'}],
-            });
-          }, 56000);
+    // setTimeout(() => {
+    //   BusinessService.createNewBusinessOrganization(payload)
+    //     .then(async newBusiness => {
+    //       setCurrentLoaderView('updating-profile');
+    //       setTimeout(() => {
+    //         closeBottomSheet();
+    //         stopLoader('createDefaultBusiness');
+    //         setCurrentLoaderView('please-wait');
+    //         Toast.show({
+    //           type: 'success',
+    //           text1: 'Created business organization successfully',
+    //         });
+    //         navigation.reset({
+    //           index: 0,
+    //           routes: [{name: 'home'}],
+    //         });
+    //       }, 56000);
 
-          const allOrgs = await BusinessService.fetchAllOrgUsersByType({
-            organization_user_type: 'DELIVERY',
-          });
+    //       const allOrgs = await BusinessService.fetchAllOrgUsersByType({
+    //         organization_user_type: 'DELIVERY',
+    //       });
 
-          const newOrg = allOrgs?.businessOrgUsers.find(org => {
-            return org.id === newBusiness?.id;
-          });
+    //       const newOrg = allOrgs?.businessOrgUsers.find(org => {
+    //         return org.id === newBusiness?.id;
+    //       });
 
-          await BusinessService.createWalletForNewOrg({
-            object: {
-              currency_id: 'b8b0753d-df29-42c3-a7af-bb5a212a7600', //todo: hardcoded for now
-              organization_id: newOrg?.organization_id,
-              organization_user_id: newOrg?.id,
-            },
-          });
+    //       await BusinessService.createWalletForNewOrg({
+    //         object: {
+    //           currency_id: 'b8b0753d-df29-42c3-a7af-bb5a212a7600',
+    //           organization_id: newOrg?.organization_id,
+    //           organization_user_id: newOrg?.id,
+    //         },
+    //       });
 
-          const businessesList = await BusinessService.fetchAllOrgUsersByType({
-            organization_user_type: 'DELIVERY',
-          });
+    //       const businessesList = await BusinessService.fetchAllOrgUsersByType({
+    //         organization_user_type: 'DELIVERY',
+    //       });
 
-          const activeOrg = businessesList?.businessOrgUsers.find(business => {
-            return business.id === newBusiness?.id;
-          });
+    //       const activeOrg = businessesList?.businessOrgUsers.find(business => {
+    //         return business.id === newBusiness?.id;
+    //       });
 
-          setActiveDelOrgUserId(activeOrg?.id);
-          businessStore.setState(state => ({
-            ...state,
-            activeDeliveryOrgUser: activeOrg,
-          }));
-        })
-        .catch(() => {
-          Toast.show({
-            type: 'error',
-            text1: 'Error creating business',
-          });
-          closeBottomSheet();
-          stopLoader('createDefaultBusiness');
-        })
-        .finally(() => {
-          stopLoader('setActiveDelOrgUser');
-        });
-    }, 20000);
+    //       setActiveDelOrgUserId(activeOrg?.id);
+    //       businessStore.setState(state => ({
+    //         ...state,
+    //         activeDeliveryOrgUser: activeOrg,
+    //       }));
+    //     })
+    //     .catch(() => {
+    //       Toast.show({
+    //         type: 'error',
+    //         text1: 'Error creating business',
+    //       });
+    //       closeBottomSheet();
+    //       stopLoader('createDefaultBusiness');
+    //     })
+    //     .finally(() => {
+    //       stopLoader('setActiveDelOrgUser');
+    //     });
+    // }, 20000);
   };
 
   const onFocus = useCallback(() => {
@@ -502,9 +509,13 @@ const CreateBusinessForm: React.FC<Props> = ({closeBottomSheet}) => {
                 borderRadius: 10,
               }}>
               {currentLoaderView === 'please-wait' ? (
-                <AddingBusinessLoader />
+                <View style={{padding: 20, alignItems: 'center'}}>
+                  <Text>Processing...</Text>
+                </View>
               ) : (
-                <SetupBusinessProfileLoader />
+                <View style={{padding: 20, alignItems: 'center'}}>
+                  <Text>Setting up profile...</Text>
+                </View>
               )}
             </View>
           </Modal>
@@ -518,12 +529,26 @@ const CreateBusinessForm: React.FC<Props> = ({closeBottomSheet}) => {
             onBackdropPress={() => {
               setShowOrganisations(false);
             }}>
-            <OrganisationSegmentList
+            {/* <OrganisationSegmentList
               organizationSegments={organizationSegments}
               selectedBusinessType={selectedBusinessType}
               setShowOrganisations={setShowOrganisations}
               setSelectedBusinessType={setSelectedBusinessType}
-            />
+            /> */}
+            <View style={{padding: 20, backgroundColor: 'white', margin: 20, borderRadius: 10}}>
+              <Text size="lg" weight="600" style={{textAlign: 'center'}}>
+                Business Feature Unavailable
+              </Text>
+              <Text style={{marginTop: 10, textAlign: 'center'}}>
+                Business module has been removed
+              </Text>
+              <Button
+                variant="solid"
+                onPress={() => setShowOrganisations(false)}
+                style={{marginTop: 20}}>
+                <Text color="white" weight="600">Close</Text>
+              </Button>
+            </View>
           </Modal>
           <Modal
             isVisible={showCustomerSegmentation}

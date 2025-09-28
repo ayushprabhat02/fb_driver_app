@@ -10,7 +10,6 @@ import {DateTime} from 'luxon';
 // store
 import {
   addressStore,
-  businessStore,
   deliveryStore,
   homeStore,
 } from '@/globalStore';
@@ -37,8 +36,9 @@ import {
 } from '@/generated/graphql';
 
 const SwitchProfileHeader: React.FC = () => {
-  const activeDeliveryOrgUser = businessStore.use.activeDeliveryOrgUser();
-  const loader = businessStore.use.loaders();
+  // const activeDeliveryOrgUser = businessStore.use.activeDeliveryOrgUser(); // Business module deleted
+  // const loader = businessStore.use.loaders(); // Business module deleted
+  const activeDeliveryOrgUser = null; // Mock for deleted business module
   const startLoaderDelivery = deliveryStore.use.startLoader();
   const stopLoaderDelivery = deliveryStore.use.stopLoader();
   const stopLoaderAddress = addressStore.use.stopLoader();
