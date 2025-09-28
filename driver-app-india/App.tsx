@@ -1,34 +1,25 @@
 // dependencies
-import React, {useEffect, useRef} from 'react';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { NavigationContainer } from '@react-navigation/native';
+import React, { useEffect } from 'react';
 import 'react-native-gesture-handler';
-import {NavigationContainer} from '@react-navigation/native';
-import {GestureHandlerRootView} from 'react-native-gesture-handler';
-import {BottomSheetModalProvider} from '@gorhom/bottom-sheet';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { MenuProvider } from 'react-native-popup-menu';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
-import {MenuProvider} from 'react-native-popup-menu';
-import {DateTime} from 'luxon';
-import {
-  FetchDriverVehicleIdDocument,
-  FetchDriverVehicleIdQuery,
-} from './generated/graphql';
-import {AppState} from 'react-native';
 import './utils/ignoreWarnings';
-import {SafeAreaProvider, SafeAreaView} from 'react-native-safe-area-context';
 
 // navigator
-import {createStackNavigator} from '@react-navigation/stack';
+import { createStackNavigator } from '@react-navigation/stack';
 
 // store
-import {splashStore, authStore, checkinStore} from './globalStore';
+import { authStore, splashStore, locationTrackingStore } from './globalStore';
 
 // services
-import {signOut} from './modules/auth/services';
-import {getDriverVehicleId} from './utils/localStorage';
-import {callQuery} from './utils/client';
 
 // components
-import AuthNavigator from './modules/auth/navigator';
 import SplashScreen from '@/modules/splash/screens';
+import AuthNavigator from './modules/auth/navigator';
 import ProtectedNavigator from './navigator';
 
 /**
@@ -37,7 +28,7 @@ import ProtectedNavigator from './navigator';
  * No dev env available in this project as of now.
  */
 import './ReactotronConfig';
-import {FocusAwareStatusBar} from './components';
+import { FocusAwareStatusBar } from './components';
 
 const StackNavigator = createStackNavigator();
 
@@ -48,6 +39,8 @@ function App(): React.JSX.Element {
 
   useEffect(() => {
     initializeSplash();
+    // Initialize location tracking
+    locationTrackingStore.getState().initialize();
   }, [initializeSplash]);
 
   // Periodic shift validation moved to HomeLandingPage.tsx to only run when on home screen
@@ -64,38 +57,38 @@ function App(): React.JSX.Element {
 
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={{flex: 1}}>
+      <SafeAreaView style={{ flex: 1 }}>
 
-      <GestureHandlerRootView style={{flex: 1}}>
-        <MenuProvider>
-          <NavigationContainer>
-            <BottomSheetModalProvider>
-              <FocusAwareStatusBar />
-              {/*
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <MenuProvider>
+            <NavigationContainer>
+              <BottomSheetModalProvider>
+                <FocusAwareStatusBar />
+                {/*
                * * We are rendering the AuthScreens and Protected screen conditionally to handle authentication.
                * * This was done in accordance with the React Navigation documentation - https://reactnavigation.org/docs/auth-flow#what-we-need
                */}
-              <StackNavigator.Navigator screenOptions={{headerShown: false}}>
-                {!graphqlClient ? (
-                  <StackNavigator.Screen
-                    component={AuthNavigator}
-                    name="authnav"
-                  />
-                ) : (
-                  <StackNavigator.Screen
-                    component={ProtectedNavigator as React.ComponentType}
-                    name="protected"
-                    key="_protected"
-                  />
-                )}
-              </StackNavigator.Navigator>
-            </BottomSheetModalProvider>
-          </NavigationContainer>
-        </MenuProvider>
-      </GestureHandlerRootView>
+                <StackNavigator.Navigator screenOptions={{ headerShown: false }}>
+                  {!graphqlClient ? (
+                    <StackNavigator.Screen
+                      component={AuthNavigator}
+                      name="authnav"
+                    />
+                  ) : (
+                    <StackNavigator.Screen
+                      component={ProtectedNavigator as React.ComponentType}
+                      name="protected"
+                      key="_protected"
+                    />
+                  )}
+                </StackNavigator.Navigator>
+              </BottomSheetModalProvider>
+            </NavigationContainer>
+          </MenuProvider>
+        </GestureHandlerRootView>
 
-      <Toast />
-    </SafeAreaView>
+        <Toast />
+      </SafeAreaView>
     </SafeAreaProvider>
   );
 }

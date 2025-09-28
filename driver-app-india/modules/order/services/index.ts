@@ -12,7 +12,7 @@ import {
  */
 
 // dependencies
-import {callMutation, callQuery} from '@/utils/client';
+import { callMutation, callQuery } from '@/utils/client';
 
 // store
 import orderStore from '../store';
@@ -127,7 +127,7 @@ import {
   FuelDeliveryToMutation,
   FuelDeliveryToDocument,
   FuelDeliveryToMutationVariables,
-  
+
   // update totalizer reading
   UpdateTotalizerReadingDocument,
   UpdateTotalizerReadingMutation,
@@ -259,7 +259,7 @@ class OrderService {
   ) {
     const response: FetchCustomerOrderDetailsByCodeQuery = await callQuery({
       queryDocument: FetchCustomerOrderDetailsByCodeDocument,
-      variables: {...args},
+      variables: { ...args },
     });
 
     return response.customer_order;
@@ -302,7 +302,7 @@ class OrderService {
   ) {
     const response: FetchCustomerOrderDetailsByIdQuery = await callQuery({
       queryDocument: FetchCustomerOrderDetailsByIdDocument,
-      variables: {...args},
+      variables: { ...args },
     });
 
     orderStore.setState(state => ({
@@ -403,7 +403,7 @@ class OrderService {
    * @description Upserts step task action for streaming functionality
    * @args UpsertStepTaskActionMutationVariables
    */
-  public async upsertStepTaskAction(args: {object: any}) {
+  public async upsertStepTaskAction(args: { object: any }) {
     try {
       console.log('UpsertStepTaskAction API call:', args);
 
@@ -475,7 +475,7 @@ class OrderService {
         const updatedAssets = currentState.orderAssets.map(asset =>
           // @ts-ignore - Type issue with generated GraphQL types
           asset.customer_asset?.id === updatedAsset.customer_asset?.id
-            ? {...asset, quantity_dispensed: updatedAsset.quantity_dispensed}
+            ? { ...asset, quantity_dispensed: updatedAsset.quantity_dispensed }
             : asset,
         );
 
@@ -539,7 +539,7 @@ class OrderService {
    * @description Marks an order as in transit using changeTaskState mutation (matching Vue.js implementation)
    * @args {id: string}
    */
-  public async markOrderInTransit(args: {id: string}) {
+  public async markOrderInTransit(args: { id: string }) {
     try {
       console.log('MarkOrderInTransit API call:', args);
 
@@ -563,7 +563,7 @@ class OrderService {
    * @description Marks an order as arrived using changeTaskState mutation (matching Vue.js implementation)
    * @args {id: string}
    */
-  public async markOrderArrived(args: {id: string}) {
+  public async markOrderArrived(args: { id: string }) {
     try {
       console.log('MarkOrderArrived API call:', args);
 
@@ -587,7 +587,7 @@ class OrderService {
    * @description Marks an order as dispensing using changeTaskState mutation (matching Vue.js implementation)
    * @args {task_id: string}
    */
-  public async markOrderDispensing(args: {id: string}) {
+  public async markOrderDispensing(args: { id: string }) {
     try {
       console.log('MarkOrderDispensing API call:', args);
 
@@ -612,7 +612,7 @@ class OrderService {
    * @description Marks an order as completed/delivered
    * @args {task_id: string}
    */
-  public async markOrderCompleted(args: {id: string}) {
+  public async markOrderCompleted(args: { id: string }) {
     try {
       console.log('MarkOrderCompleted API call:', args);
 
@@ -636,7 +636,7 @@ class OrderService {
    * @description Marks an order as completed/delivered
    * @args {task_id: string}
    */
-  public async markOrderCancel(args: {id: string}) {
+  public async markOrderCancel(args: { id: string }) {
     try {
       console.log('MarkOrderCancel API call:', args);
 
@@ -660,7 +660,7 @@ class OrderService {
    * @description Adds cancellation reason for a task (matching Vue.js implementation)
    * @args {task_id: string, reason: string}
    */
-  public async addTaskCancellationReason(args: {id: string; reason: string}) {
+  public async addTaskCancellationReason(args: { id: string; reason: string }) {
     try {
       console.log('AddTaskCancellationReason API call:', args);
 
@@ -798,7 +798,7 @@ class OrderService {
    * @description Checks serviceability for given coordinates
    * @args {lat: number, lng: number}
    */
-  public async checkServiceability(args: {lat: number; lng: number}) {
+  public async checkServiceability(args: { lat: number; lng: number }) {
     try {
       console.log('CheckServiceability API call:', args);
 
@@ -822,7 +822,7 @@ class OrderService {
    * @description Fetches delivery products with prices
    * @args {id: string}
    */
-  public async fetchDeliveryProductsWithPrices(args: {id: string}) {
+  public async fetchDeliveryProductsWithPrices(args: { id: string }) {
     try {
       console.log('FetchDeliveryProductsWithPrices API call:', args);
 
@@ -865,17 +865,17 @@ class OrderService {
   }) {
     try {
       console.log('FetchCompletelyFilledAsset API call:', args);
-      
+
       // Use existing fetchTaskValue method
       const response = await this.fetchTaskValue({ task_id: args.task_id });
-      
+
       // Filter for the specific key and vehicle
       const filteredValues = response.task_value?.filter(
-        (value: any) => 
-          value.key === args.key && 
+        (value: any) =>
+          value.key === args.key &&
           value.customer_asset_id === args.vehicle_id
       );
-      
+
       return filteredValues?.[0] || null;
     } catch (error) {
       console.error('Error fetching completely filled asset:', error);
@@ -894,11 +894,11 @@ class OrderService {
   }) {
     try {
       console.log('AddStockEntryForFillupOnErp API call:', args);
-      
+
       // This would be implemented when the actual GraphQL mutation is available
       // For now, return a mock response
       console.log('AddStockEntryForFillupOnErp - using mock response');
-      
+
       return {
         success: true,
         state: args.state,
@@ -907,6 +907,62 @@ class OrderService {
     } catch (error) {
       console.error('Error adding stock entry for fillup on ERP:', error);
       throw new Error('Failed to add stock entry for fillup on ERP');
+    }
+  }
+
+  /**
+  * @method sendDriverLocation
+  * @description Sends driver location to tracking API
+  * @args {driverId: string, deviceId: string, driverVehicleId: string, shiftScheduleId: string, latitude: number, longitude: number, timestamp?: string, source?: string}
+  */
+  public async sendDriverLocation(args: {
+    driverId: string;
+    deviceId: string;
+    driverVehicleId: string;
+    shiftScheduleId: string;
+    latitude: number;
+    longitude: number;
+    timestamp?: string;
+    source?: string;
+  }) {
+    // Using the same API key as in Vue.js implementation
+    const apiKey = "3a1223c3a%$!%2!2a1c!$c$1bb2!2$ab";
+
+    // The direct API endpoint from the working curl command
+    const apiUrl =
+      "https://track-api.fuelbuddy.in/api/v1/publish-driver-location";
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "x-api-key": apiKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          driverId: args.driverId,
+          deviceId: args.deviceId,
+          driverVehicleId: args.driverVehicleId,
+          shiftScheduleId: args.shiftScheduleId,
+          latitude: args.latitude,
+          longitude: args.longitude,
+          timestamp: args.timestamp || new Date().toISOString(),
+          source: args.source || "driver_app",
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(
+          `Failed to send location: ${response.status} ${response.statusText} - ${errorData}`,
+        );
+      }
+
+      // Assuming the API returns JSON on success
+      return await response.json();
+    } catch (err) {
+      console.error('Error publishing driver location:', err);
+      throw new Error("Error publishing driver location");
     }
   }
 }

@@ -15,21 +15,21 @@ import {
   Partner_Vehicle_State_Enum,
   Photo_Type_Enum,
 } from './../../../generated/graphql';
-import {setDriverVehicleId, getDriverVehicleId} from '@/utils/localStorage';
-import {DateTime} from 'luxon';
-import {signOut} from '../../auth/services';
+import { setDriverVehicleId, getDriverVehicleId } from '@/utils/localStorage';
+import { DateTime } from 'luxon';
+import { signOut } from '../../auth/services';
 import Toast from 'react-native-toast-message';
-import {Vehicle} from '../../../generated/graphql';
+import { Vehicle } from '../../../generated/graphql';
 /**
  * @module Checkin
  * @description This is the service file for the checkin module.
  */
 
 // dependencies
-import {callQuery, callMutation} from '@/utils/client';
+import { callQuery, callMutation } from '@/utils/client';
 
 // store
-import {checkinStore, orderStore, authStore} from '@/globalStore';
+import { checkinStore, orderStore, authStore } from '@/globalStore';
 
 // graphql-documents
 
@@ -57,7 +57,7 @@ class CheckinService {
       // Always fetch fresh data from API to validate current shift status
       const response: FetchDriverVehicleIdQuery = await callQuery({
         queryDocument: FetchDriverVehicleIdDocument,
-        variables: {...args},
+        variables: { ...args },
       });
 
       const shiftSchedule = response.shift_schedule[0];
@@ -80,6 +80,7 @@ class CheckinService {
         checkinStore.setState(state => ({
           ...state,
           driverVehicleId: null,
+          shiftSchedule: null,
           isCheckedIn: false,
         }));
 
@@ -121,6 +122,9 @@ class CheckinService {
         driverVehicleId: driverVehicleId,
       }));
 
+      //set shift schedule
+      checkinStore.getState().setShiftSchedule(shiftSchedule);
+
       return response.shift_schedule;
     } catch (error) {
       console.warn('Error validating shift status:', error);
@@ -136,6 +140,7 @@ class CheckinService {
       checkinStore.setState(state => ({
         ...state,
         driverVehicleId: null,
+        shiftSchedule: null,
         isCheckedIn: false,
       }));
 
@@ -176,7 +181,7 @@ class CheckinService {
   ) {
     const response: GetDriverVehicleDetailsByIdQuery = await callQuery({
       queryDocument: GetDriverVehicleDetailsByIdDocument,
-      variables: {...args},
+      variables: { ...args },
     });
 
     // Use type assertion to ensure the vehicle data matches the expected Vehicle type
@@ -186,6 +191,7 @@ class CheckinService {
     checkinStore.setState(state => ({
       ...state,
       driverVehicleDetails: vehicleData,
+      driverDetails: response.driver_vehicle_by_pk?.user
     }));
 
     return response.driver_vehicle_by_pk;
@@ -212,7 +218,7 @@ class CheckinService {
 
       const response: DriverCheckInMutation = await callMutation({
         queryDocument: DriverCheckInDocument,
-        variables: {...args},
+        variables: { ...args },
       });
 
       if (response && response.insert_driver_duty_log_one) {
@@ -229,9 +235,8 @@ class CheckinService {
       Toast.show({
         type: 'error',
         text1: 'Check-in Failed',
-        text2: `Unable to complete check-in: ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`,
+        text2: `Unable to complete check-in: ${error instanceof Error ? error.message : 'Unknown error'
+          }`,
       });
       throw error;
     }
@@ -253,7 +258,7 @@ class CheckinService {
       const response: UpdateDriverVehicleStateByIdMutation = await callMutation(
         {
           queryDocument: UpdateDriverVehicleStateByIdDocument,
-          variables: {...args},
+          variables: { ...args },
         },
       );
 
@@ -279,11 +284,11 @@ class CheckinService {
    */
   public async completeCheckIn(checkInData: {
     refuellerStoreUrl: string;
-    location: {lat: number; lng: number};
+    location: { lat: number; lng: number };
     driverVehicleId: string;
   }) {
     try {
-      const {refuellerStoreUrl, location, driverVehicleId} = checkInData;
+      const { refuellerStoreUrl, location, driverVehicleId } = checkInData;
 
       console.log('Starting check-in process with data:', checkInData);
 

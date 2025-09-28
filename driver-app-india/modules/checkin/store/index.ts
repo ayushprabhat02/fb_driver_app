@@ -1,11 +1,11 @@
 // dependencies
-import {create} from 'zustand';
-import {persist, createJSONStorage} from 'zustand/middleware';
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // utils
 import createSelectors from '@/utils/selectors';
-import {GetDriverVehicleDetailsByIdQuery, Vehicle} from '@/generated/graphql';
+import { GetDriverVehicleDetailsByIdQuery, Vehicle, Shift_Schedule } from '@/generated/graphql';
 
 // types
 
@@ -29,6 +29,8 @@ type Loaders = {
 type CheckinStore = {
   driverVehicleId: string | null;
   driverVehicleDetails: Vehicle | null;
+  driverDetails: any | null;
+  shiftSchedule: Shift_Schedule | null;
   refuellerImageData: string | null;
   refuellerStoreUrl: string | null; // Store the uploaded image URL
   odometerImageData: string | null;
@@ -43,6 +45,7 @@ type CheckinActions = {
   startLoader: (loaderType: LoaderTypes) => void;
   stopLoader: (loaderType: LoaderTypes) => void;
   resetCheckinStore: () => void;
+  setShiftSchedule: (shiftSchedule: Shift_Schedule | null) => void; // Added missing function
 };
 
 /*
@@ -53,6 +56,8 @@ type CheckinActions = {
 const checkinInitialState: CheckinStore = {
   driverVehicleId: null,
   driverVehicleDetails: null,
+  driverDetails: null,
+  shiftSchedule: null,
   refuellerImageData: null,
   refuellerStoreUrl: null,
   isQuantityCheckEnabled: false,
@@ -79,17 +84,24 @@ const checkinStore = create(
       startLoader: (loaderType: LoaderTypes) =>
         set(state => ({
           ...state,
-          loaders: {...state.loaders, [loaderType]: true},
+          loaders: { ...state.loaders, [loaderType]: true },
         })),
 
       stopLoader: (loaderType: LoaderTypes) =>
         set(state => ({
           ...state,
-          loaders: {...state.loaders, [loaderType]: false},
+          loaders: { ...state.loaders, [loaderType]: false },
         })),
 
       // reset checkin store
       resetCheckinStore: () => set(checkinInitialState),
+
+      // Added missing function to set shift schedule
+      setShiftSchedule: (shiftSchedule: Shift_Schedule | null) =>
+        set(state => ({
+          ...state,
+          shiftSchedule,
+        })),
     }),
     {
       name: 'checkin-storage',

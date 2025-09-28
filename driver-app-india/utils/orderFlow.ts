@@ -3,9 +3,9 @@
  * @description Utilities for order flow management matching Vue.js implementation
  */
 
-import {Alert} from 'react-native';
+import { Alert } from 'react-native';
 import orderService from '@/modules/order/services';
-import {orderStore, homeStore} from '@/globalStore';
+import { orderStore, homeStore, locationTrackingStore } from '@/globalStore';
 
 export interface OrderFlowResult {
   success: boolean;
@@ -20,7 +20,7 @@ export interface OrderFlowResult {
  */
 export const startTrip = async (order: any): Promise<OrderFlowResult> => {
   if (!order) {
-    return {success: false};
+    return { success: false };
   }
 
   try {
@@ -34,10 +34,19 @@ export const startTrip = async (order: any): Promise<OrderFlowResult> => {
       currentFillupOrder: order.category === 'FILL_UP' ? order : null,
     }));
 
+    // Start location tracking when starting a trip
+    try {
+      console.log('Starting location tracking for order:', order.id);
+      locationTrackingStore.getState().startLiveLocationTracking();
+    } catch (trackingError) {
+      console.error('Failed to start location tracking:', trackingError);
+      // Don't block the trip start if tracking fails
+    }
+
     // Update order state if needed (ASSIGNED → IN_TRANSIT)
     const stateUpdated = await updateOrderState(order);
     if (!stateUpdated) {
-      return {success: false};
+      return { success: false };
     }
 
     // Route based on order category
@@ -50,7 +59,7 @@ export const startTrip = async (order: any): Promise<OrderFlowResult> => {
   } catch (error) {
     console.error('Error in startTrip:', error);
     Alert.alert('Error', 'Failed to start trip. Please try again.');
-    return {success: false};
+    return { success: false };
   }
 };
 
@@ -67,9 +76,9 @@ const updateOrderState = async (order: any): Promise<boolean> => {
       // For delivery orders, change state to IN_TRANSIT
       let response;
       if (order.category === 'FILL_UP') {
-        response = await orderService.markOrderArrived({id: order.id});
+        response = await orderService.markOrderArrived({ id: order.id });
       } else {
-        response = await orderService.markOrderInTransit({id: order.id});
+        response = await orderService.markOrderInTransit({ id: order.id });
       }
 
       if (!response) {
@@ -120,7 +129,7 @@ const updateOrderState = async (order: any): Promise<boolean> => {
  */
 const routeToOrderHandler = (
   order: any,
-): {navigateTo: string; navigateParams?: any} => {
+): { navigateTo: string; navigateParams?: any } => {
   switch (order.category) {
     case 'DELIVERY':
       return handleDelivery(order);
@@ -139,14 +148,14 @@ const routeToOrderHandler = (
  */
 const handleDelivery = (
   order: any,
-): {navigateTo: string; navigateParams?: any} => {
-  const {state} = order;
+): { navigateTo: string; navigateParams?: any } => {
+  const { state } = order;
 
   // DISPENSING orders go directly to asset selection
   if (state === 'DISPENSING') {
     return {
       navigateTo: 'order',
-      navigateParams: {screen: 'choose-asset'},
+      navigateParams: { screen: 'choose-asset' },
     };
   }
 
@@ -157,7 +166,7 @@ const handleDelivery = (
 
   return {
     navigateTo: 'order',
-    navigateParams: {screen: 'choose-asset'},
+    navigateParams: { screen: 'choose-asset' },
   };
 };
 
@@ -168,14 +177,14 @@ const handleDelivery = (
  */
 const handleFillUp = (
   order: any,
-): {navigateTo: string; navigateParams?: any} => {
-  const {state} = order;
+): { navigateTo: string; navigateParams?: any } => {
+  const { state } = order;
 
   // DISPENSING/ARRIVED orders go directly to fill asset
   if (state === 'DISPENSING' || state === 'ARRIVED') {
     return {
       navigateTo: 'address',
-      navigateParams: {screen: 'fill-asset'},
+      navigateParams: { screen: 'fill-asset' },
     };
   }
 
@@ -184,7 +193,7 @@ const handleFillUp = (
   // For now, go directly to fill asset
   return {
     navigateTo: 'address',
-    navigateParams: {screen: 'fill-asset'},
+    navigateParams: { screen: 'fill-asset' },
   };
 };
 
@@ -222,7 +231,7 @@ export const getPaymentInfo = (custOrder: any) => {
     custOrder?.organizationAddressByShippingAddressId
       ?.organization_address_payment_methods?.[0]?.customer_payment_method
       ?.value;
-  const {is_credit_available} =
+  const { is_credit_available } =
     custOrder?.organization_user?.organization || {};
 
   return {
