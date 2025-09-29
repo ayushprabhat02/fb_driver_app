@@ -9,12 +9,14 @@ import orderStore from '../../store';
 import {homeStore} from '@/globalStore';
 import fillupStore from '@/modules/fillupRequest/store';
 import {canSelectOrder, getOrderValidationState, showOrderSelectionAlert} from '@/utils/orderValidation';
+import orderService from '../../services';
 
 interface Props {
   order: any; // type from your driverOrders API
+  onRefreshOrders?: () => Promise<void>; // callback to refresh orders
 }
 
-const NormalOrderCard: React.FC<Props> = ({order}) => {
+const NormalOrderCard: React.FC<Props> = ({order, onRefreshOrders}) => {
   const currentDriverOrder = orderStore.use.currentDriverOrder();
   const isSelected = currentDriverOrder?.id === order?.id;
 
@@ -115,9 +117,60 @@ const NormalOrderCard: React.FC<Props> = ({order}) => {
         {
           text: 'Yes, Cancel',
           style: 'destructive',
-          onPress: () => {
-            // TODO: Implement actual cancel order logic
-            console.log('Order cancelled:', order.customer_order?.order_code);
+          onPress: async () => {
+            try {
+              console.log('Cancelling order:', order.customer_order?.order_code);
+
+              // Start loader for cancelling order
+              homeStore.setState(state => ({
+                ...state,
+                loaders: {
+                  ...state.loaders,
+                  driverCurrentOrder: true,
+                },
+              }));
+
+              // Call the markOrderCancel API to update order state to CANCELLATION_REQUESTED
+              await orderService.markOrderCancel({ id: order.id });
+
+              console.log('Order cancelled successfully');
+
+              // Clear current selected order if it was this order
+              if (isSelected) {
+                orderStore.setState(state => ({
+                  ...state,
+                  currentDriverOrder: null,
+                }));
+              }
+
+              // Refresh the orders list using the callback from parent component
+              if (onRefreshOrders) {
+                await onRefreshOrders();
+              }
+
+              Alert.alert(
+                'Order Cancelled',
+                `Order ${order.customer_order?.order_code} has been successfully cancelled.`,
+                [{ text: 'OK' }]
+              );
+
+            } catch (error) {
+              console.error('Error cancelling order:', error);
+              Alert.alert(
+                'Cancellation Failed',
+                `Failed to cancel order ${order.customer_order?.order_code}. Please try again.`,
+                [{ text: 'OK' }]
+              );
+            } finally {
+              // Stop loader
+              homeStore.setState(state => ({
+                ...state,
+                loaders: {
+                  ...state.loaders,
+                  driverCurrentOrder: false,
+                },
+              }));
+            }
           },
         },
       ],
@@ -213,15 +266,22 @@ const NormalOrderCard: React.FC<Props> = ({order}) => {
         {/* Cancel Button - only show for ASSIGNED state */}
         {order?.state === 'ASSIGNED' && (
           <Pressable
-            style={styles.cancelButton}
+            style={[
+              styles.cancelButton,
+              isLoadingOrder && styles.disabledCancelButton
+            ]}
             onPress={handleCancelOrder}
+            disabled={isLoadingOrder}
             android_ripple={{color: '#fee2e2', borderless: false}}>
-            <X size={12} color="#dc2626" weight="bold" />
+            <X size={12} color={isLoadingOrder ? "#9ca3af" : "#dc2626"} weight="bold" />
             <Text
               size="xs"
               weight="600"
-              style={{color: '#dc2626', marginLeft: 4}}>
-              Cancel
+              style={{
+                color: isLoadingOrder ? "#9ca3af" : "#dc2626",
+                marginLeft: 4
+              }}>
+              {isLoadingOrder ? 'Cancelling...' : 'Cancel'}
             </Text>
           </Pressable>
         )}
@@ -332,6 +392,11 @@ const styles = ScaledSheet.create({
     paddingVertical: '4@vs',
     borderWidth: 1,
     borderColor: '#fecaca',
+  },
+  disabledCancelButton: {
+    backgroundColor: '#f9fafb',
+    borderColor: '#e5e7eb',
+    opacity: 0.6,
   },
 });
 

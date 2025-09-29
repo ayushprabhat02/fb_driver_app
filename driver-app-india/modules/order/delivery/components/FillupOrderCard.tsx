@@ -17,9 +17,10 @@ type NavigationProp = StackNavigationProp<OrderStackParamList>;
 
 interface Props {
   order: any; // type from your driverOrders API
+  onRefreshOrders?: () => Promise<void>; // callback to refresh orders
 }
 
-const FillupOrderCard: React.FC<Props> = ({order}) => {
+const FillupOrderCard: React.FC<Props> = ({order, onRefreshOrders}) => {
   const navigation = useNavigation<NavigationProp>();
   const currentFillupOrder = orderStore.use.currentFillupOrder();
   const isSelected = currentFillupOrder?.id === order?.id;

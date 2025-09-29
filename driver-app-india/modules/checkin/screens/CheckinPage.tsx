@@ -387,17 +387,24 @@ const CheckinPage: React.FC = () => {
 
       <View style={styles.buttonContainer}>
         <Button
-          style={[styles.button, !refuellerStoreUrl && styles.disabledButton]}
+          style={[
+            styles.button,
+            (!refuellerStoreUrl || isCheckingIn) && styles.disabledButton
+          ]}
           variant="solid"
           onPress={handleSubmit}
           loading={isCheckingIn}
-          disabled={!refuellerStoreUrl}>
+          disabled={!refuellerStoreUrl || isCheckingIn}>
           {isCheckingIn ? 'Checking in...' : 'Check-in'}
         </Button>
       </View>
       <FullScreenLoader
         showLoader={loaders.isDriverVehicleIdLoading}
         loaderText={`Fetching driver vehicle ID...`}
+      />
+      <FullScreenLoader
+        showLoader={isCheckingIn}
+        loaderText={`Checking in, please wait...`}
       />
     </HeaderAvoidingContainer>
   );
@@ -533,7 +540,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   disabledButton: {
-    opacity: 0.5,
+    opacity: 0.6,
+    backgroundColor: '#C0C4CA',
   },
   selfieBoxContainer: {
     backgroundColor: FBBackground.white,

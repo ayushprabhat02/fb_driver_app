@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, {useRef, useState, useEffect} from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -7,22 +7,22 @@ import {
   TextInput,
   TouchableOpacity,
 } from 'react-native';
-import { Button, Divider, HeaderAvoidingContainer, Text } from '@/components';
-import { FBBackground, FBColors } from '@/types/styles';
-import { commonInputStyles } from '@/styles';
-import { orderStore, checkinStore } from '@/globalStore';
-import { ImageContainer } from '@/modules/checkin/components';
-import { RNCamera } from 'react-native-camera';
-import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
+import {Button, Divider, HeaderAvoidingContainer, Text} from '@/components';
+import {FBBackground, FBColors} from '@/types/styles';
+import {commonInputStyles} from '@/styles';
+import {orderStore, checkinStore} from '@/globalStore';
+import {ImageContainer} from '@/modules/checkin/components';
+import {RNCamera} from 'react-native-camera';
+import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
 import supportService from '@/modules/support/services';
 import orderService from '../services';
 import Toast from 'react-native-toast-message';
 type LoaderTypes = 'totalizerImage' | 'quantityImage';
-import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
+import {useNavigation} from '@react-navigation/native';
+import {StackNavigationProp} from '@react-navigation/stack';
 
 // utils
-import { getCurrentLocation } from '@/utils/location';
+import {getCurrentLocation} from '@/utils/location';
 
 type RootStackParamList = {
   home: undefined;
@@ -32,8 +32,7 @@ type RootStackParamList = {
 };
 
 const UploadImageAsset: React.FC = () => {
-  const navigation =
-    useNavigation<StackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
   const cameraRef = useRef<RNCamera | null>(null);
   const [showCamera, setShowCamera] = useState(false);
@@ -119,14 +118,16 @@ const UploadImageAsset: React.FC = () => {
           value: totalizerReading,
           task_id: currentFillupOrder?.id,
           ...(currentFillupOrder?.category === 'DELIVERY'
-            ? { customer_asset_id: currentAssetForDispense?.id }
-            : { vehicle_id: currentAssetForDispense?.id || driverVehicleDetails?.id }
-          ),
+            ? {customer_asset_id: currentAssetForDispense?.id}
+            : {
+                vehicle_id:
+                  currentAssetForDispense?.id || driverVehicleDetails?.id,
+              }),
           location: {
             type: 'Point',
             coordinates: [coordinates.longitude, coordinates.latitude],
           },
-        }
+        },
       });
 
       // Update totalizer reading for vehicle (following Vue.js pattern)
@@ -140,13 +141,14 @@ const UploadImageAsset: React.FC = () => {
         Toast.show({
           type: 'error',
           text1: 'Warning',
-          text2: 'Vehicle information not available. Totalizer reading not updated.',
+          text2:
+            'Vehicle information not available. Totalizer reading not updated.',
         });
       }
 
       // Mark order dispensing if arrived (following Vue.js pattern)
       if (currentFillupOrder?.state === 'ARRIVED') {
-        await orderService.markOrderDispensing({ id: currentFillupOrder?.id });
+        await orderService.markOrderDispensing({id: currentFillupOrder?.id});
       }
 
       // Set totalizer before reading in store
@@ -166,7 +168,6 @@ const UploadImageAsset: React.FC = () => {
       navigation.navigate('order', {
         screen: 'totalizer-after-manual',
       });
-
     } catch (error) {
       console.error('Error in nextStep function:', error);
       Toast.show({
@@ -195,7 +196,7 @@ const UploadImageAsset: React.FC = () => {
 
   const handleTakePhoto = async () => {
     if (cameraRef.current && imageType) {
-      const options = { quality: 0.5, base64: true };
+      const options = {quality: 0.5, base64: true};
       const data = await cameraRef.current.takePictureAsync(options);
       setShowCamera(false);
       let loaderType: LoaderTypes | null = null;
@@ -230,16 +231,16 @@ const UploadImageAsset: React.FC = () => {
   ) => {
     try {
       const blob = await (await fetch(uri)).blob();
-      const { src, storeUrl } = await supportService.uploadFile({
+      const {src, storeUrl} = await supportService.uploadFile({
         fileName: `${type}.jpg`,
         contentType: 'image/jpeg',
         fileData: blob,
       });
-      console.log('Image uploaded:', { src, storeUrl });
+      console.log('Image uploaded:', {src, storeUrl});
 
       // Store the upload URL for API calls but keep the local URI for display
       if (type === 'totalizer') {
-        orderStore.setState({ totalizerUploadedUrl: storeUrl || src });
+        orderStore.setState({totalizerUploadedUrl: storeUrl || src});
       }
     } catch (error) {
       console.error('Upload error:', error);
@@ -302,12 +303,15 @@ const UploadImageAsset: React.FC = () => {
         <Divider height={10} />
 
         <ImageContainer
-          label="Start Totalizer"
+          label="Upload Totalizer Reading"
           imageData={totalizerImageData}
           isUploading={totalizerImageUploading}
           onCameraPress={() => openCamera('totalizer')}
           uploadingText="Uploading totalizer image..."
-          required={currentFillupOrder?.is_enable_totalizer_reading_image_upload || false}
+          required={
+            currentFillupOrder?.is_enable_totalizer_reading_image_upload ||
+            false
+          }
         />
         <Divider height={10} />
         {/* Remove quantity dispensed section for totalizer before reading */}
@@ -318,8 +322,9 @@ const UploadImageAsset: React.FC = () => {
           style={[
             styles.button,
             (!totalizerReading ||
-              (currentFillupOrder?.is_enable_totalizer_reading_image_upload && !totalizerImageData)) &&
-            styles.disabledButton,
+              (currentFillupOrder?.is_enable_totalizer_reading_image_upload &&
+                !totalizerImageData)) &&
+              styles.disabledButton,
           ]}
           variant="solid"
           onPress={nextStep}
@@ -327,7 +332,8 @@ const UploadImageAsset: React.FC = () => {
           disabled={
             disableButton ||
             !totalizerReading ||
-            (currentFillupOrder?.is_enable_totalizer_reading_image_upload && !totalizerImageData)
+            (currentFillupOrder?.is_enable_totalizer_reading_image_upload &&
+              !totalizerImageData)
           }>
           {'Next'}
         </Button>
@@ -418,7 +424,7 @@ const styles = StyleSheet.create({
     padding: 8,
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: {width: 0, height: 1},
     shadowOpacity: 0.2,
     shadowRadius: 2,
   },
@@ -442,7 +448,7 @@ const styles = StyleSheet.create({
     padding: 8,
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: {width: 0, height: 1},
     shadowOpacity: 0.2,
     shadowRadius: 2,
   },

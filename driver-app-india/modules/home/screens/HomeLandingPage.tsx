@@ -384,6 +384,12 @@ const HomeLandingPage: React.FC = () => {
       (order as any)?.fillup_requests.length > 0;
     const shouldDisable = !allFillupsCompleted && !isFillupOrder;
 
+    // Create a refresh callback that calls fetchCurrentOrder with current selectedDate
+    const handleRefreshOrders = async () => {
+      await fetchCurrentOrder(selectedDate, 0, false);
+      await fetchOrderStats();
+    };
+
     return (
       <Container paddingHorizontal={16}>
         <View
@@ -391,7 +397,7 @@ const HomeLandingPage: React.FC = () => {
             opacity: shouldDisable ? 0.5 : 1,
             pointerEvents: shouldDisable ? 'none' : 'auto',
           }}>
-          <OrderListCard order={order} />
+          <OrderListCard order={order} onRefreshOrders={handleRefreshOrders} />
         </View>
       </Container>
     );
