@@ -1,11 +1,5 @@
 import React, {useCallback, useEffect, useState, useRef, useMemo} from 'react';
-import {
-  View,
-  FlatList,
-  TouchableOpacity,
-  Alert,
-  StyleSheet,
-} from 'react-native';
+import {View, FlatList, TouchableOpacity, StyleSheet} from 'react-native';
 import Toast from 'react-native-toast-message';
 import {useFocusEffect} from '@react-navigation/native';
 import {BottomSheetModal, BottomSheetView} from '@gorhom/bottom-sheet';
@@ -15,7 +9,6 @@ import {ms} from 'react-native-size-matters';
 // --- Core Components & Services ---
 // Assuming these are your existing custom components, services, and stores.
 import {
-  Button,
   Divider,
   FullScreenLoader,
   HeaderAvoidingContainer,
@@ -116,14 +109,18 @@ const FillupRequest: React.FC = () => {
   }, [driverVehicleDetails]);
 
   const currentTankDetails = useMemo(() => {
-    if (!watchedTankType || isRotationFlow) return null;
+    if (!watchedTankType || isRotationFlow) {
+      return null;
+    }
     return tankTypeOptions.find(opt => opt.value === watchedTankType)?.details;
   }, [watchedTankType, isRotationFlow, tankTypeOptions]);
 
   console.log('----currentTankDetails-----', currentTankDetails);
 
   const maxCapacity = useMemo(() => {
-    if (isRotationFlow) return Number.MAX_SAFE_INTEGER;
+    if (isRotationFlow) {
+      return Number.MAX_SAFE_INTEGER;
+    }
     if (currentTankDetails && driverVehicleDetails) {
       return currentTankDetails.tank_type?.slug === 'browser-tank'
         ? driverVehicleDetails.tanker_capacity
@@ -134,30 +131,40 @@ const FillupRequest: React.FC = () => {
 
   // --- DATA FETCHING & LIFECYCLE HOOKS ---
 
-  // Function to fetch fillup history - optimized for today's data
+  // Function to fetch fillup history - optimized for last 5 days
   const getFillupHistory = useCallback(async () => {
     if (!driverVehicleId) {
-      console.warn('Driver vehicle ID not available, cannot fetch fillup history');
+      console.warn(
+        'Driver vehicle ID not available, cannot fetch fillup history',
+      );
       return;
     }
 
-    // Get date range for today only (ensure local timezone)
+    // Get date range for last 5 days (ensure local timezone)
     const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
+    const fiveDaysAgo = new Date();
+    fiveDaysAgo.setDate(now.getDate() - 5);
 
-    const startOfDay = `${year}-${month}-${day}T00:00:00`;
-    const endOfDay = `${year}-${month}-${day}T23:59:59`;
+    // Format start date (5 days ago at 00:00:00)
+    const startYear = fiveDaysAgo.getFullYear();
+    const startMonth = String(fiveDaysAgo.getMonth() + 1).padStart(2, '0');
+    const startDay = String(fiveDaysAgo.getDate()).padStart(2, '0');
+    const startOfPeriod = `${startYear}-${startMonth}-${startDay}T00:00:00`;
+
+    // Format end date (today at 23:59:59)
+    const endYear = now.getFullYear();
+    const endMonth = String(now.getMonth() + 1).padStart(2, '0');
+    const endDay = String(now.getDate()).padStart(2, '0');
+    const endOfPeriod = `${endYear}-${endMonth}-${endDay}T23:59:59`;
 
     startFillupLoader('fetchFillupHistoryNew');
     try {
       await fillupService.fetchFillupHistoryNew({
-        limit: 5,
+        limit: 5, // Increased limit to accommodate 5 days of history
         offset: 0,
         driver_vehicle_id: driverVehicleId,
-        start_date: startOfDay,
-        end_date: endOfDay,
+        start_date: startOfPeriod,
+        end_date: endOfPeriod,
       });
     } catch (error) {
       console.error('Failed to fetch fillup history:', error);
@@ -207,7 +214,8 @@ const FillupRequest: React.FC = () => {
       Toast.show({
         type: 'error',
         text1: 'Request Denied',
-        text2: 'You cannot raise a new request while a previous one is still pending.',
+        text2:
+          'You cannot raise a new request while a previous one is still pending.',
       });
       setIsSubmitting(false);
       return;
@@ -306,9 +314,7 @@ const FillupRequest: React.FC = () => {
             data={fillupHistory || []}
             keyExtractor={(item: any) => item.id}
             renderItem={({item}: {item: any}) => (
-              <FillupHistoryCard
-                item={item}
-              />
+              <FillupHistoryCard item={item} />
             )}
             style={styles.list}
             showsVerticalScrollIndicator={false}

@@ -11,13 +11,7 @@ import {ScaledSheet} from 'react-native-size-matters';
 import {useNavigation, useRoute} from '@react-navigation/native';
 
 // Components
-import {
-  HeaderAvoidingContainer,
-  Text,
-  Button,
-  FullScreenLoader,
-  Divider,
-} from '@/components';
+import {HeaderAvoidingContainer, Text, Divider} from '@/components';
 
 // Services
 import fillupService from '../services';
@@ -46,11 +40,9 @@ const FillupDetails: React.FC = () => {
   const route = useRoute();
   const {fillupId} = route.params as RouteParams;
 
-  const [loading, setLoading] = useState(true);
   const [navigationLoading, setNavigationLoading] = useState(false);
 
   const fillupDetails = fillupStore.use.fillupRequestDetails();
-  const fillupLoaders = fillupStore.use.loaders();
 
   console.log('----fillupDetails-----', fillupDetails);
 
@@ -91,8 +83,6 @@ const FillupDetails: React.FC = () => {
       } catch (error) {
         console.error('Failed to fetch fillup details:', error);
         Alert.alert('Error', 'Failed to load fillup details');
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -100,7 +90,9 @@ const FillupDetails: React.FC = () => {
   }, [fillupId]);
 
   const getPartnerLocation = () => {
-    if (!fillupDetails) return null;
+    if (!fillupDetails) {
+      return null;
+    }
 
     try {
       // Priority 1: task partner address location (string format) - Vue.js primary
@@ -150,7 +142,9 @@ const FillupDetails: React.FC = () => {
   };
 
   const getPartnerName = () => {
-    if (!fillupDetails) return 'Unknown Partner';
+    if (!fillupDetails) {
+      return 'Unknown Partner';
+    }
 
     // Try partner order name
     if (fillupDetails.partner_order?.partner_user?.partner?.name) {
@@ -174,7 +168,9 @@ const FillupDetails: React.FC = () => {
   };
 
   const getPartnerAddress = () => {
-    if (!fillupDetails) return 'Address not available';
+    if (!fillupDetails) {
+      return 'Address not available';
+    }
 
     // First check for partner about (priority 1)
     if (fillupDetails.partner_order?.partner_user?.partner?.about) {
@@ -298,7 +294,9 @@ const FillupDetails: React.FC = () => {
   };
 
   const handleIHaveReached = async () => {
-    if (!fillupDetails) return;
+    if (!fillupDetails) {
+      return;
+    }
 
     try {
       setNavigationLoading(true);
@@ -313,7 +311,6 @@ const FillupDetails: React.FC = () => {
       await fillupService.fetchFillupRequestById({id: fillupDetails.id});
 
       // Navigate based on updated state - similar to Vue.js openSteps function
-      const {fuel_request_type, category} = fillupDetails;
 
       switch (Fillup_Request_Status_Enum.Authorized) {
         case Fillup_Request_Status_Enum.Authorized:
@@ -344,11 +341,42 @@ const FillupDetails: React.FC = () => {
   };
 
   const canShowActionButton = () => {
-    if (!fillupDetails) return false;
+    if (!fillupDetails) {
+      return false;
+    }
     return (
       fillupDetails.partner_order ||
       fillupDetails.fuel_request_type === Fuel_Request_Type_Enum.FuelTank
     );
+  };
+
+  const isApprovedState = () => {
+    return (
+      fillupDetails?.state === 'APPROVED' ||
+      fillupDetails?.state === Fillup_Request_Status_Enum.Approved
+    );
+  };
+
+  const handleContinue = () => {
+    if (!fillupDetails) {
+      return;
+    }
+
+    try {
+      setNavigationLoading(true);
+
+      // Navigate to fillup indent upload page
+      // @ts-ignore
+      navigation.navigate('address', {
+        screen: 'fillup-indent',
+        params: {fillupId: fillupDetails.id},
+      });
+    } catch (error) {
+      console.error('Error in Continue:', error);
+      Alert.alert('Error', 'Failed to navigate. Please try again.');
+    } finally {
+      setNavigationLoading(false);
+    }
   };
 
   // if (loading || fillupLoaders.fetchFillupRequestById) {
@@ -478,32 +506,47 @@ const FillupDetails: React.FC = () => {
         </View>
       </ScrollView>
 
-      {/* Action Buttons */}
+      {/* Action Buttons - Conditional based on state */}
       {canShowActionButton() ? (
-        <View style={styles.actionContainer}>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.navigateButton]}
-            onPress={openExternalNavigation}
-            disabled={navigationLoading}>
-            <NavigationArrow
-              size={20}
-              color={FBColors.white}
-              style={styles.buttonIcon}
-            />
-            <Text size="base" weight="bold" color="white">
-              {navigationLoading ? 'Opening Maps...' : 'Navigate'}
-            </Text>
-          </TouchableOpacity>
+        isApprovedState() ? (
+          // Show Navigate and "I Have Reached" buttons for APPROVED state
+          <View style={styles.actionContainer}>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.navigateButton]}
+              onPress={openExternalNavigation}
+              disabled={navigationLoading}>
+              <NavigationArrow
+                size={20}
+                color={FBColors.white}
+                style={styles.buttonIcon}
+              />
+              <Text size="base" weight="bold" color="white">
+                {navigationLoading ? 'Opening Maps...' : 'Navigate'}
+              </Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.actionButton, styles.reachedButton]}
-            onPress={handleIHaveReached}
-            disabled={navigationLoading}>
-            <Text size="base" weight="bold" color="white">
-              I Have Reached
-            </Text>
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.reachedButton]}
+              onPress={handleIHaveReached}
+              disabled={navigationLoading}>
+              <Text size="base" weight="bold" color="white">
+                I Have Reached
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          // Show Continue button for other states
+          <View style={styles.actionContainer}>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.continueButton]}
+              onPress={handleContinue}
+              disabled={navigationLoading}>
+              <Text size="base" weight="bold" color="white">
+                {navigationLoading ? 'Loading...' : 'Continue'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )
       ) : (
         <View style={styles.waitingContainer}>
           <Text
@@ -616,6 +659,9 @@ const styles = ScaledSheet.create({
   },
   reachedButton: {
     backgroundColor: '#374151', // Dark gray color like in Vue project
+  },
+  continueButton: {
+    backgroundColor: '#16A34A', // Green color for continue button
   },
   buttonIcon: {
     marginRight: '8@s',

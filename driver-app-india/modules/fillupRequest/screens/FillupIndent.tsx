@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useRef} from 'react';
+import React, {useEffect, useState, useRef, useCallback} from 'react';
 import {
   View,
   ScrollView,
@@ -87,40 +87,7 @@ const FillupIndent: React.FC = () => {
     };
   }, []);
 
-  // Initialize component and check existing state (like Vue's onMounted)
-  useEffect(() => {
-    const initializeComponent = async () => {
-      if (fillupDetails) {
-        console.log(
-          'Initializing component with fillup state:',
-          fillupDetails.state,
-        );
-
-        // Check if already waiting for approval
-        if (fillupDetails.state === 'AWAITING_INDENT_UPLOAD_AUTHORIZATION') {
-          console.log('Already awaiting approval, starting polling');
-          setWaitingForApproval(true);
-          startApprovalPolling();
-        }
-        // Check if already approved
-        else if (fillupDetails.state === 'PURCHASE_INVOICE_REQUEST') {
-          console.log('Already approved, showing mark complete button');
-          setWaitingForApproval(false);
-          setApproved(true);
-        }
-        // Check if rejected
-        else if (fillupDetails.state === 'INDENT_UPLOAD_REJECTED') {
-          console.log('Previously rejected, resetting for re-upload');
-          setWaitingForApproval(false);
-          setApproved(false);
-        }
-      }
-    };
-
-    initializeComponent();
-  }, [fillupDetails]);
-
-  const startApprovalPolling = () => {
+  const startApprovalPolling = useCallback(() => {
     if (pollInterval.current) {
       clearInterval(pollInterval.current);
     }
@@ -162,7 +129,98 @@ const FillupIndent: React.FC = () => {
         console.error('Error polling for approval:', error);
       }
     }, 5000);
-  };
+  }, [fillupId]);
+
+  // Initialize component and check existing state (like Vue's onMounted)
+  useEffect(() => {
+    const initializeComponent = async () => {
+      if (fillupDetails) {
+        console.log(
+          'Initializing component with fillup state:',
+          fillupDetails.state,
+        );
+
+        // Handle different fillup states for app resumption
+        switch (fillupDetails.state) {
+          case 'AWAITING_INDENT_UPLOAD_AUTHORIZATION':
+            console.log(
+              'App resumed: Already awaiting approval, starting polling',
+            );
+            setWaitingForApproval(true);
+            setApproved(false);
+            startApprovalPolling();
+            break;
+
+          case 'PURCHASE_INVOICE_REQUEST':
+          case 'PURCHASE_RECEIPT_REQUEST':
+            console.log(
+              'App resumed: Already approved, showing mark complete button',
+            );
+            setWaitingForApproval(false);
+            setApproved(true);
+            // Show user-friendly message about their progress
+            setTimeout(() => {
+              Alert.alert(
+                'Welcome Back!',
+                'Your indent has been approved. You can now mark this fillup order as complete.',
+                [{text: 'OK'}],
+              );
+            }, 500);
+            break;
+
+          case 'INDENT_UPLOAD_REJECTED':
+            console.log(
+              'App resumed: Previously rejected, resetting for re-upload',
+            );
+            setWaitingForApproval(false);
+            setApproved(false);
+            // Clear any existing form data for fresh start
+            setIndentNumber('');
+            setFilledQuantity('');
+            setIndentImageData(null);
+            setIndentStoreUrl(null);
+            // Show rejection message
+            setTimeout(() => {
+              Alert.alert(
+                'Indent Rejected',
+                'Your previous indent was rejected. Please upload a new one.',
+                [{text: 'OK'}],
+              );
+            }, 500);
+            break;
+
+          case 'AUTHORIZED':
+          case 'INDENT_UPLOAD_AUTHORIZED':
+            console.log('App resumed: Ready for indent upload');
+            setWaitingForApproval(false);
+            setApproved(false);
+            break;
+
+          case 'COMPLETE':
+            console.log('App resumed: Fillup already completed');
+            Alert.alert(
+              'Already Completed',
+              'This fillup order has already been completed.',
+              [
+                {
+                  text: 'Go to Home',
+                  onPress: () => navigation.navigate('home' as never),
+                },
+              ],
+            );
+            break;
+
+          default:
+            console.log('App resumed: Default state, ready for indent upload');
+            setWaitingForApproval(false);
+            setApproved(false);
+            break;
+        }
+      }
+    };
+
+    initializeComponent();
+  }, [fillupDetails, navigation, startApprovalPolling]);
 
   const openCamera = async () => {
     const cameraPermission = await check(PERMISSIONS.ANDROID.CAMERA);
@@ -274,7 +332,9 @@ const FillupIndent: React.FC = () => {
   };
 
   const uploadIndent = async () => {
-    if (!validateInputs()) return;
+    if (!validateInputs()) {
+      return;
+    }
 
     setUploading(true);
     try {
@@ -429,11 +489,21 @@ const FillupIndent: React.FC = () => {
 
       // Check each field individually to see which one is missing
       const missingFields = [];
-      if (!partnerOrderItemId) missingFields.push('partnerOrderItemId');
-      if (!partnerOrderId) missingFields.push('partnerOrderId');
-      if (!productVariationId) missingFields.push('productVariationId');
-      if (!vehicleId) missingFields.push('vehicleId');
-      if (!quantityToUse) missingFields.push('quantityToUse');
+      if (!partnerOrderItemId) {
+        missingFields.push('partnerOrderItemId');
+      }
+      if (!partnerOrderId) {
+        missingFields.push('partnerOrderId');
+      }
+      if (!productVariationId) {
+        missingFields.push('productVariationId');
+      }
+      if (!vehicleId) {
+        missingFields.push('vehicleId');
+      }
+      if (!quantityToUse) {
+        missingFields.push('quantityToUse');
+      }
 
       if (missingFields.length > 0) {
         throw new Error(
@@ -471,11 +541,22 @@ const FillupIndent: React.FC = () => {
         transaction_type: 'IN',
       });
       console.log('✅ Transaction logs added');
+      fillupStore.setState(state => ({
+        ...state,
+        activeFillupHistory: [],
+        fillupHistory: [],
+      }));
 
       Alert.alert('Success!', 'Fillup order has been marked as complete!', [
         {
           text: 'OK',
           onPress: () => {
+            // // Clear the current activeFillupHistory state first
+            fillupStore.setState(state => ({
+              ...state,
+              activeFillupHistory: [],
+              fillupHistory: [],
+            }));
             // Navigate to Home
             navigation.reset({
               index: 0,
@@ -538,14 +619,36 @@ const FillupIndent: React.FC = () => {
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         {waitingForApproval ? (
           <View style={styles.waitingContainer}>
-            <Text size="lg" weight="bold" color="neutral">
-              Waiting for indent approval
-            </Text>
-            <View style={styles.loadingIndicator}>
-              <Text size="sm" color="steelBlue">
-                Please wait while your indent is being reviewed...
+            <View style={styles.waitingIconContainer}>
+              <Text size="4xl" style={styles.waitingIcon}>
+                ⏳
               </Text>
             </View>
+            <Text size="lg" weight="bold" color="neutral">
+              Waiting for Indent Approval
+            </Text>
+            <View style={styles.loadingIndicator}>
+              <Text
+                size="sm"
+                color="steelBlue"
+                style={styles.waitingDescription}>
+                Your indent has been uploaded successfully and is currently
+                being reviewed by the supervisor.
+              </Text>
+              <Text size="sm" color="steelBlue" style={styles.waitingNote}>
+                You can safely close the app - we'll notify you when it's
+                approved!
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.refreshButton}
+              onPress={async () => {
+                await fillupService.fetchFillupRequestById({id: fillupId});
+              }}>
+              <Text size="sm" weight="600" color="primary">
+                🔄 Check Status
+              </Text>
+            </TouchableOpacity>
           </View>
         ) : approved ? (
           <View style={styles.approvedContainer}>
@@ -608,6 +711,7 @@ const FillupIndent: React.FC = () => {
                 onChangeText={setIndentNumber}
                 placeholder="Enter indent number"
                 placeholderTextColor={FBColors.lightGray}
+                keyboardType="decimal-pad"
               />
             </View>
 
@@ -783,6 +887,34 @@ const styles = ScaledSheet.create({
   loadingIndicator: {
     alignItems: 'center',
     marginTop: '20@vs',
+  },
+  waitingIconContainer: {
+    alignItems: 'center',
+    marginBottom: '20@vs',
+  },
+  waitingIcon: {
+    fontSize: '48@s',
+  },
+  waitingDescription: {
+    textAlign: 'center',
+    lineHeight: '20@vs',
+    marginBottom: '12@vs',
+    paddingHorizontal: '20@s',
+  },
+  waitingNote: {
+    textAlign: 'center',
+    fontStyle: 'italic',
+    marginTop: '8@vs',
+  },
+  refreshButton: {
+    backgroundColor: FBBackground.white,
+    borderWidth: 1,
+    borderColor: FBColors.primary,
+    paddingHorizontal: '24@s',
+    paddingVertical: '12@vs',
+    borderRadius: '8@s',
+    marginTop: '24@vs',
+    alignItems: 'center',
   },
 });
 

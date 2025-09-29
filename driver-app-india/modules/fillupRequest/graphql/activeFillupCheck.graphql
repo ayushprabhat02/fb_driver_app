@@ -5,7 +5,7 @@ query activeFillupCheck($limit: Int!, $offset: Int!, $driver_vehicle_id: uuid) {
     where: {
       driver_vehicle_id: {_eq: $driver_vehicle_id}
       is_active: {_eq: true}
-      state: {_eq: PENDING}
+      state: {_nin: [COMPLETE, REJECTED]}
     }
     order_by: {created_at: desc}
   ) {
@@ -21,7 +21,7 @@ query activeFillupCheck($limit: Int!, $offset: Int!, $driver_vehicle_id: uuid) {
     where: {
       driver_vehicle_id: {_eq: $driver_vehicle_id}
       is_active: {_eq: true}
-      state: {_eq: PENDING}
+      state: {_nin: [COMPLETE, REJECTED]}
     }
   ) {
     aggregate {

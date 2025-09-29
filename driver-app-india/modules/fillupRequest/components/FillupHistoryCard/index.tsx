@@ -3,12 +3,7 @@ import {View, TouchableOpacity} from 'react-native';
 import {ScaledSheet} from 'react-native-size-matters';
 import {useNavigation} from '@react-navigation/native';
 import {Text} from '@/components';
-import {
-  FBBackground,
-  FBBorders,
-  FBColors,
-  FBColorPalette,
-} from '@/types/styles';
+import {FBBackground, FBColors, FBColorPalette} from '@/types/styles';
 
 const allowedStates = [
   'APPROVED',
@@ -28,6 +23,19 @@ interface FillupHistoryCardProps {
 
 const FillupHistoryCard: React.FC<FillupHistoryCardProps> = ({item}) => {
   const navigation = useNavigation();
+
+  const getFuelRequestTypeDisplayLabel = (fuelRequestType: string) => {
+    switch (fuelRequestType) {
+      case 'BOWSERS_TANK':
+        return 'BOWSER TANK';
+      case 'SERVICE_STATION':
+        return 'BOWSER TANK (RO)';
+      default:
+        // For other types like FUEL_TANK, ROTATIONAL_FLOW, etc., use default formatting
+        return fuelRequestType.split('_').join(' ');
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case 'approved':
@@ -42,7 +50,9 @@ const FillupHistoryCard: React.FC<FillupHistoryCardProps> = ({item}) => {
   };
 
   const formatDate = (dateString: string) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) {
+      return 'N/A';
+    }
     const date = new Date(dateString);
     return date.toLocaleDateString('en-GB', {
       day: '2-digit',
@@ -61,7 +71,7 @@ const FillupHistoryCard: React.FC<FillupHistoryCardProps> = ({item}) => {
         // Navigate to HomeLandingPage where FillupOrderCard will be displayed
         // @ts-ignore
         navigation.navigate('home', {
-          screen: 'HomeLandingPage'
+          screen: 'HomeLandingPage',
         });
       } else {
         // For other types (BOWSERS_TANK, ROTATIONAL_FLOW, etc.), navigate to fillup details
@@ -78,7 +88,7 @@ const FillupHistoryCard: React.FC<FillupHistoryCardProps> = ({item}) => {
     <View style={[styles.card, !isStateAllowed && styles.disabledCard]}>
       <View style={styles.cardHeader}>
         <Text size="base" weight="bold" color="secondary">
-          {item?.fuel_request_type.split('_').join(' ')}
+          {getFuelRequestTypeDisplayLabel(item?.fuel_request_type || '')}
         </Text>
         <View
           style={[
@@ -122,9 +132,7 @@ const FillupHistoryCard: React.FC<FillupHistoryCardProps> = ({item}) => {
       </View>
 
       {isStateAllowed ? (
-        <TouchableOpacity
-          style={styles.goToFillupButton}
-          onPress={goToFillup}>
+        <TouchableOpacity style={styles.goToFillupButton} onPress={goToFillup}>
           <Text
             size="sm"
             weight="600"
