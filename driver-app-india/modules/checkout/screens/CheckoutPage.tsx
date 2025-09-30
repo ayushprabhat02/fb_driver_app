@@ -67,6 +67,7 @@ const CheckoutPage: React.FC = () => {
   const loaders = checkoutStore.use.loaders();
 
   const handleSubmit = async () => {
+    // Validation
     if (!selfieStoreUrl || !refuellerStoreUrl) {
       Alert.alert(
         'Required Images',
@@ -84,37 +85,106 @@ const CheckoutPage: React.FC = () => {
     }
 
     try {
-      console.log('Starting check-out process...');
       startLoader('isCheckingOut');
 
-      // Get current location
-      console.log('Getting current location...');
+      // Step 1: Get location
       const locationCoords = await getCurrentLocation();
-      const location = {
-        lat: locationCoords.latitude,
-        lng: locationCoords.longitude,
-      };
-      console.log('Location obtained:', location);
+      const lat = locationCoords.latitude;
+      const lng = locationCoords.longitude;
 
-      // Complete check-out process
-      console.log('Calling completeCheckOut service...');
-      await checkoutService.completeCheckOut({
-        selfieStoreUrl: selfieStoreUrl,
-        refuellerStoreUrl: refuellerStoreUrl,
-        location,
-        driverVehicleId,
+      // Step 2: Fetch last check-in details
+      const lastCheckinDetails = await checkoutService.fetchLastCheckInDetails({
+        driver_vehicle_id: driverVehicleId,
+        category: Login_Type_Enum.CheckIn,
       });
 
-      console.log('Check-out successful');
-      // The service will handle sign out after successful checkout
+      if (!lastCheckinDetails) {
+        Alert.alert(
+          'Check-in Required',
+          'No active check-in found. Please check in first before attempting to checkout.',
+        );
+        return;
+      }
+
+      // Step 3: Get driver name from store
+      const driverDetails = checkinStore.getState().driverDetails;
+      const firstName = driverDetails?.first_name || '';
+      const middleName = driverDetails?.middle_name || '';
+      const lastName = driverDetails?.last_name || '';
+      const driverName = `${firstName} ${middleName} ${lastName}`.trim() || 'Driver';
+
+      // Step 4: Prepare checkout data
+      const checkoutData = {
+        is_active: true,
+        location: `(${lng},${lat})`,
+        name: driverName,
+        odometer: '0',
+        totallizer: '0',
+        parent_id: lastCheckinDetails.id,
+        category: Login_Type_Enum.CheckOut,
+        driver_vehicle_id: driverVehicleId,
+        driver_duty_photos: {
+          data: [
+            {
+              category: Photo_Type_Enum.SelfieEnd,
+              is_active: true,
+              url: selfieStoreUrl,
+            },
+            {
+              category: Photo_Type_Enum.RefuellerStart,
+              is_active: true,
+              url: refuellerStoreUrl,
+            },
+          ],
+        },
+      };
+
+      // Step 5: Execute checkout
+      const response = await checkoutService.driverCheckOut({ object: checkoutData });
+
+      if (response) {
+        // Step 6: Update vehicle state
+        await checkinService.updateDriverVehicleStateById({
+          id: driverVehicleId,
+          state: Login_Type_Enum.CheckOut,
+          status: Partner_Vehicle_State_Enum.OffDuty,
+        });
+
+        // Step 7: Clear store
+        checkoutStore.setState({
+          selfieImageData: null,
+          selfieStoreUrl: null,
+          refuellerImageData: null,
+          refuellerStoreUrl: null,
+          isCheckedOut: true,
+          loaders: {
+            isSelfieImageUploading: false,
+            isRefuellerImageUploading: false,
+            isCheckingOut: false,
+          },
+        });
+
+        // Step 8: Success message
+        Toast.show({
+          type: 'success',
+          text1: 'Checkout Successful',
+          text2: 'You have been checked out. Logging out...',
+        });
+
+        // Step 9: Sign out after 2 seconds
+        setTimeout(async () => {
+          await signOut();
+        }, 2000);
+      }
     } catch (error) {
       console.error('Check-out failed:', error);
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error occurred';
-      Alert.alert(
-        'Check-out Failed',
-        `Error: ${errorMessage}\n\nPlease try again.`,
-      );
+      Toast.show({
+        type: 'error',
+        text1: 'Checkout Failed',
+        text2: errorMessage,
+      });
     } finally {
       stopLoader('isCheckingOut');
     }
