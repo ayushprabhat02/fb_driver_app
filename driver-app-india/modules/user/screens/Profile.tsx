@@ -13,6 +13,8 @@ import Modal from 'react-native-modal';
 import {ScaledSheet} from 'react-native-size-matters';
 import Toast from 'react-native-toast-message';
 import * as z from 'zod';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 
 // store
 import {authStore} from '@/globalStore';
@@ -44,6 +46,9 @@ import {
   FBColors,
 } from '@/types/styles';
 import {Trash} from 'phosphor-react-native';
+import { ProtectedStackParamList } from '@/navigator';
+
+type ProfileScreenNavigationProp = StackNavigationProp<ProtectedStackParamList, 'user'>;
 
 //zod schema for validation
 const schema = z.object({
@@ -71,6 +76,7 @@ const schema = z.object({
 type FormFields = z.infer<typeof schema>;
 
 const Profile: React.FC = () => {
+  const navigation = useNavigation<ProfileScreenNavigationProp>();
   const loggedInUser = userStore.use.loggedInUser();
   const customerSegmentationList = userStore.use.customerSegmentationList();
   const xHasuraId = authStore.use.xHasuraId();
@@ -399,7 +405,11 @@ const Profile: React.FC = () => {
                   Cancel
                 </Button>
                 <Button
-                  onPress={signOut}
+                  onPress={() => {
+                    setDeleteModalVisible(false);
+                    // Navigate to checkout page for user tracking before logout
+                    navigation.navigate('checkout');
+                  }}
                   variant="solid"
                   style={{
                     backgroundColor: FBColors.error,

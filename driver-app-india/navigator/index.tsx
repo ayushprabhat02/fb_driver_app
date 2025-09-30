@@ -19,6 +19,9 @@ import {
   CheckinNavigator,
 } from './containers';
 
+// Add CheckoutNavigator
+import CheckoutNavigator from '@/modules/checkout/navigator';
+
 //store
 import {authStore} from '@/globalStore';
 
@@ -37,6 +40,8 @@ export type ProtectedStackParamList = {
   order: undefined;
   settings: undefined;
   user: undefined;
+  checkin: undefined;
+  checkout: undefined; // Add checkout to the param list
 };
 export type Props = StackScreenProps<ProtectedStackParamList, 'home'>;
 
@@ -82,6 +87,7 @@ const ProtectedNavigator: React.FC<Props> = () => {
         <ProtectedStack.Screen name="support" component={SupportNavigator} />
         <ProtectedStack.Screen name="user" component={UserNavigator} />
         <ProtectedStack.Screen name="checkin" component={CheckinNavigator} />
+        <ProtectedStack.Screen name="checkout" component={CheckoutNavigator} />
       </ProtectedStack.Navigator>
     </Provider>
   );

@@ -3,6 +3,7 @@ import { ScrollView, View } from 'react-native';
 import React, { useCallback, useEffect } from 'react';
 import { ScaledSheet } from 'react-native-size-matters';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 
 // services
 import { signOut } from '@/modules/auth/services';
@@ -19,13 +20,16 @@ import { settingsOptions } from '../data/settings';
 import { FBBackground, FBBorders, FBColors } from '@/types/styles';
 import { UserService } from '@/services';
 import userService from '@/modules/user/services';
+import { ProtectedStackParamList } from '@/navigator';
+
+type SettingsScreenNavigationProp = StackNavigationProp<ProtectedStackParamList, 'settings'>;
 
 const Settings: React.FC = () => {
   useEffect(() => {
     // UserService.getUserProfile();
   }, []);
 
-  const navigation = useNavigation();
+  const navigation = useNavigation<SettingsScreenNavigationProp>();
 
   type NavigateProps = {
     title: string;
@@ -51,6 +55,12 @@ const Settings: React.FC = () => {
     } catch (error) {
       console.error('Failed to fetch profile:', error);
     }
+  };
+
+  // Modified logout function to navigate to checkout instead of directly signing out
+  const handleLogout = () => {
+    // Navigate to checkout page for user tracking before logout
+    navigation.navigate('checkout');
   };
 
   // useFocusEffect(
@@ -85,7 +95,7 @@ const Settings: React.FC = () => {
             }}
             color={FBColors.error}
             bgColor={FBBackground.shellPink}
-            onPress={signOut}
+            onPress={handleLogout}
             borderWidth={0}
           />
         </View>

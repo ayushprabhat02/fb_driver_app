@@ -8,3 +8,4 @@ export {default as OrderNavigator} from './Order';
 export {default as UserNavigator} from './User';
 export {default as SupportNavigator} from './Support';
 export {default as CheckinNavigator} from './CheckinPage';
+export {default as CheckoutNavigator} from '@/modules/checkout/navigator';

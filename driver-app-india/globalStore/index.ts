@@ -10,3 +10,4 @@ export { default as supportStore } from '@/modules/support/store';
 export { default as locationStore } from '@/modules/location/store';
 export { default as checkinStore } from '@/modules/checkin/store';
 export { default as locationTrackingStore } from '@/modules/location/store/locationTrackingStore';
+export { default as checkoutStore } from '@/modules/checkout/store';
