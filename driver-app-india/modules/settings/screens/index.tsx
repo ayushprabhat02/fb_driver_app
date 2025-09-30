@@ -45,6 +45,11 @@ const Settings: React.FC = () => {
     navigation.navigate(setting?.module);
   };
 
+  const handleLogout = () => {
+    // @ts-ignore
+    navigation.navigate('checkout', { screen: 'CheckoutPage' });
+  };
+
   const fetchMyProfile = async () => {
     try {
       await userService.fetchMyProfile();
@@ -80,12 +85,13 @@ const Settings: React.FC = () => {
           <SettingsCard
             settings={{
               icon: 'logout',
-              module: 'auth',
+              module: 'checkout',
+              screen: 'CheckoutPage',
               title: 'Logout',
             }}
             color={FBColors.error}
             bgColor={FBBackground.shellPink}
-            onPress={signOut}
+            onPress={handleLogout}
             borderWidth={0}
           />
         </View>

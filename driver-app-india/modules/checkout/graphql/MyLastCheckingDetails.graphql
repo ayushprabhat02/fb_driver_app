@@ -1,0 +1,22 @@
+query MyLastCheckingDetails(
+  $driver_vehicle_id: uuid
+  $category: login_type_enum = CHECK_IN
+) {
+  driver_duty_log(
+    where: {
+      driver_vehicle_id: {_eq: $driver_vehicle_id}
+      category: {_eq: $category}
+      is_active: {_eq: true}
+    }
+    offset: 0
+    limit: 1
+    order_by: {created_at: desc_nulls_last}
+  ) {
+    id
+    driver_vehicle_id
+    is_active
+    loginTime
+    location
+    name
+  }
+}

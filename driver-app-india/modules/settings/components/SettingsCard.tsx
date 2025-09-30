@@ -20,6 +20,7 @@ interface SettingsCardProps {
     title: string;
     icon: string;
     module: string;
+    screen?: string;
   };
   color?: string;
   bgColor?: string;

@@ -1,0 +1,44 @@
+mutation driverCheckOut($object: driver_duty_log_insert_input!) {
+  insert_driver_duty_log_one(object: $object) {
+    driver_duty_photos {
+      id
+      is_active
+      driver_duty_log_id
+      category
+      url
+    }
+    id
+    is_active
+    location
+    loginTime
+    name
+    odometer
+    category
+    totallizer
+    driver_vehicle_id
+  }
+}
+
+# {
+#     "object": {
+#         "is_active": true,
+#         "location": "(25.2048,55.2708)",
+#         "name": "Shobhit1",
+#         "odometer": "1000",
+#         "driver_vehicle_id": "578773cc-5c2f-4ab2-a27f-7e8d89dc650a",
+#         "totallizer": "1000",
+#         "category": "CHECK_OUT",
+#         "parent_id" : "",
+#         "driver_duty_photos": {
+#             "data": [{
+#                 "category": "TOTALIZER",
+#                 "is_active": true,
+#                 "url": "https://jbt-en-images.s3.ap-south-1.amazonaws.com/wp-content/uploads/2021/09/09141434/most-beautiful-south-indian.jpg"
+#             }, {
+#                 "category": "ODOMETER",
+#                 "is_active": true,
+#                 "url": "https://jbt-en-images.s3.ap-south-1.amazonaws.com/wp-content/uploads/2021/09/09141434/most-beautiful-south-indian.jpg"
+#             }]
+#         }
+#     }
+# }

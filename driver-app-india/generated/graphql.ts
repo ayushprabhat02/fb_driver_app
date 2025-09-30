@@ -297,6 +297,18 @@ export type FetchCustomerOrderItemSlotsByIdOutput = {
   start_time?: Maybe<Scalars['timetz']['output']>;
 };
 
+export type FetchMultipleInvoiceInput = {
+  invoices: Array<InvoiceItem>;
+};
+
+export type FetchMultipleInvoiceOutput = {
+  __typename?: 'FetchMultipleInvoiceOutput';
+  code: Scalars['Int']['output'];
+  data: Array<InvoiceResult>;
+  error?: Maybe<Scalars['String']['output']>;
+  message: Scalars['String']['output'];
+};
+
 export type FileInput = {
   fileUrl: Scalars['String']['input'];
 };
@@ -379,6 +391,19 @@ export type Int_Comparison_Exp = {
   _lte?: InputMaybe<Scalars['Int']['input']>;
   _neq?: InputMaybe<Scalars['Int']['input']>;
   _nin?: InputMaybe<Array<Scalars['Int']['input']>>;
+};
+
+export type InvoiceItem = {
+  isPickup?: InputMaybe<Scalars['Boolean']['input']>;
+  sales_invoice_erp_code: Scalars['String']['input'];
+};
+
+export type InvoiceResult = {
+  __typename?: 'InvoiceResult';
+  data?: Maybe<Scalars['String']['output']>;
+  error?: Maybe<Scalars['String']['output']>;
+  sales_invoice_erp_code: Scalars['String']['output'];
+  success: Scalars['Boolean']['output'];
 };
 
 export type PayThroughWalletInput = {
@@ -499,6 +524,28 @@ export type PointOfContactInvoiceReportInput = {
 export type PointOfContactInvoiceReportOutput = {
   __typename?: 'PointOfContactInvoiceReportOutput';
   data: Array<PointOfContactInvoiceReportData>;
+};
+
+export type PointOfContactPageReportInput = {
+  city?: InputMaybe<Scalars['String']['input']>;
+  organization_id: Scalars['uuid']['input'];
+  state?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type PointOfContactPageReportOutput = {
+  __typename?: 'PointOfContactPageReportOutput';
+  data: Array<PointOfContactPageUser>;
+};
+
+export type PointOfContactPageUser = {
+  __typename?: 'PointOfContactPageUser';
+  address_line1?: Maybe<Scalars['String']['output']>;
+  city_name?: Maybe<Scalars['String']['output']>;
+  email?: Maybe<Scalars['String']['output']>;
+  first_name?: Maybe<Scalars['String']['output']>;
+  last_name?: Maybe<Scalars['String']['output']>;
+  phone_number?: Maybe<Scalars['String']['output']>;
+  state_name?: Maybe<Scalars['String']['output']>;
 };
 
 export type PointOfContactPaymentReportData = {
@@ -24041,6 +24088,15 @@ export type FetchAddressTitleForIndusOutput = {
   data?: Maybe<Scalars['jsonb']['output']>;
 };
 
+export type FetchAllIndusTechniciansInput = {
+  city?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+};
+
+export type FetchAllIndusTechniciansOutput = {
+  __typename?: 'fetchAllIndusTechniciansOutput';
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
 export type FetchAllSiteCountsInput = {
   circle?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
   city?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
@@ -24392,6 +24448,20 @@ export type FetchErpBalanceQtyByVehicleRegNumberOutput = {
   data?: Maybe<Scalars['jsonb']['output']>;
   error?: Maybe<Scalars['String']['output']>;
   message?: Maybe<Scalars['String']['output']>;
+};
+
+export type FetchErpCodesByTechnicianNamesInput = {
+  city?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  estimate_delivery_date_end?: InputMaybe<Scalars['timestamp']['input']>;
+  estimate_delivery_date_start?: InputMaybe<Scalars['timestamp']['input']>;
+  task_state?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  technician_names?: InputMaybe<Array<Scalars['String']['input']>>;
+  technician_numbers?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+export type FetchErpCodesByTechnicianNamesOutput = {
+  __typename?: 'fetchErpCodesByTechnicianNamesOutput';
+  data?: Maybe<Scalars['jsonb']['output']>;
 };
 
 export type FetchFilteredOrdersByCityInput = {
@@ -25154,6 +25224,15 @@ export type FetchTasksOrderQtyByVehicleIdInput = {
 
 export type FetchTasksOrderQtyByVehicleIdOutput = {
   __typename?: 'fetchTasksOrderQtyByVehicleIdOutput';
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
+export type FetchTechnicianDataByErpCodesInput = {
+  erp_codes: Array<Scalars['String']['input']>;
+};
+
+export type FetchTechnicianDataByErpCodesOutput = {
+  __typename?: 'fetchTechnicianDataByErpCodesOutput';
   data?: Maybe<Scalars['jsonb']['output']>;
 };
 
@@ -27129,6 +27208,7 @@ export type Filtered_Orders_Dashboard = {
   order_id?: Maybe<Scalars['uuid']['output']>;
   order_source_of_creation?: Maybe<Scalars['String']['output']>;
   order_state?: Maybe<Scalars['String']['output']>;
+  organization_address_location?: Maybe<Scalars['point']['output']>;
   organization_id?: Maybe<Scalars['uuid']['output']>;
   organization_name?: Maybe<Scalars['String']['output']>;
   organization_user_id?: Maybe<Scalars['uuid']['output']>;
@@ -27144,6 +27224,7 @@ export type Filtered_Orders_Dashboard = {
   start_time?: Maybe<Scalars['timetz']['output']>;
   tanker_capacity?: Maybe<Scalars['Int']['output']>;
   task_id?: Maybe<Scalars['uuid']['output']>;
+  task_last_modified?: Maybe<Scalars['timestamp']['output']>;
   task_rank_id?: Maybe<Scalars['Int']['output']>;
   task_state?: Maybe<Scalars['String']['output']>;
   third_party_gps?: Maybe<Scalars['String']['output']>;
@@ -27235,6 +27316,7 @@ export type Filtered_Orders_Dashboard_Bool_Exp = {
   order_id?: InputMaybe<Uuid_Comparison_Exp>;
   order_source_of_creation?: InputMaybe<String_Comparison_Exp>;
   order_state?: InputMaybe<String_Comparison_Exp>;
+  organization_address_location?: InputMaybe<Point_Comparison_Exp>;
   organization_id?: InputMaybe<Uuid_Comparison_Exp>;
   organization_name?: InputMaybe<String_Comparison_Exp>;
   organization_user_id?: InputMaybe<Uuid_Comparison_Exp>;
@@ -27250,6 +27332,7 @@ export type Filtered_Orders_Dashboard_Bool_Exp = {
   start_time?: InputMaybe<Timetz_Comparison_Exp>;
   tanker_capacity?: InputMaybe<Int_Comparison_Exp>;
   task_id?: InputMaybe<Uuid_Comparison_Exp>;
+  task_last_modified?: InputMaybe<Timestamp_Comparison_Exp>;
   task_rank_id?: InputMaybe<Int_Comparison_Exp>;
   task_state?: InputMaybe<String_Comparison_Exp>;
   third_party_gps?: InputMaybe<String_Comparison_Exp>;
@@ -27305,6 +27388,7 @@ export type Filtered_Orders_Dashboard_Max_Fields = {
   start_time?: Maybe<Scalars['timetz']['output']>;
   tanker_capacity?: Maybe<Scalars['Int']['output']>;
   task_id?: Maybe<Scalars['uuid']['output']>;
+  task_last_modified?: Maybe<Scalars['timestamp']['output']>;
   task_rank_id?: Maybe<Scalars['Int']['output']>;
   task_state?: Maybe<Scalars['String']['output']>;
   third_party_gps?: Maybe<Scalars['String']['output']>;
@@ -27360,6 +27444,7 @@ export type Filtered_Orders_Dashboard_Min_Fields = {
   start_time?: Maybe<Scalars['timetz']['output']>;
   tanker_capacity?: Maybe<Scalars['Int']['output']>;
   task_id?: Maybe<Scalars['uuid']['output']>;
+  task_last_modified?: Maybe<Scalars['timestamp']['output']>;
   task_rank_id?: Maybe<Scalars['Int']['output']>;
   task_state?: Maybe<Scalars['String']['output']>;
   third_party_gps?: Maybe<Scalars['String']['output']>;
@@ -27404,6 +27489,7 @@ export type Filtered_Orders_Dashboard_Order_By = {
   order_id?: InputMaybe<Order_By>;
   order_source_of_creation?: InputMaybe<Order_By>;
   order_state?: InputMaybe<Order_By>;
+  organization_address_location?: InputMaybe<Order_By>;
   organization_id?: InputMaybe<Order_By>;
   organization_name?: InputMaybe<Order_By>;
   organization_user_id?: InputMaybe<Order_By>;
@@ -27419,6 +27505,7 @@ export type Filtered_Orders_Dashboard_Order_By = {
   start_time?: InputMaybe<Order_By>;
   tanker_capacity?: InputMaybe<Order_By>;
   task_id?: InputMaybe<Order_By>;
+  task_last_modified?: InputMaybe<Order_By>;
   task_rank_id?: InputMaybe<Order_By>;
   task_state?: InputMaybe<Order_By>;
   third_party_gps?: InputMaybe<Order_By>;
@@ -27498,6 +27585,8 @@ export enum Filtered_Orders_Dashboard_Select_Column {
   /** column name */
   OrderState = 'order_state',
   /** column name */
+  OrganizationAddressLocation = 'organization_address_location',
+  /** column name */
   OrganizationId = 'organization_id',
   /** column name */
   OrganizationName = 'organization_name',
@@ -27527,6 +27616,8 @@ export enum Filtered_Orders_Dashboard_Select_Column {
   TankerCapacity = 'tanker_capacity',
   /** column name */
   TaskId = 'task_id',
+  /** column name */
+  TaskLastModified = 'task_last_modified',
   /** column name */
   TaskRankId = 'task_rank_id',
   /** column name */
@@ -27627,6 +27718,7 @@ export type Filtered_Orders_Dashboard_Stream_Cursor_Value_Input = {
   order_id?: InputMaybe<Scalars['uuid']['input']>;
   order_source_of_creation?: InputMaybe<Scalars['String']['input']>;
   order_state?: InputMaybe<Scalars['String']['input']>;
+  organization_address_location?: InputMaybe<Scalars['point']['input']>;
   organization_id?: InputMaybe<Scalars['uuid']['input']>;
   organization_name?: InputMaybe<Scalars['String']['input']>;
   organization_user_id?: InputMaybe<Scalars['uuid']['input']>;
@@ -27642,6 +27734,7 @@ export type Filtered_Orders_Dashboard_Stream_Cursor_Value_Input = {
   start_time?: InputMaybe<Scalars['timetz']['input']>;
   tanker_capacity?: InputMaybe<Scalars['Int']['input']>;
   task_id?: InputMaybe<Scalars['uuid']['input']>;
+  task_last_modified?: InputMaybe<Scalars['timestamp']['input']>;
   task_rank_id?: InputMaybe<Scalars['Int']['input']>;
   task_state?: InputMaybe<Scalars['String']['input']>;
   third_party_gps?: InputMaybe<Scalars['String']['input']>;
@@ -38544,6 +38637,7 @@ export type Mutation_Root = {
   fetchCustomerOrderDashboradData?: Maybe<CustomerOrderDataOutput>;
   fetchCustomerOrderItemSlotsById?: Maybe<FetchCustomerOrderItemSlotsByIdOutput>;
   fetchIssueList?: Maybe<FetchIssueListOutput>;
+  fetchMultipleInvoicesPdf: FetchMultipleInvoiceOutput;
   fetchOrderStatsForDriver?: Maybe<FetchOrderStatsForDriverOutput>;
   fetchOrderStatsForDriverV1?: Maybe<FetchOrderStatsForDriverV1Output>;
   fetchOrderStatsForDriverV2?: Maybe<FetchOrderStatsForDriverV2Output>;
@@ -44243,6 +44337,12 @@ export type Mutation_RootFetchCustomerOrderItemSlotsByIdArgs = {
 /** mutation root */
 export type Mutation_RootFetchIssueListArgs = {
   object: FetchIssueListInput;
+};
+
+
+/** mutation root */
+export type Mutation_RootFetchMultipleInvoicesPdfArgs = {
+  object: FetchMultipleInvoiceInput;
 };
 
 
@@ -89645,6 +89745,7 @@ export type Query_Root = {
   fetchActiveZones?: Maybe<FetchActiveZonesOutput>;
   fetchActiveZonesv1?: Maybe<FetchActiveZonesv1Output>;
   fetchAddressTitleForIndus?: Maybe<FetchAddressTitleForIndusOutput>;
+  fetchAllIndusTechnicians?: Maybe<FetchAllIndusTechniciansOutput>;
   fetchAllSiteCounts?: Maybe<FetchAllSiteCountsOutput>;
   fetchAllTrucksWithSiteId?: Maybe<FetchAllTrucksWithSiteIdOutput>;
   fetchAvailableInventoryForTowerReport?: Maybe<FetchAvailableInventoryForTowerReportOutput>;
@@ -89679,6 +89780,7 @@ export type Query_Root = {
   fetchDriverVehicleLocationByIds?: Maybe<FetchDriverVehicleLocationByIdsOutput>;
   fetchDriverVehicleLocationsWithFilters?: Maybe<FetchDriverVehicleLocationsWithFiltersOutput>;
   fetchERPBalanceQtyByVehicleRegNumber?: Maybe<FetchErpBalanceQtyByVehicleRegNumberOutput>;
+  fetchErpCodesByTechnicianNames?: Maybe<FetchErpCodesByTechnicianNamesOutput>;
   fetchFile?: Maybe<FileOutput>;
   fetchFilteredOrdersByCity?: Maybe<FetchFilteredOrdersByCityOutput>;
   fetchFilteredOrdersByTruckAndTaskState?: Maybe<FetchFilteredOrdersByTruckAndTaskStateOutput>;
@@ -89733,6 +89835,7 @@ export type Query_Root = {
   fetchSupplierVehicleForTowerBussinessReport?: Maybe<FetchSupplierVehicleForTowerBussinessReportOutput>;
   fetchTaskValueForCustomerAsset?: Maybe<FetchTaskValueForCustomerAssetOutput>;
   fetchTasksOrderQtyByVehicleId?: Maybe<FetchTasksOrderQtyByVehicleIdOutput>;
+  fetchTechnicianDataByErpCodes?: Maybe<FetchTechnicianDataByErpCodesOutput>;
   fetchThirdPartyDataForPartner?: Maybe<FetchThirdPartyDataForPartnerOutput>;
   fetchTrucksByCity?: Maybe<FetchTrucksByCityOutput>;
   fetchUserDetails?: Maybe<UserDetailsOutput>;
@@ -90418,6 +90521,7 @@ export type Query_Root = {
   pointOfContactDashboardReschedule?: Maybe<PointOfContactDashboardRescheduleOutput>;
   pointOfContactDetailedReport?: Maybe<PointOfContactDetailedReportOutput>;
   pointOfContactInvoiceReport?: Maybe<PointOfContactInvoiceReportOutput>;
+  pointOfContactPageReport?: Maybe<PointOfContactPageReportOutput>;
   pointOfContactPaymentReport?: Maybe<PointOfContactPaymentReportOutput>;
   /** fetch data from the table: "product" */
   product: Array<Product>;
@@ -92565,6 +92669,11 @@ export type Query_RootFetchActiveZonesv1Args = {
 };
 
 
+export type Query_RootFetchAllIndusTechniciansArgs = {
+  object: FetchAllIndusTechniciansInput;
+};
+
+
 export type Query_RootFetchAllSiteCountsArgs = {
   object: FetchAllSiteCountsInput;
 };
@@ -92702,6 +92811,11 @@ export type Query_RootFetchDriverVehicleLocationsWithFiltersArgs = {
 
 export type Query_RootFetchErpBalanceQtyByVehicleRegNumberArgs = {
   object?: InputMaybe<FetchErpBalanceQtyByVehicleRegNumberInput>;
+};
+
+
+export type Query_RootFetchErpCodesByTechnicianNamesArgs = {
+  object: FetchErpCodesByTechnicianNamesInput;
 };
 
 
@@ -92937,6 +93051,11 @@ export type Query_RootFetchTaskValueForCustomerAssetArgs = {
 
 export type Query_RootFetchTasksOrderQtyByVehicleIdArgs = {
   object?: InputMaybe<FetchTasksOrderQtyByVehicleIdInput>;
+};
+
+
+export type Query_RootFetchTechnicianDataByErpCodesArgs = {
+  object: FetchTechnicianDataByErpCodesInput;
 };
 
 
@@ -95616,6 +95735,11 @@ export type Query_RootPointOfContactDetailedReportArgs = {
 
 export type Query_RootPointOfContactInvoiceReportArgs = {
   object: PointOfContactInvoiceReportInput;
+};
+
+
+export type Query_RootPointOfContactPageReportArgs = {
+  object: PointOfContactPageReportInput;
 };
 
 
@@ -130157,6 +130281,21 @@ export type UpdateDriverVehicleStateByIdMutationVariables = Exact<{
 
 export type UpdateDriverVehicleStateByIdMutation = { __typename?: 'mutation_root', update_driver_vehicle_by_pk?: { __typename?: 'driver_vehicle', status?: Partner_Vehicle_State_Enum | null, id: any, driver_id: any, state?: Login_Type_Enum | null } | null };
 
+export type MyLastCheckingDetailsQueryVariables = Exact<{
+  driver_vehicle_id?: InputMaybe<Scalars['uuid']['input']>;
+  category?: InputMaybe<Login_Type_Enum>;
+}>;
+
+
+export type MyLastCheckingDetailsQuery = { __typename?: 'query_root', driver_duty_log: Array<{ __typename?: 'driver_duty_log', id: any, driver_vehicle_id?: any | null, is_active: boolean, loginTime?: any | null, location?: any | null, name: string }> };
+
+export type DriverCheckOutMutationVariables = Exact<{
+  object: Driver_Duty_Log_Insert_Input;
+}>;
+
+
+export type DriverCheckOutMutation = { __typename?: 'mutation_root', insert_driver_duty_log_one?: { __typename?: 'driver_duty_log', id: any, is_active: boolean, location?: any | null, loginTime?: any | null, name: string, odometer: string, category: Login_Type_Enum, totallizer: string, driver_vehicle_id?: any | null, driver_duty_photos: Array<{ __typename?: 'driver_duty_photos', id: any, is_active: boolean, driver_duty_log_id: any, category: Photo_Type_Enum, url: string }> } | null };
+
 export type CheckWalletAmountExistMutationVariables = Exact<{
   object: CheckWalletAmountExitsInput;
 }>;
@@ -130785,6 +130924,8 @@ export const DriverCheckInDocument = {"kind":"Document","definitions":[{"kind":"
 export const FetchDriverVehicleIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"fetchDriverVehicleId"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"dateTime"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"timestamp"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"shift_schedule"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"end_time"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_gte"},"value":{"kind":"Variable","name":{"kind":"Name","value":"dateTime"}}}]}}]}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"1"}},{"kind":"Argument","name":{"kind":"Name","value":"offset"},"value":{"kind":"IntValue","value":"0"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"driver_vehicle_id"}},{"kind":"Field","name":{"kind":"Name","value":"end_time"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"start_time"}},{"kind":"Field","name":{"kind":"Name","value":"driver_vehicle"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"driver_id"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"state"}}]}}]}}]}}]} as unknown as DocumentNode<FetchDriverVehicleIdQuery, FetchDriverVehicleIdQueryVariables>;
 export const GetDriverVehicleDetailsByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getDriverVehicleDetailsById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"driver_vehicle_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"uuid"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"driver_vehicle_by_pk"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"driver_vehicle_id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"license_number"}}]}},{"kind":"Field","name":{"kind":"Name","value":"vehicle"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"fuel_tank_capacity"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"is_mothership"}},{"kind":"Field","name":{"kind":"Name","value":"location"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"registration_number"}},{"kind":"Field","name":{"kind":"Name","value":"tanker_capacity"}},{"kind":"Field","name":{"kind":"Name","value":"tanker_compartment_number"}},{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"vehicle_type"}},{"kind":"Field","name":{"kind":"Name","value":"vehicle_tank_types"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"tank_type"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}}]}},{"kind":"Field","name":{"kind":"Name","value":"tank_type_id"}},{"kind":"Field","name":{"kind":"Name","value":"vehicle_tank_type_product_variations"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"product_variation"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"expiry_date"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"price"}},{"kind":"Field","name":{"kind":"Name","value":"product_id"}},{"kind":"Field","name":{"kind":"Name","value":"variation"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"pack_size"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"variation_type"}}]}},{"kind":"Field","name":{"kind":"Name","value":"variation_id"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"totalizer_reading"}}]}}]}}]}}]} as unknown as DocumentNode<GetDriverVehicleDetailsByIdQuery, GetDriverVehicleDetailsByIdQueryVariables>;
 export const UpdateDriverVehicleStateByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"updateDriverVehicleStateById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"uuid"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"state"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"login_type_enum"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"status"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"partner_vehicle_state_enum"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"update_driver_vehicle_by_pk"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"pk_columns"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}},{"kind":"Argument","name":{"kind":"Name","value":"_set"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"state"},"value":{"kind":"Variable","name":{"kind":"Name","value":"state"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"status"},"value":{"kind":"Variable","name":{"kind":"Name","value":"status"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"driver_id"}},{"kind":"Field","name":{"kind":"Name","value":"state"}}]}}]}}]} as unknown as DocumentNode<UpdateDriverVehicleStateByIdMutation, UpdateDriverVehicleStateByIdMutationVariables>;
+export const MyLastCheckingDetailsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"MyLastCheckingDetails"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"driver_vehicle_id"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"uuid"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"category"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"login_type_enum"}},"defaultValue":{"kind":"EnumValue","value":"CHECK_IN"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"driver_duty_log"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"driver_vehicle_id"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_eq"},"value":{"kind":"Variable","name":{"kind":"Name","value":"driver_vehicle_id"}}}]}},{"kind":"ObjectField","name":{"kind":"Name","value":"category"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_eq"},"value":{"kind":"Variable","name":{"kind":"Name","value":"category"}}}]}},{"kind":"ObjectField","name":{"kind":"Name","value":"is_active"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_eq"},"value":{"kind":"BooleanValue","value":true}}]}}]}},{"kind":"Argument","name":{"kind":"Name","value":"offset"},"value":{"kind":"IntValue","value":"0"}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"1"}},{"kind":"Argument","name":{"kind":"Name","value":"order_by"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"created_at"},"value":{"kind":"EnumValue","value":"desc_nulls_last"}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"driver_vehicle_id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"loginTime"}},{"kind":"Field","name":{"kind":"Name","value":"location"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]} as unknown as DocumentNode<MyLastCheckingDetailsQuery, MyLastCheckingDetailsQueryVariables>;
+export const DriverCheckOutDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"driverCheckOut"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"object"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"driver_duty_log_insert_input"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"insert_driver_duty_log_one"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"object"},"value":{"kind":"Variable","name":{"kind":"Name","value":"object"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"driver_duty_photos"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"driver_duty_log_id"}},{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"url"}}]}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"location"}},{"kind":"Field","name":{"kind":"Name","value":"loginTime"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"odometer"}},{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"totallizer"}},{"kind":"Field","name":{"kind":"Name","value":"driver_vehicle_id"}}]}}]}}]} as unknown as DocumentNode<DriverCheckOutMutation, DriverCheckOutMutationVariables>;
 export const CheckWalletAmountExistDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"checkWalletAmountExist"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"object"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"checkWalletAmountExitsInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"checkWalletAmountExits"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"object"},"value":{"kind":"Variable","name":{"kind":"Name","value":"object"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"block_amount"}},{"kind":"Field","name":{"kind":"Name","value":"amount"}},{"kind":"Field","name":{"kind":"Name","value":"is_amount_available"}},{"kind":"Field","name":{"kind":"Name","value":"organization_user_id"}},{"kind":"Field","name":{"kind":"Name","value":"wallet_id"}},{"kind":"Field","name":{"kind":"Name","value":"is_invoice_pending"}}]}}]}}]} as unknown as DocumentNode<CheckWalletAmountExistMutation, CheckWalletAmountExistMutationVariables>;
 export const CreateDeliveryOrderDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"createDeliveryOrder"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"object"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"customer_order_insert_input"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"insert_customer_order_one"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"object"},"value":{"kind":"Variable","name":{"kind":"Name","value":"object"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"amount"}},{"kind":"Field","name":{"kind":"Name","value":"amount_paid"}},{"kind":"Field","name":{"kind":"Name","value":"amount_to_be_paid"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"delivery_fee"}},{"kind":"Field","name":{"kind":"Name","value":"is_prepaid"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"order_date"}},{"kind":"Field","name":{"kind":"Name","value":"service_tax"}},{"kind":"Field","name":{"kind":"Name","value":"tax"}},{"kind":"Field","name":{"kind":"Name","value":"category"}}]}}]}}]} as unknown as DocumentNode<CreateDeliveryOrderMutation, CreateDeliveryOrderMutationVariables>;
 export const FetchDeliveryDatesWithSlotsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"fetchDeliveryDatesWithSlots"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"date"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"date"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"latitude"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Float"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"longitude"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Float"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"product_variation_partner_localities_slots"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"day_date"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_gte"},"value":{"kind":"Variable","name":{"kind":"Name","value":"date"}}}]}},{"kind":"ObjectField","name":{"kind":"Name","value":"partner_locality"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"locality"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"area"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_st_contains"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"type"},"value":{"kind":"StringValue","value":"Point","block":false}},{"kind":"ObjectField","name":{"kind":"Name","value":"coordinates"},"value":{"kind":"ListValue","values":[{"kind":"Variable","name":{"kind":"Name","value":"longitude"}},{"kind":"Variable","name":{"kind":"Name","value":"latitude"}}]}}]}}]}}]}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"is_express_delivery_enable"}},{"kind":"Field","name":{"kind":"Name","value":"express_delivery_fee"}},{"kind":"Field","name":{"kind":"Name","value":"day_date"}},{"kind":"Field","name":{"kind":"Name","value":"end_time"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"is_visible"}},{"kind":"Field","name":{"kind":"Name","value":"order_limit"}},{"kind":"Field","name":{"kind":"Name","value":"partner_locality"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"partner"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}},{"kind":"Field","name":{"kind":"Name","value":"locality"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"state_localities"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"numeric_code_id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"zone_name"}},{"kind":"Field","name":{"kind":"Name","value":"partner_id"}}]}},{"kind":"Field","name":{"kind":"Name","value":"product_variation_id"}},{"kind":"Field","name":{"kind":"Name","value":"start_time"}},{"kind":"Field","name":{"kind":"Name","value":"product_variation"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"expiry_date"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"price"}},{"kind":"Field","name":{"kind":"Name","value":"product_id"}},{"kind":"Field","name":{"kind":"Name","value":"variation_id"}}]}}]}}]}}]} as unknown as DocumentNode<FetchDeliveryDatesWithSlotsQuery, FetchDeliveryDatesWithSlotsQueryVariables>;
