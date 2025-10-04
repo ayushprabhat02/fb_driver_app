@@ -5,6 +5,7 @@ import Toast from 'react-native-toast-message';
 import {authStore, checkinStore} from '@/globalStore';
 import {initializeClient} from '@/utils/client';
 import {clearDriverVehicleId} from '@/utils/localStorage';
+import {shiftValidator} from '@/services/ShiftValidator';
 
 const errorMessage = (message: string) => {
   if (message.includes('auth/too-many-requests')) {
@@ -164,6 +165,10 @@ export const checkHasuraId = (token: FirebaseAuthTypes.IdTokenResult) => {
 
 export const signOut = async () => {
   try {
+    // Stop shift validation before clearing auth state
+    console.log('[signOut] Stopping shift validator');
+    shiftValidator.stop();
+
     // Clear any locally persisted check-in state so next login starts from check-in
     clearDriverVehicleId();
     checkinStore.getState().resetCheckinStore();

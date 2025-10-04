@@ -13,7 +13,10 @@ import './utils/ignoreWarnings';
 import { createStackNavigator } from '@react-navigation/stack';
 
 // store
-import { authStore, splashStore, locationTrackingStore } from './globalStore';
+import { authStore, splashStore, locationTrackingStore, checkinStore } from './globalStore';
+
+// services
+import { shiftValidator } from '@/services/ShiftValidator';
 
 // services
 
@@ -43,7 +46,52 @@ function App(): React.JSX.Element {
     locationTrackingStore.getState().initialize();
   }, [initializeSplash]);
 
-  // Periodic shift validation moved to HomeLandingPage.tsx to only run when on home screen
+  // ========================================
+  // SHIFT VALIDATION - App Level (Global)
+  // ========================================
+  useEffect(() => {
+    // Subscribe to auth and checkin store changes
+    const unsubscribe = authStore.subscribe((state) => {
+      const isAuthenticated = !!state.graphQLClient;
+      const driverVehicleId = checkinStore.getState().driverVehicleId;
+
+      if (isAuthenticated && driverVehicleId) {
+        console.log('[App] Starting shift validation for driver vehicle:', driverVehicleId);
+        shiftValidator.start(driverVehicleId);
+      } else {
+        console.log('[App] Stopping shift validation (not authenticated or no driver vehicle)');
+        shiftValidator.stop();
+      }
+    });
+
+    // Also subscribe to checkin store for driver vehicle ID changes
+    const unsubscribeCheckin = checkinStore.subscribe((state) => {
+      const isAuthenticated = !!authStore.getState().graphQLClient;
+      const driverVehicleId = state.driverVehicleId;
+
+      if (isAuthenticated && driverVehicleId) {
+        console.log('[App] Starting shift validation for driver vehicle:', driverVehicleId);
+        shiftValidator.start(driverVehicleId);
+      } else {
+        console.log('[App] Stopping shift validation (no driver vehicle)');
+        shiftValidator.stop();
+      }
+    });
+
+    // Check initial state and start if already authenticated
+    const authState = authStore.getState();
+    const checkinState = checkinStore.getState();
+    if (authState.graphQLClient && checkinState.driverVehicleId) {
+      console.log('[App] Initial start of shift validation for:', checkinState.driverVehicleId);
+      shiftValidator.start(checkinState.driverVehicleId);
+    }
+
+    return () => {
+      unsubscribe();
+      unsubscribeCheckin();
+      shiftValidator.stop();
+    };
+  }, []);
 
   /**
    * If the app is still loading, show the splash screen.

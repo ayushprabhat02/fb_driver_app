@@ -1,9 +1,5 @@
 query fetchDriverVehicleId($dateTime: timestamp) {
-  shift_schedule(
-    where: {end_time: {_gte: $dateTime}}
-    limit: 1
-    offset: 0
-  ) {
+  shift_schedule(where: {end_time: {_gte: $dateTime}, start_time: {_lte: $dateTime}}, limit: 1, offset: 0) {
     driver_vehicle_id
     end_time
     id

@@ -29,6 +29,7 @@ import {check, PERMISSIONS, request, RESULTS} from 'react-native-permissions';
 import {ImageContainer} from '../components';
 import checkinService from '../services';
 import {LoaderTypes} from '../store';
+import { DateTime } from 'luxon';
 
 type RootStackParamList = {
   home: undefined;
@@ -164,7 +165,8 @@ const CheckinPage: React.FC = () => {
     const initializeCheckin = async () => {
       try {
         startLoader('isDriverVehicleIdLoading');
-        const dateTime = new Date().toISOString();
+         const currentTime = DateTime.now();
+        const dateTime = currentTime.toFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
 
         // Fetch driver vehicle ID first
         await checkinService.fetchDriverVehicleId({dateTime});

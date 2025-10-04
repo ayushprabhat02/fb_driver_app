@@ -297,6 +297,18 @@ export type FetchCustomerOrderItemSlotsByIdOutput = {
   start_time?: Maybe<Scalars['timetz']['output']>;
 };
 
+export type FetchMultipleInvoiceInput = {
+  invoices: Array<InvoiceItem>;
+};
+
+export type FetchMultipleInvoiceOutput = {
+  __typename?: 'FetchMultipleInvoiceOutput';
+  code: Scalars['Int']['output'];
+  data: Array<InvoiceResult>;
+  error?: Maybe<Scalars['String']['output']>;
+  message: Scalars['String']['output'];
+};
+
 export type FileInput = {
   fileUrl: Scalars['String']['input'];
 };
@@ -381,6 +393,19 @@ export type Int_Comparison_Exp = {
   _nin?: InputMaybe<Array<Scalars['Int']['input']>>;
 };
 
+export type InvoiceItem = {
+  isPickup?: InputMaybe<Scalars['Boolean']['input']>;
+  sales_invoice_erp_code: Scalars['String']['input'];
+};
+
+export type InvoiceResult = {
+  __typename?: 'InvoiceResult';
+  data?: Maybe<Scalars['String']['output']>;
+  error?: Maybe<Scalars['String']['output']>;
+  sales_invoice_erp_code: Scalars['String']['output'];
+  success: Scalars['Boolean']['output'];
+};
+
 export type PayThroughWalletInput = {
   amount: Scalars['numeric']['input'];
   order_id: Scalars['uuid']['input'];
@@ -408,8 +433,10 @@ export type PointOfContactDashboardData = {
 
 export type PointOfContactDashboardInput = {
   city?: InputMaybe<Scalars['String']['input']>;
-  delivered_date?: InputMaybe<Scalars['String']['input']>;
-  ordered_date?: InputMaybe<Scalars['String']['input']>;
+  delivery_date_from?: InputMaybe<Scalars['String']['input']>;
+  delivery_date_to?: InputMaybe<Scalars['String']['input']>;
+  order_date_from?: InputMaybe<Scalars['String']['input']>;
+  order_date_to?: InputMaybe<Scalars['String']['input']>;
   org_id: Scalars['String']['input'];
   point_of_contact?: InputMaybe<Scalars['String']['input']>;
 };
@@ -427,8 +454,10 @@ export type PointOfContactDashboardRescheduleData = {
 
 export type PointOfContactDashboardRescheduleInput = {
   city?: InputMaybe<Scalars['String']['input']>;
-  delivered_date?: InputMaybe<Scalars['String']['input']>;
-  ordered_date?: InputMaybe<Scalars['String']['input']>;
+  delivery_date_from?: InputMaybe<Scalars['String']['input']>;
+  delivery_date_to?: InputMaybe<Scalars['String']['input']>;
+  order_date_from?: InputMaybe<Scalars['String']['input']>;
+  order_date_to?: InputMaybe<Scalars['String']['input']>;
   org_id: Scalars['String']['input'];
   point_of_contact?: InputMaybe<Scalars['String']['input']>;
 };
@@ -460,8 +489,10 @@ export type PointOfContactDetailedReportData = {
 
 export type PointOfContactDetailedReportInput = {
   city?: InputMaybe<Scalars['String']['input']>;
-  delivered_date?: InputMaybe<Scalars['String']['input']>;
-  ordered_date?: InputMaybe<Scalars['String']['input']>;
+  delivery_date_from?: InputMaybe<Scalars['String']['input']>;
+  delivery_date_to?: InputMaybe<Scalars['String']['input']>;
+  order_date_from?: InputMaybe<Scalars['String']['input']>;
+  order_date_to?: InputMaybe<Scalars['String']['input']>;
   org_id: Scalars['String']['input'];
   point_of_contact?: InputMaybe<Scalars['String']['input']>;
 };
@@ -490,8 +521,10 @@ export type PointOfContactInvoiceReportData = {
 
 export type PointOfContactInvoiceReportInput = {
   city?: InputMaybe<Scalars['String']['input']>;
-  delivered_date?: InputMaybe<Scalars['String']['input']>;
-  ordered_date?: InputMaybe<Scalars['String']['input']>;
+  delivery_date_from?: InputMaybe<Scalars['String']['input']>;
+  delivery_date_to?: InputMaybe<Scalars['String']['input']>;
+  order_date_from?: InputMaybe<Scalars['String']['input']>;
+  order_date_to?: InputMaybe<Scalars['String']['input']>;
   org_id: Scalars['String']['input'];
   point_of_contact?: InputMaybe<Scalars['String']['input']>;
 };
@@ -499,6 +532,28 @@ export type PointOfContactInvoiceReportInput = {
 export type PointOfContactInvoiceReportOutput = {
   __typename?: 'PointOfContactInvoiceReportOutput';
   data: Array<PointOfContactInvoiceReportData>;
+};
+
+export type PointOfContactPageReportInput = {
+  city?: InputMaybe<Scalars['String']['input']>;
+  organization_id: Scalars['uuid']['input'];
+  state?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type PointOfContactPageReportOutput = {
+  __typename?: 'PointOfContactPageReportOutput';
+  data: Array<PointOfContactPageUser>;
+};
+
+export type PointOfContactPageUser = {
+  __typename?: 'PointOfContactPageUser';
+  address_line1?: Maybe<Scalars['String']['output']>;
+  city_name?: Maybe<Scalars['String']['output']>;
+  email?: Maybe<Scalars['String']['output']>;
+  first_name?: Maybe<Scalars['String']['output']>;
+  last_name?: Maybe<Scalars['String']['output']>;
+  phone_number?: Maybe<Scalars['String']['output']>;
+  state_name?: Maybe<Scalars['String']['output']>;
 };
 
 export type PointOfContactPaymentReportData = {
@@ -24041,6 +24096,15 @@ export type FetchAddressTitleForIndusOutput = {
   data?: Maybe<Scalars['jsonb']['output']>;
 };
 
+export type FetchAllIndusTechniciansInput = {
+  city?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+};
+
+export type FetchAllIndusTechniciansOutput = {
+  __typename?: 'fetchAllIndusTechniciansOutput';
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
 export type FetchAllSiteCountsInput = {
   circle?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
   city?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
@@ -24124,6 +24188,21 @@ export type FetchCumulativeInqueueOrdersAndQtyInput = {
 
 export type FetchCumulativeInqueueOrdersAndQtyOutput = {
   __typename?: 'fetchCumulativeInqueueOrdersAndQtyOutput';
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
+export type FetchCumulativeInqueueOrdersAndQtyV1Input = {
+  address?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  circle?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  cities?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  customer_ids?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  end_date: Scalars['timestamp']['input'];
+  site_type?: InputMaybe<Scalars['String']['input']>;
+  start_date: Scalars['timestamp']['input'];
+};
+
+export type FetchCumulativeInqueueOrdersAndQtyV1Output = {
+  __typename?: 'fetchCumulativeInqueueOrdersAndQtyV1Output';
   data?: Maybe<Scalars['jsonb']['output']>;
 };
 
@@ -24394,6 +24473,20 @@ export type FetchErpBalanceQtyByVehicleRegNumberOutput = {
   message?: Maybe<Scalars['String']['output']>;
 };
 
+export type FetchErpCodesByTechnicianNamesInput = {
+  city?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  estimate_delivery_date_end?: InputMaybe<Scalars['timestamp']['input']>;
+  estimate_delivery_date_start?: InputMaybe<Scalars['timestamp']['input']>;
+  task_state?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  technician_names?: InputMaybe<Array<Scalars['String']['input']>>;
+  technician_numbers?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+export type FetchErpCodesByTechnicianNamesOutput = {
+  __typename?: 'fetchErpCodesByTechnicianNamesOutput';
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
 export type FetchFilteredOrdersByCityInput = {
   city_id?: InputMaybe<Scalars['uuid']['input']>;
   driver_vehicle_id?: InputMaybe<Array<InputMaybe<Scalars['uuid']['input']>>>;
@@ -24535,6 +24628,21 @@ export type FetchInqueueOrdersAndQtyForMonthOutput = {
   data?: Maybe<Scalars['jsonb']['output']>;
 };
 
+export type FetchInqueueOrdersAndQtyForMonthV1Input = {
+  address?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  circle?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  cities?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  customer_ids?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  end_date: Scalars['timestamp']['input'];
+  site_type?: InputMaybe<Scalars['String']['input']>;
+  start_date: Scalars['timestamp']['input'];
+};
+
+export type FetchInqueueOrdersAndQtyForMonthV1Output = {
+  __typename?: 'fetchInqueueOrdersAndQtyForMonthV1Output';
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
 export type FetchInqueueOrdersAndQtyWithDatesInput = {
   address?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
   circle?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
@@ -24547,6 +24655,21 @@ export type FetchInqueueOrdersAndQtyWithDatesInput = {
 
 export type FetchInqueueOrdersAndQtyWithDatesOutput = {
   __typename?: 'fetchInqueueOrdersAndQtyWithDatesOutput';
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
+export type FetchInqueueOrdersAndQtyWithDatesV1Input = {
+  address?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  circle?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  cities?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  customer_ids?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  end_date: Scalars['timestamp']['input'];
+  site_type?: InputMaybe<Scalars['String']['input']>;
+  start_date: Scalars['timestamp']['input'];
+};
+
+export type FetchInqueueOrdersAndQtyWithDatesV1Output = {
+  __typename?: 'fetchInqueueOrdersAndQtyWithDatesV1Output';
   data?: Maybe<Scalars['jsonb']['output']>;
 };
 
@@ -25154,6 +25277,15 @@ export type FetchTasksOrderQtyByVehicleIdInput = {
 
 export type FetchTasksOrderQtyByVehicleIdOutput = {
   __typename?: 'fetchTasksOrderQtyByVehicleIdOutput';
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
+export type FetchTechnicianDataByErpCodesInput = {
+  erp_codes: Array<Scalars['String']['input']>;
+};
+
+export type FetchTechnicianDataByErpCodesOutput = {
+  __typename?: 'fetchTechnicianDataByErpCodesOutput';
   data?: Maybe<Scalars['jsonb']['output']>;
 };
 
@@ -27129,6 +27261,7 @@ export type Filtered_Orders_Dashboard = {
   order_id?: Maybe<Scalars['uuid']['output']>;
   order_source_of_creation?: Maybe<Scalars['String']['output']>;
   order_state?: Maybe<Scalars['String']['output']>;
+  organization_address_location?: Maybe<Scalars['point']['output']>;
   organization_id?: Maybe<Scalars['uuid']['output']>;
   organization_name?: Maybe<Scalars['String']['output']>;
   organization_user_id?: Maybe<Scalars['uuid']['output']>;
@@ -27144,6 +27277,7 @@ export type Filtered_Orders_Dashboard = {
   start_time?: Maybe<Scalars['timetz']['output']>;
   tanker_capacity?: Maybe<Scalars['Int']['output']>;
   task_id?: Maybe<Scalars['uuid']['output']>;
+  task_last_modified?: Maybe<Scalars['timestamp']['output']>;
   task_rank_id?: Maybe<Scalars['Int']['output']>;
   task_state?: Maybe<Scalars['String']['output']>;
   third_party_gps?: Maybe<Scalars['String']['output']>;
@@ -27235,6 +27369,7 @@ export type Filtered_Orders_Dashboard_Bool_Exp = {
   order_id?: InputMaybe<Uuid_Comparison_Exp>;
   order_source_of_creation?: InputMaybe<String_Comparison_Exp>;
   order_state?: InputMaybe<String_Comparison_Exp>;
+  organization_address_location?: InputMaybe<Point_Comparison_Exp>;
   organization_id?: InputMaybe<Uuid_Comparison_Exp>;
   organization_name?: InputMaybe<String_Comparison_Exp>;
   organization_user_id?: InputMaybe<Uuid_Comparison_Exp>;
@@ -27250,6 +27385,7 @@ export type Filtered_Orders_Dashboard_Bool_Exp = {
   start_time?: InputMaybe<Timetz_Comparison_Exp>;
   tanker_capacity?: InputMaybe<Int_Comparison_Exp>;
   task_id?: InputMaybe<Uuid_Comparison_Exp>;
+  task_last_modified?: InputMaybe<Timestamp_Comparison_Exp>;
   task_rank_id?: InputMaybe<Int_Comparison_Exp>;
   task_state?: InputMaybe<String_Comparison_Exp>;
   third_party_gps?: InputMaybe<String_Comparison_Exp>;
@@ -27305,6 +27441,7 @@ export type Filtered_Orders_Dashboard_Max_Fields = {
   start_time?: Maybe<Scalars['timetz']['output']>;
   tanker_capacity?: Maybe<Scalars['Int']['output']>;
   task_id?: Maybe<Scalars['uuid']['output']>;
+  task_last_modified?: Maybe<Scalars['timestamp']['output']>;
   task_rank_id?: Maybe<Scalars['Int']['output']>;
   task_state?: Maybe<Scalars['String']['output']>;
   third_party_gps?: Maybe<Scalars['String']['output']>;
@@ -27360,6 +27497,7 @@ export type Filtered_Orders_Dashboard_Min_Fields = {
   start_time?: Maybe<Scalars['timetz']['output']>;
   tanker_capacity?: Maybe<Scalars['Int']['output']>;
   task_id?: Maybe<Scalars['uuid']['output']>;
+  task_last_modified?: Maybe<Scalars['timestamp']['output']>;
   task_rank_id?: Maybe<Scalars['Int']['output']>;
   task_state?: Maybe<Scalars['String']['output']>;
   third_party_gps?: Maybe<Scalars['String']['output']>;
@@ -27404,6 +27542,7 @@ export type Filtered_Orders_Dashboard_Order_By = {
   order_id?: InputMaybe<Order_By>;
   order_source_of_creation?: InputMaybe<Order_By>;
   order_state?: InputMaybe<Order_By>;
+  organization_address_location?: InputMaybe<Order_By>;
   organization_id?: InputMaybe<Order_By>;
   organization_name?: InputMaybe<Order_By>;
   organization_user_id?: InputMaybe<Order_By>;
@@ -27419,6 +27558,7 @@ export type Filtered_Orders_Dashboard_Order_By = {
   start_time?: InputMaybe<Order_By>;
   tanker_capacity?: InputMaybe<Order_By>;
   task_id?: InputMaybe<Order_By>;
+  task_last_modified?: InputMaybe<Order_By>;
   task_rank_id?: InputMaybe<Order_By>;
   task_state?: InputMaybe<Order_By>;
   third_party_gps?: InputMaybe<Order_By>;
@@ -27498,6 +27638,8 @@ export enum Filtered_Orders_Dashboard_Select_Column {
   /** column name */
   OrderState = 'order_state',
   /** column name */
+  OrganizationAddressLocation = 'organization_address_location',
+  /** column name */
   OrganizationId = 'organization_id',
   /** column name */
   OrganizationName = 'organization_name',
@@ -27527,6 +27669,8 @@ export enum Filtered_Orders_Dashboard_Select_Column {
   TankerCapacity = 'tanker_capacity',
   /** column name */
   TaskId = 'task_id',
+  /** column name */
+  TaskLastModified = 'task_last_modified',
   /** column name */
   TaskRankId = 'task_rank_id',
   /** column name */
@@ -27627,6 +27771,7 @@ export type Filtered_Orders_Dashboard_Stream_Cursor_Value_Input = {
   order_id?: InputMaybe<Scalars['uuid']['input']>;
   order_source_of_creation?: InputMaybe<Scalars['String']['input']>;
   order_state?: InputMaybe<Scalars['String']['input']>;
+  organization_address_location?: InputMaybe<Scalars['point']['input']>;
   organization_id?: InputMaybe<Scalars['uuid']['input']>;
   organization_name?: InputMaybe<Scalars['String']['input']>;
   organization_user_id?: InputMaybe<Scalars['uuid']['input']>;
@@ -27642,6 +27787,7 @@ export type Filtered_Orders_Dashboard_Stream_Cursor_Value_Input = {
   start_time?: InputMaybe<Scalars['timetz']['input']>;
   tanker_capacity?: InputMaybe<Scalars['Int']['input']>;
   task_id?: InputMaybe<Scalars['uuid']['input']>;
+  task_last_modified?: InputMaybe<Scalars['timestamp']['input']>;
   task_rank_id?: InputMaybe<Scalars['Int']['input']>;
   task_state?: InputMaybe<Scalars['String']['input']>;
   third_party_gps?: InputMaybe<Scalars['String']['input']>;
@@ -38544,6 +38690,7 @@ export type Mutation_Root = {
   fetchCustomerOrderDashboradData?: Maybe<CustomerOrderDataOutput>;
   fetchCustomerOrderItemSlotsById?: Maybe<FetchCustomerOrderItemSlotsByIdOutput>;
   fetchIssueList?: Maybe<FetchIssueListOutput>;
+  fetchMultipleInvoicesPdf: FetchMultipleInvoiceOutput;
   fetchOrderStatsForDriver?: Maybe<FetchOrderStatsForDriverOutput>;
   fetchOrderStatsForDriverV1?: Maybe<FetchOrderStatsForDriverV1Output>;
   fetchOrderStatsForDriverV2?: Maybe<FetchOrderStatsForDriverV2Output>;
@@ -44243,6 +44390,12 @@ export type Mutation_RootFetchCustomerOrderItemSlotsByIdArgs = {
 /** mutation root */
 export type Mutation_RootFetchIssueListArgs = {
   object: FetchIssueListInput;
+};
+
+
+/** mutation root */
+export type Mutation_RootFetchMultipleInvoicesPdfArgs = {
+  object: FetchMultipleInvoiceInput;
 };
 
 
@@ -89645,6 +89798,7 @@ export type Query_Root = {
   fetchActiveZones?: Maybe<FetchActiveZonesOutput>;
   fetchActiveZonesv1?: Maybe<FetchActiveZonesv1Output>;
   fetchAddressTitleForIndus?: Maybe<FetchAddressTitleForIndusOutput>;
+  fetchAllIndusTechnicians?: Maybe<FetchAllIndusTechniciansOutput>;
   fetchAllSiteCounts?: Maybe<FetchAllSiteCountsOutput>;
   fetchAllTrucksWithSiteId?: Maybe<FetchAllTrucksWithSiteIdOutput>;
   fetchAvailableInventoryForTowerReport?: Maybe<FetchAvailableInventoryForTowerReportOutput>;
@@ -89654,6 +89808,7 @@ export type Query_Root = {
   fetchCityForCircleAndUser?: Maybe<FetchCityForCircleAndUserOutput>;
   fetchCityForIndus?: Maybe<FetchCityForIndusOutput>;
   fetchCumulativeInqueueOrdersAndQty?: Maybe<FetchCumulativeInqueueOrdersAndQtyOutput>;
+  fetchCumulativeInqueueOrdersAndQtyV1?: Maybe<FetchCumulativeInqueueOrdersAndQtyV1Output>;
   fetchCustomerAddress?: Maybe<FetchCustomerAddressOutput>;
   fetchCustomerDeliveryOrders?: Maybe<FetchCustomerDeliveryOrdersOutput>;
   fetchCustomerIdsReport?: Maybe<FetchCustomerIdsReportOutput>;
@@ -89679,6 +89834,7 @@ export type Query_Root = {
   fetchDriverVehicleLocationByIds?: Maybe<FetchDriverVehicleLocationByIdsOutput>;
   fetchDriverVehicleLocationsWithFilters?: Maybe<FetchDriverVehicleLocationsWithFiltersOutput>;
   fetchERPBalanceQtyByVehicleRegNumber?: Maybe<FetchErpBalanceQtyByVehicleRegNumberOutput>;
+  fetchErpCodesByTechnicianNames?: Maybe<FetchErpCodesByTechnicianNamesOutput>;
   fetchFile?: Maybe<FileOutput>;
   fetchFilteredOrdersByCity?: Maybe<FetchFilteredOrdersByCityOutput>;
   fetchFilteredOrdersByTruckAndTaskState?: Maybe<FetchFilteredOrdersByTruckAndTaskStateOutput>;
@@ -89692,7 +89848,9 @@ export type Query_Root = {
   fetchIndustryFuelAndReadingComplianceReportv1?: Maybe<FetchIndustryFuelAndReadingComplianceReportv1Output>;
   fetchIndustryFuelDeviationForecastReport?: Maybe<FetchIndustryFuelDeviationForecastReportOutput>;
   fetchInqueueOrdersAndQtyForMonth?: Maybe<FetchInqueueOrdersAndQtyForMonthOutput>;
+  fetchInqueueOrdersAndQtyForMonthV1?: Maybe<FetchInqueueOrdersAndQtyForMonthV1Output>;
   fetchInqueueOrdersAndQtyWithDates?: Maybe<FetchInqueueOrdersAndQtyWithDatesOutput>;
+  fetchInqueueOrdersAndQtyWithDatesV1?: Maybe<FetchInqueueOrdersAndQtyWithDatesV1Output>;
   fetchLiveStreamDataForUser?: Maybe<FetchLiveStreamDataForUserOutput>;
   fetchMonthlyComplianceReport?: Maybe<FetchMonthlyComplianceReportOutput>;
   fetchNearFillingStation?: Maybe<FetchNearFillingStationOutput>;
@@ -89733,6 +89891,7 @@ export type Query_Root = {
   fetchSupplierVehicleForTowerBussinessReport?: Maybe<FetchSupplierVehicleForTowerBussinessReportOutput>;
   fetchTaskValueForCustomerAsset?: Maybe<FetchTaskValueForCustomerAssetOutput>;
   fetchTasksOrderQtyByVehicleId?: Maybe<FetchTasksOrderQtyByVehicleIdOutput>;
+  fetchTechnicianDataByErpCodes?: Maybe<FetchTechnicianDataByErpCodesOutput>;
   fetchThirdPartyDataForPartner?: Maybe<FetchThirdPartyDataForPartnerOutput>;
   fetchTrucksByCity?: Maybe<FetchTrucksByCityOutput>;
   fetchUserDetails?: Maybe<UserDetailsOutput>;
@@ -90418,6 +90577,7 @@ export type Query_Root = {
   pointOfContactDashboardReschedule?: Maybe<PointOfContactDashboardRescheduleOutput>;
   pointOfContactDetailedReport?: Maybe<PointOfContactDetailedReportOutput>;
   pointOfContactInvoiceReport?: Maybe<PointOfContactInvoiceReportOutput>;
+  pointOfContactPageReport?: Maybe<PointOfContactPageReportOutput>;
   pointOfContactPaymentReport?: Maybe<PointOfContactPaymentReportOutput>;
   /** fetch data from the table: "product" */
   product: Array<Product>;
@@ -90516,6 +90676,7 @@ export type Query_Root = {
   /** fetch data from the table: "reasons" using primary key columns */
   reasons_by_pk?: Maybe<Reasons>;
   rescheduledOrdersReport?: Maybe<RescheduledOrdersReportOutput>;
+  rescheduledOrdersReportV1?: Maybe<RescheduledOrdersReportV1Output>;
   /** fetch data from the table: "role" */
   role: Array<Role>;
   /** fetch aggregated fields from the table: "role" */
@@ -92565,6 +92726,11 @@ export type Query_RootFetchActiveZonesv1Args = {
 };
 
 
+export type Query_RootFetchAllIndusTechniciansArgs = {
+  object: FetchAllIndusTechniciansInput;
+};
+
+
 export type Query_RootFetchAllSiteCountsArgs = {
   object: FetchAllSiteCountsInput;
 };
@@ -92597,6 +92763,11 @@ export type Query_RootFetchCityForIndusArgs = {
 
 export type Query_RootFetchCumulativeInqueueOrdersAndQtyArgs = {
   object: FetchCumulativeInqueueOrdersAndQtyInput;
+};
+
+
+export type Query_RootFetchCumulativeInqueueOrdersAndQtyV1Args = {
+  object: FetchCumulativeInqueueOrdersAndQtyV1Input;
 };
 
 
@@ -92705,6 +92876,11 @@ export type Query_RootFetchErpBalanceQtyByVehicleRegNumberArgs = {
 };
 
 
+export type Query_RootFetchErpCodesByTechnicianNamesArgs = {
+  object: FetchErpCodesByTechnicianNamesInput;
+};
+
+
 export type Query_RootFetchFileArgs = {
   file: FileInput;
 };
@@ -92765,8 +92941,18 @@ export type Query_RootFetchInqueueOrdersAndQtyForMonthArgs = {
 };
 
 
+export type Query_RootFetchInqueueOrdersAndQtyForMonthV1Args = {
+  object: FetchInqueueOrdersAndQtyForMonthV1Input;
+};
+
+
 export type Query_RootFetchInqueueOrdersAndQtyWithDatesArgs = {
   object: FetchInqueueOrdersAndQtyWithDatesInput;
+};
+
+
+export type Query_RootFetchInqueueOrdersAndQtyWithDatesV1Args = {
+  object: FetchInqueueOrdersAndQtyWithDatesV1Input;
 };
 
 
@@ -92937,6 +93123,11 @@ export type Query_RootFetchTaskValueForCustomerAssetArgs = {
 
 export type Query_RootFetchTasksOrderQtyByVehicleIdArgs = {
   object?: InputMaybe<FetchTasksOrderQtyByVehicleIdInput>;
+};
+
+
+export type Query_RootFetchTechnicianDataByErpCodesArgs = {
+  object: FetchTechnicianDataByErpCodesInput;
 };
 
 
@@ -95619,6 +95810,11 @@ export type Query_RootPointOfContactInvoiceReportArgs = {
 };
 
 
+export type Query_RootPointOfContactPageReportArgs = {
+  object: PointOfContactPageReportInput;
+};
+
+
 export type Query_RootPointOfContactPaymentReportArgs = {
   object: PointOfContactPaymentReportInput;
 };
@@ -95994,6 +96190,11 @@ export type Query_RootReasons_By_PkArgs = {
 
 export type Query_RootRescheduledOrdersReportArgs = {
   object: RescheduledOrdersReportInput;
+};
+
+
+export type Query_RootRescheduledOrdersReportV1Args = {
+  object: RescheduledOrdersReportV1Input;
 };
 
 
@@ -98344,6 +98545,21 @@ export type RescheduledOrdersReportInput = {
 
 export type RescheduledOrdersReportOutput = {
   __typename?: 'rescheduledOrdersReportOutput';
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
+export type RescheduledOrdersReportV1Input = {
+  address?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  circle?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  cities?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  customer_ids?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  end_date: Scalars['timestamp']['input'];
+  site_type?: InputMaybe<Scalars['String']['input']>;
+  start_date: Scalars['timestamp']['input'];
+};
+
+export type RescheduledOrdersReportV1Output = {
+  __typename?: 'rescheduledOrdersReportV1Output';
   data?: Maybe<Scalars['jsonb']['output']>;
 };
 
@@ -130782,7 +130998,7 @@ export type UpdateUserProfileMutation = { __typename?: 'mutation_root', update_u
 
 
 export const DriverCheckInDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"driverCheckIn"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"object"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"driver_duty_log_insert_input"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"insert_driver_duty_log_one"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"object"},"value":{"kind":"Variable","name":{"kind":"Name","value":"object"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"driver_duty_photos"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"driver_duty_log_id"}},{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"url"}}]}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"location"}},{"kind":"Field","name":{"kind":"Name","value":"loginTime"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"odometer"}},{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"totallizer"}},{"kind":"Field","name":{"kind":"Name","value":"driver_vehicle_id"}}]}}]}}]} as unknown as DocumentNode<DriverCheckInMutation, DriverCheckInMutationVariables>;
-export const FetchDriverVehicleIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"fetchDriverVehicleId"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"dateTime"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"timestamp"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"shift_schedule"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"end_time"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_gte"},"value":{"kind":"Variable","name":{"kind":"Name","value":"dateTime"}}}]}}]}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"1"}},{"kind":"Argument","name":{"kind":"Name","value":"offset"},"value":{"kind":"IntValue","value":"0"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"driver_vehicle_id"}},{"kind":"Field","name":{"kind":"Name","value":"end_time"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"start_time"}},{"kind":"Field","name":{"kind":"Name","value":"driver_vehicle"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"driver_id"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"state"}}]}}]}}]}}]} as unknown as DocumentNode<FetchDriverVehicleIdQuery, FetchDriverVehicleIdQueryVariables>;
+export const FetchDriverVehicleIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"fetchDriverVehicleId"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"dateTime"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"timestamp"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"shift_schedule"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"end_time"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_gte"},"value":{"kind":"Variable","name":{"kind":"Name","value":"dateTime"}}}]}},{"kind":"ObjectField","name":{"kind":"Name","value":"start_time"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_lte"},"value":{"kind":"Variable","name":{"kind":"Name","value":"dateTime"}}}]}}]}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"1"}},{"kind":"Argument","name":{"kind":"Name","value":"offset"},"value":{"kind":"IntValue","value":"0"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"driver_vehicle_id"}},{"kind":"Field","name":{"kind":"Name","value":"end_time"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"start_time"}},{"kind":"Field","name":{"kind":"Name","value":"driver_vehicle"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"driver_id"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"state"}}]}}]}}]}}]} as unknown as DocumentNode<FetchDriverVehicleIdQuery, FetchDriverVehicleIdQueryVariables>;
 export const GetDriverVehicleDetailsByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"getDriverVehicleDetailsById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"driver_vehicle_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"uuid"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"driver_vehicle_by_pk"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"driver_vehicle_id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"license_number"}}]}},{"kind":"Field","name":{"kind":"Name","value":"vehicle"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"fuel_tank_capacity"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"is_mothership"}},{"kind":"Field","name":{"kind":"Name","value":"location"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"registration_number"}},{"kind":"Field","name":{"kind":"Name","value":"tanker_capacity"}},{"kind":"Field","name":{"kind":"Name","value":"tanker_compartment_number"}},{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"vehicle_type"}},{"kind":"Field","name":{"kind":"Name","value":"vehicle_tank_types"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"tank_type"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}}]}},{"kind":"Field","name":{"kind":"Name","value":"tank_type_id"}},{"kind":"Field","name":{"kind":"Name","value":"vehicle_tank_type_product_variations"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"product_variation"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"expiry_date"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"price"}},{"kind":"Field","name":{"kind":"Name","value":"product_id"}},{"kind":"Field","name":{"kind":"Name","value":"variation"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"pack_size"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"variation_type"}}]}},{"kind":"Field","name":{"kind":"Name","value":"variation_id"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"totalizer_reading"}}]}}]}}]}}]} as unknown as DocumentNode<GetDriverVehicleDetailsByIdQuery, GetDriverVehicleDetailsByIdQueryVariables>;
 export const UpdateDriverVehicleStateByIdDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"updateDriverVehicleStateById"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"uuid"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"state"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"login_type_enum"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"status"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"partner_vehicle_state_enum"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"update_driver_vehicle_by_pk"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"pk_columns"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}]}},{"kind":"Argument","name":{"kind":"Name","value":"_set"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"state"},"value":{"kind":"Variable","name":{"kind":"Name","value":"state"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"status"},"value":{"kind":"Variable","name":{"kind":"Name","value":"status"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"driver_id"}},{"kind":"Field","name":{"kind":"Name","value":"state"}}]}}]}}]} as unknown as DocumentNode<UpdateDriverVehicleStateByIdMutation, UpdateDriverVehicleStateByIdMutationVariables>;
 export const CheckWalletAmountExistDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"checkWalletAmountExist"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"object"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"checkWalletAmountExitsInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"checkWalletAmountExits"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"object"},"value":{"kind":"Variable","name":{"kind":"Name","value":"object"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"block_amount"}},{"kind":"Field","name":{"kind":"Name","value":"amount"}},{"kind":"Field","name":{"kind":"Name","value":"is_amount_available"}},{"kind":"Field","name":{"kind":"Name","value":"organization_user_id"}},{"kind":"Field","name":{"kind":"Name","value":"wallet_id"}},{"kind":"Field","name":{"kind":"Name","value":"is_invoice_pending"}}]}}]}}]} as unknown as DocumentNode<CheckWalletAmountExistMutation, CheckWalletAmountExistMutationVariables>;

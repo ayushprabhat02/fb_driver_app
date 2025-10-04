@@ -44,7 +44,6 @@ import homeService from '../services';
 import userService from '@/modules/user/services';
 import fillupService from '@/modules/fillupRequest/services';
 import fillupStore from '@/modules/fillupRequest/store';
-import {setupShiftValidation} from '@/utils/shiftValidation';
 
 const HomeLandingPage: React.FC = () => {
   const [refreshing, setRefreshing] = React.useState(false);
@@ -73,7 +72,6 @@ const HomeLandingPage: React.FC = () => {
   const resetDeliveryStore = deliveryStore.use.resetDeliveryStore();
 
   const flatListRef = useRef<FlatList>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     requestAppPermissions().then(response => {
@@ -123,13 +121,6 @@ const HomeLandingPage: React.FC = () => {
     }, []),
   );
 
-  // Set up periodic validation only when this screen is focused
-  useFocusEffect(
-    useCallback(() => {
-      const cleanup = setupShiftValidation(driverVehicleId, intervalRef);
-      return cleanup;
-    }, [driverVehicleId]),
-  );
 
   // Refresh data when screen comes into focus
   useFocusEffect(
