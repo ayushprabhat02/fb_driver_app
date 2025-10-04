@@ -12,6 +12,7 @@ import {FBBackground, FBColors} from '@/types/styles';
 import {commonInputStyles} from '@/styles';
 import {orderStore, checkinStore} from '@/globalStore';
 import {ImageContainer} from '@/modules/checkin/components';
+import {VehicleInfoCard} from '../components';
 import {RNCamera} from 'react-native-camera';
 import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
 import supportService from '@/modules/support/services';
@@ -149,6 +150,14 @@ const UploadImageAsset: React.FC = () => {
       // Mark order dispensing if arrived (following Vue.js pattern)
       if (currentFillupOrder?.state === 'ARRIVED') {
         await orderService.markOrderDispensing({id: currentFillupOrder?.id});
+
+        // Update order state in store
+        orderStore.setState(state => ({
+          ...state,
+          currentFillupOrder: state.currentFillupOrder
+            ? {...state.currentFillupOrder, state: 'DISPENSING' as any}
+            : null,
+        }));
       }
 
       // Set totalizer before reading in store
@@ -274,11 +283,86 @@ const UploadImageAsset: React.FC = () => {
     );
   }
 
+  // Get order status color (matching FillupOrderCard styling)
+  const getOrderStatusColor = (state: string) => {
+    switch (state?.toUpperCase()) {
+      case 'DISPENSING':
+        return {
+          backgroundColor: '#fee2e2',
+          textColor: '#991b1b',
+          borderColor: '#fecaca',
+        };
+      case 'ASSIGNED':
+        return {
+          backgroundColor: '#dbeafe',
+          textColor: '#1e40af',
+          borderColor: '#bfdbfe',
+        };
+      case 'IN_TRANSIT':
+        return {
+          backgroundColor: '#fef3c7',
+          textColor: '#92400e',
+          borderColor: '#fde68a',
+        };
+      case 'ARRIVED':
+        return {
+          backgroundColor: '#dcfce7',
+          textColor: '#166534',
+          borderColor: '#bbf7d0',
+        };
+      case 'APPROVED':
+        return {
+          backgroundColor: '#dbeafe',
+          textColor: '#1e40af',
+          borderColor: '#bfdbfe',
+        };
+      default:
+        return {
+          backgroundColor: '#f3f4f6',
+          textColor: '#1f2937',
+          borderColor: '#e5e7eb',
+        };
+    }
+  };
+
+  // Get vehicle information for the card
+  const getVehicleInfo = () => {
+    if (currentFillupOrder?.fillup_requests?.length > 0) {
+      const fillupRequest = currentFillupOrder.fillup_requests[0];
+      return {
+        vehicleName: fillupRequest.driver_vehicle?.vehicle?.name || 'Unknown Vehicle',
+        tankTypeName: fillupRequest.vehicle_tank_type_product_variation?.vehicle_tank_type?.tank_type?.name || 'Unknown Tank',
+        requestedQuantity: fillupRequest.quantity_approved || fillupRequest.quantity || 0,
+      };
+    }
+    return {
+      vehicleName: 'Unknown Vehicle',
+      tankTypeName: 'Unknown Tank',
+      requestedQuantity: 0,
+    };
+  };
+
+  const vehicleInfo = getVehicleInfo();
+  const orderState = currentFillupOrder?.state || 'PENDING';
+  const statusColor = getOrderStatusColor(orderState);
+
   return (
     <HeaderAvoidingContainer paddingHorizontal={0}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
+
+        {/* Vehicle Info Card */}
+        <VehicleInfoCard
+          vehicleName={vehicleInfo.vehicleName}
+          tankTypeName={vehicleInfo.tankTypeName}
+          requestedQuantity={vehicleInfo.requestedQuantity}
+          orderState={orderState}
+          statusColor={statusColor}
+        />
+
+        <Divider height={20} />
+
         <View>
           <Text
             size="base"

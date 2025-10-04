@@ -91,7 +91,10 @@ const Settings: React.FC = () => {
             }}
             color={FBColors.error}
             bgColor={FBBackground.shellPink}
-            onPress={handleLogout}
+            onPress={() => {
+              signOut();
+              // handleLogout()
+            }} 
             borderWidth={0}
           />
         </View>

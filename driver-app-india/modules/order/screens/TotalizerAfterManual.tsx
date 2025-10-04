@@ -13,6 +13,7 @@ import {commonInputStyles} from '@/styles';
 import {orderStore} from '@/globalStore';
 import {checkinStore} from '@/globalStore'; // Add checkinStore import
 import {ImageContainer} from '@/modules/checkin/components';
+import {VehicleInfoCard} from '../components';
 import {RNCamera} from 'react-native-camera';
 import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
 import supportService from '@/modules/support/services';
@@ -342,13 +343,35 @@ const TotalizerAfterManual: React.FC = () => {
         id: currentFillupOrder?.fillup_requests[0]?.id,
         state: Fillup_Request_Status_Enum.Complete,
       });
-      
+
+      // Clear order states (following OrderSuccess pattern)
+      orderStore.setState(state => ({
+        ...state,
+        currentDriverOrder: null,
+        currentFillupOrder: null,
+        orderAssets: [],
+        dispenseCompletedAssets: [],
+        partiallyFilledAssetsArray: [],
+        assetsWithUploadedVideos: [],
+        challanImageData: null,
+        technicianImageData: null,
+        imapImageData: null,
+        challanUploadedUrl: null,
+        technicianUploadedUrl: null,
+        imapUploadedUrl: null,
+        totalizerImageData: null,
+        quantityImageData: null,
+        totalizerUploadedUrl: null,
+        totalizerBeforeReading: 0,
+        currentAssetForDispense: null,
+      }));
+
       Toast.show({
         type: 'success',
         text1: 'Success',
         text2: 'Challan uploaded successfully',
       });
-      
+
       // @ts-ignore
       navigation.replace('home');
     } catch (e) {
@@ -460,11 +483,86 @@ const TotalizerAfterManual: React.FC = () => {
     );
   }
 
+  // Get order status color (matching FillupOrderCard styling)
+  const getOrderStatusColor = (state: string) => {
+    switch (state?.toUpperCase()) {
+      case 'DISPENSING':
+        return {
+          backgroundColor: '#fee2e2',
+          textColor: '#991b1b',
+          borderColor: '#fecaca',
+        };
+      case 'ASSIGNED':
+        return {
+          backgroundColor: '#dbeafe',
+          textColor: '#1e40af',
+          borderColor: '#bfdbfe',
+        };
+      case 'IN_TRANSIT':
+        return {
+          backgroundColor: '#fef3c7',
+          textColor: '#92400e',
+          borderColor: '#fde68a',
+        };
+      case 'ARRIVED':
+        return {
+          backgroundColor: '#dcfce7',
+          textColor: '#166534',
+          borderColor: '#bbf7d0',
+        };
+      case 'APPROVED':
+        return {
+          backgroundColor: '#dbeafe',
+          textColor: '#1e40af',
+          borderColor: '#bfdbfe',
+        };
+      default:
+        return {
+          backgroundColor: '#f3f4f6',
+          textColor: '#1f2937',
+          borderColor: '#e5e7eb',
+        };
+    }
+  };
+
+  // Get vehicle information for the card
+  const getVehicleInfo = () => {
+    if (currentFillupOrder?.fillup_requests?.length > 0) {
+      const fillupRequest = currentFillupOrder.fillup_requests[0];
+      return {
+        vehicleName: fillupRequest.driver_vehicle?.vehicle?.name || 'Unknown Vehicle',
+        tankTypeName: fillupRequest.vehicle_tank_type_product_variation?.vehicle_tank_type?.tank_type?.name || 'Unknown Tank',
+        requestedQuantity: fillupRequest.quantity_approved || fillupRequest.quantity || 0,
+      };
+    }
+    return {
+      vehicleName: 'Unknown Vehicle',
+      tankTypeName: 'Unknown Tank',
+      requestedQuantity: 0,
+    };
+  };
+
+  const vehicleInfo = getVehicleInfo();
+  const orderState = currentFillupOrder?.state || 'PENDING';
+  const statusColor = getOrderStatusColor(orderState);
+
   return (
     <HeaderAvoidingContainer paddingHorizontal={0}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
+
+        {/* Vehicle Info Card */}
+        <VehicleInfoCard
+          vehicleName={vehicleInfo.vehicleName}
+          tankTypeName={vehicleInfo.tankTypeName}
+          requestedQuantity={vehicleInfo.requestedQuantity}
+          orderState={orderState}
+          statusColor={statusColor}
+        />
+
+        <Divider height={20} />
+
         <View>
           <Text
             size="base"

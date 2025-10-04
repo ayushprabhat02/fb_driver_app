@@ -7,6 +7,7 @@ export {default as CameraOverlay} from './CameraOverlay';
 export {default as StreamControls} from './StreamControls';
 export {default as OrderCancellationRequest} from './OrderCancellationRequest';
 export {default as OrderInfoCard} from './OrderInfoCard';
+export {default as VehicleInfoCard} from './VehicleInfoCard';
 
 // Enhanced Fillup Order Management Components (Vue-inspired)
 export {default as FillupOrderStateFlow} from './FillupOrderStateFlow';

@@ -4,19 +4,20 @@ import React, {useEffect, useLayoutEffect, useState} from 'react';
 import {
   Alert,
   ScrollView,
-  TextStyle,
-  TouchableOpacity,
   View,
-  ViewStyle,
 } from 'react-native';
 import {ScaledSheet} from 'react-native-size-matters';
 import Toast from 'react-native-toast-message';
 
 // components
-import {FocusAwareStatusBar, HeaderAvoidingContainer, Text, Divider} from '@/components';
-import {AssetCard} from '../components';
-import FillupOrderStateFlow from '../components/FillupOrderStateFlow';
-import FillupOrderCancellationModal from '../components/FillupOrderCancellationModal';
+import {
+  FocusAwareStatusBar,
+  HeaderAvoidingContainer,
+  Text,
+  Divider,
+  Button,
+} from '@/components';
+import {VehicleInfoCard, FillupOrderCancellationModal} from '../components';
 
 // services
 import orderService from '../services';
@@ -253,13 +254,35 @@ const FillAsset: React.FC = () => {
         id: currentFillupOrder?.fillup_requests[0]?.id,
         state: Fillup_Request_Status_Enum.Complete,
       });
-      
+
+      // Clear order states (following OrderSuccess pattern)
+      orderStore.setState(state => ({
+        ...state,
+        currentDriverOrder: null,
+        currentFillupOrder: null,
+        orderAssets: [],
+        dispenseCompletedAssets: [],
+        partiallyFilledAssetsArray: [],
+        assetsWithUploadedVideos: [],
+        challanImageData: null,
+        technicianImageData: null,
+        imapImageData: null,
+        challanUploadedUrl: null,
+        technicianUploadedUrl: null,
+        imapUploadedUrl: null,
+        totalizerImageData: null,
+        quantityImageData: null,
+        totalizerUploadedUrl: null,
+        totalizerBeforeReading: 0,
+        currentAssetForDispense: null,
+      }));
+
       Toast.show({
         type: 'success',
         text1: 'Success',
         text2: 'Challan uploaded and fillup order completed',
       });
-      
+
       // @ts-ignore
       navigation.replace('home');
     } catch (error) {
@@ -324,22 +347,66 @@ const FillAsset: React.FC = () => {
 
   const getOrderStatusColor = (state: string) => {
     switch (state?.toUpperCase()) {
-      case 'PENDING':
-        return '#FFA500';
-      case 'CONFIRMED':
-        return '#2196F3';
-      case 'IN_TRANSIT':
-        return '#FF9800';
-      case 'ARRIVED':
-        return '#9C27B0';
       case 'DISPENSING':
-        return '#FF5722';
+        return {
+          backgroundColor: '#fee2e2',
+          textColor: '#991b1b',
+          borderColor: '#fecaca',
+        };
+      case 'ASSIGNED':
+        return {
+          backgroundColor: '#dbeafe',
+          textColor: '#1e40af',
+          borderColor: '#bfdbfe',
+        };
+      case 'IN_TRANSIT':
+        return {
+          backgroundColor: '#fef3c7',
+          textColor: '#92400e',
+          borderColor: '#fde68a',
+        };
+      case 'ARRIVED':
+        return {
+          backgroundColor: '#dcfce7',
+          textColor: '#166534',
+          borderColor: '#bbf7d0',
+        };
+      case 'APPROVED':
+        return {
+          backgroundColor: '#dbeafe',
+          textColor: '#1e40af',
+          borderColor: '#bfdbfe',
+        };
+      case 'PENDING':
+        return {
+          backgroundColor: '#fef3c7',
+          textColor: '#92400e',
+          borderColor: '#fde68a',
+        };
+      case 'CONFIRMED':
+        return {
+          backgroundColor: '#dbeafe',
+          textColor: '#1e40af',
+          borderColor: '#bfdbfe',
+        };
       case 'DELIVERED':
-        return '#4CAF50';
+        return {
+          backgroundColor: '#dcfce7',
+          textColor: '#166534',
+          borderColor: '#bbf7d0',
+        };
       case 'CANCELLED':
-        return '#F44336';
+        return {
+          backgroundColor: '#fee2e2',
+          textColor: '#991b1b',
+          borderColor: '#fecaca',
+        };
       default:
-        return '#6B7280';
+        return {
+          backgroundColor: '#f3f4f6',
+          textColor: '#1f2937',
+          borderColor: '#e5e7eb',
+        };
     }
   };
 
@@ -360,146 +427,90 @@ const FillAsset: React.FC = () => {
   return (
     <HeaderAvoidingContainer>
       <FocusAwareStatusBar
-        backgroundColor={FBBackground.primary}
+        backgroundColor={FBBackground.white}
         barStyle="dark-content"
       />
 
-      <View style={styles.container as ViewStyle}>
-        <ScrollView
-          style={styles.scrollView as ViewStyle}
-          showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}>
 
-          {/* Enhanced Order Header */}
-          {currentFillupOrder && (
-            <View style={styles.orderHeader as ViewStyle}>
-              <View style={styles.orderInfo as ViewStyle}>
-                <Text size="lg" weight="bold" color="neutral">
-                  Order #{currentFillupOrder.id?.substring(0, 8)}
-                </Text>
-                <View style={[styles.statusBadge as ViewStyle, { backgroundColor: statusColor }]}>
-                  <Text size="sm" weight="bold" color="white">
-                    {orderState}
-                  </Text>
-                </View>
-              </View>
+        {/* Page Title */}
+        <Text size="xl" weight="700" style={styles.pageTitle}>
+          Vehicle to be Filled
+        </Text>
 
-              <Text size="sm" color="steelBlue" style={styles.orderSubtitle as TextStyle}>
-                {requestedQuantity} L • Fillup Request
-              </Text>
-            </View>
-          )}
-
-          {/* Order State Flow */}
-          {currentFillupOrder && fillupOrderStateFlow.length > 0 && (
-            <FillupOrderStateFlow
-              orderStateFlow={fillupOrderStateFlow}
-              currentState={orderState}
-            />
-          )}
-
-          <Divider height={10} />
-          {/* <AssetSummaryCard
-            orderId="650761"
-            totalQuantity={totalQuantity}
-            filledQuantity={filledQuantity}
-            pendingQuantity={pendingQuantity}
-          /> */}
-
-          {/* <AssetSearchBar
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-          /> */}
-
-          {/* Loading state */}
-          {loadingAssets ? (
-            <View style={styles.loadingContainer as ViewStyle}>
-              <Text size="base" color="lightGray">
-                Loading assets...
-              </Text>
-            </View>
-          ) : (
-            /* Vehicle Card (following Vue.js template structure) */
-            <View style={styles.vehicleContainer as ViewStyle}>
-              {!currentFillupOrder ? (
-                <View style={styles.emptyState as ViewStyle}>
-                  <Text size="lg" weight="600" color="neutral" style={styles.emptyStateTitle as TextStyle}>
-                    No Asset Found
-                  </Text>
-                </View>
-              ) : (
-                <View style={[
-                  styles.vehicleCard as ViewStyle,
-                  assetFilled && styles.filledVehicleCard as ViewStyle
-                ]}>
-                  <View style={styles.vehicleInfo as ViewStyle}>
-                    <View style={styles.vehicleIcon as ViewStyle}>
-                      <Text size="lg" weight="600" color="white">
-                        🚛
-                      </Text>
-                    </View>
-                    
-                    <View style={styles.vehicleDetails as ViewStyle}>
-                      <Text size="base" weight="bold" color="neutral" numberOfLines={1}>
-                        {vehicleName}
-                      </Text>
-                      <Text size="sm" weight="bold" color="lightGray" numberOfLines={1}>
-                        {tankTypeName}
-                      </Text>
-                      <Text size="sm" color="lightGray">
-                        Quantity: {requestedQuantity} L
-                      </Text>
-                    </View>
-                  </View>
-                  
-                  <View style={styles.vehicleAction as ViewStyle}>
-                    {assetFilled ? (
-                      <View style={styles.filledStatus as ViewStyle}>
-                        <Text size="sm" color="primary">Asset Filled</Text>
-                        <Text size="lg">✅</Text>
-                      </View>
-                    ) : (
-                      <TouchableOpacity
-                        style={styles.startDispenseButton as ViewStyle}
-                        onPress={startDispense}
-                        activeOpacity={0.7}>
-                        <Text size="sm" weight="600" color="white">
-                          Start Dispense
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                </View>
-              )}
-            </View>
-          )}
-        </ScrollView>
-
-        {/* Enhanced Action Buttons (following Vue.js bottom button pattern) */}
-        {!loadingAssets && (
-          <View style={styles.actionContainer as ViewStyle}>
-            {!assetFilled ? (
-              <TouchableOpacity
-                style={styles.cancelButton as ViewStyle}
-                onPress={handleCancel}
-                activeOpacity={0.7}>
-                <Text size="base" weight="600" color="white">
-                  Cancel Request
-                </Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                style={[styles.proceedButton as ViewStyle, isButtonDisabled && styles.disabledButton as ViewStyle]}
-                onPress={startDispense}
-                disabled={isButtonDisabled}
-                activeOpacity={0.7}>
-                <Text size="base" weight="600" color="white">
-                  Proceed
-                </Text>
-              </TouchableOpacity>
-            )}
+        <Divider height={16} />
+        {/* Loading state */}
+        {loadingAssets ? (
+          <View style={styles.loadingContainer}>
+            <Text size="base" color="secondary">
+              Loading...
+            </Text>
           </View>
+        ) : !currentFillupOrder ? (
+          <View style={styles.emptyState}>
+            <Text size="lg" weight="600" color="secondary">
+              No Fillup Order Found
+            </Text>
+          </View>
+        ) : (
+          <>
+            {/* Vehicle Info Card */}
+            <VehicleInfoCard
+              vehicleName={vehicleName}
+              tankTypeName={tankTypeName}
+              requestedQuantity={requestedQuantity}
+              orderState={orderState}
+              statusColor={statusColor}
+            />
+
+            {assetFilled && (
+              <>
+                <Divider height={12} />
+                <View style={styles.filledBanner}>
+                  <Text size="sm" weight="600" color="success">
+                    ✓ Asset Filled
+                  </Text>
+                </View>
+              </>
+            )}
+          </>
         )}
-      </View>
+      </ScrollView>
+
+      {/* Action Buttons */}
+      {!loadingAssets && currentFillupOrder && (
+        <View style={styles.actionContainer}>
+          {!assetFilled ? (
+            <>
+              <Button
+                variant="solid"
+                onPress={startDispense}
+                style={styles.primaryButton}>
+                Start Dispense
+              </Button>
+              <Divider height={12} />
+              <Button
+                variant="outlined"
+                onPress={handleCancel}
+                style={styles.cancelButton}>
+                Cancel Request
+              </Button>
+            </>
+          ) : (
+            <Button
+              variant="solid"
+              onPress={startDispense}
+              disabled={isButtonDisabled}
+              loading={isButtonDisabled}
+              style={styles.primaryButton}>
+              Proceed
+            </Button>
+          )}
+        </View>
+      )}
 
       {/* Enhanced Modals (Vue-inspired) */}
       <FillupOrderCancellationModal
@@ -514,140 +525,45 @@ const FillAsset: React.FC = () => {
 const styles = ScaledSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'white',
+    backgroundColor: FBBackground.white,
   },
-  scrollView: {
-    flex: 1,
-    paddingHorizontal: '16@s',
-    paddingTop: '16@vs',
+  scrollContent: {
+    paddingHorizontal: '20@s',
+    paddingTop: '20@vs',
+    paddingBottom: '20@vs',
   },
-  orderHeader: {
-    backgroundColor: '#F8F9FA',
-    padding: '16@s',
-    borderRadius: '8@s',
-    marginBottom: '16@vs',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  orderInfo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '8@vs',
-  },
-  statusBadge: {
-    paddingHorizontal: '12@s',
-    paddingVertical: '6@vs',
-    borderRadius: '16@s',
-  },
-  orderSubtitle: {
-    fontStyle: 'italic',
+  pageTitle: {
+    color: FBColors.neutral,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: '40@vs',
-  },
-  vehicleContainer: {
-    paddingVertical: '16@vs',
-  },
-  vehicleCard: {
-    backgroundColor: FBBackground.white,
-    borderRadius: '8@s',
-    padding: '16@s',
-    marginBottom: '16@vs',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  filledVehicleCard: {
-    backgroundColor: '#F0F0F0',
-  },
-  vehicleInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  vehicleIcon: {
-    width: '40@s',
-    height: '40@s',
-    borderRadius: '20@s',
-    backgroundColor: FBColors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: '12@s',
-  },
-  vehicleDetails: {
-    flex: 1,
-  },
-  vehicleAction: {
-    alignItems: 'center',
-  },
-  filledStatus: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  startDispenseButton: {
-    backgroundColor: FBColors.primary,
-    paddingVertical: '8@vs',
-    paddingHorizontal: '16@s',
-    borderRadius: '6@s',
-    minWidth: '100@s',
-    alignItems: 'center',
-  },
-  actionContainer: {
-    paddingHorizontal: '16@s',
-    paddingBottom: '16@vs',
-    alignItems: 'center',
-  },
-  cancelButton: {
-    backgroundColor: '#FF6B6B',
-    paddingVertical: '16@vs',
-    paddingHorizontal: '24@s',
-    borderRadius: '8@s',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '90%',
-  },
-  proceedButton: {
-    backgroundColor: FBColors.primary,
-    paddingVertical: '16@vs',
-    paddingHorizontal: '24@s',
-    borderRadius: '8@s',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '90%',
-  },
-  disabledButton: {
-    backgroundColor: '#CCCCCC',
-    opacity: 0.6,
+    paddingVertical: '60@vs',
   },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: '40@vs',
-    paddingHorizontal: '20@s',
+    paddingVertical: '60@vs',
   },
-  emptyStateTitle: {
-    marginBottom: '8@vs',
-    textAlign: 'center',
-  },
-  emptyStateMessage: {
-    marginBottom: '24@vs',
-    textAlign: 'center',
-    lineHeight: '20@vs',
-  },
-  retryButton: {
-    backgroundColor: '#007AFF',
-    paddingVertical: '12@vs',
-    paddingHorizontal: '24@s',
+  filledBanner: {
+    backgroundColor: '#E8F5E9',
+    padding: '12@s',
     borderRadius: '8@s',
     alignItems: 'center',
+  },
+  actionContainer: {
+    padding: '20@s',
+    backgroundColor: FBBackground.white,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  primaryButton: {
+    width: '100%',
+  },
+  cancelButton: {
+    width: '100%',
   },
 });
 

@@ -16,6 +16,7 @@ const FloatingActionButtons: React.FC<FloatingActionButtonsProps> = () => {
   const fillupHistory = fillupStore.use.fillupHistory();
   const currentFillupOrder = orderStore.use.currentFillupOrder();
   const currentDriverOrder = orderStore.use.currentDriverOrder();
+  const [isStartingTrip, setIsStartingTrip] = React.useState(false);
 
   const allFillupsCompleted = fillupHistory?.every(
     (item: any) => item.state === 'COMPLETE' || item.state === 'REJECTED',
@@ -133,9 +134,12 @@ const FloatingActionButtons: React.FC<FloatingActionButtonsProps> = () => {
   };
 
   const handleStartTrip = async () => {
-    if (!selectedOrder) return;
+    if (!selectedOrder || isStartingTrip) return;
 
     try {
+      // Set loading state to prevent double-clicks
+      setIsStartingTrip(true);
+
       // Use the comprehensive start trip flow
       const result = await startTrip(selectedOrder);
 
@@ -149,6 +153,11 @@ const FloatingActionButtons: React.FC<FloatingActionButtonsProps> = () => {
     } catch (error) {
       console.error('Error in handleStartTrip:', error);
       Alert.alert('Error', 'Failed to start trip. Please try again.');
+    } finally {
+      // Reset loading state after a delay to prevent rapid re-clicks
+      setTimeout(() => {
+        setIsStartingTrip(false);
+      }, 1000);
     }
   };
 
@@ -182,11 +191,13 @@ const FloatingActionButtons: React.FC<FloatingActionButtonsProps> = () => {
         variant="solid"
         style={[
           buttonConfig.buttonStyle === 'full' ? styles.fullWidthButton : styles.floatingButton,
-          styles.startTripButton
+          styles.startTripButton,
+          isStartingTrip && styles.buttonDisabled
         ]}
         textStyle={floatingButtonTextStyle}
-        onPress={handleStartTrip}>
-        {buttonConfig.buttonText}
+        onPress={handleStartTrip}
+        disabled={isStartingTrip}>
+        {isStartingTrip ? 'Starting...' : buttonConfig.buttonText}
       </Button>
     </View>
   );
@@ -221,6 +232,9 @@ const styles = ScaledSheet.create({
   },
   startTripButton: {
     backgroundColor: '#10B981',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
 });
 

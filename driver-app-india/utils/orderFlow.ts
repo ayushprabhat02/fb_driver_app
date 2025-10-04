@@ -65,54 +65,63 @@ export const startTrip = async (order: any): Promise<OrderFlowResult> => {
 
 /**
  * @function updateOrderState
- * @description Updates order state from ASSIGNED to IN_TRANSIT for delivery orders and to ARRIVED for fillup orders
+ * @description Updates order state from ASSIGNED to IN_TRANSIT to ARRIVED for delivery orders
+ * For fillup orders, directly changes from ASSIGNED to ARRIVED
+ * Also handles IN_TRANSIT to ARRIVED transition when start delivery is clicked
  */
 const updateOrderState = async (order: any): Promise<boolean> => {
   try {
     const isAssigned = order.state === 'ASSIGNED';
+    const isInTransit = order.state === 'IN_TRANSIT';
 
     if (isAssigned) {
       // For fillup orders, directly change state to ARRIVED
-      // For delivery orders, change state to IN_TRANSIT
-      let response;
       if (order.category === 'FILL_UP') {
-        response = await orderService.markOrderArrived({ id: order.id });
+        const response = await orderService.markOrderArrived({ id: order.id });
+
+        if (!response) {
+          Alert.alert('Error', 'Failed to update order state. Please try again.');
+          return false;
+        }
+
+        // Update store with new state
+        updateOrderInStore(order, 'ARRIVED');
       } else {
-        response = await orderService.markOrderInTransit({ id: order.id });
+        // For delivery orders, transition: ASSIGNED → IN_TRANSIT → ARRIVED
+        console.log('Delivery order: Transitioning ASSIGNED → IN_TRANSIT → ARRIVED');
+
+        // Step 1: ASSIGNED → IN_TRANSIT
+        const transitResponse = await orderService.markOrderInTransit({ id: order.id });
+        if (!transitResponse) {
+          Alert.alert('Error', 'Failed to update order to IN_TRANSIT. Please try again.');
+          return false;
+        }
+
+        console.log('Successfully changed to IN_TRANSIT, now changing to ARRIVED');
+
+        // Step 2: IN_TRANSIT → ARRIVED (immediately after)
+        const arrivedResponse = await orderService.markOrderArrived({ id: order.id });
+        if (!arrivedResponse) {
+          Alert.alert('Error', 'Failed to update order to ARRIVED. Please try again.');
+          return false;
+        }
+
+        console.log('Successfully changed to ARRIVED');
+
+        // Update store with final ARRIVED state
+        updateOrderInStore(order, 'ARRIVED');
       }
+    } else if (isInTransit) {
+      // When clicking Start Delivery from IN_TRANSIT state, change to ARRIVED
+      const response = await orderService.markOrderArrived({ id: order.id });
 
       if (!response) {
         Alert.alert('Error', 'Failed to update order state. Please try again.');
         return false;
       }
 
-      // Update store with fresh order data after state change
-      const allDriverOrders = homeStore.getState().driverOrders;
-      if (allDriverOrders) {
-        const updatedOrder = allDriverOrders.find(
-          (o: any) => o.id === order.id,
-        );
-        if (updatedOrder) {
-          // Update the order object with new state
-          if (order.category === 'FILL_UP') {
-            updatedOrder.state = 'ARRIVED' as any;
-          } else {
-            updatedOrder.state = 'IN_TRANSIT' as any;
-          }
-
-          if (order.category === 'DELIVERY') {
-            orderStore.setState(state => ({
-              ...state,
-              currentDriverOrder: updatedOrder,
-            }));
-          } else if (order.category === 'FILL_UP') {
-            orderStore.setState(state => ({
-              ...state,
-              currentFillupOrder: updatedOrder,
-            }));
-          }
-        }
-      }
+      // Update store with new state
+      updateOrderInStore(order, 'ARRIVED');
     }
 
     return true;
@@ -120,6 +129,32 @@ const updateOrderState = async (order: any): Promise<boolean> => {
     console.error('Error updating order state:', error);
     Alert.alert('Error', 'Failed to update order state. Please try again.');
     return false;
+  }
+};
+
+/**
+ * @function updateOrderInStore
+ * @description Helper function to update order state in the store
+ */
+const updateOrderInStore = (order: any, newState: string) => {
+  const allDriverOrders = homeStore.getState().driverOrders;
+  if (allDriverOrders) {
+    const updatedOrder = allDriverOrders.find((o: any) => o.id === order.id);
+    if (updatedOrder) {
+      updatedOrder.state = newState as any;
+
+      if (order.category === 'DELIVERY') {
+        orderStore.setState(state => ({
+          ...state,
+          currentDriverOrder: updatedOrder,
+        }));
+      } else if (order.category === 'FILL_UP') {
+        orderStore.setState(state => ({
+          ...state,
+          currentFillupOrder: updatedOrder,
+        }));
+      }
+    }
   }
 };
 

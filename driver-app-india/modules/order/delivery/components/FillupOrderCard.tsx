@@ -38,22 +38,60 @@ const FillupOrderCard: React.FC<Props> = ({order, onRefreshOrders}) => {
 
   const getOrderStatusColor = (state: string) => {
     switch (state?.toUpperCase()) {
-      case 'PENDING':
-        return '#FFA500';
-      case 'CONFIRMED':
-        return '#2196F3';
-      case 'IN_TRANSIT':
-        return '#FF9800';
-      case 'ARRIVED':
-        return '#9C27B0';
       case 'DISPENSING':
-        return '#FF5722';
+        return {
+          backgroundColor: '#fee2e2',
+          textColor: '#991b1b',
+          borderColor: '#fecaca',
+        };
+      case 'ASSIGNED':
+        return {
+          backgroundColor: '#dbeafe',
+          textColor: '#1e40af',
+          borderColor: '#bfdbfe',
+        };
+      case 'IN_TRANSIT':
+        return {
+          backgroundColor: '#fef3c7',
+          textColor: '#92400e',
+          borderColor: '#fde68a',
+        };
+      case 'ARRIVED':
+        return {
+          backgroundColor: '#dcfce7',
+          textColor: '#166534',
+          borderColor: '#bbf7d0',
+        };
+      case 'PENDING':
+        return {
+          backgroundColor: '#fef3c7',
+          textColor: '#92400e',
+          borderColor: '#fde68a',
+        };
+      case 'CONFIRMED':
+        return {
+          backgroundColor: '#dbeafe',
+          textColor: '#1e40af',
+          borderColor: '#bfdbfe',
+        };
       case 'DELIVERED':
-        return '#4CAF50';
+        return {
+          backgroundColor: '#dcfce7',
+          textColor: '#166534',
+          borderColor: '#bbf7d0',
+        };
       case 'CANCELLED':
-        return '#F44336';
+        return {
+          backgroundColor: '#fee2e2',
+          textColor: '#991b1b',
+          borderColor: '#fecaca',
+        };
       default:
-        return '#6B7280';
+        return {
+          backgroundColor: '#f3f4f6',
+          textColor: '#1f2937',
+          borderColor: '#e5e7eb',
+        };
     }
   };
 
@@ -152,8 +190,8 @@ const FillupOrderCard: React.FC<Props> = ({order, onRefreshOrders}) => {
           <Text weight="600" size="sm">
             Status:{' '}
           </Text>
-          <View style={[styles.statusBadge, { backgroundColor: statusColor, borderColor: statusColor }]}>
-            <Text color="white" size="xs" weight="600">
+          <View style={[styles.statusBadge, { backgroundColor: statusColor.backgroundColor, borderColor: statusColor.borderColor }]}>
+            <Text size="xs" weight="600" style={{ color: statusColor.textColor }}>
               {orderState}
             </Text>
           </View>
