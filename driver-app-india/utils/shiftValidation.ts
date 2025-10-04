@@ -33,10 +33,12 @@ export const validateShiftPeriodically = async (
       return;
     }
 
-    // Fetch current shift schedule to validate using the service
-    const currentTime = new Date().toISOString();
+    	const today = DateTime.now()
+		.set({ millisecond: 0 })
+		.toISO({ suppressMilliseconds: true });
+
     const shiftScheduleArray = await checkinService.fetchDriverVehicleId({
-      dateTime: currentTime,
+      dateTime: today,
     });
 
     const shiftSchedule = shiftScheduleArray?.[0];
