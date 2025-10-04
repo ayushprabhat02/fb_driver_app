@@ -107,12 +107,12 @@ const StreamControls: React.FC<StreamControlsProps> = ({
             <Button
               variant="solid"
               onPress={onStopRecording}
-              disabled={isStoppingRecording}
+              disabled={!canStopStream || isStoppingRecording}
               loading={isStoppingRecording}
               style={[
                 styles.button,
                 styles.stopButton,
-                isStoppingRecording && styles.disabledButton,
+                (!canStopStream || isStoppingRecording) && styles.disabledButton,
               ]}>
               Stop Recording
             </Button>

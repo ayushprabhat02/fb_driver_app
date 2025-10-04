@@ -306,20 +306,19 @@ const BuddyChallanScreen: React.FC = () => {
     }
   };
 
-  const createInvoice = async () => {
+   const createInvoice = async () => {
     try {
-      // Create invoice items from dispensed assets
       const assetsToBeInvoiced =
-        currentDriverOrder?.customer_order?.customer_order_customer_assets
+        dispenseCompletedAssets
           ?.filter(
             (asset: any) =>
               asset.quantity_dispensed && !isNaN(asset.quantity_dispensed),
           )
           ?.map((item: any) => ({
             unit_price: rate,
-            actual_amount: (item.quantity_dispensed || 0) * rate,
-            actual_qty: item.quantity_dispensed || 0,
-            amount: (item.quantity_dispensed || 0) * rate,
+            actual_amount: item.quantity_dispensed * rate,
+            actual_qty: item.quantity_dispensed,
+            amount: item.quantity_dispensed * rate,
             customer_asset_id: item?.customer_asset?.id,
             discount: 0.0,
             is_active: true,
@@ -328,7 +327,7 @@ const BuddyChallanScreen: React.FC = () => {
             product_variation_id:
               currentDriverOrder?.customer_order?.customer_order_items?.[0]
                 ?.product_variation_id,
-            qty: item.quantity_dispensed || 0,
+            qty: item.quantity_dispensed,
             service_tax:
               currentDriverOrder?.customer_order?.customer_order_items?.[0]
                 ?.service_tax || 0,
@@ -353,7 +352,6 @@ const BuddyChallanScreen: React.FC = () => {
       const discount = parseFloat(deliveryFeeData?.discount || '0');
       const calculatedFinalAmount = totalAmount + deliveryFee - discount;
 
-      // Create invoice
       await orderService.createInvoice({
         delivery_fee: String(deliveryFeeData?.delivery_fees || 0),
         actual_amount: String(calculatedFinalAmount),

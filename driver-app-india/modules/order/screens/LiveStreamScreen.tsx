@@ -112,8 +112,8 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
 
   // console.log('--currentDriverOrder---', currentDriverOrder);
 
-  // const streamingDurationSeconds = 5 * 60; // 5 minutes
-  const streamingDurationSeconds = 10; // 10 seconds
+  // Minimum streaming duration set to 5 minutes for all users
+  const streamingDurationSeconds = 10; // 5 minutes (300 seconds)
 
   // Get current asset's filled quantity
   const getCurrentAssetFilledQuantity = () => {
@@ -458,6 +458,16 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
 
   const stopRecording = async () => {
     if (!cameraRef.current || (!isRecording && !isPaused)) return;
+
+    // Prevent stopping if minimum duration not reached
+    if (!canStopStream) {
+      Toast.show({
+        type: 'error',
+        text1: 'Cannot Stop Recording',
+        text2: `Please record for at least ${streamingDurationSeconds / 60} minutes before stopping`,
+      });
+      return;
+    }
 
     try {
       setIsStoppingRecording(true);
