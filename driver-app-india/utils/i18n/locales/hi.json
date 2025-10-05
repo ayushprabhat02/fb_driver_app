@@ -44,5 +44,50 @@
     "success": "सफलता",
     "cancel": "रद्द करें",
     "confirm": "पुष्टि करें"
+  },
+  "home": {
+    "loadingMoreOrders": "अधिक ऑर्डर लोड हो रहे हैं...",
+    "noMoreOrders": "लोड करने के लिए कोई और ऑर्डर नहीं",
+    "noOrdersFound": "इस तारीख के लिए कोई ऑर्डर नहीं मिला",
+    "todaysSummary": "आज का सारांश",
+    "total": "कुल",
+    "delivered": "वितरित",
+    "pending": "लंबित",
+    "progress": "प्रगति",
+    "today": "आज",
+    "yesterday": "कल",
+    "tomorrow": "कल",
+    "close": "बंद करें",
+    "alerts": {
+      "completeDispensingFirst": "पहले डिस्पेंसिंग ऑर्डर पूरा करें!",
+      "completeDispensingDesc": "नया ऑर्डर चुनने से पहले आपको डिस्पेंसिंग स्थिति में ऑर्डर पूरा करना होगा।",
+      "completeFillupFirst": "पहले फिलअप इतिहास पूरा करें!",
+      "completeFillupDesc": "डिलीवरी ऑर्डर चुनने से पहले आपको सभी अपूर्ण फिलअप ऑर्डर पूरे करने होंगे।",
+      "fillupPriority": "फिलअप ऑर्डर को प्राथमिकता है!",
+      "fillupPriorityDesc": "डिलीवरी ऑर्डर चुनने से पहले फिलअप ऑर्डर पूरे करें।"
+    },
+    "months": {
+      "january": "जनवरी",
+      "february": "फरवरी",
+      "march": "मार्च",
+      "april": "अप्रैल",
+      "may": "मई",
+      "june": "जून",
+      "july": "जुलाई",
+      "august": "अगस्त",
+      "september": "सितंबर",
+      "october": "अक्टूबर",
+      "november": "नवंबर",
+      "december": "दिसंबर"
+    },
+    "weekDays": {
+      "sun": "रवि",
+      "mon": "सोम",
+      "tue": "मंगल",
+      "wed": "बुध",
+      "thu": "गुरु",
+      "fri": "शुक्र",
+      "sat": "शनि"
+    }
   }
 }

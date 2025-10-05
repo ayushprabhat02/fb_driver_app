@@ -44,5 +44,50 @@
     "check_in": "ચેક ઇન",
     "check_in_title": "ચેક ઇન",
     "logout_confirmation": "શું તમે ખરેખર લોગઆઉટ કરવા માંગો છો?"
+  },
+  "home": {
+    "loadingMoreOrders": "વધુ ઓર્ડર લોડ થઈ રહ્યા છે...",
+    "noMoreOrders": "લોડ કરવા માટે વધુ ઓર્ડર નથી",
+    "noOrdersFound": "આ તારીખ માટે કોઈ ઓર્ડર મળ્યો નથી",
+    "todaysSummary": "આજનો સારાંશ",
+    "total": "કુલ",
+    "delivered": "પહોંચાડ્યું",
+    "pending": "બાકી",
+    "progress": "પ્રગતિ",
+    "today": "આજે",
+    "yesterday": "ગઈકાલે",
+    "tomorrow": "આવતીકાલે",
+    "close": "બંધ કરો",
+    "alerts": {
+      "completeDispensingFirst": "પહેલા ડિસ્પેન્સિંગ ઓર્ડર પૂર્ણ કરો!",
+      "completeDispensingDesc": "નવો ઓર્ડર પસંદ કરતા પહેલા તમારે ડિસ્પેન્સિંગ સ્થિતિમાં ઓર્ડર પૂર્ણ કરવો આવશ્યક છે.",
+      "completeFillupFirst": "પહેલા ફિલઅપ હિસ્ટ્રી પૂર્ણ કરો!",
+      "completeFillupDesc": "ડિલિવરી ઓર્ડર પસંદ કરતા પહેલા તમારે બધા અપૂર્ણ ફિલઅપ ઓર્ડર પૂર્ણ કરવા આવશ્યક છે.",
+      "fillupPriority": "ફિલઅપ ઓર્ડરને પ્રાથમિકતા છે!",
+      "fillupPriorityDesc": "ડિલિવરી ઓર્ડર પસંદ કરતા પહેલા ફિલઅપ ઓર્ડર પૂર્ણ કરો."
+    },
+    "months": {
+      "january": "જાન્યુઆરી",
+      "february": "ફેબ્રુઆરી",
+      "march": "માર્ચ",
+      "april": "એપ્રિલ",
+      "may": "મે",
+      "june": "જૂન",
+      "july": "જુલાઈ",
+      "august": "ઑગસ્ટ",
+      "september": "સપ્ટેમ્બર",
+      "october": "ઑક્ટોબર",
+      "november": "નવેમ્બર",
+      "december": "ડિસેમ્બર"
+    },
+    "weekDays": {
+      "sun": "રવિ",
+      "mon": "સોમ",
+      "tue": "મંગળ",
+      "wed": "બુધ",
+      "thu": "ગુરુ",
+      "fri": "શુક્ર",
+      "sat": "શનિ"
+    }
   }
 }

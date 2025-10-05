@@ -44,5 +44,50 @@
     "check_in": "چیک ان",
     "check_in_title": "چیک ان",
     "logout_confirmation": "کیا آپ واقعی لاگ آؤٹ کرنا چاہتے ہیں؟"
+  },
+  "home": {
+    "loadingMoreOrders": "مزید آرڈرز لوڈ ہو رہے ہیں...",
+    "noMoreOrders": "مزید آرڈرز نہیں ہیں",
+    "noOrdersFound": "اس تاریخ کے لیے کوئی آرڈرز نہیں ملے",
+    "todaysSummary": "آج کا خلاصہ",
+    "total": "کل",
+    "delivered": "ڈیلیور ہو گیا",
+    "pending": "زیر التواء",
+    "progress": "پروگریس",
+    "today": "آج",
+    "yesterday": "کل",
+    "tomorrow": "کل",
+    "close": "بند کریں",
+    "alerts": {
+      "completeDispensingFirst": "پہلے ڈسپنسنگ آرڈر مکمل کریں!",
+      "completeDispensingDesc": "نیا آرڈر منتخب کرنے سے پہلے ڈسپنسنگ اسٹیٹس میں آرڈر مکمل کرنا ضروری ہے.",
+      "completeFillupFirst": "پہلے فل اپ ہسٹری مکمل کریں!",
+      "completeFillupDesc": "ڈیلیوری آرڈر منتخب کرنے سے پہلے تمام نامکمل فل اپ آرڈرز مکمل کرنے ہیں.",
+      "fillupPriority": "فل اپ آرڈرز کو ترجیح دی گئی ہے!",
+      "fillupPriorityDesc": "ڈیلیوری آرڈر منتخب کرنے سے پہلے فل اپ آرڈرز مکمل کریں."
+    },
+    "months": {
+      "january": "جنوری",
+      "february": "فروری",
+      "march": "مارچ",
+      "april": "اپریل",
+      "may": "مئی",
+      "june": "جون",
+      "july": "جولائی",
+      "august": "اگست",
+      "september": "ستمبر",
+      "october": "اکتوبر",
+      "november": "نومبر",
+      "december": "دسمبر"
+    },
+    "weekDays": {
+      "sun": "اتوار",
+      "mon": "پیر",
+      "tue": "منگل",
+      "wed": "بدھ",
+      "thu": "جمعرات",
+      "fri": "جمعہ",
+      "sat": "ہفتہ"
+    }
   }
 }

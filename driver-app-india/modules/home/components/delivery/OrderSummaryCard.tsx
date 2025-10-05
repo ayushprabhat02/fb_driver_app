@@ -2,8 +2,10 @@ import React from 'react';
 import {View, StyleSheet, ActivityIndicator} from 'react-native';
 import {FullScreenLoader, Text} from '@/components';
 import {homeStore} from '@/globalStore';
+import {useTranslation} from 'react-i18next';
 
 const OrderSummaryCard: React.FC = () => {
+  const {t} = useTranslation();
   const driverOrderStats = homeStore.use.driverOrderStats();
   const isLoading = homeStore.use.loaders().driverOrderStats;
   const selectedDate = homeStore.use.selectedDate();
@@ -34,7 +36,7 @@ const OrderSummaryCard: React.FC = () => {
     <View style={styles.card}>
       <View style={styles.header}>
         <Text size="base" weight="700" color="primary">
-          Today's Summary
+          {t('home.todaysSummary')}
         </Text>
         <Text size="sm" weight="500" color="neutral">
           {getSelectedDate()}
@@ -44,7 +46,7 @@ const OrderSummaryCard: React.FC = () => {
       <View style={styles.statsRow}>
         <View style={styles.statItem}>
           <Text size="xs" weight="500" color="neutral">
-            Total
+            {t('home.total')}
           </Text>
           <Text size="lg" weight="700" color="primary">
             {totalOrders}
@@ -58,7 +60,7 @@ const OrderSummaryCard: React.FC = () => {
 
         <View style={styles.statItem}>
           <Text size="xs" weight="500" color="neutral">
-            Delivered
+            {t('home.delivered')}
           </Text>
           <Text size="lg" weight="700" style={{color: '#28a745'}}>
             {deliveredOrders}
@@ -72,7 +74,7 @@ const OrderSummaryCard: React.FC = () => {
 
         <View style={styles.statItem}>
           <Text size="xs" weight="500" color="neutral">
-            Pending
+            {t('home.pending')}
           </Text>
           <Text size="lg" weight="700" style={{color: '#fd7e14'}}>
             {pendingOrders}
@@ -86,7 +88,7 @@ const OrderSummaryCard: React.FC = () => {
 
         <View style={styles.statItem}>
           <Text size="xs" weight="500" color="neutral">
-            Progress
+            {t('home.progress')}
           </Text>
           <Text size="lg" weight="700" color="primary">
             {progressPercentage}%

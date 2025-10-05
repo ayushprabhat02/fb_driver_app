@@ -3,6 +3,7 @@ import {View} from 'react-native';
 import {ScaledSheet} from 'react-native-size-matters';
 import {Text} from '@/components';
 import {Warning} from 'phosphor-react-native';
+import {useTranslation} from 'react-i18next';
 
 interface OrderValidationAlertProps {
   hasDispensingOrder: boolean;
@@ -15,6 +16,8 @@ const OrderValidationAlert: React.FC<OrderValidationAlertProps> = ({
   hasIncompleteFillupHistory,
   hasFillupOrder,
 }) => {
+  const {t} = useTranslation();
+
   if (!hasDispensingOrder && !hasIncompleteFillupHistory && !hasFillupOrder) {
     return null;
   }
@@ -28,10 +31,10 @@ const OrderValidationAlert: React.FC<OrderValidationAlertProps> = ({
             <Warning size={16} color="#92400e" weight="fill" />
             <View style={styles.alertText}>
               <Text size="sm" weight="600" style={{color: '#92400e', marginBottom: 2}}>
-                Complete dispensing order first!
+                {t('home.alerts.completeDispensingFirst')}
               </Text>
               <Text size="xs" style={{color: '#92400e', opacity: 0.8}}>
-                You must complete the order in dispensing state before selecting a new order.
+                {t('home.alerts.completeDispensingDesc')}
               </Text>
             </View>
           </View>
@@ -45,10 +48,10 @@ const OrderValidationAlert: React.FC<OrderValidationAlertProps> = ({
             <Warning size={16} color="#92400e" weight="fill" />
             <View style={styles.alertText}>
               <Text size="sm" weight="600" style={{color: '#92400e', marginBottom: 2}}>
-                Complete fillup history first!
+                {t('home.alerts.completeFillupFirst')}
               </Text>
               <Text size="xs" style={{color: '#92400e', opacity: 0.8}}>
-                You must complete all incomplete fillup orders before selecting delivery orders.
+                {t('home.alerts.completeFillupDesc')}
               </Text>
             </View>
           </View>
@@ -62,10 +65,10 @@ const OrderValidationAlert: React.FC<OrderValidationAlertProps> = ({
             <Warning size={16} color="#92400e" weight="fill" />
             <View style={styles.alertText}>
               <Text size="sm" weight="600" style={{color: '#92400e', marginBottom: 2}}>
-                Fillup orders have priority!
+                {t('home.alerts.fillupPriority')}
               </Text>
               <Text size="xs" style={{color: '#92400e', opacity: 0.8}}>
-                Complete fillup orders before selecting delivery orders.
+                {t('home.alerts.fillupPriorityDesc')}
               </Text>
             </View>
           </View>

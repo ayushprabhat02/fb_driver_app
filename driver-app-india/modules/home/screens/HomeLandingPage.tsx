@@ -8,6 +8,7 @@ import {
   ListRenderItem,
 } from 'react-native';
 import {ScaledSheet} from 'react-native-size-matters';
+import {useTranslation} from 'react-i18next';
 
 //components
 import {
@@ -16,6 +17,7 @@ import {
   SwitchProfileHeader,
   FloatingActionButtons,
   Text,
+  LanguageSelector,
 } from '@/components';
 import CustomDateSelector from '../components/CustomDateSelector';
 import {OrderListSkeleton} from '../components/SkeletonLoader';
@@ -47,6 +49,7 @@ import fillupStore from '@/modules/fillupRequest/store';
 import {setupShiftValidation} from '@/utils/shiftValidation';
 
 const HomeLandingPage: React.FC = () => {
+  const {t} = useTranslation();
   const [refreshing, setRefreshing] = React.useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [currentOffset, setCurrentOffset] = useState(0);
@@ -411,14 +414,14 @@ const HomeLandingPage: React.FC = () => {
     if (isLoadingMore) {
       return (
         <View style={{padding: 20, alignItems: 'center'}}>
-          <Text>Loading more orders...</Text>
+          <Text>{t('home.loadingMoreOrders')}</Text>
         </View>
       );
     }
     if (!hasMoreData && driverOrders?.length > 0) {
       return (
         <View style={{padding: 20, alignItems: 'center'}}>
-          <Text>No more orders to load</Text>
+          <Text>{t('home.noMoreOrders')}</Text>
         </View>
       );
     }
@@ -482,7 +485,7 @@ const HomeLandingPage: React.FC = () => {
         ListEmptyComponent={() => (
           <Container paddingHorizontal={16}>
             <View style={{padding: 20, alignItems: 'center'}}>
-              <Text>No orders found for this date</Text>
+              <Text>{t('home.noOrdersFound')}</Text>
             </View>
           </Container>
         )}

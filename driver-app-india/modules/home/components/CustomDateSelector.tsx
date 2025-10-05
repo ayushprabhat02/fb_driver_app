@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import {ScaledSheet} from 'react-native-size-matters';
+import {useTranslation} from 'react-i18next';
 
 interface CustomDateSelectorProps {
   selectedDate: Date;
@@ -23,25 +24,34 @@ const CustomDateSelector: React.FC<CustomDateSelectorProps> = ({
   style,
   isLoading = false,
 }) => {
+  const {t} = useTranslation();
   const [showCalendar, setShowCalendar] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date(selectedDate));
 
   const months = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December',
+    t('home.months.january'),
+    t('home.months.february'),
+    t('home.months.march'),
+    t('home.months.april'),
+    t('home.months.may'),
+    t('home.months.june'),
+    t('home.months.july'),
+    t('home.months.august'),
+    t('home.months.september'),
+    t('home.months.october'),
+    t('home.months.november'),
+    t('home.months.december'),
   ];
 
-  const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const weekDays = [
+    t('home.weekDays.sun'),
+    t('home.weekDays.mon'),
+    t('home.weekDays.tue'),
+    t('home.weekDays.wed'),
+    t('home.weekDays.thu'),
+    t('home.weekDays.fri'),
+    t('home.weekDays.sat'),
+  ];
 
   const formatDate = (date: Date) => {
     const today = new Date();
@@ -51,11 +61,11 @@ const CustomDateSelector: React.FC<CustomDateSelectorProps> = ({
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     if (date.toDateString() === today.toDateString()) {
-      return 'Today';
+      return t('home.today');
     } else if (date.toDateString() === yesterday.toDateString()) {
-      return 'Yesterday';
+      return t('home.yesterday');
     } else if (date.toDateString() === tomorrow.toDateString()) {
-      return 'Tomorrow';
+      return t('home.tomorrow');
     } else {
       return date.toLocaleDateString('en-US', {
         month: 'short',
@@ -228,7 +238,7 @@ const CustomDateSelector: React.FC<CustomDateSelectorProps> = ({
             <TouchableOpacity
               style={styles.closeButton}
               onPress={() => setShowCalendar(false)}>
-              <Text style={styles.closeButtonText}>Close</Text>
+              <Text style={styles.closeButtonText}>{t('home.close')}</Text>
             </TouchableOpacity>
           </View>
         </View>
