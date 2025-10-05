@@ -19,5 +19,30 @@
     "success": "ਸਫਲਤਾ",
     "cancel": "ਰੱਦ ਕਰੋ",
     "confirm": "ਪੁਸ਼ਟੀ ਕਰੋ"
+  },
+  "checkin": {
+    "driver_name": "ਡਰਾਈਵਰ ਦਾ ਨਾਮ",
+    "registration_number": "ਰਜਿਸਟਰੇਸ਼ਨ ਨੰਬਰ",
+    "complete_steps": "ਕਿਰਪਾ ਕਰਕੇ ਚੈੱਕ-ਇਨ ਕਰਨ ਲਈ ਹੇਠਾਂ ਦਿੱਤੇ ਕਦਮ ਪੂਰੇ ਕਰੋ",
+    "upload_refueller_image": "ਰੀਫਿਊਲਰ ਤਸਵੀਰ ਅੱਪਲੋਡ ਕਰੋ",
+    "uploading_refueller": "ਰੀਫਿਊਲਰ ਤਸਵੀਰ ਅੱਪਲੋਡ ਹੋ ਰਹੀ ਹੈ...",
+    "checkin_button": "ਚੈੱਕ-ਇਨ",
+    "checking_in": "ਚੈੱਕ-ਇਨ ਹੋ ਰਿਹਾ ਹੈ...",
+    "take_photo": "ਫੋਟੋ ਲਓ",
+    "required_image": "ਲੋੜੀਂਦੀ ਤਸਵੀਰ",
+    "required_image_message": "ਕਿਰਪਾ ਕਰਕੇ ਅੱਗੇ ਵਧਣ ਤੋਂ ਪਹਿਲਾਂ ਰੀਫਿਊਲਰ ਤਸਵੀਰ ਅੱਪਲੋਡ ਕਰੋ ਅਤੇ ਪ੍ਰੋਸੈਸ ਹੋਣ ਦੀ ਉਡੀਕ ਕਰੋ",
+    "vehicle_error": "ਵਾਹਨ ਗਲਤੀ",
+    "vehicle_error_message": "ਡਰਾਈਵਰ ਵਾਹਨ ID ਨਹੀਂ ਮਿਲੀ। ਕਿਰਪਾ ਕਰਕੇ ਐਪ ਨੂੰ ਮੁੜ ਸ਼ੁਰੂ ਕਰੋ।",
+    "checkin_failed": "ਚੈੱਕ-ਇਨ ਅਸਫਲ",
+    "please_try_again": "ਕਿਰਪਾ ਕਰਕੇ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
+    "fetching_vehicle_id": "ਡਰਾਈਵਰ ਵਾਹਨ ID ਲਿਆ ਜਾ ਰਿਹਾ ਹੈ...",
+    "checking_in_wait": "ਚੈੱਕ-ਇਨ ਹੋ ਰਿਹਾ ਹੈ, ਕਿਰਪਾ ਕਰਕੇ ਉਡੀਕ ਕਰੋ...",
+    "bowser_assigned": "ਅੱਜ ਲਈ ਬਾਊਸਰ ਨਿਰਧਾਰਤ ਕੀਤਾ ਗਿਆ ਹੈ",
+    "view_shift_schedule": "ਮੇਰਾ ਸ਼ਿਫਟ ਸਮਾਂ-ਸਾਰਣੀ ਦੇਖੋ",
+    "raise_request": "ਬੇਨਤੀ ਕਰੋ",
+    "logout": "ਲਾਗ ਆਉਟ",
+    "check_in": "ਚੈੱਕ ਇਨ",
+    "check_in_title": "ਚੈੱਕ ਇਨ",
+    "logout_confirmation": "ਕੀ ਤੁਸੀਂ ਯਕੀਨੀ ਤੌਰ 'ਤੇ ਲਾਗਆਉਟ ਕਰਨਾ ਚਾਹੁੰਦੇ ਹੋ?"
   }
 }

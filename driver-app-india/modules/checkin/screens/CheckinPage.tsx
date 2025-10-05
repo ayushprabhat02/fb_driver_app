@@ -29,13 +29,15 @@ import {check, PERMISSIONS, request, RESULTS} from 'react-native-permissions';
 import {ImageContainer} from '../components';
 import checkinService from '../services';
 import {LoaderTypes} from '../store';
-import { DateTime } from 'luxon';
+import {DateTime} from 'luxon';
+import {useTranslation} from 'react-i18next';
 
 type RootStackParamList = {
   home: undefined;
 };
 
 const CheckinPage: React.FC = () => {
+  const {t} = useTranslation();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const driverVehicleId = checkinStore.use.driverVehicleId();
@@ -110,16 +112,16 @@ const CheckinPage: React.FC = () => {
   const handleSubmit = async () => {
     if (!refuellerStoreUrl) {
       Alert.alert(
-        'Required Image',
-        'Please upload and wait for refueller image to be processed before proceeding',
+        t('checkin.required_image'),
+        t('checkin.required_image_message'),
       );
       return;
     }
 
     if (!driverVehicleId) {
       Alert.alert(
-        'Vehicle Error',
-        'Driver vehicle ID not found. Please restart the app.',
+        t('checkin.vehicle_error'),
+        t('checkin.vehicle_error_message'),
       );
       return;
     }
@@ -153,8 +155,8 @@ const CheckinPage: React.FC = () => {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error occurred';
       Alert.alert(
-        'Check-in Failed',
-        `Error: ${errorMessage}\n\nPlease try again.`,
+        t('checkin.checkin_failed'),
+        `${t('common.error')}: ${errorMessage}\n\n${t('checkin.please_try_again')}`,
       );
     } finally {
       stopLoader('isCheckingIn');
@@ -292,12 +294,12 @@ const CheckinPage: React.FC = () => {
         />
         <View style={styles.cameraButtonContainer}>
           <TouchableOpacity onPress={handleTakePhoto} style={styles.capture}>
-            <Text style={styles.buttonText}>Take Photo</Text>
+            <Text style={styles.buttonText}>{t('checkin.take_photo')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => setShowCamera(false)}
             style={styles.capture}>
-            <Text style={styles.buttonText}>Cancel</Text>
+            <Text style={styles.buttonText}>{t('common.cancel')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -316,7 +318,7 @@ const CheckinPage: React.FC = () => {
           <View style={styles.vehicleDetailsRow}>
             <View style={styles.vehicleDetailItem}>
               <Text size="xs" color="secondary" style={styles.vehicleLabel}>
-                Driver Name
+                {t('checkin.driver_name')}
               </Text>
               <Text size="base" weight="600" style={styles.vehicleValue}>
                 {driverVehicleDetails?.name || 'N/A'}
@@ -324,7 +326,7 @@ const CheckinPage: React.FC = () => {
             </View>
             <View style={styles.vehicleDetailItem}>
               <Text size="xs" color="secondary" style={styles.vehicleLabel}>
-                Registration Number
+                {t('checkin.registration_number')}
               </Text>
               <Text size="base" weight="600" style={styles.vehicleValue}>
                 {driverVehicleDetails?.registration_number || 'N/A'}
@@ -351,16 +353,16 @@ const CheckinPage: React.FC = () => {
         /> */}
         <Divider height={10} />
         <Text size="base" weight="700" color="secondary">
-          Please complete the following steps to check-in
+          {t('checkin.complete_steps')}
         </Text>
 
         <ImageContainer
-          label="Upload Refueller Image"
+          label={t('checkin.upload_refueller_image')}
           imageData={refuellerImageData}
           isUploading={isRefuellerImageUploading}
           onCameraPress={() => openCamera('refueller')}
           onRemovePhoto={handleRemoveRefueller}
-          uploadingText="Uploading Refueller image..."
+          uploadingText={t('checkin.uploading_refueller')}
           required={true}
         />
         {/* Refueller and Odometer sections commented out for simplified check-in flow */}
@@ -398,16 +400,16 @@ const CheckinPage: React.FC = () => {
           onPress={handleSubmit}
           loading={isCheckingIn}
           disabled={!refuellerStoreUrl || isCheckingIn}>
-          {isCheckingIn ? 'Checking in...' : 'Check-in'}
+          {isCheckingIn ? t('checkin.checking_in') : t('checkin.checkin_button')}
         </Button>
       </View>
       <FullScreenLoader
         showLoader={loaders.isDriverVehicleIdLoading}
-        loaderText={`Fetching driver vehicle ID...`}
+        loaderText={t('checkin.fetching_vehicle_id')}
       />
       <FullScreenLoader
         showLoader={isCheckingIn}
-        loaderText={`Checking in, please wait...`}
+        loaderText={t('checkin.checking_in_wait')}
       />
     </HeaderAvoidingContainer>
   );

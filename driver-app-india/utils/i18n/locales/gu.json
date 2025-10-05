@@ -19,5 +19,30 @@
     "success": "સફળતા",
     "cancel": "રદ કરો",
     "confirm": "પુષ્ટિ કરો"
+  },
+  "checkin": {
+    "driver_name": "ડ્રાઇવરનું નામ",
+    "registration_number": "નોંધણી નંબર",
+    "complete_steps": "કૃપા કરીને ચેક-ઇન કરવા માટે નીચેના પગલાં પૂર્ણ કરો",
+    "upload_refueller_image": "રિફ્યુઅલર ચિત્ર અપલોડ કરો",
+    "uploading_refueller": "રિફ્યુઅલર ચિત્ર અપલોડ થઈ રહ્યું છે...",
+    "checkin_button": "ચેક-ઇન",
+    "checking_in": "ચેક-ઇન થઈ રહ્યું છે...",
+    "take_photo": "ફોટો લો",
+    "required_image": "જરૂરી ચિત્ર",
+    "required_image_message": "કૃપા કરીને આગળ વધતા પહેલા રિફ્યુઅલર ચિત્ર અપલોડ કરો અને પ્રોસેસ થાય ત્યાં સુધી રાહ જુઓ",
+    "vehicle_error": "વાહન ભૂલ",
+    "vehicle_error_message": "ડ્રાઇવર વાહન ID મળી નથી. કૃપા કરીને એપ પુનઃપ્રારંભ કરો.",
+    "checkin_failed": "ચેક-ઇન નિષ્ફળ",
+    "please_try_again": "કૃપા કરીને ફરી પ્રયાસ કરો.",
+    "fetching_vehicle_id": "ડ્રાઇવર વાહન ID મેળવી રહ્યા છીએ...",
+    "checking_in_wait": "ચેક-ઇન થઈ રહ્યું છે, કૃપા કરીને રાહ જુઓ...",
+    "bowser_assigned": "આજ માટે બાઉઝર સોંપાયેલ છે",
+    "view_shift_schedule": "મારું શિફ્ટ શેડ્યૂલ જુઓ",
+    "raise_request": "વિનંતી ઉઠાવો",
+    "logout": "લોગઆઉટ",
+    "check_in": "ચેક ઇન",
+    "check_in_title": "ચેક ઇન",
+    "logout_confirmation": "શું તમે ખરેખર લોગઆઉટ કરવા માંગો છો?"
   }
 }

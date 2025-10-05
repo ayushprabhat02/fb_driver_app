@@ -19,5 +19,30 @@
     "success": "کامیابی",
     "cancel": "منسوخ کریں",
     "confirm": "تصدیق کریں"
+  },
+  "checkin": {
+    "driver_name": "ڈرائیور کا نام",
+    "registration_number": "رجسٹریشن نمبر",
+    "complete_steps": "براہ کرم چیک-ان کرنے کے لیے درج ذیل اقدامات مکمل کریں",
+    "upload_refueller_image": "ریفیولر کی تصویر اپ لوڈ کریں",
+    "uploading_refueller": "ریفیولر کی تصویر اپ لوڈ ہو رہی ہے...",
+    "checkin_button": "چیک-ان",
+    "checking_in": "چیک-ان ہو رہا ہے...",
+    "take_photo": "تصویر لیں",
+    "required_image": "ضروری تصویر",
+    "required_image_message": "براہ کرم آگے بڑھنے سے پہلے ریفیولر کی تصویر اپ لوڈ کریں اور پروسیس ہونے تک انتظار کریں",
+    "vehicle_error": "گاڑی کی خرابی",
+    "vehicle_error_message": "ڈرائیور گاڑی ID نہیں ملی۔ براہ کرم ایپ دوبارہ شروع کریں۔",
+    "checkin_failed": "چیک-ان ناکام",
+    "please_try_again": "براہ کرم دوبارہ کوشش کریں۔",
+    "fetching_vehicle_id": "ڈرائیور گاڑی ID حاصل کی جا رہی ہے...",
+    "checking_in_wait": "چیک-ان ہو رہا ہے، براہ کرم انتظار کریں...",
+    "bowser_assigned": "آج کے لیے باؤسر تفویض کیا گیا ہے",
+    "view_shift_schedule": "میری شفٹ شیڈول دیکھیں",
+    "raise_request": "درخواست اٹھائیں",
+    "logout": "لاگ آؤٹ",
+    "check_in": "چیک ان",
+    "check_in_title": "چیک ان",
+    "logout_confirmation": "کیا آپ واقعی لاگ آؤٹ کرنا چاہتے ہیں؟"
   }
 }

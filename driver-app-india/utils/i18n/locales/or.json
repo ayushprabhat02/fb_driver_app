@@ -19,5 +19,30 @@
     "success": "ସଫଳତା",
     "cancel": "ବାତିଲ୍ କରନ୍ତୁ",
     "confirm": "ନିଶ୍ଚିତ କରନ୍ତୁ"
+  },
+  "checkin": {
+    "driver_name": "ଡ୍ରାଇଭରଙ୍କ ନାମ",
+    "registration_number": "ପଞ୍ଜିକରଣ ସଂଖ୍ୟା",
+    "complete_steps": "ଦୟାକରି ଚେକ୍-ଇନ୍ କରିବାକୁ ନିମ୍ନଲିଖିତ ପଦକ୍ଷେପଗୁଡିକ ସମ୍ପୂର୍ଣ୍ଣ କରନ୍ତୁ",
+    "upload_refueller_image": "ରିଫ୍ୟୁଏଲର୍ ଚିତ୍ର ଅପଲୋଡ୍ କରନ୍ତୁ",
+    "uploading_refueller": "ରିଫ୍ୟୁଏଲର୍ ଚିତ୍ର ଅପଲୋଡ୍ ହେଉଛି...",
+    "checkin_button": "ଚେକ୍-ଇନ୍",
+    "checking_in": "ଚେକ୍-ଇନ୍ ହେଉଛି...",
+    "take_photo": "ଫଟୋ ନିଅନ୍ତୁ",
+    "required_image": "ଆବଶ୍ୟକ ଚିତ୍ର",
+    "required_image_message": "ଦୟାକରି ଆଗକୁ ବଢିବା ପୂର୍ବରୁ ରିଫ୍ୟୁଏଲର୍ ଚିତ୍ର ଅପଲୋଡ୍ କରନ୍ତୁ ଏବଂ ପ୍ରକ୍ରିୟା ହେବା ପର୍ଯ୍ୟନ୍ତ ଅପେକ୍ଷା କରନ୍ତୁ",
+    "vehicle_error": "ଯାନ ତ୍ରୁଟି",
+    "vehicle_error_message": "ଡ୍ରାଇଭର ଯାନ ID ମିଳିଲା ନାହିଁ। ଦୟାକରି ଆପ୍ ପୁନଃ ଆରମ୍ଭ କରନ୍ତୁ।",
+    "checkin_failed": "ଚେକ୍-ଇନ୍ ବିଫଳ",
+    "please_try_again": "ଦୟାକରି ପୁନର୍ବାର ଚେଷ୍ଟା କରନ୍ତୁ।",
+    "fetching_vehicle_id": "ଡ୍ରାଇଭର ଯାନ ID ଆଣିବା...",
+    "checking_in_wait": "ଚେକ୍-ଇନ୍ ହେଉଛି, ଦୟାକରି ଅପେକ୍ଷା କରନ୍ତୁ...",
+    "bowser_assigned": "ଆଜି ପାଇଁ ବୌସର୍ ନିର୍ଦ୍ଧାରିତ ହୋଇଛି",
+    "view_shift_schedule": "ମୋର ସିଫ୍ଟ ସମୟସୂଚୀ ଦେଖନ୍ତୁ",
+    "raise_request": "ଅନୁରୋଧ କରନ୍ତୁ",
+    "logout": "ଲଗ୍ଆଉଟ୍",
+    "check_in": "ଚେକ୍ ଇନ୍",
+    "check_in_title": "ଚେକ୍ ଇନ୍",
+    "logout_confirmation": "ଆପଣ ନିଶ୍ଚିତ କି ଆପଣ ଲଗଆଉଟ୍ କରିବାକୁ ଚାହୁଁଛନ୍ତି?"
   }
 }

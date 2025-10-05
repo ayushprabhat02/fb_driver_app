@@ -19,5 +19,30 @@
     "success": "यश",
     "cancel": "रद्द करा",
     "confirm": "पुष्टी करा"
+  },
+  "checkin": {
+    "driver_name": "ड्रायव्हरचे नाव",
+    "registration_number": "नोंदणी क्रमांक",
+    "complete_steps": "कृपया चेक-इन करण्यासाठी खालील चरण पूर्ण करा",
+    "upload_refueller_image": "रिफ्यूलर प्रतिमा अपलोड करा",
+    "uploading_refueller": "रिफ्यूलर प्रतिमा अपलोड होत आहे...",
+    "checkin_button": "चेक-इन",
+    "checking_in": "चेक-इन होत आहे...",
+    "take_photo": "फोटो काढा",
+    "required_image": "आवश्यक प्रतिमा",
+    "required_image_message": "कृपया पुढे जाण्यापूर्वी रिफ्यूलर प्रतिमा अपलोड करा आणि प्रक्रिया होईपर्यंत प्रतीक्षा करा",
+    "vehicle_error": "वाहन त्रुटी",
+    "vehicle_error_message": "ड्रायव्हर वाहन ID आढळला नाही. कृपया अॅप रीस्टार्ट करा.",
+    "checkin_failed": "चेक-इन अयशस्वी",
+    "please_try_again": "कृपया पुन्हा प्रयत्न करा.",
+    "fetching_vehicle_id": "ड्रायव्हर वाहन ID मिळवत आहे...",
+    "checking_in_wait": "चेक-इन होत आहे, कृपया प्रतीक्षा करा...",
+    "bowser_assigned": "आजसाठी बॉझर नियुक्त केले आहे",
+    "view_shift_schedule": "माझे शिफ्ट शेड्यूल पहा",
+    "raise_request": "विनंती उठवा",
+    "logout": "लॉग आउट",
+    "check_in": "चेक इन",
+    "check_in_title": "चेक इन",
+    "logout_confirmation": "तुम्हाला खात्री आहे की तुम्ही लॉग आउट करू इच्छिता?"
   }
 }
