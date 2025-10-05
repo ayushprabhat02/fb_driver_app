@@ -46,7 +46,13 @@ const ProtectedNavigator: React.FC<Props> = () => {
   // Show loading immediately if client is not ready
   if (!graphQLClient) {
     return (
-      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff'}}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: '#fff',
+        }}>
         <Text>Loading...</Text>
       </View>
     );

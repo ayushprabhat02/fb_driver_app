@@ -58,6 +58,7 @@
     "yesterday": "कल",
     "tomorrow": "कल",
     "close": "बंद करें",
+    "testOCR": "ओसीआर रीडिंग टेस्ट करें",
     "alerts": {
       "completeDispensingFirst": "पहले डिस्पेंसिंग ऑर्डर पूरा करें!",
       "completeDispensingDesc": "नया ऑर्डर चुनने से पहले आपको डिस्पेंसिंग स्थिति में ऑर्डर पूरा करना होगा।",

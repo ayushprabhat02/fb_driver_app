@@ -6,6 +6,10 @@ import {
   FetchOrderForDriverIncompleteQuery,
   FetchOrderForDriverIncompleteDocument,
 } from './../../../generated/graphql';
+
+// Export OCR service
+export { default as OCRService } from './OCRService';
+export type { ExtractedOrderData, OCRResult } from './OCRService';
 /**
  * @module Order
  * @description This is the service file for the order module.

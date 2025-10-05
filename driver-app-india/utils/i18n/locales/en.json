@@ -58,6 +58,7 @@
     "yesterday": "Yesterday",
     "tomorrow": "Tomorrow",
     "close": "Close",
+    "testOCR": "Test OCR Reading",
     "alerts": {
       "completeDispensingFirst": "Complete dispensing order first!",
       "completeDispensingDesc": "You must complete the order in dispensing state before selecting a new order.",

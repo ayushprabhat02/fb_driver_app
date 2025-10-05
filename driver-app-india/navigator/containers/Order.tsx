@@ -16,6 +16,7 @@ import ChooseAssetScreen from '@/modules/order/screens/ChooseAssetScreen';
 import ReachLocationScreen from '@/modules/order/screens/ReachLocationScreen';
 import DeliveryChallanScreen from '@/modules/order/screens/DeliveryChallanScreen';
 import BuddyChallanScreen from '@/modules/order/screens/BuddyChallanScreen';
+import OCRReadingScreen from '@/modules/order/screens/OCRReadingScreen';
 import {BackButtonArrow} from '@/components';
 
 // styles
@@ -23,6 +24,7 @@ import {commonHeaderStyles} from '@/styles';
 import {FBBackground} from '@/types/styles';
 
 export type OrderStackParamList = {
+  'ocr-reading': undefined;
   'delivery-orders': undefined;
   'order-details': {
     orderId: string;
@@ -45,8 +47,16 @@ const OrderStack = createStackNavigator<OrderStackParamList>();
 const OrderNavigator: React.FC = () => {
   return (
     <OrderStack.Navigator
-      initialRouteName="delivery-orders"
+      initialRouteName="ocr-reading"
       screenOptions={{...commonHeaderStyles}}>
+      <OrderStack.Screen
+        name="ocr-reading"
+        component={OCRReadingScreen}
+        options={{
+          title: 'OCR Reading',
+          headerLeft: BackButtonArrow,
+        }}
+      />
       <OrderStack.Screen
         name="delivery-orders"
         component={MyOrders}

@@ -18,6 +18,7 @@ import {
   FloatingActionButtons,
   Text,
   LanguageSelector,
+  Button,
 } from '@/components';
 import CustomDateSelector from '../components/CustomDateSelector';
 import {OrderListSkeleton} from '../components/SkeletonLoader';
@@ -40,7 +41,7 @@ import {Task_State_Enum} from '@/generated/graphql';
 import {OrderListCard} from '@/modules/order/delivery/components';
 import {UserService} from '@/services';
 import {FBBackground} from '@/types/styles';
-import {useFocusEffect} from '@react-navigation/native';
+import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import OrderSummaryCard from '../components/delivery/OrderSummaryCard';
 import homeService from '../services';
 import userService from '@/modules/user/services';
@@ -50,6 +51,7 @@ import {setupShiftValidation} from '@/utils/shiftValidation';
 
 const HomeLandingPage: React.FC = () => {
   const {t} = useTranslation();
+  const navigation = useNavigation();
   const [refreshing, setRefreshing] = React.useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [currentOffset, setCurrentOffset] = useState(0);
@@ -406,6 +408,13 @@ const HomeLandingPage: React.FC = () => {
     );
   };
 
+  // Navigate to OCR screen
+  const navigateToOCR = () => {
+    navigation.navigate('order', {
+      screen: 'ocr-reading',
+    });
+  };
+
   // Render FlatList header (empty since we moved static content out)
   const renderHeader = () => null;
 
@@ -443,6 +452,15 @@ const HomeLandingPage: React.FC = () => {
       {/* Static Content - OrderSummary and DateSelector */}
       <Container paddingHorizontal={16} style={{position: 'relative'}}>
         <OrderSummaryCard />
+        
+        {/* OCR Test Button */}
+        <Button
+          title={t('home.testOCR')}
+          onPress={navigateToOCR}
+          style={{marginVertical: 16}}
+          variant="outlined"
+        />
+        
         <CustomDateSelector
           selectedDate={selectedDate}
           onDateChange={handleDateChange}
