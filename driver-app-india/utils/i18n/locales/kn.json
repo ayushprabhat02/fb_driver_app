@@ -1,0 +1,23 @@
+{
+  "login": {
+    "welcome": "ಸ್ವಾಗತ",
+    "login_to_continue": "ಮುಂದುವರೆಯಲು ಲಾಗಿನ್ ಮಾಡಿ",
+    "email": "ಇಮೇಲ್",
+    "password": "ಪಾಸ್‌ವರ್ಡ್",
+    "login": "ಲಾಗಿನ್",
+    "logging_in": "ಲಾಗಿನ್ ಆಗುತ್ತಿದೆ...",
+    "email_required": "ಇಮೇಲ್ ಅಗತ್ಯವಿದೆ",
+    "email_invalid": "ದಯವಿಟ್ಟು ಮಾನ್ಯವಾದ ಇಮೇಲ್ ನಮೂದಿಸಿ",
+    "password_required": "ಪಾಸ್‌ವರ್ಡ್ ಅಗತ್ಯವಿದೆ",
+    "password_min": "ಪಾಸ್‌ವರ್ಡ್ ಕನಿಷ್ಠ 6 ಅಕ್ಷರಗಳ ಉದ್ದವಿರಬೇಕು",
+    "switch_language": "ಭಾಷೆ ಬದಲಾಯಿಸಿ",
+    "select_language": "ನಿಮ್ಮ ಭಾಷೆಯನ್ನು ಆಯ್ಕೆಮಾಡಿ"
+  },
+  "common": {
+    "loading": "ಲೋಡ್ ಆಗುತ್ತಿದೆ...",
+    "error": "ದೋಷ",
+    "success": "ಯಶಸ್ಸು",
+    "cancel": "ರದ್ದುಮಾಡಿ",
+    "confirm": "ದೃಢೀಕರಿಸಿ"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "login": {
+    "welcome": "خوش آمدید",
+    "login_to_continue": "جاری رکھنے کے لیے لاگ ان کریں",
+    "email": "ای میل",
+    "password": "پاس ورڈ",
+    "login": "لاگ ان",
+    "logging_in": "لاگ ان ہو رہا ہے...",
+    "email_required": "ای میل درکار ہے",
+    "email_invalid": "براہ کرم ایک درست ای میل درج کریں",
+    "password_required": "پاس ورڈ درکار ہے",
+    "password_min": "پاس ورڈ کم از کم 6 حروف کا ہونا چاہیے",
+    "switch_language": "زبان تبدیل کریں",
+    "select_language": "اپنی زبان منتخب کریں"
+  },
+  "common": {
+    "loading": "لوڈ ہو رہا ہے...",
+    "error": "خرابی",
+    "success": "کامیابی",
+    "cancel": "منسوخ کریں",
+    "confirm": "تصدیق کریں"
+  }
+}

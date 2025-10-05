@@ -3,12 +3,13 @@ import {Keyboard, Pressable, StyleSheet, TextInput, View} from 'react-native';
 import React, {useState} from 'react';
 import {commonInputStyles} from '@/styles';
 import {z} from 'zod'; // <-- Added Zod import here
+import {useTranslation} from 'react-i18next';
 
 // store
 import {authStore} from '@/globalStore';
 
 // components
-import {Text, Button, Divider} from '@/components';
+import {Text, Button, Divider, LanguageSelector} from '@/components';
 import LoginFormHeading from './LoginHeading';
 import {Eye, EyeSlash} from 'phosphor-react-native';
 
@@ -36,6 +37,7 @@ const loginSchema = z.object({
 type LoginFormFields = z.infer<typeof loginSchema>;
 
 const LoginForm: React.FC = () => {
+  const {t} = useTranslation();
   const [showPassword, setShowPassword] = useState(false);
   const isLoading = authStore.use.loaders().auth;
   const loader = authStore.use.loaders();
@@ -85,7 +87,7 @@ const LoginForm: React.FC = () => {
         render={({field: {onChange, onBlur, value}}) => (
           <View style={styles.inputWrapper}>
             <Text size="sm" color="steelBlue" weight="500">
-              Email <Text color="error">*</Text>
+              {t('login.email')} <Text color="error">*</Text>
             </Text>
             <Divider height={4} />
             <TextInput
@@ -93,7 +95,7 @@ const LoginForm: React.FC = () => {
               onChangeText={onChange}
               onBlur={onBlur}
               style={[styles.inputStyle, errors.email && styles.errorBorder]}
-              placeholder="Enter your email"
+              placeholder={t('login.email')}
               placeholderTextColor={FBColors.placeHolderPrimary}
               keyboardType="email-address"
               autoCapitalize="none"
@@ -115,7 +117,7 @@ const LoginForm: React.FC = () => {
         render={({field: {onChange, onBlur, value}}) => (
           <View style={styles.inputWrapper}>
             <Text size="sm" color="steelBlue" weight="500">
-              Password <Text color="error">*</Text>
+              {t('login.password')} <Text color="error">*</Text>
             </Text>
             <Divider height={4} />
             <View
@@ -128,7 +130,7 @@ const LoginForm: React.FC = () => {
                 onChangeText={onChange}
                 onBlur={onBlur}
                 style={styles.passwordInput}
-                placeholder="Enter your password"
+                placeholder={t('login.password')}
                 placeholderTextColor={FBColors.placeHolderPrimary}
                 secureTextEntry={!showPassword}
                 editable={!isLoading}
@@ -165,8 +167,19 @@ const LoginForm: React.FC = () => {
         variant="solid"
         style={{width: '100%'}}
         onPress={handleSubmit(onLoginSubmit)}>
-        {isLoading ? 'Logging in...' : 'Login'}
+        {isLoading ? t('common.loading') : t('login.login')}
       </Button>
+
+      <Divider height={20} />
+
+      {/* Language Selector */}
+      <View style={styles.languageSection}>
+        <Text size="xs" color="steelBlue" weight="600">
+          {t('login.switch_language')}
+        </Text>
+        <Divider height={8} />
+        <LanguageSelector style={{width: '100%'}} />
+      </View>
     </View>
   );
 };
@@ -216,5 +229,9 @@ const styles = StyleSheet.create({
   },
   errorBorder: {
     borderColor: 'red',
+  },
+  languageSection: {
+    width: '100%',
+    marginTop: 8,
   },
 });

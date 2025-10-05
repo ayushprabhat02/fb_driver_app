@@ -1,0 +1,23 @@
+{
+  "login": {
+    "welcome": "স্বাগতম",
+    "login_to_continue": "চালিয়ে যেতে লগইন করুন",
+    "email": "ইমেল",
+    "password": "পাসওয়ার্ড",
+    "login": "লগইন",
+    "logging_in": "লগইন হচ্ছে...",
+    "email_required": "ইমেল প্রয়োজন",
+    "email_invalid": "অনুগ্রহ করে একটি বৈধ ইমেল লিখুন",
+    "password_required": "পাসওয়ার্ড প্রয়োজন",
+    "password_min": "পাসওয়ার্ড কমপক্ষে 6 অক্ষরের হতে হবে",
+    "switch_language": "ভাষা পরিবর্তন করুন",
+    "select_language": "আপনার ভাষা নির্বাচন করুন"
+  },
+  "common": {
+    "loading": "লোড হচ্ছে...",
+    "error": "ত্রুটি",
+    "success": "সফলতা",
+    "cancel": "বাতিল করুন",
+    "confirm": "নিশ্চিত করুন"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "login": {
+    "welcome": "સ્વાગત છે",
+    "login_to_continue": "ચાલુ રાખવા માટે લોગિન કરો",
+    "email": "ઈમેલ",
+    "password": "પાસવર્ડ",
+    "login": "લોગિન",
+    "logging_in": "લોગિન થઈ રહ્યું છે...",
+    "email_required": "ઈમેલ જરૂરી છે",
+    "email_invalid": "કૃપા કરીને માન્ય ઈમેલ દાખલ કરો",
+    "password_required": "પાસવર્ડ જરૂરી છે",
+    "password_min": "પાસવર્ડ ઓછામાં ઓછો 6 અક્ષરોનો હોવો જોઈએ",
+    "switch_language": "ભાષા બદલો",
+    "select_language": "તમારી ભાષા પસંદ કરો"
+  },
+  "common": {
+    "loading": "લોડ થઈ રહ્યું છે...",
+    "error": "ભૂલ",
+    "success": "સફળતા",
+    "cancel": "રદ કરો",
+    "confirm": "પુષ્ટિ કરો"
+  }
+}

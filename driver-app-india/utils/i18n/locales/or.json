@@ -1,0 +1,23 @@
+{
+  "login": {
+    "welcome": "ସ୍ୱାଗତ",
+    "login_to_continue": "ଜାରି ରଖିବାକୁ ଲଗଇନ୍ କରନ୍ତୁ",
+    "email": "ଇମେଲ୍",
+    "password": "ପାସୱାର୍ଡ଼",
+    "login": "ଲଗଇନ୍",
+    "logging_in": "ଲଗଇନ୍ ହେଉଛି...",
+    "email_required": "ଇମେଲ୍ ଆବଶ୍ୟକ",
+    "email_invalid": "ଦୟାକରି ଏକ ବୈଧ ଇମେଲ୍ ପ୍ରବେଶ କରନ୍ତୁ",
+    "password_required": "ପାସୱାର୍ଡ଼ ଆବଶ୍ୟକ",
+    "password_min": "ପାସୱାର୍ଡ଼ ଅତିକମରେ 6 ଅକ୍ଷର ଲମ୍ବା ହେବା ଆବଶ୍ୟକ",
+    "switch_language": "ଭାଷା ବଦଳାନ୍ତୁ",
+    "select_language": "ଆପଣଙ୍କ ଭାଷା ଚୟନ କରନ୍ତୁ"
+  },
+  "common": {
+    "loading": "ଲୋଡ୍ ହେଉଛି...",
+    "error": "ତ୍ରୁଟି",
+    "success": "ସଫଳତା",
+    "cancel": "ବାତିଲ୍ କରନ୍ତୁ",
+    "confirm": "ନିଶ୍ଚିତ କରନ୍ତୁ"
+  }
+}

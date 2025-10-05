@@ -1,0 +1,23 @@
+{
+  "login": {
+    "welcome": "Welcome",
+    "login_to_continue": "Log in to continue",
+    "email": "Email",
+    "password": "Password",
+    "login": "Login",
+    "logging_in": "Logging in...",
+    "email_required": "Email is required",
+    "email_invalid": "Please enter a valid email address",
+    "password_required": "Password is required",
+    "password_min": "Password must be at least 6 characters long",
+    "switch_language": "Switch language",
+    "select_language": "Select your language"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "confirm": "Confirm"
+  }
+}

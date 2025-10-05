@@ -9,6 +9,9 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import './utils/ignoreWarnings';
 
+// Initialize i18n (must be imported early)
+import './utils/i18n';
+
 // navigator
 import { createStackNavigator } from '@react-navigation/stack';
 

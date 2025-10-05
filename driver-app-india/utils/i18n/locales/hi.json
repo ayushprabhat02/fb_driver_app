@@ -1,0 +1,23 @@
+{
+  "login": {
+    "welcome": "स्वागत है",
+    "login_to_continue": "जारी रखने के लिए लॉगिन करें",
+    "email": "ईमेल",
+    "password": "पासवर्ड",
+    "login": "लॉगिन",
+    "logging_in": "लॉगिन हो रहा है...",
+    "email_required": "ईमेल आवश्यक है",
+    "email_invalid": "कृपया एक वैध ईमेल दर्ज करें",
+    "password_required": "पासवर्ड आवश्यक है",
+    "password_min": "पासवर्ड कम से कम 6 अक्षरों का होना चाहिए",
+    "switch_language": "भाषा बदलें",
+    "select_language": "अपनी भाषा चुनें"
+  },
+  "common": {
+    "loading": "लोड हो रहा है...",
+    "error": "त्रुटि",
+    "success": "सफलता",
+    "cancel": "रद्द करें",
+    "confirm": "पुष्टि करें"
+  }
+}

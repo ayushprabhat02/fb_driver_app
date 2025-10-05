@@ -16,6 +16,7 @@ export {default as ImageCard} from './ImageCard';
 export {default as SimpleBottomSheet} from './SimpleBottomSheet';
 export {default as BackButtonCross} from './BackButtonCross';
 export {default as NewBottomSheet} from './NewBottomSheet';
+export {default as LanguageSelector} from './LanguageSelector';
 export {default as FocusAwareStatusBar} from './FocusAwareStatusBar';
 export {default as HeaderAvoidingContainer} from './HeaderAvoidingContainer';
 export {default as ShippingAddressHeader} from './ShippingAddressHeader';
