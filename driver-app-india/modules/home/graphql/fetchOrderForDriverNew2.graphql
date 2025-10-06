@@ -285,6 +285,7 @@ query fetchOrderForDriverNew2(
         official_state
       }
       country_id
+      name
     }
   }
 }

@@ -152,23 +152,8 @@ const ChooseAssetScreen: React.FC = () => {
       dispenseCompletedAssets: dispensedAssets,
     }));
 
-    // Check if buddy challan flow is enabled
-    if (currentDriverOrder?.is_enable_buddycan_flow) {
-      navigation.navigate('buddy-challan');
-    } else {
-       Alert.alert(
-        'Bowser Order',
-        'This is a bowser order',
-        [
-          {
-            text: 'OK',
-            onPress: () => navigation.navigate('home'),
-          },
-        ],
-        { cancelable: false }
-      );
-      // navigation.navigate('delivery-challan');
-    }
+    // Navigate to OCR Reading screen
+    navigation.navigate('ocr-reading');
   };
 
   // 🚫 CANCELLATION FUNCTIONALITY - Using simplified components

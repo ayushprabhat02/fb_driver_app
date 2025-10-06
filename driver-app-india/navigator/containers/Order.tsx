@@ -16,6 +16,7 @@ import ChooseAssetScreen from '@/modules/order/screens/ChooseAssetScreen';
 import ReachLocationScreen from '@/modules/order/screens/ReachLocationScreen';
 import DeliveryChallanScreen from '@/modules/order/screens/DeliveryChallanScreen';
 import BuddyChallanScreen from '@/modules/order/screens/BuddyChallanScreen';
+import OCRReadingScreen from '@/modules/order/screens/OCRReadingScreen';
 import {BackButtonArrow} from '@/components';
 
 // styles
@@ -36,6 +37,7 @@ export type OrderStackParamList = {
   'upload-image-asset': undefined;
   'totalizer-after-manual': undefined;
   'live-stream': undefined;
+  'ocr-reading': undefined;
   'delivery-challan': undefined;
   'buddy-challan': undefined;
 };
@@ -124,6 +126,17 @@ const OrderNavigator: React.FC = () => {
         component={LiveStreamScreen}
         options={{
           title: 'Live Stream Recording',
+          headerTransparent: false,
+          headerStyle: {
+            backgroundColor: FBBackground.white,
+          },
+        }}
+      />
+      <OrderStack.Screen
+        name="ocr-reading"
+        component={OCRReadingScreen}
+        options={{
+          title: 'OCR Reading',
           headerTransparent: false,
           headerStyle: {
             backgroundColor: FBBackground.white,
