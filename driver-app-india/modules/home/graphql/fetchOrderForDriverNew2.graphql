@@ -270,6 +270,7 @@ query fetchOrderForDriverNew2(
     is_enable_customer_location_test
     id
     organization_address {
+      name
       instruction
       location
       address_line1

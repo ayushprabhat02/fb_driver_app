@@ -44,7 +44,7 @@ const OrderInfoCard: React.FC = () => {
 
             return {
                 orderCode: String(customerOrder?.order_code || 'N/A'),
-                indusId: String(organizationName),
+                indusId:selectedOrder?.organization_address?.name,
                 deliveryDate: String(deliveryDate),
                 quantity: totalQty || quantityToBeDispensed || 0
             };

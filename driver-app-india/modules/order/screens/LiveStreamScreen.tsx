@@ -113,7 +113,8 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   // console.log('--currentDriverOrder---', currentDriverOrder);
 
   // Minimum streaming duration set to 5 minutes for all users
-  const streamingDurationSeconds = 300; // 5 minutes (300 seconds)
+  // const streamingDurationSeconds = 300; // 5 minutes (300 seconds)
+  const streamingDurationSeconds = 10; //10 seconds
 
   // Get current asset's filled quantity
   const getCurrentAssetFilledQuantity = () => {
@@ -492,6 +493,8 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       // Stop camera recording if recording was ever started (regardless of pause state)
       if (isRecording || isPaused) {
         cameraRef.current.stopRecording();
+        // NOTE: isStoppingRecording will remain true until handleRecordingFinished completes
+        // This prevents user from clicking Start Recording before upload finishes
       }
 
       setIsRecording(false);
@@ -507,7 +510,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
 
       // Clear persisted state since recording is complete
       await clearStreamState();
-      
+
       // Remove from interrupted recording array since recording is now complete
       const currentAssetId = currentAssetForDispense?.id;
       if (currentAssetId) {
@@ -522,8 +525,11 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       Toast.show({
         type: 'success',
         text1: 'Recording Stopped',
-        text2: 'Live stream has been saved',
+        text2: 'Processing video... Please wait',
       });
+
+      // DON'T reset isStoppingRecording here - it will be reset in handleRecordingFinished
+      // This keeps all buttons disabled during upload
     } catch (error) {
       console.error('Stop recording error:', error);
       Toast.show({
@@ -531,9 +537,10 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         text1: 'Stop Failed',
         text2: 'Unable to stop recording properly',
       });
-    } finally {
+      // Only reset on error
       setIsStoppingRecording(false);
     }
+    // NOTE: No finally block - isStoppingRecording stays true until upload completes
   };
 
   // Check storage permissions for Android
@@ -656,7 +663,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   const handleRecordingFinished = async (data: any) => {
     try {
       startLoader('uploadVideo');
-      
+
       // Detect actual video format
       const videoFormat = getVideoFormat(data.uri, data.codec);
       const contentType = `video/${videoFormat}`;
@@ -743,6 +750,10 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       });
     } finally {
       stopLoader('uploadVideo');
+      // IMPORTANT: Reset isStoppingRecording after upload is complete
+      // This re-enables the Start Recording button
+      setIsStoppingRecording(false);
+      console.log('✅ Upload process completed - buttons re-enabled');
     }
   };
 

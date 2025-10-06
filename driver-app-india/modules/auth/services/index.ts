@@ -2,7 +2,7 @@
 import auth, {FirebaseAuthTypes} from '@react-native-firebase/auth';
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
-import {authStore, checkinStore} from '@/globalStore';
+import {authStore, checkinStore, locationTrackingStore} from '@/globalStore';
 import {initializeClient} from '@/utils/client';
 import {clearDriverVehicleId} from '@/utils/localStorage';
 
@@ -175,12 +175,18 @@ export const checkHasuraId = (token: FirebaseAuthTypes.IdTokenResult) => {
 
 export const signOut = async () => {
   try {
+    // Stop live location tracking before signing out
+    console.log('🛑 Stopping live location tracking before sign out...');
+    locationTrackingStore.getState().stopLiveLocationTracking();
+
     // Clear any locally persisted check-in state so next login starts from check-in
     clearDriverVehicleId();
     checkinStore.getState().resetCheckinStore();
 
     await auth().signOut();
+    console.log('✅ Sign out completed successfully');
   } catch (error) {
+    console.error('❌ Sign out failed:', error);
     Toast.show({
       type: 'error',
       text1: 'Error signing out',

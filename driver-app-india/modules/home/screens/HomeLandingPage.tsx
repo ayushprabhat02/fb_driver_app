@@ -64,6 +64,9 @@ const HomeLandingPage: React.FC = () => {
   const currentDriverOrder = orderStore.use.currentDriverOrder();
   const currentFillupOrder = orderStore.use.currentFillupOrder();
 
+  const shiftDetails = checkinStore.getState().shiftSchedule
+  console.log('---shiftDetails---', shiftDetails?.start_time);
+
   const allFillupsCompleted = fillupHistory?.every(
     (item: any) => item.state === 'COMPLETE' || item.state === 'REJECTED',
   );
