@@ -53,17 +53,17 @@ export const validateShiftPeriodically = async (
       return;
     }
 
-    // Check if current time exceeds shift end time by more than 1 hour
-    const now = DateTime.now();
+    // Check if current time exceeds shift end time
+    // Matching Vue.js logic: use 1 hour buffer (current time + 1 hour) for validation
+    const currentTimeWithBuffer = DateTime.now().plus({ hours: 1 });
     const shiftEndTime = DateTime.fromISO(shiftSchedule.end_time);
-    const timeDifference = now.diff(shiftEndTime, 'hours').hours;
 
-    if (timeDifference > 1) {
-      console.log('Shift ended more than 1 hour ago, logging out user');
+    if (currentTimeWithBuffer > shiftEndTime) {
+      console.log('Shift has ended, logging out user');
       Toast.show({
         type: 'info',
         text1: 'Shift Ended',
-        text2: 'Your shift has ended. Please log in again.',
+        text2: 'Your shift has ended. You will now be logged out.',
       });
       signOut();
     }

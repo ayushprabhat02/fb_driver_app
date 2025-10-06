@@ -71,6 +71,7 @@ export const startTrip = async (order: any): Promise<OrderFlowResult> => {
 const updateOrderState = async (order: any): Promise<boolean> => {
   try {
     const isAssigned = order.state === 'ASSIGNED';
+    const isInTransit = order.state === 'IN_TRANSIT';
 
     if (isAssigned) {
       if (order.category === 'FILL_UP') {
@@ -144,6 +145,32 @@ const updateOrderState = async (order: any): Promise<boolean> => {
     console.error('Error updating order state:', error);
     Alert.alert('Error', 'Failed to update order state. Please try again.');
     return false;
+  }
+};
+
+/**
+ * @function updateOrderInStore
+ * @description Helper function to update order state in the store
+ */
+const updateOrderInStore = (order: any, newState: string) => {
+  const allDriverOrders = homeStore.getState().driverOrders;
+  if (allDriverOrders) {
+    const updatedOrder = allDriverOrders.find((o: any) => o.id === order.id);
+    if (updatedOrder) {
+      updatedOrder.state = newState as any;
+
+      if (order.category === 'DELIVERY') {
+        orderStore.setState(state => ({
+          ...state,
+          currentDriverOrder: updatedOrder,
+        }));
+      } else if (order.category === 'FILL_UP') {
+        orderStore.setState(state => ({
+          ...state,
+          currentFillupOrder: updatedOrder,
+        }));
+      }
+    }
   }
 };
 

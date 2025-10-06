@@ -2,6 +2,7 @@ import React, {forwardRef} from 'react';
 import {View, StyleSheet, Image, TouchableOpacity} from 'react-native';
 import {BottomSheetModal, BottomSheetView} from '@gorhom/bottom-sheet';
 import {Button, Divider, SimpleBottomSheet, Text} from '@/components';
+import { useNavigation } from '@react-navigation/native';
 
 interface CheckInBottomSheetProps {
   handleCheckIn: () => void;
@@ -13,6 +14,12 @@ const CheckInBottomsheet = forwardRef<
   CheckInBottomSheetProps
 >(({handleCheckIn, closeSheet}, ref) => {
   const snapPoints = ['80%'];
+  const navigation = useNavigation();
+
+  const handleLogout = () => {
+    // @ts-ignore
+    navigation.navigate('checkout');
+  };
 
   const truckImage = require('@/assets/home/truck-fuelbuddy.png');
 
@@ -59,7 +66,7 @@ const CheckInBottomsheet = forwardRef<
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity>
+          <TouchableOpacity onPress={handleLogout}>
             <Text
               size="sm"
               color="complementary"

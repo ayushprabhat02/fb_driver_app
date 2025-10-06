@@ -78,8 +78,15 @@ const FillupRequest: React.FC = () => {
   const isRotationFlow = watchedTankType === 'rotation-flow';
 
   const tankTypeOptions = useMemo(() => {
+    // NOTE: Currently only showing 'browser-tank' (bowser tank) for fillup requests
+    // Fuel tank and rotation tank are commented out and may be enabled in future
     const options =
-      driverVehicleDetails?.vehicle_tank_types?.map(
+      driverVehicleDetails?.vehicle_tank_types
+        ?.filter((tank: Vehicle_Tank_Type) => {
+          // Only include browser-tank (bowser tank)
+          return tank.tank_type?.slug === 'browser-tank';
+        })
+        ?.map(
         (tank: Vehicle_Tank_Type) => {
           const tankTypeDetails: TankTypeDetails = {
             tank_type: {
@@ -100,11 +107,12 @@ const FillupRequest: React.FC = () => {
           };
         },
       ) || [];
-    options.push({
-      label: 'Rotation Flow',
-      value: 'rotation-flow',
-      details: undefined as any,
-    });
+    // TODO: Uncomment when rotation flow is needed
+    // options.push({
+    //   label: 'Rotation Flow',
+    //   value: 'rotation-flow',
+    //   details: undefined as any,
+    // });
     return options;
   }, [driverVehicleDetails]);
 

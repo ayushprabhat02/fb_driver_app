@@ -95,18 +95,18 @@ class CheckinService {
         return []; // Return empty array instead of throwing
       }
 
-      // Check if current time exceeds shift end time by more than 1 hour (grace period)
+      // Check if current time exceeds shift end time
+      // Matching Vue.js logic: use 1 hour buffer (current time + 1 hour) for validation
       if (shiftEndTime) {
-        const currentTime = DateTime.now();
+        const currentTimeWithBuffer = DateTime.now().plus({ hours: 1 });
         const endTime = DateTime.fromISO(shiftEndTime);
-        const timeDifference = currentTime.diff(endTime, 'hours').hours;
 
-        if (timeDifference > 1) {
-          // Shift has ended more than 1 hour ago - driver should be logged out
+        if (currentTimeWithBuffer > endTime) {
+          // Shift has ended - driver should be logged out
           Toast.show({
             type: 'info',
-            text1: 'Shift Time Expired',
-            text2: 'Your shift time has expired. Please log in again.',
+            text1: 'Shift Ended',
+            text2: 'Your shift has ended. You will now be logged out.',
           });
           await this.handleShiftEndLogout();
           return response.shift_schedule;

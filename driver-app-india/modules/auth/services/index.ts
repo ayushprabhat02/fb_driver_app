@@ -7,11 +7,22 @@ import {initializeClient} from '@/utils/client';
 import {clearDriverVehicleId} from '@/utils/localStorage';
 
 const errorMessage = (message: string) => {
+  console.log('firebase error', message);
+
   if (message.includes('auth/too-many-requests')) {
     return 'Too many attempts. Please try after some time';
+  } else if (message.includes('auth/wrong-password')) {
+    return 'Incorrect password. Please try again.';
+  } else if (message.includes('auth/user-not-found')) {
+    return 'No account found with this email.';
+  } else if (message.includes('auth/invalid-email')) {
+    return 'Invalid email address format.';
+  } else if (message.includes('auth/user-disabled')) {
+    return 'This account has been disabled.';
+  } else if (message.includes('auth/network-request-failed')) {
+    return 'Network error. Please check your connection.';
   } else {
-    console.log('firebase error', message);
-    return 'Make sure your phone number is correct and try again.';
+    return 'Login failed. Please check your credentials and try again.';
   }
 };
 

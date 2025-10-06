@@ -27,8 +27,20 @@ query fillupHistoryNew(
         }
       }
     }
+    partner_order {
+      partner_order_items {
+        partner_order_item_values {
+          key
+          value
+        }
+      }
+    }
     task {
       category
+      task_values {
+        key
+        quantity_dispensed
+      }
     }
   }
   fillup_request_aggregate(
