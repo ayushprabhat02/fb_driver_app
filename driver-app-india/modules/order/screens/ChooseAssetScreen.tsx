@@ -156,7 +156,18 @@ const ChooseAssetScreen: React.FC = () => {
     if (currentDriverOrder?.is_enable_buddycan_flow) {
       navigation.navigate('buddy-challan');
     } else {
-      navigation.navigate('delivery-challan');
+       Alert.alert(
+        'Bowser Order',
+        'This is a bowser order',
+        [
+          {
+            text: 'OK',
+            onPress: () => navigation.navigate('home'),
+          },
+        ],
+        { cancelable: false }
+      );
+      // navigation.navigate('delivery-challan');
     }
   };
 

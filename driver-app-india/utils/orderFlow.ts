@@ -65,52 +65,76 @@ export const startTrip = async (order: any): Promise<OrderFlowResult> => {
 
 /**
  * @function updateOrderState
- * @description Updates order state from ASSIGNED to IN_TRANSIT for delivery orders and to ARRIVED for fillup orders
+ * @description Updates order state from ASSIGNED to IN_TRANSIT and then immediately to ARRIVED for delivery orders
+ * For fillup orders, directly changes to ARRIVED
  */
 const updateOrderState = async (order: any): Promise<boolean> => {
   try {
     const isAssigned = order.state === 'ASSIGNED';
 
     if (isAssigned) {
-      // For fillup orders, directly change state to ARRIVED
-      // For delivery orders, change state to IN_TRANSIT
-      let response;
       if (order.category === 'FILL_UP') {
-        response = await orderService.markOrderArrived({ id: order.id });
-      } else {
-        response = await orderService.markOrderInTransit({ id: order.id });
-      }
+        // For fillup orders, directly change state to ARRIVED
+        const response = await orderService.markOrderArrived({ id: order.id });
 
-      if (!response) {
-        Alert.alert('Error', 'Failed to update order state. Please try again.');
-        return false;
-      }
+        if (!response) {
+          Alert.alert('Error', 'Failed to update order state. Please try again.');
+          return false;
+        }
 
-      // Update store with fresh order data after state change
-      const allDriverOrders = homeStore.getState().driverOrders;
-      if (allDriverOrders) {
-        const updatedOrder = allDriverOrders.find(
-          (o: any) => o.id === order.id,
-        );
-        if (updatedOrder) {
-          // Update the order object with new state
-          if (order.category === 'FILL_UP') {
+        // Update store with ARRIVED state
+        const allDriverOrders = homeStore.getState().driverOrders;
+        if (allDriverOrders) {
+          const updatedOrder = allDriverOrders.find((o: any) => o.id === order.id);
+          if (updatedOrder) {
             updatedOrder.state = 'ARRIVED' as any;
-          } else {
-            updatedOrder.state = 'IN_TRANSIT' as any;
-          }
-
-          if (order.category === 'DELIVERY') {
-            orderStore.setState(state => ({
-              ...state,
-              currentDriverOrder: updatedOrder,
-            }));
-          } else if (order.category === 'FILL_UP') {
             orderStore.setState(state => ({
               ...state,
               currentFillupOrder: updatedOrder,
             }));
           }
+        }
+      } else {
+        // For delivery orders, change state to IN_TRANSIT first, then immediately to ARRIVED
+        console.log('🚚 Starting delivery order state transitions: ASSIGNED → IN_TRANSIT → ARRIVED');
+
+        // Step 1: ASSIGNED → IN_TRANSIT
+        console.log('📍 Step 1: Updating order to IN_TRANSIT...');
+        const transitResponse = await orderService.markOrderInTransit({ id: order.id });
+        if (!transitResponse) {
+          console.error('❌ Failed to update order to IN_TRANSIT');
+          Alert.alert('Error', 'Failed to update order to IN_TRANSIT. Please try again.');
+          return false;
+        }
+        console.log('✅ Order state updated to IN_TRANSIT successfully');
+
+        // Step 2: IN_TRANSIT → ARRIVED (immediately)
+        console.log('🎯 Step 2: Updating order to ARRIVED...');
+        const arrivedResponse = await orderService.markOrderArrived({ id: order.id });
+        if (!arrivedResponse) {
+          console.error('❌ Failed to update order to ARRIVED');
+          Alert.alert('Error', 'Failed to update order to ARRIVED. Please try again.');
+          return false;
+        }
+        console.log('✅ Order state updated to ARRIVED successfully');
+
+        // Update store with ARRIVED state (final state)
+        console.log('🔄 Updating store with ARRIVED state...');
+        const allDriverOrders = homeStore.getState().driverOrders;
+        if (allDriverOrders) {
+          const updatedOrder = allDriverOrders.find((o: any) => o.id === order.id);
+          if (updatedOrder) {
+            updatedOrder.state = 'ARRIVED' as any;
+            orderStore.setState(state => ({
+              ...state,
+              currentDriverOrder: updatedOrder,
+            }));
+            console.log('✅ Store updated with ARRIVED state');
+          } else {
+            console.warn('⚠️ Order not found in driver orders list for store update');
+          }
+        } else {
+          console.warn('⚠️ No driver orders found in store');
         }
       }
     }
@@ -144,26 +168,22 @@ const routeToOrderHandler = (
 /**
  * @function handleDelivery
  * @description Handles delivery order routing logic
- * Matches Vue.js handleDelivery() implementation
+ * Routes to choose-asset page when order is in ARRIVED state
  */
 const handleDelivery = (
   order: any,
 ): { navigateTo: string; navigateParams?: any } => {
   const { state } = order;
 
-  // DISPENSING orders go directly to asset selection
-  if (state === 'DISPENSING') {
+  // DISPENSING or ARRIVED orders go directly to asset selection
+  if (state === 'DISPENSING' || state === 'ARRIVED') {
     return {
       navigateTo: 'order',
       navigateParams: { screen: 'choose-asset' },
     };
   }
 
-  // For now, route directly to choose asset
-  // TODO: Implement customer tests, COD, POD flows
-  // TODO: Add payment information detection
-  // TODO: Add health checks routing
-
+  // For all other states, route to choose asset (order will be in ARRIVED state after startTrip)
   return {
     navigateTo: 'order',
     navigateParams: { screen: 'choose-asset' },

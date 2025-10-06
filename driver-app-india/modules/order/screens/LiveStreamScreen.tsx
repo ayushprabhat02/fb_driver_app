@@ -113,7 +113,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   // console.log('--currentDriverOrder---', currentDriverOrder);
 
   // Minimum streaming duration set to 5 minutes for all users
-  const streamingDurationSeconds = 10; // 5 minutes (300 seconds)
+  const streamingDurationSeconds = 300; // 5 minutes (300 seconds)
 
   // Get current asset's filled quantity
   const getCurrentAssetFilledQuantity = () => {
@@ -1081,8 +1081,8 @@ For iOS Simulator:
 
   const handleQuantityProceedBuddyCan = async (quantity: number) => {
     try {
-      setIsLoading(true);
-      setShowQuantityBottomSheet(false);
+      // Start loading but keep bottomsheet open
+      startLoader('uploadVideo');
 
       const currentAssetId = orderStore.getState().currentAssetForDispense?.id;
 
@@ -1167,6 +1167,13 @@ For iOS Simulator:
         removePartiallyFilledAsset(currentAssetId);
       }
 
+      // Stop loader before closing bottomsheet
+      stopLoader('uploadVideo');
+
+      // Close bottomsheet only after successful update
+      setShowQuantityBottomSheet(false);
+
+      // Show success toast
       Toast.show({
         type: 'success',
         text1: 'Quantity Updated',
@@ -1177,6 +1184,11 @@ For iOS Simulator:
       navigation.navigate('choose-asset');
     } catch (error) {
       console.error('Error in handleQuantityProceedBuddyCan:', error);
+
+      // Stop loader on error
+      stopLoader('uploadVideo');
+
+      // Keep bottomsheet open on error so user can retry
       Toast.show({
         type: 'error',
         text1: 'Update Failed',
@@ -1185,15 +1197,13 @@ For iOS Simulator:
             ? error.message
             : 'Failed to update quantity. Please try again.',
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const handleQuantityProceedBowser = async (quantity: number) => {
     try {
-      setIsLoading(true);
-      setShowQuantityBottomSheet(false);
+      // Start loading but keep bottomsheet open
+      startLoader('uploadVideo');
 
       const currentAssetId = orderStore.getState().currentAssetForDispense?.id;
       const driverVehicleId = currentDriverOrder?.driver_vehicle_id;
@@ -1308,6 +1318,13 @@ For iOS Simulator:
         }
       }
 
+      // Stop loader before closing bottomsheet
+      stopLoader('uploadVideo');
+
+      // Close bottomsheet only after successful update
+      setShowQuantityBottomSheet(false);
+
+      // Show success toast
       Toast.show({
         type: 'success',
         text1: 'Quantity Updated',
@@ -1318,6 +1335,11 @@ For iOS Simulator:
       navigation.navigate('choose-asset');
     } catch (error) {
       console.error('Error in handleQuantityProceedBowser:', error);
+
+      // Stop loader on error
+      stopLoader('uploadVideo');
+
+      // Keep bottomsheet open on error so user can retry
       Toast.show({
         type: 'error',
         text1: 'Update Failed',
@@ -1326,8 +1348,6 @@ For iOS Simulator:
             ? error.message
             : 'Failed to update bowser quantity. Please try again.',
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 

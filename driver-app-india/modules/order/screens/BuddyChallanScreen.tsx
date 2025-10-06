@@ -6,7 +6,7 @@ import Toast from 'react-native-toast-message';
 import {ScaledSheet} from 'react-native-size-matters';
 
 // Components
-import {Button, Divider, Text} from '@/components';
+import {Button, Divider, Text, FullScreenLoader} from '@/components';
 import {ImageContainer} from '@/modules/checkin/components';
 
 // Camera
@@ -50,6 +50,7 @@ const BuddyChallanScreen: React.FC = () => {
   const [showCamera, setShowCamera] = useState(false);
   const [imageType, setImageType] = useState<ImageCaptureType | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [processingOrder, setProcessingOrder] = useState(false);
 
   // Store
   const currentDriverOrder = orderStore.use.currentDriverOrder();
@@ -489,6 +490,10 @@ const BuddyChallanScreen: React.FC = () => {
       // Step 0: Upload all images first
       await uploadAllImages();
 
+      // After images are uploaded, show fullscreen loader for remaining operations
+      setProcessingOrder(true);
+      setLoading(false);
+
       // Step 1: Create invoice
       await createInvoice();
 
@@ -517,6 +522,7 @@ const BuddyChallanScreen: React.FC = () => {
       });
     } finally {
       setLoading(false);
+      setProcessingOrder(false);
     }
   };
 
@@ -578,6 +584,10 @@ const BuddyChallanScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      <FullScreenLoader
+        showLoader={processingOrder}
+        loaderText="Completing order..."
+      />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
