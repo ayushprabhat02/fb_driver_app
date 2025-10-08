@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Alert,
@@ -8,12 +8,12 @@ import {
   TouchableOpacity,
   PermissionsAndroid,
 } from 'react-native';
-import {RNCamera} from 'react-native-camera';
-import {useNavigation} from '@react-navigation/native';
-import {StackNavigationProp} from '@react-navigation/stack';
-import {request, PERMISSIONS, RESULTS, check} from 'react-native-permissions';
+import { RNCamera } from 'react-native-camera';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { request, PERMISSIONS, RESULTS, check } from 'react-native-permissions';
 import Toast from 'react-native-toast-message';
-import {ScaledSheet} from 'react-native-size-matters';
+import { ScaledSheet } from 'react-native-size-matters';
 import RNFS from 'react-native-fs';
 import DocumentPicker from 'react-native-document-picker';
 
@@ -31,16 +31,16 @@ import CameraOverlay from '../components/CameraOverlay';
 import StreamControls from '../components/StreamControls';
 
 // Store
-import {checkinStore, orderStore} from '@/globalStore';
+import { checkinStore, orderStore } from '@/globalStore';
 
 // Services
 import orderService from '../services';
 import supportService from '@/modules/support/services';
 
 // Types
-import {FBColors, FBBackground} from '@/types/styles';
-import {OrderStackParamList} from '@/navigator/containers/Order';
-import {getCurrentLocation} from '@/utils/location';
+import { FBColors, FBBackground } from '@/types/styles';
+import { OrderStackParamList } from '@/navigator/containers/Order';
+import { getCurrentLocation } from '@/utils/location';
 import {
   saveStreamState,
   getStreamState,
@@ -87,6 +87,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   const [isManualUploading, setIsManualUploading] = useState(false);
   const [showUploadOptions, setShowUploadOptions] = useState(false);
   const [isUploadingFromDevice, setIsUploadingFromDevice] = useState(false);
+  const [showCamera, setShowCamera] = useState(true);
 
   // Individual button loading states
   const [isStartingRecording, setIsStartingRecording] = useState(false);
@@ -113,8 +114,8 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   // console.log('--currentDriverOrder---', currentDriverOrder);
 
   // Minimum streaming duration set to 5 minutes for all users
-  // const streamingDurationSeconds = 300; // 5 minutes (300 seconds)
-  const streamingDurationSeconds = 10; //10 seconds
+  const streamingDurationSeconds = 300; // 5 minutes (300 seconds)
+  // const streamingDurationSeconds = 10; //10 seconds
 
   // Get current asset's filled quantity
   const getCurrentAssetFilledQuantity = () => {
@@ -304,6 +305,9 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         setHasStreamedOnce(true);
       }
 
+      // Show camera when starting new recording
+      setShowCamera(true);
+
       // Always reset timer states when starting new recording
       console.log('Starting recording - resetting timer states');
       setRecordingDuration(0);
@@ -468,9 +472,8 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       Toast.show({
         type: 'error',
         text1: 'Cannot Stop Recording',
-        text2: `Please record for at least ${
-          streamingDurationSeconds / 60
-        } minutes before stopping`,
+        text2: `Please record for at least ${streamingDurationSeconds / 60
+          } minutes before stopping`,
       });
       return;
     }
@@ -533,6 +536,9 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         text1: 'Recording Stopped',
         text2: 'Processing video... Please wait',
       });
+
+      // Hide camera after recording is stopped
+      setShowCamera(false);
 
       // DON'T reset isStoppingRecording here - it will be reset in handleRecordingFinished
       // This keeps all buttons disabled during upload
@@ -710,7 +716,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         const uploadResult = await supportService.uploadVideoFile({
           fileName: fileName,
           contentType: contentType,
-          fileData: {uri: data.uri, path: filePath}, // pass file path
+          fileData: { uri: data.uri, path: filePath }, // pass file path
         });
 
         if (uploadResult.storeUrl) {
@@ -719,6 +725,8 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           setIsStreamUploaded(true);
           setUploadError(false);
         }
+        // Hide camera after recording is complete, regardless of upload success
+        setShowCamera(false);
       } catch (uploadError) {
         console.warn('Cloud upload failed, video saved locally:', uploadError);
         setUploadError(true);
@@ -812,8 +820,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
 
     Alert.alert(
       'Video File Location',
-      `File Path: ${recordedVideoFile}\n\nFile Exists: ${
-        fileExists ? 'Yes' : 'No'
+      `File Path: ${recordedVideoFile}\n\nFile Exists: ${fileExists ? 'Yes' : 'No'
       }
 
 For Android Emulator:
@@ -832,7 +839,7 @@ For iOS Simulator:
             console.log('File path:', recordedVideoFile);
           },
         },
-        {text: 'OK'},
+        { text: 'OK' },
       ],
     );
   };
@@ -874,8 +881,7 @@ For iOS Simulator:
         // Show confirmation dialog
         Alert.alert(
           'Upload Video',
-          `Are you sure you want to upload this video?\n\nFile: ${
-            selectedFile.name
+          `Are you sure you want to upload this video?\n\nFile: ${selectedFile.name
           }\nSize: ${((selectedFile.size || 0) / 1024 / 1024).toFixed(2)}MB`,
           [
             {
@@ -917,14 +923,13 @@ For iOS Simulator:
       const detectedFormat = selectedFile.type?.includes('webm')
         ? 'webm'
         : selectedFile.type?.includes('mp4')
-        ? 'mp4'
-        : selectedFile.name?.toLowerCase().includes('.webm')
-        ? 'webm'
-        : 'mp4';
+          ? 'mp4'
+          : selectedFile.name?.toLowerCase().includes('.webm')
+            ? 'webm'
+            : 'mp4';
       const contentType = selectedFile.type || `video/${detectedFormat}`;
-      const fileName = `Upload_${
-        currentDriverOrder?.customer_order?.order_code
-      }_${Date.now()}.${detectedFormat}`;
+      const fileName = `Upload_${currentDriverOrder?.customer_order?.order_code
+        }_${Date.now()}.${detectedFormat}`;
 
       // Try to upload the file directly using the file object
       // Many upload services can handle the file object with uri, type, and name
@@ -1166,7 +1171,7 @@ For iOS Simulator:
           const assetId =
             asset.customer_asset?.id || asset.id || asset.customer_asset_id;
           if (assetId === currentAssetId) {
-            return {...asset, quantity_dispensed: quantity};
+            return { ...asset, quantity_dispensed: quantity };
           }
           return asset;
         });
@@ -1255,12 +1260,12 @@ For iOS Simulator:
           quantity_dispensed: quantity,
           task_id: currentDriverOrder?.id,
           ...(orderStore.getState().currentDriverOrder?.category === 'DELIVERY'
-            ? {customer_asset_id: `${currentAssetId}`}
+            ? { customer_asset_id: `${currentAssetId}` }
             : {
-                vehicle_id:
-                  currentAssetId ||
-                  checkinStore.getState().driverVehicleDetails?.id,
-              }),
+              vehicle_id:
+                currentAssetId ||
+                checkinStore.getState().driverVehicleDetails?.id,
+            }),
           location: {
             type: 'Point',
             coordinates: [coordinates.longitude, coordinates.latitude],
@@ -1297,7 +1302,7 @@ For iOS Simulator:
           const assetId =
             asset.customer_asset?.id || asset.id || asset.customer_asset_id;
           if (assetId === currentAssetId) {
-            return {...asset, quantity_dispensed: quantity};
+            return { ...asset, quantity_dispensed: quantity };
           }
           return asset;
         });
@@ -1440,13 +1445,11 @@ For iOS Simulator:
               Customer Name:
             </Text>
             <Text weight="400" size="sm" style={styles.orderValue as any}>
-              {`${
-                currentDriverOrder?.customer_order?.organization_user?.user
-                  ?.first_name || ''
-              } ${
-                currentDriverOrder?.customer_order?.organization_user?.user
+              {`${currentDriverOrder?.customer_order?.organization_user?.user
+                ?.first_name || ''
+                } ${currentDriverOrder?.customer_order?.organization_user?.user
                   ?.last_name || ''
-              }`.trim() || 'N/A'}
+                }`.trim() || 'N/A'}
             </Text>
           </View>
 
@@ -1462,57 +1465,75 @@ For iOS Simulator:
       </View>
 
       {/* Camera Section - Flexible area that takes remaining space */}
-      <View style={styles.cameraSection}>
-        <View style={styles.cameraContainer}>
-          <RNCamera
-            ref={cameraRef}
-            style={styles.camera}
-            type={RNCamera.Constants.Type.back}
-            flashMode={RNCamera.Constants.FlashMode.off}
-            captureAudio={true}
-            androidCameraPermissionOptions={{
-              title: 'Camera Permission',
-              message: 'We need camera access for live streaming',
-              buttonPositive: 'Ok',
-              buttonNegative: 'Cancel',
-            }}
-            androidRecordAudioPermissionOptions={{
-              title: 'Audio Permission',
-              message: 'We need microphone access for live streaming',
-              buttonPositive: 'Ok',
-              buttonNegative: 'Cancel',
-            }}
-          />
+      {showCamera && (
+        <View style={styles.cameraSection}>
+          <View style={styles.cameraContainer}>
+            <RNCamera
+              ref={cameraRef}
+              style={styles.camera}
+              type={RNCamera.Constants.Type.back}
+              flashMode={RNCamera.Constants.FlashMode.off}
+              captureAudio={true}
+              androidCameraPermissionOptions={{
+                title: 'Camera Permission',
+                message: 'We need camera access for live streaming',
+                buttonPositive: 'Ok',
+                buttonNegative: 'Cancel',
+              }}
+              androidRecordAudioPermissionOptions={{
+                title: 'Audio Permission',
+                message: 'We need microphone access for live streaming',
+                buttonPositive: 'Ok',
+                buttonNegative: 'Cancel',
+              }}
+            />
 
-          {/* Upload from device overlay - ONLY show after upload failure */}
-          {!isRecording &&
-            hasStreamedOnce &&
-            uploadError &&
-            !isStreamUploaded && (
-              <View style={styles.uploadOverlay}>
-                <TouchableOpacity
-                  onPress={uploadVideoFromDevice}
-                  disabled={isUploadingFromDevice}
-                  style={styles.uploadButton}>
-                  <Text
-                    size="sm"
-                    weight="600"
-                    style={styles.uploadButtonText as any}>
-                    {isUploadingFromDevice ? 'Uploading...' : '📁 Upload Video'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
+            {/* Upload from device overlay - ONLY show after upload failure */}
+            {!isRecording &&
+              hasStreamedOnce &&
+              uploadError &&
+              !isStreamUploaded && (
+                <View style={styles.uploadOverlay}>
+                  <TouchableOpacity
+                    onPress={uploadVideoFromDevice}
+                    disabled={isUploadingFromDevice}
+                    style={styles.uploadButton}>
+                    <Text
+                      size="sm"
+                      weight="600"
+                      style={styles.uploadButtonText as any}>
+                      {isUploadingFromDevice ? 'Uploading...' : '📁 Upload Video'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
 
-          <CameraOverlay
-            isRecording={isRecording}
-            isPaused={isPaused}
-            recordingDuration={recordingDuration}
-            canStopStream={canStopStream}
-            streamingDurationSeconds={streamingDurationSeconds}
-          />
+            <CameraOverlay
+              isRecording={isRecording}
+              isPaused={isPaused}
+              recordingDuration={recordingDuration}
+              canStopStream={canStopStream}
+              streamingDurationSeconds={streamingDurationSeconds}
+            />
+          </View>
         </View>
-      </View>
+      )}
+
+      {/* Success message when camera is hidden */}
+      {!showCamera && isStreamUploaded && (
+        <View style={styles.cameraSection}>
+          <CardElevated cardStyle={styles.successCard}>
+            <View style={styles.successContent}>
+              <Text weight="bold" size="lg" color="primary">
+                ✓ Video Uploaded Successfully
+              </Text>
+              <Text size="sm" style={styles.successMessage as any}>
+                Your video has been uploaded. You can now proceed to the next step.
+              </Text>
+            </View>
+          </CardElevated>
+        </View>
+      )}
 
       {/* Controls Section - Fixed height at bottom */}
       <View style={styles.controlsSection}>
@@ -1774,6 +1795,21 @@ const styles = ScaledSheet.create({
     paddingVertical: 20,
     paddingHorizontal: 16,
     minHeight: 80,
+  },
+  successCard: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: FBBackground.white,
+  },
+  successContent: {
+    alignItems: 'center',
+  },
+  successMessage: {
+    marginTop: 8,
+    textAlign: 'center',
+    color: FBColors.neutral,
   },
 });
 
