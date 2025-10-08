@@ -87,7 +87,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   const [isManualUploading, setIsManualUploading] = useState(false);
   const [showUploadOptions, setShowUploadOptions] = useState(false);
   const [isUploadingFromDevice, setIsUploadingFromDevice] = useState(false);
-  
+
   // Individual button loading states
   const [isStartingRecording, setIsStartingRecording] = useState(false);
   const [isPausingRecording, setIsPausingRecording] = useState(false);
@@ -143,7 +143,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
     try {
       const hasPaused = await hasPausedStreamForTask(
         currentDriverOrder.id,
-        currentAssetForDispense.id
+        currentAssetForDispense.id,
       );
 
       if (hasPaused) {
@@ -152,12 +152,15 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         setStreamingState('paused');
         setRecordingDuration(savedState.recordingDuration);
         setHasStreamedOnce(savedState.hasStreamedOnce);
-        setCanStopStream(savedState.recordingDuration >= streamingDurationSeconds);
+        setCanStopStream(
+          savedState.recordingDuration >= streamingDurationSeconds,
+        );
 
         Toast.show({
           type: 'info',
           text1: 'Paused Recording Found',
-          text2: 'Your previous recording session was paused. You can resume it.',
+          text2:
+            'Your previous recording session was paused. You can resume it.',
         });
       }
     } catch (error) {
@@ -339,7 +342,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
 
       // Start recording without blocking the UI
       const recordPromise = cameraRef.current.recordAsync(recordOptions);
-      
+
       recordPromise.then(handleRecordingFinished).catch(error => {
         console.error('Recording error:', error);
         Toast.show({
@@ -465,7 +468,9 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       Toast.show({
         type: 'error',
         text1: 'Cannot Stop Recording',
-        text2: `Please record for at least ${streamingDurationSeconds / 60} minutes before stopping`,
+        text2: `Please record for at least ${
+          streamingDurationSeconds / 60
+        } minutes before stopping`,
       });
       return;
     }
@@ -516,9 +521,10 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       if (currentAssetId) {
         orderStore.setState(state => ({
           ...state,
-          assetsWithInterruptedRecording: state.assetsWithInterruptedRecording.filter(
-            id => id !== currentAssetId
-          ),
+          assetsWithInterruptedRecording:
+            state.assetsWithInterruptedRecording.filter(
+              id => id !== currentAssetId,
+            ),
         }));
       }
 
@@ -573,7 +579,8 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       // Request permission if not granted
       const granted = await PermissionsAndroid.request(permission, {
         title: 'Storage Permission',
-        message: 'This app needs access to storage to save recorded videos to Downloads folder',
+        message:
+          'This app needs access to storage to save recorded videos to Downloads folder',
         buttonNeutral: 'Ask Me Later',
         buttonNegative: 'Cancel',
         buttonPositive: 'OK',
@@ -614,7 +621,9 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
             savedToDownloads = true;
             console.log(`Video also saved to Downloads: ${externalPath}`);
           } else {
-            console.log('Storage permission denied - video saved to app folder only');
+            console.log(
+              'Storage permission denied - video saved to app folder only',
+            );
           }
         } catch (externalError) {
           console.warn('Failed to save to Downloads folder:', externalError);
@@ -645,19 +654,14 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
     }
   };
 
-  const getVideoFormat = (uri: string, mimeType?: string) => {
-    // Check the MIME type first if available
-    if (mimeType) {
-      if (mimeType.includes('webm')) return 'webm';
-      if (mimeType.includes('mp4')) return 'mp4';
-    }
-
-    // Fallback to URI extension check
-    if (uri.toLowerCase().includes('.webm')) return 'webm';
-    if (uri.toLowerCase().includes('.mp4')) return 'mp4';
-
-    // Default based on platform - Android often produces webm from camera
-    return Platform.OS === 'android' ? 'webm' : 'mp4';
+  const getVideoFormat = (uri: string, codec?: string) => {
+    // Prefer extension if present
+    if (uri?.toLowerCase().endsWith('.mp4')) return 'mp4';
+    if (uri?.toLowerCase().endsWith('.mov')) return 'mp4'; // iOS sometimes
+    // If codec hints are available
+    if (codec && /mp4|h264|avc|aac/i.test(codec)) return 'mp4';
+    // RNCamera default is MP4 on both platforms
+    return 'mp4';
   };
 
   const handleRecordingFinished = async (data: any) => {
@@ -681,19 +685,32 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
 
       try {
         // Convert video URI to blob for upload
-        const response = await fetch(data.uri);
-        const blob = await response.blob();
+        // const response = await fetch(data.uri);
+        // const blob = await response.blob();
 
-        console.log(`Video size: ${(blob.size / 1024 / 1024).toFixed(2)} MB`);
+        // console.log(`Video size: ${(blob.size / 1024 / 1024).toFixed(2)} MB`);
+        // console.log(
+        //   `Video format detected: ${videoFormat}, Content-Type: ${contentType}`,
+        // );
+
+        // // Upload video to Google Cloud Storage
+        // const uploadResult = await supportService.uploadFile({
+        //   fileName: fileName,
+        //   contentType: contentType,
+        //   fileData: blob,
+        // });
+
+        const filePath = data.uri.replace('file://', '');
+        const fileStats = await RNFS.stat(filePath);
         console.log(
-          `Video format detected: ${videoFormat}, Content-Type: ${contentType}`,
+          `Video size: ${(fileStats.size / 1024 / 1024).toFixed(2)} MB`,
         );
+        console.log(`Uploading real file from: ${filePath}`);
 
-        // Upload video to Google Cloud Storage
-        const uploadResult = await supportService.uploadFile({
+        const uploadResult = await supportService.uploadVideoFile({
           fileName: fileName,
           contentType: contentType,
-          fileData: blob,
+          fileData: {uri: data.uri, path: filePath}, // pass file path
         });
 
         if (uploadResult.storeUrl) {
@@ -728,7 +745,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         // Also save to persistent storage
         await saveAssetWithUploadedVideo(
           currentDriverOrder?.id || '',
-          currentAssetId
+          currentAssetId,
         );
       }
 
@@ -889,6 +906,8 @@ For iOS Simulator:
     }
   };
 
+  console.log('---recordedVideoFile------', recordedVideoFile);
+
   const processSelectedVideo = async (selectedFile: any) => {
     try {
       startLoader('uploadVideo');
@@ -927,7 +946,7 @@ For iOS Simulator:
       );
 
       // Upload video to Google Cloud Storage
-      const uploadResult = await supportService.uploadFile({
+      const uploadResult = await supportService.uploadVideoFile({
         fileName: fileName,
         contentType: contentType,
         fileData: fileData, // Pass the file object directly
@@ -1016,7 +1035,7 @@ For iOS Simulator:
       );
 
       // Upload video to Google Cloud Storage
-      const uploadResult = await supportService.uploadFile({
+      const uploadResult = await supportService.uploadVideoFile({
         fileName: fileName,
         contentType: contentType,
         fileData: fileData,
@@ -1450,6 +1469,7 @@ For iOS Simulator:
             style={styles.camera}
             type={RNCamera.Constants.Type.back}
             flashMode={RNCamera.Constants.FlashMode.off}
+            captureAudio={true}
             androidCameraPermissionOptions={{
               title: 'Camera Permission',
               message: 'We need camera access for live streaming',
@@ -1587,7 +1607,10 @@ For iOS Simulator:
       />
 
       {/* FullScreen Loaders - Only for video upload */}
-      <FullScreenLoader showLoader={loaders.uploadVideo} loaderText="Uploading video..." />
+      <FullScreenLoader
+        showLoader={loaders.uploadVideo}
+        loaderText="Uploading video..."
+      />
     </View>
   );
 };

@@ -6,6 +6,11 @@ import {
   FetchFileUrlFromServerQuery,
   Support_Tickets,
 } from './../../../generated/graphql';
+import RNFS from 'react-native-fs';
+import {Buffer} from 'buffer';
+global.Buffer = Buffer;
+import {Platform} from 'react-native';
+
 /**
  * @module Support
  * @description This is the service file for the support module.
@@ -215,6 +220,9 @@ class SupportService {
         },
       },
     });
+
+    console.log('----uploadFile?.signedUrl-----', uploadFile?.signedUrl);
+    console.log('---------');
     await axios.put(`${uploadFile?.signedUrl}`, args.fileData, {
       headers: {
         'Content-Type': args.contentType,
@@ -224,6 +232,97 @@ class SupportService {
     return {src: src, storeUrl: uploadFile?.storeUrl};
   }
 
+  private putToSignedUrl = (
+    signedUrl: string,
+    uri: string,
+    contentType?: string,
+  ) =>
+    new Promise<void>((resolve, reject) => {
+      try {
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', signedUrl);
+
+        // Set Content-Type ONLY if it's signed in the URL
+        // (GCS/S3 reject extra headers not in X-Goog-SignedHeaders / X-Amz-SignedHeaders)
+        if (contentType) {
+          xhr.setRequestHeader('Content-Type', contentType);
+        }
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) resolve();
+          else
+            reject(
+              new Error(
+                `HTTP ${xhr.status}: ${xhr.responseText || 'Upload failed'}`,
+              ),
+            );
+        };
+        xhr.onerror = () => reject(new Error('Network error while uploading'));
+
+        // Send file by URI (streamed by native layer; no base64, no OOM)
+        xhr.send({
+          uri,
+          type: contentType || 'application/octet-stream',
+          name: 'video',
+        } as any);
+      } catch (e) {
+        reject(e);
+      }
+    });
+
+  /**
+   * Streams a video file to GCS signed URL without loading into JS memory.
+   * args = { fileName: string, contentType: string, fileData: { uri?: string, path?: string } }
+   */
+  public async uploadVideoFile(args: any) {
+    // 1) Ask backend for a signed URL
+    const {uploadFile}: UploadFileToBucketMutation = await callMutation({
+      queryDocument: UploadFileToBucketDocument,
+      variables: {
+        file: {
+          bucketName: 'fb-in-compliance-storage',
+          fileName: `${Date.now()}${String(args.fileName || '').replace(
+            ' ',
+            '-',
+          )}`,
+          contentType: args.contentType,
+        },
+      },
+    });
+
+    if (!uploadFile?.signedUrl) {
+      throw new Error('Signed URL is missing from backend');
+    }
+
+    // 2) Build the file URI we’ll send
+    let srcUri: string =
+      args?.fileData?.uri ||
+      (args?.fileData?.path ? `file://${args.fileData.path}` : '');
+
+    if (!srcUri) throw new Error('Invalid file path/uri for upload');
+
+    // If Android gives us content://, copy to a temp file we can read
+    if (Platform.OS === 'android' && srcUri.startsWith('content://')) {
+      const dest = `${RNFS.CachesDirectoryPath}/upload_${Date.now()}`;
+      await RNFS.copyFile(srcUri, dest);
+      srcUri = `file://${dest}`;
+    }
+
+    // 3) Respect signed headers: only include Content-Type if it’s signed
+    const signedHeadersParam =
+      uploadFile.signedUrl.match(/X-Goog-SignedHeaders=([^&]+)/)?.[1] || '';
+    const lower = decodeURIComponent(signedHeadersParam).toLowerCase();
+    const includeContentType = lower.includes('content-type');
+    const contentTypeToSend = includeContentType ? args.contentType : undefined;
+
+    // 4) PUT the file to the signed URL (streamed; no base64)
+    await this.putToSignedUrl(uploadFile.signedUrl, srcUri, contentTypeToSend);
+
+    // 5) Resolve the public URL via your API
+    const src = await this.fetchFile(uploadFile.storeUrl);
+    return {src, storeUrl: uploadFile.storeUrl};
+  }
+
   public async fetchFile(url: string | null | undefined) {
     const response: FetchFileUrlFromServerQuery = await callQuery({
       queryDocument: FetchFileUrlFromServerDocument,
@@ -231,6 +330,7 @@ class SupportService {
         file: {fileUrl: url as string},
       },
     });
+    console.log('----after upload-----', response.fetchFile?.url);
     return response.fetchFile?.url;
   }
 }

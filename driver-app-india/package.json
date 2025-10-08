@@ -43,6 +43,7 @@
     "@types/json2csv": "^5.0.7",
     "@urql/exchange-auth": "^2.1.6",
     "axios": "^1.6.8",
+    "buffer": "^6.0.3",
     "deprecated-react-native-prop-types": "^5.0.0",
     "graphql": "^16.8.1",
     "i18next": "^25.5.3",
