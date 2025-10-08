@@ -380,7 +380,6 @@
 //     const hasInterruptedRecording =
 //       assetsWithInterruptedRecording.includes(assetId);
 
-
 //     // Priority 0: If order is completely dispensed, show Order Complete
 //     if (isOrderCompletelyDispensed) {
 //       return 'Order Complete';
@@ -628,7 +627,6 @@
 
 // export default AssetCard;
 
-
 import React, {useState, useMemo, useCallback} from 'react';
 import {
   View,
@@ -698,7 +696,8 @@ const AssetCard: React.FC<AssetCardProps> = ({
   // These values are recalculated only when their dependencies change.
 
   const assetId = useMemo(
-    () => asset?.customer_asset?.id || asset?.id || asset?.customer_asset_id || '',
+    () =>
+      asset?.customer_asset?.id || asset?.id || asset?.customer_asset_id || '',
     [asset],
   );
 
@@ -716,9 +715,11 @@ const AssetCard: React.FC<AssetCardProps> = ({
     () => hasUploadedVideo && filledQuantity === 0,
     [hasUploadedVideo, filledQuantity],
   );
-    
+
   const isOrderComplete = useMemo(
-    () => fuelDispensedTillNow >= quantityToBeDispensed && quantityToBeDispensed > 0,
+    () =>
+      fuelDispensedTillNow >= quantityToBeDispensed &&
+      quantityToBeDispensed > 0,
     [fuelDispensedTillNow, quantityToBeDispensed],
   );
 
@@ -731,10 +732,10 @@ const AssetCard: React.FC<AssetCardProps> = ({
     () => hasOtherFillRemaining && !hasUploadedVideo,
     [hasOtherFillRemaining, hasUploadedVideo],
   );
-  
+
   const canEditQuantity = useMemo(
     () => filledQuantity > 0 && !isDisabledByOtherAsset,
-    [filledQuantity, isDisabledByOtherAsset]
+    [filledQuantity, isDisabledByOtherAsset],
   );
 
   // --- Event Handlers ---
@@ -759,7 +760,7 @@ const AssetCard: React.FC<AssetCardProps> = ({
   const buttonState = useMemo(() => {
     const baseStyle = styles.dispenseButton;
     const disabledStyle = styles.disabledButton;
-    
+
     if (isDisabledByOtherAsset) {
       return {
         text: 'Fill Other Asset First',
@@ -792,14 +793,14 @@ const AssetCard: React.FC<AssetCardProps> = ({
         disabled: true,
       };
     }
-    if (hasUploadedVideo) {
-      return {
-        text: 'Fill Remaining',
-        style: styles.fillRemainingButton,
-        onPress: () => setShowQuantityBottomSheet(true),
-        disabled: false,
-      };
-    }
+    // if (hasUploadedVideo) {
+    //   return {
+    //     text: 'Fill Remaining',
+    //     style: styles.fillRemainingButton,
+    //     onPress: () => setShowQuantityBottomSheet(true),
+    //     disabled: false,
+    //   };
+    // }
 
     // Default case
     return {
@@ -815,7 +816,7 @@ const AssetCard: React.FC<AssetCardProps> = ({
     hasUploadedVideo,
     isDisabledByOtherAsset,
     handleStartDispense,
-    disabled
+    disabled,
   ]);
 
   // --- Data Update Logic (Refactored from original handleQuantityUpdate) ---
@@ -827,9 +828,13 @@ const AssetCard: React.FC<AssetCardProps> = ({
       return;
     }
 
-    const assetIndex = task.task_value.findIndex((t: any) => t.customer_asset_id === assetId);
+    const assetIndex = task.task_value.findIndex(
+      (t: any) => t.customer_asset_id === assetId,
+    );
     if (assetIndex === -1) {
-      console.warn('⚠️ Current asset not found in task values, skipping totalizer update');
+      console.warn(
+        '⚠️ Current asset not found in task values, skipping totalizer update',
+      );
       return;
     }
 
@@ -839,9 +844,10 @@ const AssetCard: React.FC<AssetCardProps> = ({
     for (let i = assetIndex; i < task.task_value.length; i++) {
       const taskAsset = task.task_value[i];
       if (taskAsset.key === 'TOTALIZER_AFTER_READING') {
-        const qty = (taskAsset.customer_asset_id === assetId)
-          ? newQuantity
-          : (taskAsset.quantity_dispensed || 0);
+        const qty =
+          taskAsset.customer_asset_id === assetId
+            ? newQuantity
+            : taskAsset.quantity_dispensed || 0;
         totalizerAfterValue += qty;
       }
     }
@@ -861,16 +867,20 @@ const AssetCard: React.FC<AssetCardProps> = ({
   /** Helper to update the local Zustand store after a successful API call. */
   const updateLocalOrderState = (updatedQuantity: number) => {
     const updatedAssets = orderAssets?.map((orderAsset: any) => {
-      const orderAssetId = orderAsset.customer_asset?.id || orderAsset.id || orderAsset.customer_asset_id;
+      const orderAssetId =
+        orderAsset.customer_asset?.id ||
+        orderAsset.id ||
+        orderAsset.customer_asset_id;
       return orderAssetId === assetId
         ? {...orderAsset, quantity_dispensed: updatedQuantity}
         : orderAsset;
     });
 
-    const newTotalDispensed = updatedAssets?.reduce(
-      (total: number, asset: any) => total + (asset.quantity_dispensed || 0),
-      0
-    ) || 0;
+    const newTotalDispensed =
+      updatedAssets?.reduce(
+        (total: number, asset: any) => total + (asset.quantity_dispensed || 0),
+        0,
+      ) || 0;
 
     orderStore.setState({
       orderAssets: updatedAssets,
@@ -878,105 +888,145 @@ const AssetCard: React.FC<AssetCardProps> = ({
     });
   };
 
-  const handleQuantityUpdate = useCallback(async (quantity: number) => {
-    if (!asset || !assetId || !currentDriverOrder?.customer_order?.id) {
-      return Alert.alert('Error', 'Required asset or order data is missing.');
-    }
-    
-    Toast.show({type: 'info', text1: 'Updating...'});
+  const handleQuantityUpdate = useCallback(
+    async (quantity: number) => {
+      if (!asset || !assetId || !currentDriverOrder?.customer_order?.id) {
+        return Alert.alert('Error', 'Required asset or order data is missing.');
+      }
 
-    try {
-      const isFillRemaining = filledQuantity === 0 && hasUploadedVideo;
-      const isEditQuantity = filledQuantity > 0;
+      Toast.show({type: 'info', text1: 'Updating...'});
 
-      // SCENARIO 1: Fill Remaining (First time quantity after streaming)
-      if (isFillRemaining) {
-        const coords = await getCurrentLocation();
-        await orderService.upsertStepTaskAction({
-          object: {
-            key: 'TOTALIZER_AFTER_READING',
-            url: '',
-            value: '0.0',
-            quantity_dispensed: quantity,
-            task_id: currentDriverOrder.id,
-            customer_asset_id: assetId,
-            location: {
-              type: 'Point',
-              coordinates: [coords.longitude, coords.latitude],
+      try {
+        const isFillRemaining = filledQuantity === 0 && hasUploadedVideo;
+        const isEditQuantity = filledQuantity > 0;
+
+        // SCENARIO 1: Fill Remaining (First time quantity after streaming)
+        if (isFillRemaining) {
+          const coords = await getCurrentLocation();
+          await orderService.upsertStepTaskAction({
+            object: {
+              key: 'TOTALIZER_AFTER_READING',
+              url: '',
+              value: '0.0',
+              quantity_dispensed: quantity,
+              task_id: currentDriverOrder.id,
+              customer_asset_id: assetId,
+              location: {
+                type: 'Point',
+                coordinates: [coords.longitude, coords.latitude],
+              },
             },
-          },
-        });
-      }
-
-      // ALWAYS update asset quantity, except for the complex edit case handled below.
-      if (!isEditQuantity || !currentDriverOrder?.is_enable_buddycan_flow) {
-        await orderService.updateAssetQty({
-          customerAssetId: assetId,
-          customerOrderId: currentDriverOrder.customer_order.id,
-          qty: quantity,
-        });
-      }
-
-      // SCENARIO 2: Edit Quantity in Buddycan Flow (Complex totalizer logic)
-      if (isEditQuantity && currentDriverOrder?.is_enable_buddycan_flow) {
-         await orderService.updateAssetQty({
-          customerAssetId: assetId,
-          customerOrderId: currentDriverOrder.customer_order.id,
-          qty: quantity,
-        });
-        try {
-          const task = await orderService.checkPartiallyFilledAssets(currentDriverOrder.id);
-          await updateTotalizerForEdit(quantity, task);
-        } catch (totalizerError) {
-          console.error('⚠️ Failed to update totalizer readings:', totalizerError);
+          });
         }
+
+        // ALWAYS update asset quantity, except for the complex edit case handled below.
+        if (!isEditQuantity || !currentDriverOrder?.is_enable_buddycan_flow) {
+          await orderService.updateAssetQty({
+            customerAssetId: assetId,
+            customerOrderId: currentDriverOrder.customer_order.id,
+            qty: quantity,
+          });
+        }
+
+        // SCENARIO 2: Edit Quantity in Buddycan Flow (Complex totalizer logic)
+        if (isEditQuantity && currentDriverOrder?.is_enable_buddycan_flow) {
+          await orderService.updateAssetQty({
+            customerAssetId: assetId,
+            customerOrderId: currentDriverOrder.customer_order.id,
+            qty: quantity,
+          });
+          try {
+            const task = await orderService.checkPartiallyFilledAssets(
+              currentDriverOrder.id,
+            );
+            await updateTotalizerForEdit(quantity, task);
+          } catch (totalizerError) {
+            console.error(
+              '⚠️ Failed to update totalizer readings:',
+              totalizerError,
+            );
+          }
+        }
+
+        // --- Post-update local state changes ---
+        updateLocalOrderState(quantity);
+
+        removeAssetWithUploadedVideo(assetId);
+        removeAssetWithInterruptedRecording(assetId);
+        await removeAssetFromPersistentStorage(currentDriverOrder.id, assetId);
+
+        if (quantity > 0 && filledQuantity === 0) {
+          await orderService.markOrderDispensing({id: currentDriverOrder.id});
+        }
+
+        setShowQuantityBottomSheet(false);
+        Toast.show({
+          type: 'success',
+          text1: 'Success',
+          text2: 'Asset quantity updated.',
+        });
+      } catch (error) {
+        console.error('Error updating asset quantity:', error);
+        Toast.show({
+          type: 'error',
+          text1: 'Update Failed',
+          text2: 'Please try again.',
+        });
       }
-
-      // --- Post-update local state changes ---
-      updateLocalOrderState(quantity);
-
-      removeAssetWithUploadedVideo(assetId);
-      removeAssetWithInterruptedRecording(assetId);
-      await removeAssetFromPersistentStorage(currentDriverOrder.id, assetId);
-      
-      if (quantity > 0 && filledQuantity === 0) {
-        await orderService.markOrderDispensing({id: currentDriverOrder.id});
-      }
-
-      setShowQuantityBottomSheet(false);
-      Toast.show({type: 'success', text1: 'Success', text2: 'Asset quantity updated.'});
-    } catch (error) {
-      console.error('Error updating asset quantity:', error);
-      Toast.show({type: 'error', text1: 'Update Failed', text2: 'Please try again.'});
-    }
-  }, [
-      asset, assetId, currentDriverOrder, filledQuantity, hasUploadedVideo,
-      removeAssetWithUploadedVideo, removeAssetWithInterruptedRecording
-  ]);
+    },
+    [
+      asset,
+      assetId,
+      currentDriverOrder,
+      filledQuantity,
+      hasUploadedVideo,
+      removeAssetWithUploadedVideo,
+      removeAssetWithInterruptedRecording,
+    ],
+  );
 
   // --- Render ---
   return (
     <View style={styles.container as ViewStyle}>
       <View style={styles.assetInfo as ViewStyle}>
         <View style={styles.assetIcon as ViewStyle}>
-          <Text size="lg" weight="600" color="white">⛽</Text>
+          <Text size="lg" weight="600" color="white">
+            ⛽
+          </Text>
         </View>
         <View style={styles.assetDetails as ViewStyle}>
-          <Text size="base" weight="600" color="neutral">{assetName}</Text>
-          <Text size="sm" color="lightGray" style={styles.assetCode as TextStyle}>{assetCode}</Text>
+          <Text size="base" weight="600" color="neutral">
+            {assetName}
+          </Text>
+          <Text
+            size="sm"
+            color="lightGray"
+            style={styles.assetCode as TextStyle}>
+            {assetCode}
+          </Text>
         </View>
       </View>
 
       <View style={styles.quantityInfo as ViewStyle}>
         <Text size="sm" color="lightGray">
           Filled Qty:{' '}
-          <Text size="sm" weight="600" color={filledQuantity > 0 ? 'primary' : 'neutral'}>
+          <Text
+            size="sm"
+            weight="600"
+            color={filledQuantity > 0 ? 'primary' : 'neutral'}>
             {filledQuantity} {unit}
           </Text>
         </Text>
         {canEditQuantity && (
-          <TouchableOpacity onPress={handleFilledQuantityPress} style={styles.editButton as ViewStyle}>
-            <Text size="xs" color="lightGray" style={styles.editHint as TextStyle}>(edit)</Text>
+          <TouchableOpacity
+            onPress={handleFilledQuantityPress}
+            style={styles.editButton as ViewStyle}>
+            <Text
+              size="xs"
+              color="lightGray"
+              style={styles.editHint as TextStyle}>
+              (edit)
+            </Text>
           </TouchableOpacity>
         )}
       </View>
@@ -986,7 +1036,10 @@ const AssetCard: React.FC<AssetCardProps> = ({
         onPress={buttonState.onPress}
         disabled={buttonState.disabled}
         activeOpacity={0.7}>
-        <Text size="sm" weight="600" color={buttonState.disabled ? 'disabledInputText' : 'white'}>
+        <Text
+          size="sm"
+          weight="600"
+          color={buttonState.disabled ? 'disabledInputText' : 'white'}>
           {buttonState.text}
         </Text>
       </TouchableOpacity>

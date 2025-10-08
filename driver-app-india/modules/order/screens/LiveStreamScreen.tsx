@@ -36,6 +36,11 @@ import {checkinStore, orderStore} from '@/globalStore';
 // Services
 import orderService from '../services';
 import supportService from '@/modules/support/services';
+import {
+  Device,
+  mediaDevices,
+  setupMediasoupForReactNative,
+} from '../services/mediasoupSetup';
 
 // Types
 import {FBColors, FBBackground} from '@/types/styles';
@@ -94,6 +99,12 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   const [isResumingRecording, setIsResumingRecording] = useState(false);
   const [isStoppingRecording, setIsStoppingRecording] = useState(false);
 
+  // Mediasoup state for live streaming
+  const deviceRef = useRef<any>(null);
+  const sendTransportRef = useRef<any>(null);
+  const producersRef = useRef<any[]>([]);
+  const liveStreamRef = useRef<any>(null);
+
   // Store
   const currentDriverOrder = orderStore.use.currentDriverOrder();
   const orderAssets = orderStore.use.orderAssets();
@@ -115,6 +126,264 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   // Minimum streaming duration set to 5 minutes for all users
   // const streamingDurationSeconds = 300; // 5 minutes (300 seconds)
   const streamingDurationSeconds = 10; //10 seconds
+
+  const WS_URL = 'wss://soup.fuelbuddy.in';
+
+  type SoupMessage =
+    | {type: 'join-room'; isViewer: boolean}
+    | {type: 'leave-room'}
+    | {type: 'get-rtp-capabilities'}
+    | {type: 'create-send-transport'}
+    | {type: 'create-recv-transport'}
+    | {type: 'connect-transport'; transportId: string; dtlsParameters: any}
+    | {
+        type: 'produce';
+        transportId: string;
+        kind: 'audio' | 'video';
+        rtpParameters: any;
+      }
+    | {
+        type: 'consume';
+        transportId: string;
+        producerId: string;
+        rtpCapabilities: any;
+      }
+    | {type: 'resume-consumer'; consumerId: string}
+    | {type: 'ping'}
+    | {type: string; [k: string]: any}; // generic
+
+  const wsRef = useRef<WebSocket | null>(null);
+  const wsOpenRef = useRef(false);
+  const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Build the same roomId as Vue: `${orderCode}-${driverVehicleId}-${assetId}`
+  const roomId = React.useMemo(() => {
+    const orderCode =
+      orderStore.getState().currentDriverOrder?.customer_order?.order_code;
+    const driverVehicleId =
+      orderStore.getState().currentDriverOrder?.driver_vehicle_id;
+    const assetId = orderStore.getState().currentAssetForDispense?.id;
+    return orderCode && driverVehicleId && assetId
+      ? `${orderCode}-${driverVehicleId}-${assetId}`
+      : '';
+  }, [
+    orderStore.getState().currentDriverOrder?.id,
+    orderStore.getState().currentAssetForDispense?.id,
+  ]);
+
+  // Send JSON with the same envelope that Vue adds (roomId + isViewer)
+  const sendToSoup = React.useCallback(
+    (msg: SoupMessage, isViewer = false, explicitRoomId?: string) => {
+      if (wsRef.current && wsOpenRef.current) {
+        const payload = JSON.stringify({
+          ...msg,
+          roomId: explicitRoomId || roomId, // prefer explicit if provided
+          isViewer,
+        });
+        wsRef.current!.send(payload);
+      }
+    },
+    [roomId],
+  );
+
+  const connectSoup = (): Promise<void> =>
+    new Promise((resolve, reject) => {
+      try {
+        if (wsRef.current && wsOpenRef.current) {
+          return resolve();
+        }
+        const ws = new WebSocket(WS_URL);
+        wsRef.current = ws;
+
+        ws.onopen = () => {
+          wsOpenRef.current = true;
+          // optional keepalive/ping (some proxies close idle sockets)
+          if (!pingIntervalRef.current) {
+            pingIntervalRef.current = setInterval(() => {
+              sendToSoup({type: 'ping'});
+            }, 15000);
+          }
+          resolve();
+        };
+
+        ws.onerror = e => {
+          console.log('[soup] ws error', e);
+          reject(new Error('WebSocket error'));
+        };
+
+        ws.onclose = () => {
+          wsOpenRef.current = false;
+          if (pingIntervalRef.current) {
+            clearInterval(pingIntervalRef.current);
+            pingIntervalRef.current = null;
+          }
+        };
+
+        ws.onmessage = async evt => {
+          try {
+            const data = JSON.parse(evt.data);
+            console.log('[soup] received:', data);
+
+            // ✅ Step 1: After joining room, request RTP capabilities
+            if (data.type === 'room-joined') {
+              console.log('[soup] -> joined room, requesting RTP capabilities');
+              sendToSoup({type: 'get-rtp-capabilities'});
+            }
+
+            // ✅ Step 2: When server sends RTP caps, create Device and request send transport
+            if (data.type === 'rtp-capabilities') {
+              console.log('[soup] -> got RTP caps, creating Device');
+
+              try {
+                // Setup mediasoup to use react-native-webrtc
+                setupMediasoupForReactNative();
+
+                // Create and load Device (will auto-detect Chrome handler from globals)
+                deviceRef.current = new Device();
+                await deviceRef.current.load({
+                  routerRtpCapabilities: data.rtpCapabilities,
+                });
+
+                console.log(
+                  '[soup] -> Device loaded, requesting send transport',
+                );
+                sendToSoup({type: 'create-send-transport'});
+              } catch (err: any) {
+                console.error('[soup] Device load error:', err);
+                Toast.show({
+                  type: 'error',
+                  text1: 'Device Setup Failed',
+                  text2: err.message || 'Could not initialize streaming',
+                });
+              }
+            }
+
+            // ✅ Step 3: When transport created, set up transport and produce media
+            if (
+              data.type === 'transport-created' &&
+              data.direction === 'send'
+            ) {
+              console.log(
+                '[soup] -> send transport created',
+                data.transportOptions,
+              );
+
+              try {
+                // Create send transport
+                sendTransportRef.current =
+                  deviceRef.current.createSendTransport(data.transportOptions);
+
+                // Handle connect event
+                sendTransportRef.current.on(
+                  'connect',
+                  async ({dtlsParameters}: any, callback: any) => {
+                    console.log('[soup] -> transport connecting...');
+                    sendToSoup({
+                      type: 'connect-transport',
+                      transportId: sendTransportRef.current.id,
+                      dtlsParameters,
+                    });
+                    callback();
+                  },
+                );
+
+                // Handle produce event
+                sendTransportRef.current.on(
+                  'produce',
+                  async ({kind, rtpParameters}: any, callback: any) => {
+                    console.log(`[soup] -> producing ${kind} track`);
+                    sendToSoup({
+                      type: 'produce',
+                      transportId: sendTransportRef.current.id,
+                      kind,
+                      rtpParameters,
+                    });
+                    // Use temporary producer ID until server responds
+                    callback({id: `${kind}-${Date.now()}`});
+                  },
+                );
+
+                // Get camera and microphone stream
+                console.log('[soup] -> getting media stream...');
+                const stream = await mediaDevices.getUserMedia({
+                  video: {
+                    width: 640,
+                    height: 480,
+                    frameRate: 15,
+                    facingMode: 'environment', // Back camera
+                  },
+                  audio: true,
+                });
+
+                liveStreamRef.current = stream;
+                console.log('[soup] -> got media stream, producing tracks...');
+
+                // Produce video track
+                const videoTrack = stream.getVideoTracks()[0];
+                if (videoTrack) {
+                  const videoProducer = await sendTransportRef.current.produce({
+                    track: videoTrack,
+                    encodings: [{maxBitrate: 800000}],
+                  });
+                  producersRef.current.push(videoProducer);
+                  console.log('[soup] ✅ Video producer created');
+                }
+
+                // Produce audio track
+                const audioTrack = stream.getAudioTracks()[0];
+                if (audioTrack) {
+                  const audioProducer = await sendTransportRef.current.produce({
+                    track: audioTrack,
+                  });
+                  producersRef.current.push(audioProducer);
+                  console.log('[soup] ✅ Audio producer created');
+                }
+
+                console.log(
+                  '[soup] 🎉 Live streaming ACTIVE - dashboard should show video now!',
+                );
+
+                Toast.show({
+                  type: 'success',
+                  text1: 'Live Streaming Active!',
+                  text2: 'Video is now streaming to dashboard',
+                });
+              } catch (err: any) {
+                console.error('[soup] Error producing media:', err);
+                Toast.show({
+                  type: 'error',
+                  text1: 'Live Streaming Failed',
+                  text2: err.message || 'Could not start video stream',
+                });
+              }
+            }
+          } catch (err) {
+            console.log('[soup] bad json', err);
+          }
+        };
+      } catch (err) {
+        reject(err);
+      }
+    });
+
+  const disconnectSoup = () => {
+    try {
+      if (wsRef.current && wsOpenRef.current) {
+        try {
+          // fire and forget
+          sendToSoup({type: 'leave-room'});
+        } catch {}
+        wsRef.current?.close();
+      }
+    } finally {
+      wsRef.current = null;
+      wsOpenRef.current = false;
+      if (pingIntervalRef.current) {
+        clearInterval(pingIntervalRef.current);
+        pingIntervalRef.current = null;
+      }
+    }
+  };
 
   // Get current asset's filled quantity
   const getCurrentAssetFilledQuantity = () => {
@@ -290,6 +559,24 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       setIsStartingRecording(true);
       setStreamingState('started');
 
+      const orderCode =
+        orderStore.getState().currentDriverOrder?.customer_order?.order_code;
+      const driverVehicleId =
+        orderStore.getState().currentDriverOrder?.driver_vehicle_id;
+      const assetId = orderStore.getState().currentAssetForDispense?.id;
+
+      const roomIdLocal =
+        orderCode && driverVehicleId && assetId
+          ? `${orderCode}-${driverVehicleId}-${assetId}`
+          : '';
+
+      if (!roomIdLocal) {
+        throw new Error(
+          'Room ID not ready yet. Please wait a second and try again.',
+        );
+      }
+      console.log('[soup] roomIdLocal =', roomIdLocal);
+
       // Validate required data
       if (!currentDriverOrder?.customer_order?.id) {
         throw new Error('Order data is missing');
@@ -339,6 +626,22 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         text1: 'Recording Started',
         text2: 'Live stream is now recording',
       });
+
+      await connectSoup();
+
+      if (!roomId) {
+        console.log('[soup] No roomId; skipping signals');
+      } else {
+        // isViewer=false means you’re the publisher (driver streaming)
+        sendToSoup(
+          {type: 'join-room', isViewer: false} as any,
+          false,
+          roomIdLocal,
+        );
+        // If you want to mimic Vue’s “ask to create send transport” (without actually sending media):
+        // sendToSoup({ type: 'get-rtp-capabilities' });
+        // sendToSoup({ type: 'create-send-transport' });
+      }
 
       // Start recording without blocking the UI
       const recordPromise = cameraRef.current.recordAsync(recordOptions);
@@ -479,6 +782,54 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       setIsStoppingRecording(true);
       setStreamingState('stopped');
 
+      // Cleanup live streaming
+      try {
+        console.log('[soup] Stopping live stream...');
+
+        // Close all producers
+        producersRef.current.forEach((producer: any) => {
+          try {
+            producer.close();
+          } catch (err) {
+            console.error('[soup] Error closing producer:', err);
+          }
+        });
+        producersRef.current = [];
+
+        // Close transport
+        if (sendTransportRef.current) {
+          try {
+            sendTransportRef.current.close();
+          } catch (err) {
+            console.error('[soup] Error closing transport:', err);
+          }
+          sendTransportRef.current = null;
+        }
+
+        // Stop media stream
+        if (liveStreamRef.current) {
+          liveStreamRef.current.getTracks().forEach((track: any) => {
+            try {
+              track.stop();
+            } catch (err) {
+              console.error('[soup] Error stopping track:', err);
+            }
+          });
+          liveStreamRef.current = null;
+        }
+
+        deviceRef.current = null;
+
+        // Leave WebSocket room
+        if (wsRef.current && wsOpenRef.current) {
+          sendToSoup({type: 'leave-room'});
+        }
+
+        console.log('[soup] ✅ Live stream stopped');
+      } finally {
+        disconnectSoup();
+      }
+
       // Update stream status via API (no loader for task state)
       await orderService.upsertStepTaskAction({
         object: {
@@ -548,6 +899,13 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
     }
     // NOTE: No finally block - isStoppingRecording stays true until upload completes
   };
+
+  useEffect(() => {
+    return () => {
+      // Cleanup WebSocket on unmount
+      disconnectSoup();
+    };
+  }, []);
 
   // Check storage permissions for Android
   const checkStoragePermissions = async (): Promise<boolean> => {
