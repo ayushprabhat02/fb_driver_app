@@ -1,9 +1,9 @@
 //dependencies
-import { createStackNavigator, StackScreenProps } from '@react-navigation/stack';
+import {createStackNavigator, StackScreenProps} from '@react-navigation/stack';
 import React from 'react';
-import { View } from 'react-native';
-import { Client, Provider } from 'urql';
-import { Text } from '@/components';
+import {View} from 'react-native';
+import {Client, Provider} from 'urql';
+import {Text} from '@/components';
 
 // components
 import {
@@ -21,11 +21,11 @@ import {
 } from './containers';
 
 //store
-import { authStore } from '@/globalStore';
+import {authStore} from '@/globalStore';
 
 // styles
-import { BackButtonArrow } from '@/components';
-import { commonHeaderStyles } from '@/styles';
+import {BackButtonArrow} from '@/components';
+import {commonHeaderStyles} from '@/styles';
 
 const ProtectedStack = createStackNavigator();
 
@@ -48,7 +48,13 @@ const ProtectedNavigator: React.FC<Props> = () => {
   // Show loading immediately if client is not ready
   if (!graphQLClient) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: '#fff',
+        }}>
         <Text>Loading...</Text>
       </View>
     );
@@ -58,7 +64,7 @@ const ProtectedNavigator: React.FC<Props> = () => {
     // production
     <Provider value={graphQLClient as Client}>
       <ProtectedStack.Navigator
-        screenOptions={{ headerShown: false, gestureEnabled: false }}
+        screenOptions={{headerShown: false, gestureEnabled: false}}
         initialRouteName="checkin">
         <ProtectedStack.Screen
           name="home"
@@ -68,7 +74,7 @@ const ProtectedNavigator: React.FC<Props> = () => {
         <ProtectedStack.Screen
           name="location"
           component={LocationNavigator}
-          options={{ headerShown: false }}
+          options={{headerShown: false}}
         />
         <ProtectedStack.Screen name="address" component={AddressNavigator} />
         <ProtectedStack.Screen

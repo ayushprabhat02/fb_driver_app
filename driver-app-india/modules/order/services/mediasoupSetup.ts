@@ -11,15 +11,11 @@ import {
   MediaStream,
   mediaDevices,
   RTCRtpSender,
+  RTCRtpTransceiver,
+  RTCRtpReceiver,
 } from 'react-native-webrtc';
 
-// Import and load WebRTC polyfills BEFORE importing Device
-import {loadWebRTC} from 'mediasoup-client';
-
-// Load WebRTC polyfills first
-loadWebRTC();
-
-// Inject WebRTC classes into global scope BEFORE importing Device
+// Setup globals first
 // @ts-ignore
 if (typeof global !== 'undefined') {
   // @ts-ignore
@@ -33,11 +29,17 @@ if (typeof global !== 'undefined') {
   // @ts-ignore
   global.RTCRtpSender = RTCRtpSender;
   // @ts-ignore
+  global.RTCRtpReceiver = RTCRtpReceiver;
+  // @ts-ignore
+  global.RTCRtpTransceiver = RTCRtpTransceiver;
+  // @ts-ignore
   global.navigator = global.navigator || {};
   // @ts-ignore
   global.navigator.mediaDevices = mediaDevices;
   // @ts-ignore
-  global.navigator.userAgent = 'Chrome';
+  global.navigator.product = 'ReactNative';
+  // @ts-ignore
+  global.navigator.userAgent = 'ReactNative';
   // @ts-ignore
   global.window = global.window || {};
   // @ts-ignore
@@ -46,12 +48,19 @@ if (typeof global !== 'undefined') {
   global.document = global.document || {};
 }
 
-// Import Device AFTER setting up globals
-import {Device} from 'mediasoup-client';
+// Now import Device after globals are set up
+import { Device } from 'mediasoup-client';
 
 export function setupMediasoupForReactNative() {
   // Already set up globally above
   console.log('[mediasoup] Global WebRTC polyfills loaded');
+  // @ts-ignore
+  console.log('[mediasoup] navigator.product:', global.navigator.product);
+  // @ts-ignore
+  console.log('[mediasoup] RTCPeerConnection available:', typeof global.RTCPeerConnection !== 'undefined');
+  // @ts-ignore
+  console.log('[mediasoup] RTCRtpTransceiver available:', typeof global.RTCRtpTransceiver !== 'undefined');
 }
 
-export {Device, mediaDevices};
+// Export the Device class and mediaDevices
+export { Device, mediaDevices };

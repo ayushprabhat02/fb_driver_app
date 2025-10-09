@@ -1,6 +1,6 @@
-import React, {useEffect, useRef, useState} from 'react';
-import {View, Alert} from 'react-native';
-import {ScaledSheet} from 'react-native-size-matters';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Alert } from 'react-native';
+import { ScaledSheet } from 'react-native-size-matters';
 import Toast from 'react-native-toast-message';
 import {
   BottomSheetModal,
@@ -16,8 +16,8 @@ import {
   Divider,
   FullScreenLoader,
 } from '@/components';
-import {FBBackground, FBColors, FBBorders} from '@/types/styles';
-import {orderStore} from '@/globalStore';
+import { FBBackground, FBColors, FBBorders } from '@/types/styles';
+import { orderStore } from '@/globalStore';
 
 interface QuantityBottomSheetProps {
   visible: boolean;
@@ -56,8 +56,8 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
         isFillingRemaining
           ? ''
           : existingQuantity > 0
-          ? existingQuantity.toString()
-          : '',
+            ? existingQuantity.toString()
+            : '',
       );
       bottomSheetRef.current?.present();
     } else {
@@ -95,10 +95,10 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
     }
   };
 
-  console.log('----quantityno----', parseFloat(quantity));
-  console.log('-----pendingQuantity----', pendingQuantity);
+  // console.log('----quantityno----', parseFloat(quantity));
+  // console.log('-----pendingQuantity----', pendingQuantity);
 
-  console.log('----isFillingRemaining----', isFillingRemaining);
+  // console.log('----isFillingRemaining----', isFillingRemaining);
 
   const handleProceed = async () => {
     let quantityNum = parseFloat(quantity);
@@ -158,8 +158,8 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
             {isComplete
               ? 'Dispensing Complete'
               : isFillingRemaining
-              ? 'Enter Dispensed Quantity'
-              : 'Enter Dispensed Quantity'}
+                ? 'Enter Dispensed Quantity'
+                : 'Enter Dispensed Quantity'}
           </Text>
 
           <Divider height={16} />
@@ -236,7 +236,7 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
                 <Text
                   size="xs"
                   color="darkGray"
-                  style={{marginTop: 4, fontStyle: 'italic'}}>
+                  style={{ marginTop: 4, fontStyle: 'italic' }}>
                   Note: Quantity must be in multiples of 20 liters
                 </Text>
               </View>
