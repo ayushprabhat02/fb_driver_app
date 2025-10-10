@@ -133,8 +133,8 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   const loaders = orderStore.use.loaders();
 
   // Minimum streaming duration set to 5 minutes for all users
-  // const streamingDurationSeconds = 300; // 5 minutes (300 seconds)
-  const streamingDurationSeconds = 10; //10 seconds
+  const streamingDurationSeconds = 300; // 5 minutes (300 seconds)
+  // const streamingDurationSeconds = 10; //10 seconds
 
   const WS_URL = 'wss://soup.fuelbuddy.in';
 
@@ -2192,6 +2192,21 @@ const styles = ScaledSheet.create({
   },
   modeDescription: {
     marginTop: 4,
+    color: FBColors.neutral,
+  },
+  successCard: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: FBBackground.white,
+  },
+  successContent: {
+    alignItems: 'center',
+  },
+  successMessage: {
+    marginTop: 8,
+    textAlign: 'center',
     color: FBColors.neutral,
   },
 });
