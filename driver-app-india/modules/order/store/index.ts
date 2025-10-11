@@ -127,6 +127,9 @@ type OrderStore = {
 
   // driver vehicle details
   driverVehicleDetails: any | null;
+
+  // OCR extracted data from maintenance form
+  ocrData: any | null;
 };
 
 type OrderActions = {
@@ -242,6 +245,9 @@ const orderInitialState: OrderStore = {
   driverVehicleDetails: null,
 
   pendingQuantity: 0,
+
+  // OCR data initial state
+  ocrData: null,
 };
 
 const orderPaginationInitialState = {
