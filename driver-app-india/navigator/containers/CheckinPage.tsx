@@ -7,6 +7,7 @@ import {useTranslation} from 'react-i18next';
 
 // components
 import CheckinPage from '@/modules/checkin/screens/CheckinPage';
+import CheckinPageCustomer from '@/modules/checkin/screens/CheckinPageCustomer';
 import {commonHeaderStyles} from '@/styles';
 import {BackButtonArrow} from '@/components';
 
@@ -15,6 +16,7 @@ import {signOut} from '@/modules/auth/services';
 
 // types
 import {FBColors} from '@/types/styles';
+import {authStore} from '@/globalStore';
 
 export type CheckInParamList = {
   'check-in': undefined;
@@ -24,6 +26,11 @@ const CheckInStack = createStackNavigator<CheckInParamList>();
 
 const CheckinNavigator: React.FC = () => {
   const {t} = useTranslation();
+
+  const userRole = authStore.use.userRole();
+  console.log('🚦 CheckinNavigator rendered with userRole:', userRole);
+
+  const CheckinComponent = userRole === 'customer' ? CheckinPageCustomer : CheckinPage;
 
   const handleLogout = () => {
     Alert.alert(
@@ -54,7 +61,7 @@ const CheckinNavigator: React.FC = () => {
       initialRouteName="check-in">
       <CheckInStack.Screen
         name="check-in"
-        component={CheckinPage}
+        component={CheckinComponent}
         options={{
           headerTitle: t('checkin.check_in_title'),
           headerRight: () => (

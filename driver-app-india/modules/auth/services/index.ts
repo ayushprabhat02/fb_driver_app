@@ -156,12 +156,22 @@ export const checkHasuraId = (token: FirebaseAuthTypes.IdTokenResult) => {
 
   const isDriver = allowedRoles?.includes('driver');
   const isTowerDriver = allowedRoles?.includes('tower_driver');
+  const isCustomer = allowedRoles?.includes('customer');
 
-  // ✅ Only pass if both conditions met
+  // ✅ Accept tower_driver + driver
   if (isDriver && isTowerDriver) {
     return {
       hasuraId,
-      role: 'tower_driver', // force role to customer
+      role: 'tower_driver',
+      isDriverAccount: true,
+    };
+  }
+
+  // ✅ Accept customer + driver
+  if (isDriver && isCustomer) {
+    return {
+      hasuraId,
+      role: 'customer',
       isDriverAccount: true,
     };
   }
@@ -182,6 +192,7 @@ export const signOut = async () => {
     // Clear any locally persisted check-in state so next login starts from check-in
     clearDriverVehicleId();
     checkinStore.getState().resetCheckinStore();
+    authStore.getState().resetAuthStore();
 
     await auth().signOut();
     console.log('✅ Sign out completed successfully');

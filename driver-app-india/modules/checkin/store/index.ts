@@ -31,12 +31,15 @@ type CheckinStore = {
   driverVehicleDetails: Vehicle | null;
   driverDetails: any | null;
   shiftSchedule: Shift_Schedule | null;
+  selfieImageData: string | null;
+  selfieStoreUrl: string | null;
   refuellerImageData: string | null;
-  refuellerStoreUrl: string | null; // Store the uploaded image URL
+  refuellerStoreUrl: string | null;
   odometerImageData: string | null;
+  odometerStoreUrl: string | null;
   totalizerImageData: string | null;
+  totalizerStoreUrl: string | null;
   isQuantityCheckEnabled: boolean;
-  // New explicit completion flag for check-in state
   isCheckedIn: boolean;
   loaders: Loaders;
 };
@@ -58,12 +61,15 @@ const checkinInitialState: CheckinStore = {
   driverVehicleDetails: null,
   driverDetails: null,
   shiftSchedule: null,
+  selfieImageData: null,
+  selfieStoreUrl: null,
   refuellerImageData: null,
   refuellerStoreUrl: null,
-  isQuantityCheckEnabled: false,
   odometerImageData: null,
+  odometerStoreUrl: null,
   totalizerImageData: null,
-  // Initially, user is not checked in
+  totalizerStoreUrl: null,
+  isQuantityCheckEnabled: false,
   isCheckedIn: false,
   loaders: {
     isDriverVehicleIdLoading: false,

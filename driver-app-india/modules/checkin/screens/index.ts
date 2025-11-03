@@ -1,1 +1,2 @@
-export {default as CheckinPage} from './checkinPage';
+export {default as CheckinPage} from './CheckinPage';
+export {default as CheckinPageCustomer} from './CheckinPageCustomer';

@@ -25,6 +25,7 @@ const initializeAuthListener = () => {
     stopLoader,
     setIsNewUser,
     resetAuthStore,
+    setUserRole,
   } = authStore.getState();
 
   // Helper functions
@@ -49,11 +50,10 @@ const initializeAuthListener = () => {
       const updatedToken = await user?.getIdToken(true);
       const updatedTokenResult = await user?.getIdTokenResult(true);
       const hasuraIdExists = checkHasuraId(updatedTokenResult);
-
       if (!hasuraIdExists?.hasuraId) {
         await fireRefreshToken(user); // Recursive call if claims not set yet
       } else {
-        if (hasuraIdExists?.role !== 'tower_driver') {
+        if (hasuraIdExists?.role !== 'tower_driver' && hasuraIdExists?.role !== 'customer') {
           Toast.show({type: 'error', text1: 'Unauthorized account role.'});
           setTimeout(() => {
             signOut();
@@ -67,6 +67,7 @@ const initializeAuthListener = () => {
           user?.metadata.lastSignInTime,
         );
         setIsNewUser(isNew);
+        setUserRole(hasuraIdExists.role as 'tower_driver' | 'customer');
         const client = initializeClient();
         setGraphQLClient(client);
         setXHasuraId(hasuraIdExists.hasuraId);
@@ -102,6 +103,7 @@ const initializeAuthListener = () => {
           user.metadata.lastSignInTime,
         );
         setIsNewUser(isNew);
+        setUserRole(hasuraIdExists.role as 'tower_driver' | 'customer');
         setXHasuraId(hasuraIdExists.hasuraId);
 
         const token = await user.getIdToken();

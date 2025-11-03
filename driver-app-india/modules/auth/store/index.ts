@@ -20,6 +20,7 @@ type AuthStore = {
   xHasuraId: string | null;
   graphQLClient: Client | null;
   isNewUser: boolean;
+  userRole: 'tower_driver' | 'customer' | null;
 
   // loading states
   loaders: Loaders;
@@ -36,6 +37,7 @@ type AuthActions = {
   resetAuthStore: () => void;
   setGraphQLClient: (client: Client | null) => void;
   setIsNewUser: (isNew: boolean) => void;
+  setUserRole: (role: 'tower_driver' | 'customer' | null) => void;
 };
 
 export const authIntialState: AuthStore = {
@@ -45,6 +47,7 @@ export const authIntialState: AuthStore = {
   xHasuraId: '',
   graphQLClient: null,
   isNewUser: false,
+  userRole: null,
 
   // loading states
   loaders: {
@@ -74,6 +77,9 @@ const authStore = create<AuthStore & AuthActions>(set => ({
 
   setIsNewUser: (isNew: boolean) =>
     set(state => ({...state, isNewUser: isNew})),
+
+  setUserRole: (role: 'tower_driver' | 'customer' | null) =>
+    set(state => ({...state, userRole: role})),
 
   // loader actions
   startLoader: (loaderType: LoaderTypes) =>
