@@ -93,7 +93,7 @@
     "react-native-svg": "^15.1.0",
     "react-native-toast-message": "^2.2.0",
     "react-native-vector-icons": "^10.0.3",
-    "react-native-webrtc": "^124.0.4",
+    "react-native-webrtc": "^124.0.7",
     "react-native-webview": "^13.11.1",
     "urql": "^4.0.6",
     "use-debounce": "^10.0.6",
