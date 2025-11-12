@@ -1,0 +1,15 @@
+mutation addTestResultsWithImages(
+  $objects: [customer_order_item_test_results_insert_input!]!
+) {
+  insert_customer_order_item_test_results(objects: $objects) {
+    affected_rows
+    returning {
+      id
+      is_passed
+      key
+      value
+      test_id
+      customer_order_item_test_category_id
+    }
+  }
+}

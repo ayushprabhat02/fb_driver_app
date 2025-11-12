@@ -1,0 +1,15 @@
+query fetchCustomerTestApproved(
+  $customerOrderItemId: uuid!
+  $testCategoryId: uuid!
+) {
+  customer_order_item_test_category(
+    where: {
+      customer_order_item_id: {_eq: $customerOrderItemId}
+      test_category_id: {_eq: $testCategoryId}
+    }
+  ) {
+    id
+    is_customer_approved
+    is_customer_allowed_skipped
+  }
+}

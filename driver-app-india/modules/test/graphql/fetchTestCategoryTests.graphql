@@ -1,0 +1,12 @@
+query fetchTestCategoryTests($slug: String!) {
+  test_category_test(where: {test_category: {slug: {_eq: $slug}}}) {
+    id
+    test {
+      id
+      name
+      slug
+      description
+      is_active
+    }
+  }
+}

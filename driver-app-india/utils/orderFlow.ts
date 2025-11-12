@@ -195,25 +195,35 @@ const routeToOrderHandler = (
 /**
  * @function handleDelivery
  * @description Handles delivery order routing logic
- * Routes to choose-asset page when order is in ARRIVED state
+ * For normal drivers (customer role), routes to test selection when in ARRIVED state
+ * For tower drivers, routes directly to choose-asset
  */
 const handleDelivery = (
   order: any,
 ): { navigateTo: string; navigateParams?: any } => {
   const { state } = order;
 
-  // DISPENSING or ARRIVED orders go directly to asset selection
-  if (state === 'DISPENSING' || state === 'ARRIVED') {
+  // ARRIVED orders go to test selection for normal drivers (customer role)
+  // This matches the Vue.js flow where tower drivers skip tests
+  if (state === 'ARRIVED') {
+    return {
+      navigateTo: 'order',
+      navigateParams: { screen: 'select-test' },
+    };
+  }
+
+  // DISPENSING orders go directly to choose-asset
+  if (state === 'DISPENSING') {
     return {
       navigateTo: 'order',
       navigateParams: { screen: 'choose-asset' },
     };
   }
 
-  // For all other states, route to choose asset (order will be in ARRIVED state after startTrip)
+  // For all other states, route to test selection
   return {
     navigateTo: 'order',
-    navigateParams: { screen: 'choose-asset' },
+    navigateParams: { screen: 'select-test' },
   };
 };
 
@@ -221,6 +231,7 @@ const handleDelivery = (
  * @function handleFillUp
  * @description Handles fillup order routing logic
  * Matches Vue.js handleFillUp() implementation
+ * FILL_UP orders go directly to fill asset (no tests)
  */
 const handleFillUp = (
   order: any,

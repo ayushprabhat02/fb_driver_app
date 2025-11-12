@@ -82,7 +82,12 @@ const CheckinPageCustomer: React.FC = () => {
   const loaders = checkinStore.use.loaders();
 
   const handleSubmit = async () => {
-    if (!selfieStoreUrl || !refuellerStoreUrl || !odometerStoreUrl || !totalizerStoreUrl) {
+    if (
+      !selfieStoreUrl ||
+      !refuellerStoreUrl ||
+      !odometerStoreUrl ||
+      !totalizerStoreUrl
+    ) {
       Alert.alert(
         t('checkin.required_image'),
         'Please upload all required images',
@@ -132,7 +137,9 @@ const CheckinPageCustomer: React.FC = () => {
         error instanceof Error ? error.message : 'Unknown error occurred';
       Alert.alert(
         t('checkin.checkin_failed'),
-        `${t('common.error')}: ${errorMessage}\n\n${t('checkin.please_try_again')}`,
+        `${t('common.error')}: ${errorMessage}\n\n${t(
+          'checkin.please_try_again',
+        )}`,
       );
     } finally {
       stopLoader('isCheckingIn');
@@ -301,7 +308,11 @@ const CheckinPageCustomer: React.FC = () => {
         <RNCamera
           ref={cameraRef}
           style={styles.preview}
-          type={imageType === 'selfie' ? RNCamera.Constants.Type.front : RNCamera.Constants.Type.back}
+          type={
+            imageType === 'selfie'
+              ? RNCamera.Constants.Type.front
+              : RNCamera.Constants.Type.back
+          }
           captureAudio={false}
         />
         <View style={styles.cameraButtonContainer}>
@@ -359,7 +370,7 @@ const CheckinPageCustomer: React.FC = () => {
         </Text>
 
         <ImageContainer
-          label="Upload Selfie *"
+          label="Upload Selfie"
           imageData={selfieImageData}
           isUploading={isSelfieImageUploading}
           onCameraPress={() => openCamera('selfie')}
@@ -380,7 +391,7 @@ const CheckinPageCustomer: React.FC = () => {
 
         <Divider height={10} />
         <Text size="base" weight="normal" color="secondary">
-          Enter Odometer Reading *
+          Enter Odometer Reading
         </Text>
         <TextInput
           keyboardType="numeric"
@@ -392,7 +403,7 @@ const CheckinPageCustomer: React.FC = () => {
         />
 
         <ImageContainer
-          label="Upload Odometer Image *"
+          label="Upload Odometer Image"
           imageData={odometerImageData}
           isUploading={isOdometerImageUploading}
           onCameraPress={() => openCamera('odometer')}
@@ -415,7 +426,7 @@ const CheckinPageCustomer: React.FC = () => {
         />
 
         <ImageContainer
-          label="Upload Totalizer Image *"
+          label="Upload Totalizer Image"
           imageData={totalizerImageData}
           isUploading={isTotalizerImageUploading}
           onCameraPress={() => openCamera('totalizer')}
@@ -427,7 +438,10 @@ const CheckinPageCustomer: React.FC = () => {
 
       <View style={styles.buttonContainer}>
         <Button
-          style={[styles.button, (!isFormValid || isCheckingIn) && styles.disabledButton]}
+          style={[
+            styles.button,
+            (!isFormValid || isCheckingIn) && styles.disabledButton,
+          ]}
           variant="solid"
           onPress={handleSubmit}
           loading={isCheckingIn}

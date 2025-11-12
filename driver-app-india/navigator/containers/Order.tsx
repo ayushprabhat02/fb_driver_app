@@ -16,6 +16,8 @@ import ChooseAssetScreen from '@/modules/order/screens/ChooseAssetScreen';
 import ReachLocationScreen from '@/modules/order/screens/ReachLocationScreen';
 import DeliveryChallanScreen from '@/modules/order/screens/DeliveryChallanScreen';
 import BuddyChallanScreen from '@/modules/order/screens/BuddyChallanScreen';
+import SelectTestScreen from '@/modules/test/screens/SelectTestScreen';
+import PerformTestScreen from '@/modules/test/screens/PerformTestScreen';
 import {BackButtonArrow} from '@/components';
 
 // styles
@@ -32,6 +34,8 @@ export type OrderStackParamList = {
   };
   'choose-asset': undefined;
   'reach-location': undefined;
+  'select-test': undefined;
+  'perform-test': undefined;
   'fill-asset': undefined;
   'upload-image-asset': undefined;
   'totalizer-after-manual': undefined;
@@ -85,6 +89,28 @@ const OrderNavigator: React.FC = () => {
         component={ReachLocationScreen}
         options={{
           title: 'Reach Location',
+          headerTransparent: false,
+          headerStyle: {
+            backgroundColor: FBBackground.white,
+          },
+        }}
+      />
+      <OrderStack.Screen
+        name="select-test"
+        component={SelectTestScreen}
+        options={{
+          title: 'Select Tests',
+          headerTransparent: false,
+          headerStyle: {
+            backgroundColor: FBBackground.white,
+          },
+        }}
+      />
+      <OrderStack.Screen
+        name="perform-test"
+        component={PerformTestScreen}
+        options={{
+          title: 'Perform Tests',
           headerTransparent: false,
           headerStyle: {
             backgroundColor: FBBackground.white,

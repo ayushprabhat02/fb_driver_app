@@ -1,0 +1,19 @@
+query fetchCustomerTestResults($customerOrderItemId: uuid!) {
+  customer_order_item_test_results(
+    where: {
+      customer_order_item_test_category: {
+        customer_order_item_id: {_eq: $customerOrderItemId}
+      }
+    }
+  ) {
+    id
+    is_passed
+    key
+    value
+    test_id
+    customer_order_item_test_results_photos {
+      id
+      url
+    }
+  }
+}

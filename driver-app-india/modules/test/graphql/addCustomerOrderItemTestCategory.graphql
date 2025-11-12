@@ -1,0 +1,30 @@
+mutation addCustomerOrderItemTestCategory(
+  $customer_order_item_id: uuid
+  $is_active: Boolean
+  $test_category_id: uuid
+  $is_customer_approved: Boolean
+  $is_customer_allowed_skipped: Boolean
+) {
+  insert_customer_order_item_test_category(
+    objects: {
+      customer_order_item_id: $customer_order_item_id
+      is_active: $is_active
+      test_category_id: $test_category_id
+      is_customer_approved: $is_customer_approved
+      is_customer_allowed_skipped: $is_customer_allowed_skipped
+    }
+  ) {
+    returning {
+      customer_order_item_id
+      id
+      is_customer_allowed_skipped
+      is_customer_approved
+      test_category {
+        description
+        id
+        is_active
+        name
+      }
+    }
+  }
+}

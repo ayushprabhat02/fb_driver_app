@@ -1,0 +1,12 @@
+mutation addTestResultCheckin(
+  $object: shift_schedule_test_category_test_results_insert_input!
+) {
+  insert_shift_schedule_test_category_test_results_one(object: $object) {
+    id
+    is_passed
+    key
+    value
+    test_category_test_id
+    shift_schedule_id
+  }
+}

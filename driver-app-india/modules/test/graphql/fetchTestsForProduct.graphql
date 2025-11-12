@@ -1,0 +1,19 @@
+query fetchTestsForProduct($productVariationId: uuid!) {
+  product_variation_test_category(
+    where: {product_variation_id: {_eq: $productVariationId}}
+  ) {
+    id
+    test_category {
+      id
+      name
+      slug
+      tests {
+        id
+        name
+        slug
+        description
+        is_active
+      }
+    }
+  }
+}

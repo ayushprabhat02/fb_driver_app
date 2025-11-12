@@ -1,0 +1,24 @@
+mutation updateCustomerTestApproval(
+  $customerOrderItemId: uuid!
+  $testCategoryId: uuid!
+  $isCustomerApproved: Boolean!
+  $isCustomerAllowedSkipped: Boolean!
+) {
+  update_customer_order_item_test_category(
+    where: {
+      customer_order_item_id: {_eq: $customerOrderItemId}
+      test_category_id: {_eq: $testCategoryId}
+    }
+    _set: {
+      is_customer_approved: $isCustomerApproved
+      is_customer_allowed_skipped: $isCustomerAllowedSkipped
+    }
+  ) {
+    affected_rows
+    returning {
+      id
+      is_customer_approved
+      is_customer_allowed_skipped
+    }
+  }
+}

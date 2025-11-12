@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {
   View,
   Alert,
@@ -8,12 +8,12 @@ import {
   TouchableOpacity,
   PermissionsAndroid,
 } from 'react-native';
-import { RNCamera } from 'react-native-camera';
-import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { request, PERMISSIONS, RESULTS, check } from 'react-native-permissions';
+import {RNCamera} from 'react-native-camera';
+import {useNavigation} from '@react-navigation/native';
+import {StackNavigationProp} from '@react-navigation/stack';
+import {request, PERMISSIONS, RESULTS, check} from 'react-native-permissions';
 import Toast from 'react-native-toast-message';
-import { ScaledSheet } from 'react-native-size-matters';
+import {ScaledSheet} from 'react-native-size-matters';
 import RNFS from 'react-native-fs';
 import DocumentPicker from 'react-native-document-picker';
 
@@ -31,16 +31,16 @@ import CameraOverlay from '../components/CameraOverlay';
 import StreamControls from '../components/StreamControls';
 
 // Store
-import { checkinStore, orderStore } from '@/globalStore';
+import {checkinStore, orderStore} from '@/globalStore';
 
 // Services
 import orderService from '../services';
 import supportService from '@/modules/support/services';
 
 // Types
-import { FBColors, FBBackground } from '@/types/styles';
-import { OrderStackParamList } from '@/navigator/containers/Order';
-import { getCurrentLocation } from '@/utils/location';
+import {FBColors, FBBackground} from '@/types/styles';
+import {OrderStackParamList} from '@/navigator/containers/Order';
+import {getCurrentLocation} from '@/utils/location';
 import {
   saveStreamState,
   getStreamState,
@@ -114,8 +114,8 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   // console.log('--currentDriverOrder---', currentDriverOrder);
 
   // Minimum streaming duration set to 5 minutes for all users
-  const streamingDurationSeconds = 300; // 5 minutes (300 seconds)
-  // const streamingDurationSeconds = 10; //10 seconds
+  // const streamingDurationSeconds = 300; // 5 minutes (300 seconds)
+  const streamingDurationSeconds = 10; //10 seconds
 
   // Get current asset's filled quantity
   const getCurrentAssetFilledQuantity = () => {
@@ -472,8 +472,9 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       Toast.show({
         type: 'error',
         text1: 'Cannot Stop Recording',
-        text2: `Please record for at least ${streamingDurationSeconds / 60
-          } minutes before stopping`,
+        text2: `Please record for at least ${
+          streamingDurationSeconds / 60
+        } minutes before stopping`,
       });
       return;
     }
@@ -716,7 +717,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         const uploadResult = await supportService.uploadVideoFile({
           fileName: fileName,
           contentType: contentType,
-          fileData: { uri: data.uri, path: filePath }, // pass file path
+          fileData: {uri: data.uri, path: filePath}, // pass file path
         });
 
         if (uploadResult.storeUrl) {
@@ -820,7 +821,8 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
 
     Alert.alert(
       'Video File Location',
-      `File Path: ${recordedVideoFile}\n\nFile Exists: ${fileExists ? 'Yes' : 'No'
+      `File Path: ${recordedVideoFile}\n\nFile Exists: ${
+        fileExists ? 'Yes' : 'No'
       }
 
 For Android Emulator:
@@ -839,7 +841,7 @@ For iOS Simulator:
             console.log('File path:', recordedVideoFile);
           },
         },
-        { text: 'OK' },
+        {text: 'OK'},
       ],
     );
   };
@@ -881,7 +883,8 @@ For iOS Simulator:
         // Show confirmation dialog
         Alert.alert(
           'Upload Video',
-          `Are you sure you want to upload this video?\n\nFile: ${selectedFile.name
+          `Are you sure you want to upload this video?\n\nFile: ${
+            selectedFile.name
           }\nSize: ${((selectedFile.size || 0) / 1024 / 1024).toFixed(2)}MB`,
           [
             {
@@ -923,13 +926,14 @@ For iOS Simulator:
       const detectedFormat = selectedFile.type?.includes('webm')
         ? 'webm'
         : selectedFile.type?.includes('mp4')
-          ? 'mp4'
-          : selectedFile.name?.toLowerCase().includes('.webm')
-            ? 'webm'
-            : 'mp4';
+        ? 'mp4'
+        : selectedFile.name?.toLowerCase().includes('.webm')
+        ? 'webm'
+        : 'mp4';
       const contentType = selectedFile.type || `video/${detectedFormat}`;
-      const fileName = `Upload_${currentDriverOrder?.customer_order?.order_code
-        }_${Date.now()}.${detectedFormat}`;
+      const fileName = `Upload_${
+        currentDriverOrder?.customer_order?.order_code
+      }_${Date.now()}.${detectedFormat}`;
 
       // Try to upload the file directly using the file object
       // Many upload services can handle the file object with uri, type, and name
@@ -1171,7 +1175,7 @@ For iOS Simulator:
           const assetId =
             asset.customer_asset?.id || asset.id || asset.customer_asset_id;
           if (assetId === currentAssetId) {
-            return { ...asset, quantity_dispensed: quantity };
+            return {...asset, quantity_dispensed: quantity};
           }
           return asset;
         });
@@ -1260,12 +1264,12 @@ For iOS Simulator:
           quantity_dispensed: quantity,
           task_id: currentDriverOrder?.id,
           ...(orderStore.getState().currentDriverOrder?.category === 'DELIVERY'
-            ? { customer_asset_id: `${currentAssetId}` }
+            ? {customer_asset_id: `${currentAssetId}`}
             : {
-              vehicle_id:
-                currentAssetId ||
-                checkinStore.getState().driverVehicleDetails?.id,
-            }),
+                vehicle_id:
+                  currentAssetId ||
+                  checkinStore.getState().driverVehicleDetails?.id,
+              }),
           location: {
             type: 'Point',
             coordinates: [coordinates.longitude, coordinates.latitude],
@@ -1302,7 +1306,7 @@ For iOS Simulator:
           const assetId =
             asset.customer_asset?.id || asset.id || asset.customer_asset_id;
           if (assetId === currentAssetId) {
-            return { ...asset, quantity_dispensed: quantity };
+            return {...asset, quantity_dispensed: quantity};
           }
           return asset;
         });
@@ -1445,11 +1449,13 @@ For iOS Simulator:
               Customer Name:
             </Text>
             <Text weight="400" size="sm" style={styles.orderValue as any}>
-              {`${currentDriverOrder?.customer_order?.organization_user?.user
-                ?.first_name || ''
-                } ${currentDriverOrder?.customer_order?.organization_user?.user
+              {`${
+                currentDriverOrder?.customer_order?.organization_user?.user
+                  ?.first_name || ''
+              } ${
+                currentDriverOrder?.customer_order?.organization_user?.user
                   ?.last_name || ''
-                }`.trim() || 'N/A'}
+              }`.trim() || 'N/A'}
             </Text>
           </View>
 
@@ -1502,7 +1508,9 @@ For iOS Simulator:
                       size="sm"
                       weight="600"
                       style={styles.uploadButtonText as any}>
-                      {isUploadingFromDevice ? 'Uploading...' : '📁 Upload Video'}
+                      {isUploadingFromDevice
+                        ? 'Uploading...'
+                        : '📁 Upload Video'}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -1528,7 +1536,8 @@ For iOS Simulator:
                 ✓ Video Uploaded Successfully
               </Text>
               <Text size="sm" style={styles.successMessage as any}>
-                Your video has been uploaded. You can now proceed to the next step.
+                Your video has been uploaded. You can now proceed to the next
+                step.
               </Text>
             </View>
           </CardElevated>

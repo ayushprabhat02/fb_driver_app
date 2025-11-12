@@ -1,0 +1,36 @@
+mutation addCustomerApprovalAndSkipped(
+  $customer_order_item_id: uuid
+  $test_category_id: uuid
+  $is_customer_approved: Boolean
+  $is_customer_allowed_skipped: Boolean
+) {
+  insert_customer_order_item_test_category_one(
+    object: {
+      customer_order_item_id: $customer_order_item_id
+      test_category_id: $test_category_id
+      is_customer_approved: $is_customer_approved
+      is_customer_allowed_skipped: $is_customer_allowed_skipped
+    }
+  ) {
+    customer_order_item_id
+    id
+    is_customer_allowed_skipped
+    is_customer_approved
+    test_category {
+      description
+      is_active
+      id
+      name
+      slug
+      tests {
+        id
+        description
+        is_active
+        slug
+        sequence
+        name
+        test_category_id
+      }
+    }
+  }
+}
