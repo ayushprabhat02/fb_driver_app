@@ -212,6 +212,109 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           resolve();
         };
 
+  const handleWebRTCRecordingFinished = async (data: {
+    uri: string;
+    name: string;
+    size: number;
+    type: string;
+  }) => {
+    try {
+      console.log('[WebRTC] Processing recorded stream...', {
+        uri: data.uri,
+        size: data.size,
+        type: data.type,
+      });
+
+      startLoader('uploadVideo');
+
+      const fileName = `WebRTC_Recording_${currentDriverOrder?.customer_order?.order_code}_${Date.now()}.webm`;
+      const contentType = 'video/webm';
+
+      let uploadedUrl = data.uri;
+      let uploadSuccess = false;
+      let localVideoPath: string | null = null;
+
+      // Always save video locally first
+      localVideoPath = await saveVideoToDevice(data.uri, fileName);
+      if (localVideoPath) {
+        setRecordedVideoFile(localVideoPath);
+      }
+
+      try {
+        const filePath = data.uri.replace('file://', '');
+        const fileStats = await RNFS.stat(filePath);
+        console.log(
+          `[WebRTC] Recording size: ${(fileStats.size / 1024 / 1024).toFixed(
+            2,
+          )} MB`,
+        );
+        console.log(`[WebRTC] Uploading recording from: ${filePath}`);
+
+        const uploadResult = await supportService.uploadVideoFile({
+          fileName: fileName,
+          contentType: contentType,
+          fileData: {uri: data.uri, path: filePath},
+        });
+
+        if (uploadResult.storeUrl) {
+          uploadedUrl = uploadResult.storeUrl;
+          uploadSuccess = true;
+          setIsStreamUploaded(true);
+          setUploadError(false);
+        }
+      } catch (uploadError) {
+        console.warn(
+          '[WebRTC] Cloud upload failed, recording saved locally:',
+          uploadError,
+        );
+        setUploadError(true);
+        uploadSuccess = false;
+      }
+
+      // Save the task action with uploaded recording URL or local URI
+      await orderService.upsertStepTaskAction({
+        object: {
+          key: 'LIVE_STREAM_RECORDING',
+          url: uploadedUrl,
+          value: fileName,
+          quantity_dispensed: 0,
+          task_id: currentDriverOrder?.id,
+          customer_asset_id: currentAssetForDispense?.id,
+        },
+      });
+
+      // Mark asset as having uploaded video
+      const currentAssetId = currentAssetForDispense?.id;
+      if (currentAssetId && uploadSuccess) {
+        addAssetWithUploadedVideo(currentAssetId);
+        await saveAssetWithUploadedVideo(
+          currentDriverOrder?.id || '',
+          currentAssetId,
+        );
+      }
+
+      Toast.show({
+        type: uploadSuccess ? 'success' : 'info',
+        text1: uploadSuccess ? 'Live Stream Recording Saved' : 'Recording Saved Locally',
+        text2: uploadSuccess
+          ? 'Successfully uploaded to cloud storage'
+          : 'Recording saved to device - you can retry upload manually',
+      });
+    } catch (error) {
+      console.error('[WebRTC] Process recording error:', error);
+      setIsStreamUploaded(false);
+      setUploadError(true);
+      Toast.show({
+        type: 'error',
+        text1: 'Processing Failed',
+        text2: 'Failed to save WebRTC recording. Please try again.',
+      });
+    } finally {
+      stopLoader('uploadVideo');
+      console.log('✅ WebRTC recording process completed');
+    }
+  };
+
         ws.onerror = e => {
           console.log('[WebRTC] ws error', e);
           reject(new Error('WebSocket error'));
@@ -680,6 +783,60 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           mediaStreamRef.current = stream;
           liveStreamRef.current = stream;
 
+          // Start recording the WebRTC stream
+          try {
+            console.log('[LIVE] Starting WebRTC stream recording...');
+            
+            // For React Native WebRTC, we need to use native recording capabilities
+            // Since we don't have a direct MediaRecorder equivalent, we'll implement
+            // a basic recording mechanism using the available APIs
+            
+            // Get video and audio tracks
+            const videoTrack = stream.getVideoTracks()[0];
+            const audioTrack = stream.getAudioTracks()[0];
+            
+            if (!videoTrack) {
+              throw new Error('No video track found in stream');
+            }
+            
+            console.log('[LIVE] WebRTC stream recording setup completed');
+            
+            // IMPORTANT: React Native WebRTC Recording Limitation
+            // ================================================
+            // Direct WebRTC stream recording is NOT supported in React Native.
+            // The react-native-webrtc package only provides streaming capabilities.
+            // 
+            // What we CAN do:
+            // - ✅ Live stream to server (current implementation)
+            // - ✅ Capture camera video separately (record mode)
+            // - ✅ Send stream to media server
+            //
+            // What we CANNOT do:
+            // - ❌ Record the WebRTC stream locally on device
+            // - ❌ Save WebRTC stream to file directly
+            // - ❌ Use MediaRecorder API (web-only)
+            //
+            // Solutions:
+            // 1. Server-side recording (recommended)
+            // 2. Native module development (complex)
+            // 3. Third-party services (Daily.co, Twilio, Agora)
+            
+            // Store the stream reference for live streaming only
+            mediaRecorderRef.current = {
+              stream: stream,
+              videoTrack: videoTrack,
+              audioTrack: audioTrack,
+              startTime: Date.now(),
+              isRecording: true // This indicates streaming is active, not recording
+            };
+            
+            console.log('[LIVE] WebRTC live streaming started (recording not available in React Native)');
+            
+          } catch (recorderError) {
+            console.warn('[LIVE] WebRTC recording failed, continuing without recording:', recorderError);
+            // Continue with live streaming even if recording fails
+          }
+
           // Connect to WebSocket and start streaming
           connectSoup()
             .then(() => {
@@ -865,6 +1022,31 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       // Stop WebRTC live streaming
       try {
         console.log('[WebRTC] Stopping live stream...');
+
+        // Stop WebRTC recording if recording
+        if (mediaRecorderRef.current && mediaRecorderRef.current.isRecording) {
+          console.log('[WebRTC] Stopping WebRTC recording...');
+          try {
+            const recordingData = mediaRecorderRef.current;
+            const duration = Date.now() - recordingData.startTime;
+            
+            console.log(`[WebRTC] Recording duration: ${duration}ms`);
+            
+            // Note: WebRTC stream recording is not directly supported in React Native
+            // The stream was being captured for live streaming but not actually recorded
+            // This is a limitation of the current React Native WebRTC implementation
+            
+            console.log('[WebRTC] WebRTC recording stopped (stream was live but not recorded)');
+            
+            // Reset the recorder reference
+            mediaRecorderRef.current = null;
+            
+          } catch (error) {
+            console.error('[WebRTC] Error stopping recording:', error);
+            mediaRecorderRef.current = null;
+          }
+        }
+
         producersRef.current.forEach((producer: any) => {
           try {
             producer.close();
