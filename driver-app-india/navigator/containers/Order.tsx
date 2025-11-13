@@ -17,8 +17,11 @@ import ChooseAssetScreen from '@/modules/order/screens/ChooseAssetScreen';
 import ReachLocationScreen from '@/modules/order/screens/ReachLocationScreen';
 import DeliveryChallanScreen from '@/modules/order/screens/DeliveryChallanScreen';
 import BuddyChallanScreen from '@/modules/order/screens/BuddyChallanScreen';
+import NormalDeliveryChallanScreen from '@/modules/order/screens/NormalDeliveryChallanScreen';
+import NormalBuddyChallanScreen from '@/modules/order/screens/NormalBuddyChallanScreen';
 import SelectTestScreen from '@/modules/test/screens/SelectTestScreen';
 import PerformTestScreen from '@/modules/test/screens/PerformTestScreen';
+import {OrderSuccess, OrderFailure} from '@/modules/home/components';
 import {BackButtonArrow} from '@/components';
 
 // styles
@@ -44,6 +47,13 @@ export type OrderStackParamList = {
   'live-stream': undefined;
   'delivery-challan': undefined;
   'buddy-challan': undefined;
+  'normal-delivery-challan': undefined;
+  'normal-buddy-challan': undefined;
+  'OrderSuccess': undefined;
+  'OrderFailure': {
+    errorMessage: string;
+    canRetry: boolean;
+  };
 };
 
 const OrderStack = createStackNavigator<OrderStackParamList>();
@@ -181,6 +191,28 @@ const OrderNavigator: React.FC = () => {
         }}
       />
       <OrderStack.Screen
+        name="normal-delivery-challan"
+        component={NormalDeliveryChallanScreen}
+        options={{
+          title: 'Delivery Challan',
+          headerTransparent: false,
+          headerStyle: {
+            backgroundColor: FBBackground.white,
+          },
+        }}
+      />
+      <OrderStack.Screen
+        name="normal-buddy-challan"
+        component={NormalBuddyChallanScreen}
+        options={{
+          title: 'Buddy Challan',
+          headerTransparent: false,
+          headerStyle: {
+            backgroundColor: FBBackground.white,
+          },
+        }}
+      />
+      <OrderStack.Screen
         name="dispense-fuel"
         component={DispenseFuelScreen}
         options={{
@@ -189,6 +221,22 @@ const OrderNavigator: React.FC = () => {
           headerStyle: {
             backgroundColor: FBBackground.white,
           },
+        }}
+      />
+      <OrderStack.Screen
+        name="OrderSuccess"
+        component={OrderSuccess}
+        options={{
+          title: 'Order Success',
+          headerShown: false,
+        }}
+      />
+      <OrderStack.Screen
+        name="OrderFailure"
+        component={OrderFailure}
+        options={{
+          title: 'Order Failed',
+          headerShown: false,
         }}
       />
     </OrderStack.Navigator>

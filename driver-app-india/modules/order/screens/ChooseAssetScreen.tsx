@@ -173,20 +173,10 @@ const ChooseAssetScreen: React.FC = () => {
 
     // Check if buddy challan flow is enabled
     if (currentDriverOrder?.is_enable_buddycan_flow) {
-      navigation.navigate('buddy-challan');
+      navigation.navigate('normal-buddy-challan');
     } else {
-       Alert.alert(
-        'Bowser Order',
-        'This is a bowser order',
-        [
-          {
-            text: 'OK',
-            onPress: () => navigation.navigate('home'),
-          },
-        ],
-        { cancelable: false }
-      );
-      // navigation.navigate('delivery-challan');
+      // Bowser flow - navigate to normal delivery challan
+      navigation.navigate('normal-delivery-challan');
     }
   };
 

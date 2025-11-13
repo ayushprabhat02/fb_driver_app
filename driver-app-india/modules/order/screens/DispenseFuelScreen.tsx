@@ -22,6 +22,7 @@ import {RNCamera} from 'react-native-camera';
 import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
 import supportService from '@/modules/support/services';
 import orderService from '../services';
+import checkinService from '@/modules/checkin/services';
 import Toast from 'react-native-toast-message';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
@@ -39,7 +40,8 @@ const DispenseFuelScreen: React.FC = () => {
   const [quantityDispensed, setQuantityDispensed] = useState('');
   const [disableButton, setDisableButton] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [totalizerBeforeSubmitted, setTotalizerBeforeSubmitted] = useState(false);
+  const [totalizerBeforeSubmitted, setTotalizerBeforeSubmitted] =
+    useState(false);
   const [isSubmittingTotalizerBefore, setIsSubmittingTotalizerBefore] =
     useState(false);
 
@@ -53,6 +55,7 @@ const DispenseFuelScreen: React.FC = () => {
   const currentFillupOrder = orderStore.use.currentFillupOrder();
   const currentAssetForDispense = orderStore.use.currentAssetForDispense();
   const driverVehicleDetails = checkinStore.use.driverVehicleDetails();
+  const driverVehicleId = checkinStore.use.driverVehicleId();
   const startLoader = orderStore.use.startLoader();
   const stopLoader = orderStore.use.stopLoader();
 
@@ -60,24 +63,57 @@ const DispenseFuelScreen: React.FC = () => {
   const selectedOrder = currentFillupOrder || currentDriverOrder;
 
   useEffect(() => {
-    orderStore.setState({
-      totalizerImageData: null,
-      totalizerUploadedUrl: null,
-      quantityImageData: null,
-      totalizerReading: '',
-      quantityDispensed: 0,
-      totalizerBeforeReading: 0,
-      totalizerAfterReading: 0,
-    });
-    setQuantityDispensed('');
-    setTotalizerBeforeSubmitted(false);
+    const fetchLatestVehicleDetails = async () => {
+      // Reset state first
+      orderStore.setState({
+        totalizerImageData: null,
+        totalizerUploadedUrl: null,
+        quantityImageData: null,
+        totalizerReading: '',
+        quantityDispensed: 0,
+        totalizerBeforeReading: 0,
+        totalizerAfterReading: 0,
+      });
+      setQuantityDispensed('');
+      setTotalizerBeforeSubmitted(false);
 
-    if (!selectedOrder) {
-      Alert.alert('Error', 'No order assigned');
-      navigation.replace('home' as never);
-    } else if (driverVehicleDetails?.totalizer_reading !== undefined) {
-      setTotalizerReading(driverVehicleDetails.totalizer_reading.toString());
-    }
+      if (!selectedOrder) {
+        Alert.alert('Error', 'No order assigned');
+        navigation.replace('home' as never);
+        return;
+      }
+
+      // Fetch updated vehicle details to get latest totalizer reading
+      if (driverVehicleId) {
+        try {
+          await checkinService.fetchDriverVehicleDetailsById({
+            driver_vehicle_id: driverVehicleId,
+          });
+
+          // After fetching, get the updated value from store
+          const updatedVehicleDetails =
+            checkinStore.getState().driverVehicleDetails;
+          if (updatedVehicleDetails?.totalizer_reading !== undefined) {
+            setTotalizerReading(
+              updatedVehicleDetails.totalizer_reading.toString(),
+            );
+          }
+        } catch (error) {
+          console.error('Error fetching vehicle details:', error);
+          // Fallback to cached value if API fails
+          if (driverVehicleDetails?.totalizer_reading !== undefined) {
+            setTotalizerReading(
+              driverVehicleDetails.totalizer_reading.toString(),
+            );
+          }
+        }
+      } else if (driverVehicleDetails?.totalizer_reading !== undefined) {
+        // Fallback if no vehicle ID
+        setTotalizerReading(driverVehicleDetails.totalizer_reading.toString());
+      }
+    };
+
+    fetchLatestVehicleDetails();
   }, []);
 
   // Auto-submit totalizer before reading when both fields are filled
@@ -94,7 +130,11 @@ const DispenseFuelScreen: React.FC = () => {
   }, [totalizerReading, totalizerImageData, totalizerBeforeSubmitted]);
 
   const handleTotalizerBeforeSubmit = async () => {
-    if (!selectedOrder || totalizerBeforeSubmitted || isSubmittingTotalizerBefore) {
+    if (
+      !selectedOrder ||
+      totalizerBeforeSubmitted ||
+      isSubmittingTotalizerBefore
+    ) {
       return;
     }
 
@@ -147,10 +187,10 @@ const DispenseFuelScreen: React.FC = () => {
       }
 
       // Update vehicle totalizer reading
-      if (driverVehicleDetails?.id) {
+      if (driverVehicleId) {
         await orderService.updateTotalizerReading({
           totalizer_reading: totalizerReadingValue,
-          vehicle_id: driverVehicleDetails.id,
+          vehicle_id: driverVehicleId,
         });
       }
 
@@ -263,10 +303,10 @@ const DispenseFuelScreen: React.FC = () => {
       });
 
       // Step 4: Update vehicle totalizer reading to final value
-      if (driverVehicleDetails?.id) {
+      if (driverVehicleId) {
         await orderService.updateTotalizerReading({
           totalizer_reading: qty + totalizerReadingValue,
-          vehicle_id: driverVehicleDetails.id,
+          vehicle_id: driverVehicleId,
         });
       }
 

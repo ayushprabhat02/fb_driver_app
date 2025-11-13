@@ -5,7 +5,7 @@
 
 import { Alert } from 'react-native';
 import orderService from '@/modules/order/services';
-import { orderStore, homeStore, locationTrackingStore } from '@/globalStore';
+import { orderStore, homeStore, locationTrackingStore, authStore } from '@/globalStore';
 
 export interface OrderFlowResult {
   success: boolean;
@@ -196,20 +196,32 @@ const routeToOrderHandler = (
  * @function handleDelivery
  * @description Handles delivery order routing logic
  * For normal drivers (customer role), routes to test selection when in ARRIVED state
- * For tower drivers, routes directly to choose-asset
+ * For tower drivers, routes directly to choose-asset (skips tests)
  */
 const handleDelivery = (
   order: any,
 ): { navigateTo: string; navigateParams?: any } => {
   const { state } = order;
+  const userRole = authStore.getState().userRole;
+  const isTowerDriver = userRole === 'tower_driver';
 
-  // ARRIVED orders go to test selection for normal drivers (customer role)
-  // This matches the Vue.js flow where tower drivers skip tests
+  // ARRIVED orders: route based on user role
+  // - Tower drivers: skip tests, go directly to choose-asset
+  // - Normal drivers (customer role): go through test flow
   if (state === 'ARRIVED') {
-    return {
-      navigateTo: 'order',
-      navigateParams: { screen: 'select-test' },
-    };
+    if (isTowerDriver) {
+      console.log('🚛 Tower driver - navigating to choose-asset (skipping tests)');
+      return {
+        navigateTo: 'order',
+        navigateParams: { screen: 'choose-asset' },
+      };
+    } else {
+      console.log('🚗 Normal driver - navigating to select-test');
+      return {
+        navigateTo: 'order',
+        navigateParams: { screen: 'select-test' },
+      };
+    }
   }
 
   // DISPENSING orders go directly to choose-asset
@@ -220,11 +232,18 @@ const handleDelivery = (
     };
   }
 
-  // For all other states, route to test selection
-  return {
-    navigateTo: 'order',
-    navigateParams: { screen: 'select-test' },
-  };
+  // For all other states, route based on user role
+  if (isTowerDriver) {
+    return {
+      navigateTo: 'order',
+      navigateParams: { screen: 'choose-asset' },
+    };
+  } else {
+    return {
+      navigateTo: 'order',
+      navigateParams: { screen: 'select-test' },
+    };
+  }
 };
 
 /**

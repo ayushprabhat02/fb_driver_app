@@ -367,7 +367,7 @@ const TestCard: React.FC<TestCardProps> = ({test, onTestComplete}) => {
             {/* Image upload for all tests except density - using ImageContainer */}
             {!isDensityTest && (
               <ImageContainer
-                label={`Test Result Image${requiresImage ? ' *' : ''}`}
+                label={`Test Result Image`}
                 imageData={formData.imageUri || null}
                 isUploading={isUploadingImage}
                 onCameraPress={openCamera}
