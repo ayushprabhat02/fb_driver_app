@@ -17,6 +17,7 @@ import {
   HeaderAvoidingContainer,
   FullScreenLoader,
 } from '@/components';
+import OrderCancellationRequest from '@/modules/order/components/OrderCancellationRequest';
 
 // Store
 import testStore from '../store';
@@ -32,7 +33,7 @@ import {Test} from '../types';
 type RootStackParamList = {
   'perform-test': undefined;
   'choose-asset': undefined;
-  dashboard: undefined;
+  home: undefined;
 };
 
 const SelectTestScreen: React.FC = () => {
@@ -60,6 +61,7 @@ const SelectTestScreen: React.FC = () => {
   console.log('🧪 SelectTestScreen - currentFillupOrder:', currentFillupOrder);
 
   const [isLoading, setIsLoading] = useState(true);
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   // Fetch tests on mount
   useEffect(() => {
@@ -187,26 +189,19 @@ const SelectTestScreen: React.FC = () => {
   };
 
   const handleCancel = () => {
-    Alert.alert(
-      t('common.cancel_request'),
-      'Are you sure you want to cancel this order?',
-      [
-        {
-          text: t('common.no'),
-          style: 'cancel',
-        },
-        {
-          text: t('common.yes'),
-          onPress: () => {
-            // Reset test store
-            testStore.getState().resetTestStore();
-            // Navigate back to dashboard
-            navigation.navigate('dashboard');
-          },
-          style: 'destructive',
-        },
-      ],
-    );
+    // Show the cancellation modal
+    setShowCancelModal(true);
+  };
+
+  const handleCancelModalClose = () => {
+    setShowCancelModal(false);
+  };
+
+  const handleCancelSuccess = () => {
+    // Reset test store
+    testStore.getState().resetTestStore();
+    // Navigate to home screen after successful cancellation
+    navigation.navigate('home' as never);
   };
 
   if (isLoading || loaders.fetchTests) {
@@ -301,11 +296,19 @@ const SelectTestScreen: React.FC = () => {
           <Button
             variant="outlined"
             onPress={handleCancel}
-            style={styles.cancelButton}>
+            style={styles.cancelButton}
+            textStyle={styles.cancelButtonText}>
             {'Cancel Request'}
           </Button>
         )}
       </View>
+
+      {/* Cancellation Modal */}
+      <OrderCancellationRequest
+        isVisible={showCancelModal}
+        onClose={handleCancelModalClose}
+        onSuccess={handleCancelSuccess}
+      />
     </View>
   );
 };
@@ -390,6 +393,11 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     width: '100%',
+    borderColor: FBColors.error,
+    borderWidth: 2,
+  },
+  cancelButtonText: {
+    color: FBColors.error,
   },
 });
 

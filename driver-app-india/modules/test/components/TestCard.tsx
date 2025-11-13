@@ -4,9 +4,9 @@ import {
   StyleSheet,
   TouchableOpacity,
   TextInput,
-  Image,
   Alert,
   ActivityIndicator,
+  Platform,
   Modal,
   StatusBar,
 } from 'react-native';
@@ -16,6 +16,7 @@ import {useTranslation} from 'react-i18next';
 
 // Components
 import {Text, Button} from '@/components';
+import {ImageContainer} from '@/modules/checkin/components';
 
 // Services
 import testService from '../services';
@@ -24,7 +25,6 @@ import supportService from '@/modules/support/services';
 // Types
 import {FBColors, FBBackground} from '@/types/styles';
 import {Test, TestFormData} from '../types';
-import {Platform} from 'react-native';
 
 interface TestCardProps {
   test: Test;
@@ -116,7 +116,7 @@ const TestCard: React.FC<TestCardProps> = ({test, onTestComplete}) => {
   const takePicture = async () => {
     if (cameraRef.current) {
       try {
-        const options = {quality: 0.5, base64: true};
+        const options = {quality: 0.5, base64: false};
         const data = await cameraRef.current.takePictureAsync(options);
 
         console.log('🔧 TestCard - Picture taken:', data.uri);
@@ -249,201 +249,176 @@ const TestCard: React.FC<TestCardProps> = ({test, onTestComplete}) => {
         <View style={styles.cameraContainer}>
           <RNCamera
             ref={cameraRef}
-            style={styles.camera}
+            style={styles.preview}
             type={RNCamera.Constants.Type.back}
-            flashMode={RNCamera.Constants.FlashMode.auto}
             captureAudio={false}
           />
-
-          <View style={styles.cameraControls}>
-            <Button
-              variant="outlined"
+          <View style={styles.cameraButtonContainer}>
+            <TouchableOpacity onPress={takePicture} style={styles.capture}>
+              <Text style={styles.buttonText}>{t('checkin.take_photo')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
               onPress={() => setShowCamera(false)}
-              style={styles.cameraCancelButton}
-              textStyle={styles.cameraCancelText}>
-              Cancel
-            </Button>
-
-            <Button variant="solid" onPress={takePicture}>
-              Capture
-            </Button>
+              style={styles.capture}>
+              <Text style={styles.buttonText}>{t('common.cancel')}</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
       {/* Test Card */}
       <View style={styles.container}>
-      <TouchableOpacity
-        style={styles.header}
-        onPress={toggleExpand}
-        activeOpacity={0.7}>
-        <Text size="lg" weight="bold" color="primary">
-          {test.name}
-        </Text>
-        <Text size="lg" weight="bold" color="primary">
-          {isExpanded ? '▼' : '▶'}
-        </Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.header}
+          onPress={toggleExpand}
+          activeOpacity={0.7}>
+          <Text size="lg" weight="bold" color="primary">
+            {test.name}
+          </Text>
+          <Text size="lg" weight="bold" color="primary">
+            {isExpanded ? '▼' : '▶'}
+          </Text>
+        </TouchableOpacity>
 
-      {isExpanded && (
-        <View style={styles.content}>
-          {/* Density Test - 3 readings */}
-          {isDensityTest && (
-            <>
-              <Text size="sm" weight="600" color="secondary" style={styles.label}>
-                Hydrometer Reading *
-              </Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter hydrometer reading"
-                keyboardType="numeric"
-                value={String(formData.hydrometerReading || '')}
-                onChangeText={text =>
-                  updateFormData('hydrometerReading', parseFloat(text) || 0)
-                }
-                placeholderTextColor={FBColors.placeHolderPrimary}
+        {isExpanded && (
+          <View style={styles.content}>
+            {/* Density Test - 3 readings */}
+            {isDensityTest && (
+              <>
+                <Text
+                  size="sm"
+                  weight="600"
+                  color="secondary"
+                  style={styles.label}>
+                  Hydrometer Reading *
+                </Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter hydrometer reading"
+                  keyboardType="numeric"
+                  value={String(formData.hydrometerReading || '')}
+                  onChangeText={text =>
+                    updateFormData('hydrometerReading', parseFloat(text) || 0)
+                  }
+                  placeholderTextColor={FBColors.placeHolderPrimary}
+                />
+
+                <Text
+                  size="sm"
+                  weight="600"
+                  color="secondary"
+                  style={styles.label}>
+                  Thermometer Reading *
+                </Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter thermometer reading"
+                  keyboardType="numeric"
+                  value={String(formData.thermometerReading || '')}
+                  onChangeText={text =>
+                    updateFormData('thermometerReading', parseFloat(text) || 0)
+                  }
+                  placeholderTextColor={FBColors.placeHolderPrimary}
+                />
+
+                <Text
+                  size="sm"
+                  weight="600"
+                  color="secondary"
+                  style={styles.label}>
+                  Density Reading *
+                </Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter density reading"
+                  keyboardType="numeric"
+                  value={String(formData.densityReading || '')}
+                  onChangeText={text =>
+                    updateFormData('densityReading', parseFloat(text) || 0)
+                  }
+                  placeholderTextColor={FBColors.placeHolderPrimary}
+                />
+              </>
+            )}
+
+            {/* Dip Test - reading + image */}
+            {isDipTest && (
+              <>
+                <Text
+                  size="sm"
+                  weight="600"
+                  color="secondary"
+                  style={styles.label}>
+                  Dip Reading *
+                </Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter dip reading"
+                  keyboardType="numeric"
+                  value={String(formData.dipReading || '')}
+                  onChangeText={text =>
+                    updateFormData('dipReading', parseFloat(text) || 0)
+                  }
+                  placeholderTextColor={FBColors.placeHolderPrimary}
+                />
+              </>
+            )}
+
+            {/* Image upload for all tests except density - using ImageContainer */}
+            {!isDensityTest && (
+              <ImageContainer
+                label={`Test Result Image${requiresImage ? ' *' : ''}`}
+                imageData={formData.imageUri || null}
+                isUploading={isUploadingImage}
+                onCameraPress={openCamera}
+                onRemovePhoto={removeImage}
+                uploadingText="Uploading test image..."
+                required={requiresImage}
               />
+            )}
 
-              <Text size="sm" weight="600" color="secondary" style={styles.label}>
-                Thermometer Reading *
-              </Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter thermometer reading"
-                keyboardType="numeric"
-                value={String(formData.thermometerReading || '')}
-                onChangeText={text =>
-                  updateFormData('thermometerReading', parseFloat(text) || 0)
-                }
-                placeholderTextColor={FBColors.placeHolderPrimary}
-              />
+            {/* Pass/Fail Buttons */}
+            <View style={styles.actions}>
+              <Button
+                variant="outlined"
+                onPress={() => handleMarkTest(false)}
+                disabled={!canSubmitTest() || isSubmitting}
+                loading={isSubmitting && formData.isPassed === false}
+                style={[
+                  styles.actionButton,
+                  formData.isPassed === false && styles.failedButton,
+                ]}>
+                Test Failed
+              </Button>
 
-              <Text size="sm" weight="600" color="secondary" style={styles.label}>
-                Density Reading *
-              </Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter density reading"
-                keyboardType="numeric"
-                value={String(formData.densityReading || '')}
-                onChangeText={text =>
-                  updateFormData('densityReading', parseFloat(text) || 0)
-                }
-                placeholderTextColor={FBColors.placeHolderPrimary}
-              />
-            </>
-          )}
-
-          {/* Dip Test - reading + image */}
-          {isDipTest && (
-            <>
-              <Text size="sm" weight="600" color="secondary" style={styles.label}>
-                Dip Reading *
-              </Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter dip reading"
-                keyboardType="numeric"
-                value={String(formData.dipReading || '')}
-                onChangeText={text =>
-                  updateFormData('dipReading', parseFloat(text) || 0)
-                }
-                placeholderTextColor={FBColors.placeHolderPrimary}
-              />
-            </>
-          )}
-
-          {/* Image upload for all tests except density */}
-          {!isDensityTest && (
-            <View style={styles.imageSection}>
-              <Text
-                size="sm"
-                weight="600"
-                color="secondary"
-                style={styles.label}>
-                Test Result Image {requiresImage && '*'}
-              </Text>
-
-              {formData.imageUri ? (
-                <View style={styles.imagePreview}>
-                  <Image
-                    source={{uri: formData.imageUri}}
-                    style={styles.image}
-                    resizeMode="cover"
-                  />
-                  {isUploadingImage && (
-                    <View style={styles.uploadingOverlay}>
-                      <ActivityIndicator size="large" color={FBColors.primary} />
-                      <Text size="sm" weight="600" color="white" style={{marginTop: 8}}>
-                        Uploading...
-                      </Text>
-                    </View>
-                  )}
-                  {!isUploadingImage && formData.imageStoreUrl && (
-                    <View style={styles.uploadSuccessBadge}>
-                      <Text size="xs" weight="600" color="white">
-                        ✓ Uploaded
-                      </Text>
-                    </View>
-                  )}
-                  <TouchableOpacity
-                    style={styles.removeButton}
-                    onPress={removeImage}
-                    disabled={isUploadingImage}>
-                    <Text size="sm" weight="600" color="white">
-                      ✕
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <Button
-                  variant="outlined"
-                  onPress={openCamera}
-                  disabled={isUploadingImage}>
-                  📷 Take Photo
-                </Button>
-              )}
+              <Button
+                variant="solid"
+                onPress={() => handleMarkTest(true)}
+                disabled={!canSubmitTest() || isSubmitting}
+                loading={isSubmitting && formData.isPassed === true}
+                style={[
+                  styles.actionButton,
+                  formData.isPassed === true && styles.passedButton,
+                ]}>
+                Test Passed
+              </Button>
             </View>
-          )}
 
-          {/* Pass/Fail Buttons */}
-          <View style={styles.actions}>
-            <Button
-              variant="outlined"
-              onPress={() => handleMarkTest(false)}
-              disabled={!canSubmitTest() || isSubmitting}
-              loading={isSubmitting && formData.isPassed === false}
-              style={[
-                styles.actionButton,
-                formData.isPassed === false && styles.failedButton,
-              ]}>
-              Test Failed
-            </Button>
-
-            <Button
-              variant="solid"
-              onPress={() => handleMarkTest(true)}
-              disabled={!canSubmitTest() || isSubmitting}
-              loading={isSubmitting && formData.isPassed === true}
-              style={[
-                styles.actionButton,
-                formData.isPassed === true && styles.passedButton,
-              ]}>
-              Test Passed
-            </Button>
+            {isSubmitting && (
+              <View style={styles.loadingOverlay}>
+                <ActivityIndicator size="large" color={FBColors.primary} />
+                <Text
+                  size="sm"
+                  weight="600"
+                  color="primary"
+                  style={{marginTop: 8}}>
+                  Submitting test result...
+                </Text>
+              </View>
+            )}
           </View>
-
-          {isSubmitting && (
-            <View style={styles.loadingOverlay}>
-              <ActivityIndicator size="large" color={FBColors.primary} />
-              <Text size="sm" weight="600" color="primary" style={{marginTop: 8}}>
-                Submitting test result...
-              </Text>
-            </View>
-          )}
-        </View>
-      )}
-    </View>
+        )}
+      </View>
     </>
   );
 };
@@ -483,31 +458,6 @@ const styles = StyleSheet.create({
     color: FBColors.textPrimary,
     backgroundColor: FBBackground.white,
   },
-  imageSection: {
-    marginTop: 16,
-  },
-  imagePreview: {
-    position: 'relative',
-    borderRadius: 12,
-    overflow: 'hidden',
-    marginTop: 8,
-  },
-  image: {
-    width: '100%',
-    height: 200,
-    borderRadius: 12,
-  },
-  removeButton: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: FBColors.error,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   actions: {
     flexDirection: 'row',
     gap: 12,
@@ -526,25 +476,30 @@ const styles = StyleSheet.create({
   },
   cameraContainer: {
     flex: 1,
-    backgroundColor: '#000',
+    flexDirection: 'column',
+    backgroundColor: 'black',
   },
-  camera: {
+  preview: {
     flex: 1,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
   },
-  cameraControls: {
+  cameraButtonContainer: {
+    flex: 0,
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    padding: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    gap: 12,
+    justifyContent: 'center',
   },
-  cameraCancelButton: {
-    flex: 1,
-    borderColor: FBColors.error,
-    borderWidth: 2,
+  capture: {
+    flex: 0,
+    backgroundColor: '#fff',
+    borderRadius: 5,
+    padding: 15,
+    paddingHorizontal: 20,
+    alignSelf: 'center',
+    margin: 20,
   },
-  cameraCancelText: {
-    color: FBColors.error,
+  buttonText: {
+    fontSize: 14,
   },
   loadingOverlay: {
     position: 'absolute',
@@ -555,26 +510,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  uploadingOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 12,
-  },
-  uploadSuccessBadge: {
-    position: 'absolute',
-    top: 8,
-    left: 8,
-    backgroundColor: FBColors.success,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
   },
 });
 

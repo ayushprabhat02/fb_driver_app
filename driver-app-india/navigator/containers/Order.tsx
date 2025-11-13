@@ -11,6 +11,7 @@ import {
 import FillAsset from '@/modules/order/screens/FillAsset';
 import UploadImageAsset from '@/modules/order/screens/UploadImageAsset';
 import TotalizerAfterManual from '@/modules/order/screens/TotalizerAfterManual';
+import DispenseFuelScreen from '@/modules/order/screens/DispenseFuelScreen';
 import LiveStreamScreen from '@/modules/order/screens/LiveStreamScreen';
 import ChooseAssetScreen from '@/modules/order/screens/ChooseAssetScreen';
 import ReachLocationScreen from '@/modules/order/screens/ReachLocationScreen';
@@ -39,6 +40,7 @@ export type OrderStackParamList = {
   'fill-asset': undefined;
   'upload-image-asset': undefined;
   'totalizer-after-manual': undefined;
+  'dispense-fuel': undefined;
   'live-stream': undefined;
   'delivery-challan': undefined;
   'buddy-challan': undefined;
@@ -172,6 +174,17 @@ const OrderNavigator: React.FC = () => {
         component={BuddyChallanScreen}
         options={{
           title: 'Buddy Challan',
+          headerTransparent: false,
+          headerStyle: {
+            backgroundColor: FBBackground.white,
+          },
+        }}
+      />
+      <OrderStack.Screen
+        name="dispense-fuel"
+        component={DispenseFuelScreen}
+        options={{
+          title: 'Dispense Fuel',
           headerTransparent: false,
           headerStyle: {
             backgroundColor: FBBackground.white,

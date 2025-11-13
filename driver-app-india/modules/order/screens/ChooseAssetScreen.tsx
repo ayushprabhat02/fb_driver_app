@@ -17,7 +17,7 @@ import {
 import OrderCancellationRequest from '../components/OrderCancellationRequest';
 
 // styles
-import {orderStore} from '@/globalStore';
+import {orderStore, authStore} from '@/globalStore';
 import {FBBackground, FBColorPalette} from '@/types/styles';
 import orderService from '../services';
 
@@ -28,6 +28,7 @@ const ChooseAssetScreen: React.FC = () => {
   const currentFillupOrder = orderStore.use.currentFillupOrder();
   const currentDriverOrder = orderStore.use.currentDriverOrder();
   const orderAssets = orderStore.use.orderAssets();
+  const userRole = authStore.use.userRole();
 
   const stopLoader = orderStore.use.stopLoader();
   const startLoader = orderStore.use.startLoader();
@@ -127,8 +128,26 @@ const ChooseAssetScreen: React.FC = () => {
       currentAssetForDispense: assetForDispense,
     }));
 
-    // Navigate to live stream screen
-    navigation.navigate('live-stream');
+    // Check user role and order type for navigation
+    const isTowerDriver = userRole === 'tower_driver';
+    const isBuddyCanFlow = selectedOrder?.is_enable_buddycan_flow;
+
+    console.log('📍 Navigation decision:', {
+      userRole,
+      isTowerDriver,
+      isBuddyCanFlow,
+      orderCategory: selectedOrder?.category,
+    });
+
+    if (isTowerDriver) {
+      // Tower drivers always go to live stream screen
+      console.log('🚛 Tower driver - navigating to live-stream');
+      navigation.navigate('live-stream');
+    } else {
+      // Normal drivers skip live streaming - go to dispense fuel screen
+      console.log('🚗 Normal driver - navigating to dispense-fuel');
+      navigation.navigate('dispense-fuel');
+    }
   };
 
   const handleProceed = () => {

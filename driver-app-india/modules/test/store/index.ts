@@ -24,7 +24,8 @@ type TestStore = {
   // Available tests for selection
   availableTests: Test[];
   testCategory: TestCategory | null;
-  testCategoryId: string | null;
+  testCategoryId: string | null; // The test_category.id (for approval API)
+  customerOrderItemTestCategoryId: string | null; // The customer_order_item_test_category.id (for test results API)
 
   // Selected tests by user
   selectedTestIds: string[];
@@ -41,6 +42,7 @@ type TestStore = {
   setAvailableTests: (tests: Test[], category?: TestCategory) => void;
   setTestCategory: (category: TestCategory | null) => void;
   setTestCategoryId: (id: string | null) => void;
+  setCustomerOrderItemTestCategoryId: (id: string | null) => void;
 
   // Test selection
   toggleTestSelection: (testId: string) => void;
@@ -73,6 +75,7 @@ const testStoreBase = create<TestStore>((set, get) => ({
   availableTests: [],
   testCategory: null,
   testCategoryId: null,
+  customerOrderItemTestCategoryId: null,
   selectedTestIds: [],
   testResults: new Map(),
   passedTestIds: [],
@@ -91,6 +94,10 @@ const testStoreBase = create<TestStore>((set, get) => ({
 
   // Set test category ID
   setTestCategoryId: id => set({testCategoryId: id}),
+
+  // Set customer order item test category ID
+  setCustomerOrderItemTestCategoryId: id =>
+    set({customerOrderItemTestCategoryId: id}),
 
   // Toggle test selection
   toggleTestSelection: testId => {
@@ -184,6 +191,7 @@ const testStoreBase = create<TestStore>((set, get) => ({
       availableTests: [],
       testCategory: null,
       testCategoryId: null,
+      customerOrderItemTestCategoryId: null,
       selectedTestIds: [],
       testResults: new Map(),
       passedTestIds: [],

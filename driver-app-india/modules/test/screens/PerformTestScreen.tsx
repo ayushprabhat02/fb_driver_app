@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {View, ScrollView, StyleSheet, Alert} from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, CommonActions} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {useTranslation} from 'react-i18next';
 
@@ -27,7 +27,7 @@ import testService from '../services';
 
 type RootStackParamList = {
   'choose-asset': undefined;
-  dashboard: undefined;
+  home: undefined;
 };
 
 const PerformTestScreen: React.FC = () => {
@@ -43,6 +43,7 @@ const PerformTestScreen: React.FC = () => {
   const currentDriverOrder = orderStore.use.currentDriverOrder();
 
   const [isProcessing, setIsProcessing] = useState(false);
+  const [hasCheckedInitialTests, setHasCheckedInitialTests] = useState(false);
 
   // Get selected tests
   const selectedTests = availableTests.filter(test =>
@@ -50,16 +51,20 @@ const PerformTestScreen: React.FC = () => {
   );
 
   useEffect(() => {
-    // If no tests selected, go back
-    if (selectedTestIds.length === 0) {
-      Alert.alert('No Tests Selected', 'Please select tests to perform', [
-        {
-          text: 'OK',
-          onPress: () => navigation.goBack(),
-        },
-      ]);
+    // Only check for empty tests on initial mount, not when store resets during navigation
+    if (!hasCheckedInitialTests) {
+      setHasCheckedInitialTests(true);
+
+      if (selectedTestIds.length === 0) {
+        Alert.alert('No Tests Selected', 'Please select tests to perform', [
+          {
+            text: 'OK',
+            onPress: () => navigation.goBack(),
+          },
+        ]);
+      }
     }
-  }, [selectedTestIds]);
+  }, [hasCheckedInitialTests, selectedTestIds, navigation]);
 
   const handleTestComplete = (testId: string, isPassed: boolean) => {
     console.log(`Test ${testId} completed: ${isPassed ? 'Passed' : 'Failed'}`);
@@ -129,25 +134,30 @@ const PerformTestScreen: React.FC = () => {
         throw new Error('Missing test category or order item ID');
       }
 
-      console.log('🧪 PerformTestScreen - Adding customer approval');
+      console.log('🧪 PerformTestScreen - Updating customer approval');
 
-      // Add customer approval and skip status
-      await testService.addCustomerApprovalAndSkipped({
-        test_category_id: testCategoryId,
-        customer_order_item_id: customerOrderItemId,
-        is_customer_approved: true,
-        is_customer_allowed_skipped: false,
+      // Update customer approval and skip status (record already exists from addTestCategory)
+      await testService.updateCustomerApproval({
+        customerOrderItemId: customerOrderItemId,
+        testCategoryId: testCategoryId,
+        isCustomerApproved: true,
+        isCustomerAllowedSkipped: false,
       });
 
       console.log(
-        '🧪 PerformTestScreen - Customer approval added successfully',
+        '🧪 PerformTestScreen - Customer approval updated successfully',
       );
 
       // Clear test store for next order
       testStore.getState().resetTestStore();
 
-      // Navigate to choose-asset (normal driver flow for delivery orders)
-      navigation.navigate('choose-asset');
+      // Reset navigation stack to choose-asset (prevents back button from returning to test screens)
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{name: 'choose-asset'}],
+        }),
+      );
     } catch (error) {
       console.error('Error proceeding after tests:', error);
       Alert.alert('Error', 'Failed to proceed. Please try again.');
@@ -180,8 +190,8 @@ const PerformTestScreen: React.FC = () => {
             onPress: () => {
               // Reset test store
               testStore.getState().resetTestStore();
-              // Navigate to dashboard
-              navigation.navigate('dashboard');
+              // Navigate to home screen
+              navigation.navigate('home' as never);
             },
           },
         ],
@@ -287,7 +297,8 @@ const PerformTestScreen: React.FC = () => {
           <Button
             variant="outlined"
             onPress={handleRescheduleOrder}
-            style={[styles.proceedButton, styles.rescheduleButton]}>
+            style={[styles.proceedButton, styles.rescheduleButton]}
+            textStyle={styles.rescheduleButtonText}>
             Cancel Order
           </Button>
         ) : (
@@ -371,6 +382,9 @@ const styles = StyleSheet.create({
   },
   rescheduleButton: {
     borderColor: FBColors.error,
+  },
+  rescheduleButtonText: {
+    color: FBColors.error,
   },
 });
 

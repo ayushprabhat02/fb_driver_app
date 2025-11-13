@@ -61,9 +61,11 @@ const fetchTestsForProduct = async (
       tests,
     };
 
-    // Update store
+    // Update store with the correct test_category.id (not product_variation_test_category.id)
     testStore.getState().setAvailableTests(tests, category);
-    testStore.getState().setTestCategoryId(data.id);
+    testStore.getState().setTestCategoryId(data.test_category.id);
+
+    console.log('🔧 testService.fetchTestsForProduct - Stored testCategoryId:', data.test_category.id);
 
     return {tests, category};
   } catch (error) {
@@ -98,17 +100,25 @@ const addTestCategory = async (params: {
       },
     });
 
-    const testCategoryId =
+    const customerOrderItemTestCategoryId =
       response?.insert_customer_order_item_test_category?.returning?.[0]?.id;
 
-    if (!testCategoryId) {
+    if (!customerOrderItemTestCategoryId) {
       throw new Error('Failed to add test category');
     }
 
-    // Store the test category ID
-    testStore.getState().setTestCategoryId(testCategoryId);
+    // Store the customer_order_item_test_category.id (relation table ID)
+    // This is needed for inserting test results
+    testStore
+      .getState()
+      .setCustomerOrderItemTestCategoryId(customerOrderItemTestCategoryId);
 
-    return testCategoryId;
+    console.log(
+      '🔧 testService.addTestCategory - Stored customerOrderItemTestCategoryId:',
+      customerOrderItemTestCategoryId,
+    );
+
+    return customerOrderItemTestCategoryId;
   } catch (error) {
     console.error('Error adding test category:', error);
     throw error;
@@ -130,13 +140,19 @@ const submitTestResult = async (params: {
   try {
     testStore.getState().startLoader('submitTestResult');
 
-    const testCategoryId = testStore.getState().testCategoryId;
+    const customerOrderItemTestCategoryId = testStore.getState()
+      .customerOrderItemTestCategoryId;
 
-    if (!testCategoryId) {
+    if (!customerOrderItemTestCategoryId) {
       throw new Error(
-        'Test category ID not found. Please add test category first.',
+        'Customer order item test category ID not found. Please add test category first.',
       );
     }
+
+    console.log(
+      '🔧 testService.submitTestResult - Using customerOrderItemTestCategoryId:',
+      customerOrderItemTestCategoryId,
+    );
 
     // Use the provided imageStoreUrl (image already uploaded in TestCard)
     const imageUrl = params.imageStoreUrl || '';
@@ -147,7 +163,7 @@ const submitTestResult = async (params: {
       variables: {
         objects: [
           {
-            customer_order_item_test_category_id: testCategoryId,
+            customer_order_item_test_category_id: customerOrderItemTestCategoryId,
             test_id: params.testId,
             is_passed: params.isPassed,
             key: params.testSlug,
