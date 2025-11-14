@@ -161,6 +161,25 @@ const CheckinPageCustomer: React.FC = () => {
           await checkinService.fetchDriverVehicleDetailsById({
             driver_vehicle_id: currentDriverVehicleId as string,
           });
+
+          // Get updated vehicle details from store
+          const vehicleDetails = checkinStore.getState().driverVehicleDetails;
+
+          // Prefill totalizer reading using Vue logic:
+          // totalizer_reading + 5 (matching Vue implementation)
+          if (vehicleDetails?.totalizer_reading !== undefined) {
+            const currentTotalizer = vehicleDetails.totalizer_reading;
+            const calculatedTotalizer = currentTotalizer + 5;
+
+            console.log('📊 Totalizer calculation (Vue style):', {
+              currentTotalizer,
+              addition: 5,
+              calculatedTotalizer,
+            });
+
+            // Prefill the totalizer reading
+            setTotalizerReading(calculatedTotalizer.toString());
+          }
         }
       } catch (error) {
         console.error('Error initializing checkin:', error);
