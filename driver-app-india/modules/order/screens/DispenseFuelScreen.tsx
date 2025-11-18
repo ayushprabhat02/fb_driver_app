@@ -54,6 +54,8 @@ const DispenseFuelScreen: React.FC = () => {
   const currentDriverOrder = orderStore.use.currentDriverOrder();
   const currentFillupOrder = orderStore.use.currentFillupOrder();
   const currentAssetForDispense = orderStore.use.currentAssetForDispense();
+  const fuelDispensedTillNow = orderStore.use.fuelDispensedTillNow();
+  const quantityToBeDispensed = orderStore.use.quantityToBeDispensed();
   const driverVehicleDetails = checkinStore.use.driverVehicleDetails();
   const driverVehicleId = checkinStore.use.driverVehicleId();
   const startLoader = orderStore.use.startLoader();
@@ -243,6 +245,34 @@ const DispenseFuelScreen: React.FC = () => {
 
     if (parseFloat(quantityDispensed) <= 0) {
       Alert.alert('Error', "You can't dispense 0 litres");
+      return;
+    }
+
+    // Validate quantity doesn't exceed available amount
+    const qty = parseFloat(quantityDispensed);
+    const totalOrderQuantity =
+      quantityToBeDispensed > 0 ? quantityToBeDispensed : 0;
+    const alreadyDispensed = fuelDispensedTillNow || 0;
+    const remainingQuantity = totalOrderQuantity - alreadyDispensed;
+    const currentAssetQuantity =
+      currentAssetForDispense?.quantity_dispensed || 0;
+    const availableQuantity = remainingQuantity + currentAssetQuantity;
+
+    console.log('📊 Dispense quantity validation:', {
+      quantityDispensed: qty,
+      totalOrderQuantity,
+      fuelDispensedTillNow: alreadyDispensed,
+      currentAssetQuantity,
+      remainingQuantity,
+      availableQuantity,
+      willExceed: qty > availableQuantity,
+    });
+
+    if (totalOrderQuantity > 0 && qty > availableQuantity) {
+      Alert.alert(
+        'Quantity Exceeds Available',
+        `Cannot dispense ${qty}L. Only ${availableQuantity}L available out of ${totalOrderQuantity}L total order.`,
+      );
       return;
     }
 
@@ -449,6 +479,33 @@ const DispenseFuelScreen: React.FC = () => {
           value={quantityDispensed}
           onChangeText={setQuantityDispensed}
         />
+
+        {/* Available Quantity Display */}
+        {(() => {
+          const totalOrderQuantity =
+            quantityToBeDispensed > 0 ? quantityToBeDispensed : 0;
+          const alreadyDispensed = fuelDispensedTillNow || 0;
+          const remainingQuantity = totalOrderQuantity - alreadyDispensed;
+          const currentAssetQuantity =
+            currentAssetForDispense?.quantity_dispensed || 0;
+          const availableQuantity = remainingQuantity + currentAssetQuantity;
+
+          if (totalOrderQuantity > 0) {
+            return (
+              <View style={styles.availableQuantityContainer}>
+                <Text
+                  size="sm"
+                  color="darkGray"
+                  weight="400"
+                  style={{fontStyle: 'italic'}}>
+                  Available quantity: {availableQuantity}L
+                </Text>
+              </View>
+            );
+          }
+          return null;
+        })()}
+
         <Divider height={10} />
         <ImageContainer
           label="Quantity Dispensed Image"
@@ -526,6 +583,9 @@ const styles = StyleSheet.create({
   },
   button: {width: '100%'},
   inputStyle: {...commonInputStyles, height: 50, fontSize: 14, width: '100%'},
+  availableQuantityContainer: {
+    marginTop: 6,
+  },
   cameraContainer: {flex: 1, backgroundColor: 'black'},
   preview: {flex: 1},
   cameraButtonContainer: {flexDirection: 'row', justifyContent: 'center'},

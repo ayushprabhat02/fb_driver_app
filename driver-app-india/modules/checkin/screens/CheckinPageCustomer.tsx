@@ -410,29 +410,6 @@ const CheckinPageCustomer: React.FC = () => {
 
         <Divider height={10} />
         <Text size="base" weight="normal" color="secondary">
-          Enter Odometer Reading
-        </Text>
-        <TextInput
-          keyboardType="numeric"
-          style={styles.inputStyle}
-          placeholder="Enter odometer reading"
-          placeholderTextColor={FBColors.placeHolderPrimary}
-          value={odometerReading}
-          onChangeText={setOdometerReading}
-        />
-
-        <ImageContainer
-          label="Upload Odometer Image"
-          imageData={odometerImageData}
-          isUploading={isOdometerImageUploading}
-          onCameraPress={() => openCamera('odometer')}
-          onRemovePhoto={() => handleRemoveImage('odometer')}
-          uploadingText="Uploading odometer..."
-          required={true}
-        />
-
-        <Divider height={10} />
-        <Text size="base" weight="normal" color="secondary">
           Enter Totalizer Reading *
         </Text>
         <TextInput
@@ -451,6 +428,29 @@ const CheckinPageCustomer: React.FC = () => {
           onCameraPress={() => openCamera('totalizer')}
           onRemovePhoto={() => handleRemoveImage('totalizer')}
           uploadingText="Uploading totalizer..."
+          required={true}
+        />
+
+        <Divider height={10} />
+        <Text size="base" weight="normal" color="secondary">
+          Enter Odometer Reading
+        </Text>
+        <TextInput
+          keyboardType="numeric"
+          style={styles.inputStyle}
+          placeholder="Enter odometer reading"
+          placeholderTextColor={FBColors.placeHolderPrimary}
+          value={odometerReading}
+          onChangeText={setOdometerReading}
+        />
+
+        <ImageContainer
+          label="Upload Odometer Image"
+          imageData={odometerImageData}
+          isUploading={isOdometerImageUploading}
+          onCameraPress={() => openCamera('odometer')}
+          onRemovePhoto={() => handleRemoveImage('odometer')}
+          uploadingText="Uploading odometer..."
           required={true}
         />
       </ScrollView>

@@ -17,7 +17,7 @@ import {
   FullScreenLoader,
 } from '@/components';
 import {FBBackground, FBColors, FBBorders} from '@/types/styles';
-import {orderStore} from '@/globalStore';
+import {orderStore, authStore} from '@/globalStore';
 
 interface QuantityBottomSheetProps {
   visible: boolean;
@@ -42,9 +42,11 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
   const pendingQuantity = orderStore.use.pendingQuantity();
   const fuelDispensedTillNow = orderStore.use.fuelDispensedTillNow();
   const quantityToBeDispensed = orderStore.use.quantityToBeDispensed();
+  const currentDriverOrder = orderStore.use.currentDriverOrder();
   const startLoader = orderStore.use.startLoader();
   const stopLoader = orderStore.use.stopLoader();
   const loaders = orderStore.use.loaders();
+  const userRole = authStore.use.userRole();
 
   const bottomSheetRef = useRef<BottomSheetModal>(null);
 
@@ -112,12 +114,30 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
       return;
     }
 
-    // Validate quantity is in multiples of 20 (like Vue project)
-    if (quantityNum % 20 !== 0) {
+    // Determine if multiple of 20 validation should apply
+    // Normal driver (customer role) + Bowser flow (DELIVERY category): NO restriction
+    // Tower driver OR BuddyCan flow: YES restriction (multiples of 20)
+    const isNormalDriver = userRole === 'customer';
+    const isBowserOrder = currentDriverOrder?.category === 'DELIVERY';
+    const shouldValidateMultipleOf20 = !(isNormalDriver && isBowserOrder);
+
+    console.log('🔍 Quantity validation check:', {
+      userRole,
+      orderCategory: currentDriverOrder?.category,
+      isNormalDriver,
+      isBowserOrder,
+      shouldValidateMultipleOf20,
+      quantity: quantityNum,
+      isMultipleOf20: quantityNum % 20 === 0,
+    });
+
+    // Validate quantity is in multiples of 20 for tower drivers and buddycan flow
+    if (shouldValidateMultipleOf20 && quantityNum % 20 !== 0) {
+      // Show debug info in error message
       Toast.show({
         type: 'error',
         text1: 'Invalid Quantity',
-        text2: 'Quantity must be in multiples of 20 liters',
+        text2: `Quantity must be in multiples of 20 liters (Role: ${userRole}, Category: ${currentDriverOrder?.category})`,
       });
       return;
     }
@@ -127,9 +147,9 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
       quantityToBeDispensed > 0 ? quantityToBeDispensed : orderQuantity;
 
     // Vue.js-style validation logic: Calculate total without current asset, then add new quantity
-    const totalDispensedWithoutCurrent = fuelDispensedTillNow - existingQuantity;
+    const totalDispensedWithoutCurrent =
+      fuelDispensedTillNow - existingQuantity;
     const newTotalDispensed = totalDispensedWithoutCurrent + quantityNum;
-
 
     // Simple validation: new total should not exceed order quantity
     if (totalOrderQuantity > 0 && newTotalDispensed > totalOrderQuantity) {
@@ -150,7 +170,7 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
       // Use close() method instead of dismiss() for proper functionality
       closeSheet={() => bottomSheetRef.current?.close()}
       onDismiss={handleClose}
-      snapPoints={['50%']}
+      snapPoints={['65%']}
       showCloseBtn>
       <BottomSheetView style={styles.bottomSheetView}>
         <View style={styles.container}>

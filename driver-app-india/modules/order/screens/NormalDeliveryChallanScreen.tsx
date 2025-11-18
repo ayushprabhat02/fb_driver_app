@@ -457,20 +457,23 @@ const NormalDeliveryChallanScreen: React.FC = () => {
   const renderDispensedAssets = () => {
     if (!dispenseCompletedAssets || dispenseCompletedAssets.length === 0) {
       return (
-        <Text size="sm" color="lightGray">
+        <Text size="sm" color="lightGray" weight="400">
           No assets dispensed
         </Text>
       );
     }
 
     return dispenseCompletedAssets.map((asset: any, index: number) => (
-      <View key={index} style={styles.assetRow}>
-        <Text size="sm" color="neutral" weight="600">
-          {asset.customer_asset?.name || 'Unknown Asset'}
-        </Text>
-        <Text size="sm" color="primary" weight="600">
-          {asset.quantity_dispensed}L
-        </Text>
+      <View key={index}>
+        {index > 0 && <Divider height={4} />}
+        <View style={styles.assetRow}>
+          <Text size="sm" color="neutral" weight="500">
+            {asset.customer_asset?.name || 'Unknown Asset'}
+          </Text>
+          <Text size="sm" color="primary" weight="700">
+            {asset.quantity_dispensed} L
+          </Text>
+        </View>
       </View>
     ));
   };
@@ -510,34 +513,36 @@ const NormalDeliveryChallanScreen: React.FC = () => {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
-        <Divider height={10} />
+        <Divider height={16} />
 
         {/* Order Summary */}
         <View style={styles.vehicleDetailsContainer}>
-          <Text weight="600" size="lg" color="neutral">
+          <Text weight="700" size="base" color="neutral">
             Delivery Summary
           </Text>
 
-          <Divider height={8} />
+          <Divider height={12} />
 
           <View style={styles.summaryRow}>
-            <Text size="sm" color="darkGray">
-              Order Code:
+            <Text size="sm" color="secondary" weight="500">
+              Order Code
             </Text>
             <Text size="sm" color="primary" weight="600">
               #{currentDriverOrder?.customer_order?.order_code || 'N/A'}
             </Text>
           </View>
 
+          <Divider height={4} />
+
           <View style={styles.summaryRow}>
-            <Text size="sm" color="darkGray">
-              Total Dispensed:
+            <Text size="sm" color="secondary" weight="500">
+              Total Dispensed
             </Text>
-            <Text size="base" color="primary" weight="700">
-              {dispensedQuantity}L
+            <Text size="sm" color="primary" weight="700">
+              {dispensedQuantity} L
             </Text>
           </View>
-
+          {/* 
           {rate > 0 && (
             <View style={styles.summaryRow}>
               <Text size="sm" color="darkGray">
@@ -547,17 +552,17 @@ const NormalDeliveryChallanScreen: React.FC = () => {
                 ₹{rate.toFixed(2)}
               </Text>
             </View>
-          )}
+          )} */}
         </View>
 
-        <Divider height={10} />
+        <Divider height={16} />
 
         {/* Dispensed Assets */}
         <View style={styles.vehicleDetailsContainer}>
-          <Text weight="600" size="sm" color="neutral">
-            Dispensed Assets:
+          <Text weight="700" size="base" color="neutral">
+            Dispensed Assets
           </Text>
-          <Divider height={8} />
+          <Divider height={12} />
           {renderDispensedAssets()}
         </View>
 
@@ -640,10 +645,7 @@ const NormalDeliveryChallanScreen: React.FC = () => {
       {/* Submit Button */}
       <View style={styles.buttonContainer}>
         <Button
-          style={[
-            styles.button,
-            !challanImageData && styles.disabledButton,
-          ]}
+          style={[styles.button, !challanImageData && styles.disabledButton]}
           variant="solid"
           onPress={handleSubmit}
           loading={loading}
@@ -663,7 +665,7 @@ const styles = ScaledSheet.create({
   scrollContent: {
     backgroundColor: FBBackground.white,
     paddingHorizontal: '16@s',
-    paddingBottom: '16@vs',
+    paddingBottom: '20@vs',
   },
   titleContainer: {
     alignItems: 'center',
@@ -673,21 +675,26 @@ const styles = ScaledSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '4@vs',
   },
   assetRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '4@vs',
   },
   vehicleDetailsContainer: {
     backgroundColor: FBBackground.white,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: '8@s',
+    borderColor: FBBorders.primary,
+    borderRadius: '12@s',
     padding: '16@s',
-    marginBottom: '10@vs',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   buttonContainer: {
     position: 'relative',
@@ -737,11 +744,11 @@ const styles = ScaledSheet.create({
     minHeight: '40@vs',
   },
   placeholderContainer: {
-    borderColor: '#E0E0E0',
+    borderColor: FBBorders.primary,
   },
   dropdownList: {
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: FBBorders.primary,
     borderRadius: '8@s',
     backgroundColor: FBBackground.white,
     marginTop: '4@vs',
@@ -750,11 +757,11 @@ const styles = ScaledSheet.create({
   dropdownItem: {
     padding: '12@s',
     borderBottomWidth: 1,
-    borderBottomColor: '#F5F5F5',
+    borderBottomColor: FBBorders.secondary,
   },
   textInput: {
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: FBBorders.input,
     borderRadius: '8@s',
     padding: '12@s',
     backgroundColor: FBBackground.white,
