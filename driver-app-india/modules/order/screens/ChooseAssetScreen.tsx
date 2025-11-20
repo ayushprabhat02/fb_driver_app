@@ -173,9 +173,17 @@ const ChooseAssetScreen: React.FC = () => {
 
     // Check if buddy challan flow is enabled
     if (currentDriverOrder?.is_enable_buddycan_flow) {
-      navigation.navigate('normal-buddy-challan');
+      // For buddycan orders, check if it's a normal driver (not tower driver)
+      const isTowerDriver = userRole === 'tower_driver';
+      if (!isTowerDriver) {
+        // Normal driver with buddycan
+        navigation.navigate('buddy-challan-normal');
+      } else {
+        // Tower/Bowser driver with buddycan
+        navigation.navigate('normal-buddy-challan');
+      }
     } else {
-      // Bowser flow - navigate to normal delivery challan
+      // Regular delivery flow - navigate to normal delivery challan
       navigation.navigate('normal-delivery-challan');
     }
   };

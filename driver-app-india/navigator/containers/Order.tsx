@@ -19,6 +19,7 @@ import DeliveryChallanScreen from '@/modules/order/screens/DeliveryChallanScreen
 import BuddyChallanScreen from '@/modules/order/screens/BuddyChallanScreen';
 import NormalDeliveryChallanScreen from '@/modules/order/screens/NormalDeliveryChallanScreen';
 import NormalBuddyChallanScreen from '@/modules/order/screens/NormalBuddyChallanScreen';
+import BuddyChallanNormalScreen from '@/modules/order/screens/BuddyChallanNormalScreen';
 import SelectTestScreen from '@/modules/test/screens/SelectTestScreen';
 import PerformTestScreen from '@/modules/test/screens/PerformTestScreen';
 import {OrderSuccess, OrderFailure} from '@/modules/home/components';
@@ -49,6 +50,7 @@ export type OrderStackParamList = {
   'buddy-challan': undefined;
   'normal-delivery-challan': undefined;
   'normal-buddy-challan': undefined;
+  'buddy-challan-normal': undefined;
   'OrderSuccess': undefined;
   'OrderFailure': {
     errorMessage: string;
@@ -206,6 +208,17 @@ const OrderNavigator: React.FC = () => {
         component={NormalBuddyChallanScreen}
         options={{
           title: 'Buddy Challan',
+          headerTransparent: false,
+          headerStyle: {
+            backgroundColor: FBBackground.white,
+          },
+        }}
+      />
+      <OrderStack.Screen
+        name="buddy-challan-normal"
+        component={BuddyChallanNormalScreen}
+        options={{
+          title: 'BuddyCan Challan',
           headerTransparent: false,
           headerStyle: {
             backgroundColor: FBBackground.white,

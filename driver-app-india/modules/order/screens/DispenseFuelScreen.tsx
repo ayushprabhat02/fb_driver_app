@@ -64,6 +64,13 @@ const DispenseFuelScreen: React.FC = () => {
   // Get the selected order (fillup order takes priority, matching ChooseAssetScreen)
   const selectedOrder = currentFillupOrder || currentDriverOrder;
 
+  // Determine if this is a buddycan order (not DELIVERY category)
+  const isBuddyCanOrder = selectedOrder?.is_enable_buddycan_flow;
+  console.log(
+    '----selectedOrder------',
+    selectedOrder?.is_enable_buddycan_flow,
+  );
+
   useEffect(() => {
     const fetchLatestVehicleDetails = async () => {
       // Reset state first
@@ -119,7 +126,14 @@ const DispenseFuelScreen: React.FC = () => {
   }, []);
 
   // Auto-submit totalizer before reading when both fields are filled
+  // Skip for buddycan orders as they don't need totalizer
   useEffect(() => {
+    if (isBuddyCanOrder) {
+      // For buddycan orders, mark totalizer as submitted automatically
+      setTotalizerBeforeSubmitted(true);
+      return;
+    }
+
     const shouldSubmitTotalizerBefore =
       !totalizerBeforeSubmitted &&
       totalizerReading &&
@@ -129,13 +143,19 @@ const DispenseFuelScreen: React.FC = () => {
     if (shouldSubmitTotalizerBefore) {
       handleTotalizerBeforeSubmit();
     }
-  }, [totalizerReading, totalizerImageData, totalizerBeforeSubmitted]);
+  }, [
+    totalizerReading,
+    totalizerImageData,
+    totalizerBeforeSubmitted,
+    isBuddyCanOrder,
+  ]);
 
   const handleTotalizerBeforeSubmit = async () => {
     if (
       !selectedOrder ||
       totalizerBeforeSubmitted ||
-      isSubmittingTotalizerBefore
+      isSubmittingTotalizerBefore ||
+      isBuddyCanOrder // Skip for buddycan orders
     ) {
       return;
     }
@@ -248,8 +268,17 @@ const DispenseFuelScreen: React.FC = () => {
       return;
     }
 
-    // Validate quantity doesn't exceed available amount
+    // Validate quantity is multiple of 20 for buddycan orders
     const qty = parseFloat(quantityDispensed);
+    if (isBuddyCanOrder && qty % 20 !== 0) {
+      Alert.alert(
+        'Invalid Quantity',
+        'For BuddyCan orders, quantity must be in multiples of 20 liters',
+      );
+      return;
+    }
+
+    // Validate quantity doesn't exceed available amount
     const totalOrderQuantity =
       quantityToBeDispensed > 0 ? quantityToBeDispensed : 0;
     const alreadyDispensed = fuelDispensedTillNow || 0;
@@ -289,7 +318,9 @@ const DispenseFuelScreen: React.FC = () => {
       setDisableButton(true);
       startLoader('upsertTaskAction');
       const qty = parseFloat(quantityDispensed);
-      const totalizerReadingValue = parseFloat(totalizerReading);
+      const totalizerReadingValue = isBuddyCanOrder
+        ? 0
+        : parseFloat(totalizerReading);
       const coordinates = await getCurrentLocation();
 
       // Step 1: Upload quantity dispensed image if needed
@@ -304,21 +335,23 @@ const DispenseFuelScreen: React.FC = () => {
         quantityUploadedUrl = storeUrl || '';
       }
 
-      // Step 2: Upload totalizer after reading (totalizer before + quantity)
-      await orderService.upsertStepTaskAction({
-        object: {
-          key: 'TOTALIZER_AFTER_READING',
-          url: quantityUploadedUrl,
-          value: `${qty + totalizerReadingValue}`,
-          quantity_dispensed: qty,
-          task_id: selectedOrder.id,
-          customer_asset_id: currentAssetForDispense?.id,
-          location: {
-            type: 'Point',
-            coordinates: [coordinates.longitude, coordinates.latitude],
+      // Step 2: Upload totalizer after reading (skip for buddycan orders)
+      if (!isBuddyCanOrder) {
+        await orderService.upsertStepTaskAction({
+          object: {
+            key: 'TOTALIZER_AFTER_READING',
+            url: quantityUploadedUrl,
+            value: `${qty + totalizerReadingValue}`,
+            quantity_dispensed: qty,
+            task_id: selectedOrder.id,
+            customer_asset_id: currentAssetForDispense?.id,
+            location: {
+              type: 'Point',
+              coordinates: [coordinates.longitude, coordinates.latitude],
+            },
           },
-        },
-      });
+        });
+      }
 
       // Step 3: Update asset quantity
       const customerOrderId =
@@ -332,8 +365,8 @@ const DispenseFuelScreen: React.FC = () => {
         customerOrderId: customerOrderId,
       });
 
-      // Step 4: Update vehicle totalizer reading to final value
-      if (driverVehicleId) {
+      // Step 4: Update vehicle totalizer reading to final value (skip for buddycan orders)
+      if (!isBuddyCanOrder && driverVehicleId) {
         await orderService.updateTotalizerReading({
           totalizer_reading: qty + totalizerReadingValue,
           vehicle_id: driverVehicleId,
@@ -343,7 +376,9 @@ const DispenseFuelScreen: React.FC = () => {
       // Update store state
       orderStore.setState(state => ({
         ...state,
-        totalizerAfterReading: qty + totalizerReadingValue,
+        totalizerAfterReading: isBuddyCanOrder
+          ? 0
+          : qty + totalizerReadingValue,
         quantityDispensed: 0,
       }));
 
@@ -430,40 +465,49 @@ const DispenseFuelScreen: React.FC = () => {
   return (
     <View style={{flex: 1, backgroundColor: FBBackground.white}}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Totalizer Before Reading */}
-        <View style={{marginBottom: 4, marginTop: 8, flexDirection: 'row'}}>
-          <Text size="base" weight="600">
-            Totalizer Reading{' '}
-          </Text>
-          <Text size="base" weight="600" style={{color: FBColors.error}}>
-            *
-          </Text>
-        </View>
-        <TextInput
-          keyboardType="numeric"
-          style={styles.inputStyle}
-          placeholder="Totalizer reading"
-          placeholderTextColor={FBColors.placeHolderPrimary}
-          value={totalizerReading}
-          onChangeText={setTotalizerReading}
-        />
-        <Divider height={10} />
-        <ImageContainer
-          label="Upload Totalizer Reading"
-          imageData={totalizerImageData}
-          isUploading={totalizerImageUploading}
-          onCameraPress={() => openCamera('totalizer')}
-          onRemovePhoto={removeTotalizerImage}
-          uploadingText="Uploading..."
-          required={
-            selectedOrder?.is_enable_totalizer_reading_image_upload || false
-          }
-        />
+        {/* Totalizer Before Reading - Hidden for BuddyCan orders */}
+        {!isBuddyCanOrder && (
+          <>
+            <View style={{marginBottom: 4, marginTop: 8, flexDirection: 'row'}}>
+              <Text size="base" weight="600">
+                Totalizer Reading{' '}
+              </Text>
+              <Text size="base" weight="600" style={{color: FBColors.error}}>
+                *
+              </Text>
+            </View>
+            <TextInput
+              keyboardType="numeric"
+              style={styles.inputStyle}
+              placeholder="Totalizer reading"
+              placeholderTextColor={FBColors.placeHolderPrimary}
+              value={totalizerReading}
+              onChangeText={setTotalizerReading}
+            />
+            <Divider height={10} />
+            <ImageContainer
+              label="Upload Totalizer Reading"
+              imageData={totalizerImageData}
+              isUploading={totalizerImageUploading}
+              onCameraPress={() => openCamera('totalizer')}
+              onRemovePhoto={removeTotalizerImage}
+              uploadingText="Uploading..."
+              required={
+                selectedOrder?.is_enable_totalizer_reading_image_upload || false
+              }
+            />
 
-        <Divider height={20} />
+            <Divider height={20} />
+          </>
+        )}
 
         {/* Quantity Dispensed */}
-        <View style={{marginBottom: 4, marginTop: 8, flexDirection: 'row'}}>
+        <View
+          style={{
+            marginBottom: 4,
+            marginTop: isBuddyCanOrder ? 8 : 8,
+            flexDirection: 'row',
+          }}>
           <Text size="base" weight="600">
             Quantity Dispensed{' '}
           </Text>
@@ -527,10 +571,11 @@ const DispenseFuelScreen: React.FC = () => {
           loading={disableButton}
           disabled={
             disableButton ||
-            !totalizerBeforeSubmitted ||
             !quantityDispensed ||
             (selectedOrder?.is_enable_totalizer_reading_image_upload &&
-              !quantityImageData)
+              !quantityImageData) ||
+            // For bowser orders only, check if totalizer is submitted
+            (!isBuddyCanOrder && !totalizerBeforeSubmitted)
           }>
           Submit
         </Button>
