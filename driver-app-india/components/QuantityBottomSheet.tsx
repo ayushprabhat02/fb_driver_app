@@ -115,29 +115,25 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
     }
 
     // Determine if multiple of 20 validation should apply
-    // Normal driver (customer role) + Bowser flow (DELIVERY category): NO restriction
-    // Tower driver OR BuddyCan flow: YES restriction (multiples of 20)
-    const isNormalDriver = userRole === 'customer';
-    const isBowserOrder = currentDriverOrder?.category === 'DELIVERY';
-    const shouldValidateMultipleOf20 = !(isNormalDriver && isBowserOrder);
+    // BuddyCan enabled (any driver type): YES restriction (multiples of 20)
+    // All other cases: NO restriction
+    const isBuddyCanOrder = currentDriverOrder?.is_enable_buddycan_flow;
+    const shouldValidateMultipleOf20 = isBuddyCanOrder;
 
     console.log('🔍 Quantity validation check:', {
       userRole,
-      orderCategory: currentDriverOrder?.category,
-      isNormalDriver,
-      isBowserOrder,
+      isBuddyCanOrder,
       shouldValidateMultipleOf20,
       quantity: quantityNum,
       isMultipleOf20: quantityNum % 20 === 0,
     });
 
-    // Validate quantity is in multiples of 20 for tower drivers and buddycan flow
+    // Validate quantity is in multiples of 20 for ALL buddycan orders (tower & normal drivers)
     if (shouldValidateMultipleOf20 && quantityNum % 20 !== 0) {
-      // Show debug info in error message
       Toast.show({
         type: 'error',
         text1: 'Invalid Quantity',
-        text2: `Quantity must be in multiples of 20 liters (Role: ${userRole}, Category: ${currentDriverOrder?.category})`,
+        text2: 'For BuddyCan orders, quantity must be in multiples of 20 liters',
       });
       return;
     }
@@ -250,15 +246,21 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
                   style={styles.textInput}
                   value={quantity}
                   onChangeText={setQuantity}
-                  placeholder="Enter quantity in multiples of 20L"
+                  placeholder={
+                    currentDriverOrder?.is_enable_buddycan_flow
+                      ? 'Enter quantity in multiples of 20L'
+                      : 'Enter quantity in liters'
+                  }
                   keyboardType="numeric"
                 />
-                <Text
-                  size="xs"
-                  color="darkGray"
-                  style={{marginTop: 4, fontStyle: 'italic'}}>
-                  Note: Quantity must be in multiples of 20 liters
-                </Text>
+                {currentDriverOrder?.is_enable_buddycan_flow && (
+                  <Text
+                    size="xs"
+                    color="darkGray"
+                    style={{marginTop: 4, fontStyle: 'italic'}}>
+                    Note: BuddyCan quantity must be in multiples of 20 liters
+                  </Text>
+                )}
               </View>
 
               <View style={styles.buttonRow}>

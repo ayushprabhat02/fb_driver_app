@@ -16,9 +16,8 @@ import LiveStreamScreen from '@/modules/order/screens/LiveStreamScreen';
 import ChooseAssetScreen from '@/modules/order/screens/ChooseAssetScreen';
 import ReachLocationScreen from '@/modules/order/screens/ReachLocationScreen';
 import DeliveryChallanScreen from '@/modules/order/screens/DeliveryChallanScreen';
-import BuddyChallanScreen from '@/modules/order/screens/BuddyChallanScreen';
 import NormalDeliveryChallanScreen from '@/modules/order/screens/NormalDeliveryChallanScreen';
-import NormalBuddyChallanScreen from '@/modules/order/screens/NormalBuddyChallanScreen';
+import TowerBuddyChallanScreen from '@/modules/order/screens/TowerBuddyChallanScreen';
 import BuddyChallanNormalScreen from '@/modules/order/screens/BuddyChallanNormalScreen';
 import SelectTestScreen from '@/modules/test/screens/SelectTestScreen';
 import PerformTestScreen from '@/modules/test/screens/PerformTestScreen';
@@ -47,9 +46,8 @@ export type OrderStackParamList = {
   'dispense-fuel': undefined;
   'live-stream': undefined;
   'delivery-challan': undefined;
-  'buddy-challan': undefined;
   'normal-delivery-challan': undefined;
-  'normal-buddy-challan': undefined;
+  'tower-buddy-challan': undefined;
   'buddy-challan-normal': undefined;
   'OrderSuccess': undefined;
   'OrderFailure': {
@@ -182,17 +180,6 @@ const OrderNavigator: React.FC = () => {
         }}
       />
       <OrderStack.Screen
-        name="buddy-challan"
-        component={BuddyChallanScreen}
-        options={{
-          title: 'Buddy Challan',
-          headerTransparent: false,
-          headerStyle: {
-            backgroundColor: FBBackground.white,
-          },
-        }}
-      />
-      <OrderStack.Screen
         name="normal-delivery-challan"
         component={NormalDeliveryChallanScreen}
         options={{
@@ -204,8 +191,8 @@ const OrderNavigator: React.FC = () => {
         }}
       />
       <OrderStack.Screen
-        name="normal-buddy-challan"
-        component={NormalBuddyChallanScreen}
+        name="tower-buddy-challan"
+        component={TowerBuddyChallanScreen}
         options={{
           title: 'Buddy Challan',
           headerTransparent: false,

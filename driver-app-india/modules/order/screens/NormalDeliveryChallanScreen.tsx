@@ -8,6 +8,7 @@ import {ScaledSheet} from 'react-native-size-matters';
 // Components
 import {Button, Divider, Text} from '@/components';
 import {ImageContainer} from '@/modules/checkin/components';
+import OrderInfoCard from '../components/OrderInfoCard';
 
 // Camera
 import {RNCamera} from 'react-native-camera';
@@ -332,11 +333,19 @@ const NormalDeliveryChallanScreen: React.FC = () => {
     try {
       const coordinates = await getCurrentLocation();
 
+      // Get fresh uploaded URL from store (not from hooks which may not have updated yet)
+      const currentState = orderStore.getState();
+      const freshChallanUrl = currentState.challanUploadedUrl || '';
+
+      console.log('📤 Creating challan task with URL:', {
+        challanUrl: freshChallanUrl,
+      });
+
       // Create challan task (following Vue.js pattern)
       await orderService.upsertStepTaskAction({
         object: {
           key: 'CHALLAN',
-          url: challanUploadedUrl || challanImageData || '',
+          url: freshChallanUrl,
           value: '0.0',
           quantity_dispensed: dispensedQuantity,
           task_id: currentDriverOrder?.id || '',
@@ -454,30 +463,6 @@ const NormalDeliveryChallanScreen: React.FC = () => {
     }
   };
 
-  const renderDispensedAssets = () => {
-    if (!dispenseCompletedAssets || dispenseCompletedAssets.length === 0) {
-      return (
-        <Text size="sm" color="lightGray" weight="400">
-          No assets dispensed
-        </Text>
-      );
-    }
-
-    return dispenseCompletedAssets.map((asset: any, index: number) => (
-      <View key={index}>
-        {index > 0 && <Divider height={4} />}
-        <View style={styles.assetRow}>
-          <Text size="sm" color="neutral" weight="500">
-            {asset.customer_asset?.name || 'Unknown Asset'}
-          </Text>
-          <Text size="sm" color="primary" weight="700">
-            {asset.quantity_dispensed} L
-          </Text>
-        </View>
-      </View>
-    ));
-  };
-
   // Camera view
   if (showCamera) {
     const cameraType = RNCamera.Constants.Type.back;
@@ -515,56 +500,10 @@ const NormalDeliveryChallanScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}>
         <Divider height={16} />
 
-        {/* Order Summary */}
-        <View style={styles.vehicleDetailsContainer}>
-          <Text weight="700" size="base" color="neutral">
-            Delivery Summary
-          </Text>
-
-          <Divider height={12} />
-
-          <View style={styles.summaryRow}>
-            <Text size="sm" color="secondary" weight="500">
-              Order Code
-            </Text>
-            <Text size="sm" color="primary" weight="600">
-              #{currentDriverOrder?.customer_order?.order_code || 'N/A'}
-            </Text>
-          </View>
-
-          <Divider height={4} />
-
-          <View style={styles.summaryRow}>
-            <Text size="sm" color="secondary" weight="500">
-              Total Dispensed
-            </Text>
-            <Text size="sm" color="primary" weight="700">
-              {dispensedQuantity} L
-            </Text>
-          </View>
-          {/* 
-          {rate > 0 && (
-            <View style={styles.summaryRow}>
-              <Text size="sm" color="darkGray">
-                Rate per Liter:
-              </Text>
-              <Text size="sm" color="neutral" weight="600">
-                ₹{rate.toFixed(2)}
-              </Text>
-            </View>
-          )} */}
-        </View>
-
-        <Divider height={16} />
-
-        {/* Dispensed Assets */}
-        <View style={styles.vehicleDetailsContainer}>
-          <Text weight="700" size="base" color="neutral">
-            Dispensed Assets
-          </Text>
-          <Divider height={12} />
-          {renderDispensedAssets()}
-        </View>
+        <OrderInfoCard
+          dispensedQuantity={dispensedQuantity}
+          dispensedAssets={dispenseCompletedAssets || []}
+        />
 
         {/* COMMENTED OUT: Delivered In dropdown not needed for normal driver flow */}
         {/* <Divider height={10} /> */}
@@ -670,31 +609,6 @@ const styles = ScaledSheet.create({
   titleContainer: {
     alignItems: 'center',
     paddingVertical: '16@vs',
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  assetRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  vehicleDetailsContainer: {
-    backgroundColor: FBBackground.white,
-    borderWidth: 1,
-    borderColor: FBBorders.primary,
-    borderRadius: '12@s',
-    padding: '16@s',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
   },
   buttonContainer: {
     position: 'relative',

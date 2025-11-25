@@ -318,27 +318,30 @@ const AssetCard: React.FC<AssetCardProps> = ({
           // Don't block the quantity update if totalizer update fails
         }
       }
-      // SCENARIO 3: Regular quantity update (non-buddycan flow)
+      // SCENARIO 3: Regular quantity update (non-buddycan flow) - Following Vue.js AssetCard.vue lines 364-410
       else {
         console.log(
-          '🎯 Scenario 3: Regular quantity update (non-buddycan flow)',
+          '🎯 Scenario 3: Regular quantity update (non-buddycan/bowser flow)',
         );
 
-        // Update asset quantity
+        // Step 1: Update asset quantity
         await orderService.updateAssetQty({
           customerAssetId: assetId,
           customerOrderId: selectedOrder.customer_order.id,
           qty: quantity,
         });
+        console.log('✅ Asset quantity updated');
 
-        // If this is an edit (not initial fill), call TOTALIZER_AFTER_READING API
+        // Step 2: If editing quantity, call TOTALIZER_AFTER_READING and update totalizer readings for all subsequent assets
         if (isEditQuantity) {
-          console.log('📝 Calling TOTALIZER_AFTER_READING API for edit quantity (non-buddycan flow)...');
+          console.log('📝 Edit quantity detected - calling TOTALIZER_AFTER_READING API and updating readings...');
+
+          // Step 2a: Call upsertStepTaskAction for TOTALIZER_AFTER_READING (normal flow)
           const coordinates = await getCurrentLocation();
           await orderService.upsertStepTaskAction({
             object: {
               key: 'TOTALIZER_AFTER_READING',
-              url: '', // No image URL needed
+              url: '',
               value: '0.0',
               quantity_dispensed: quantity,
               task_id: selectedOrder?.id,
@@ -349,7 +352,122 @@ const AssetCard: React.FC<AssetCardProps> = ({
               },
             },
           });
-          console.log('✅ TOTALIZER_AFTER_READING API called successfully for edit (non-buddycan)');
+          console.log('✅ TOTALIZER_AFTER_READING API called for normal flow edit');
+
+          try {
+            // Step 2b: Fetch task values to get all assets and their current readings
+            const task = await orderService.checkPartiallyFilledAssets(
+              selectedOrder.id,
+            );
+
+            if (task?.task_value) {
+              // Find current asset index
+              const currentAssetIndex = task.task_value.findIndex(
+                (t: any) => t.customer_asset_id === assetId && t.key === 'TOTALIZER_AFTER_READING',
+              );
+
+              console.log('📋 Task values for normal flow:', {
+                totalTaskValues: task.task_value.length,
+                currentAssetIndex,
+                foundAsset: currentAssetIndex !== -1,
+              });
+
+              if (currentAssetIndex !== -1) {
+                // Get the BEFORE reading value of current asset to use as starting point
+                const currentAssetBeforeIndex = task.task_value.findIndex(
+                  (t: any) => t.customer_asset_id === assetId && t.key === 'TOTALIZER_BEFORE_READING',
+                );
+
+                let previousTotalizerAfterValue = currentAssetBeforeIndex !== -1
+                  ? task.task_value[currentAssetBeforeIndex].value
+                  : task.task_value[currentAssetIndex].value;
+
+                // Add current asset's new quantity to get its AFTER reading
+                previousTotalizerAfterValue = (
+                  parseFloat(previousTotalizerAfterValue) + quantity
+                ).toString();
+
+                console.log('🔢 Normal flow - Starting from current asset:', {
+                  currentAssetId: assetId,
+                  beforeReading: task.task_value[currentAssetBeforeIndex]?.value,
+                  newQuantity: quantity,
+                  afterReading: previousTotalizerAfterValue,
+                });
+
+                // Step 2c: Update current asset's AFTER reading first using assetUpdateChanges
+                await orderService.assetUpdateChanges({
+                  customer_asset_id: assetId,
+                  task_id: selectedOrder.id,
+                  key: 'TOTALIZER_AFTER_READING',
+                  value: previousTotalizerAfterValue,
+                  quantity_dispensed: quantity,
+                });
+
+                // Step 2d: Loop through SUBSEQUENT assets (from currentAssetIndex + 1) and update their readings
+                for (let i = currentAssetIndex + 1; i < task.task_value.length; i++) {
+                  const taskAsset = task.task_value[i];
+
+                  // Update TOTALIZER_BEFORE_READING with previous asset's AFTER value
+                  if (taskAsset.key === 'TOTALIZER_BEFORE_READING') {
+                    console.log(`  Updating BEFORE reading for asset ${taskAsset.customer_asset_id}: ${previousTotalizerAfterValue}`);
+                    await orderService.assetUpdateChanges({
+                      customer_asset_id: taskAsset.customer_asset_id,
+                      task_id: selectedOrder.id,
+                      key: 'TOTALIZER_BEFORE_READING',
+                      value: previousTotalizerAfterValue,
+                    });
+                  }
+
+                  // Update TOTALIZER_AFTER_READING with accumulated quantity
+                  if (taskAsset.key === 'TOTALIZER_AFTER_READING') {
+                    const assetQuantity = taskAsset.quantity_dispensed || 0;
+                    previousTotalizerAfterValue = (
+                      parseFloat(previousTotalizerAfterValue) + assetQuantity
+                    ).toString();
+
+                    console.log(`  Updating AFTER reading for asset ${taskAsset.customer_asset_id}: +${assetQuantity} = ${previousTotalizerAfterValue}`);
+                    await orderService.assetUpdateChanges({
+                      customer_asset_id: taskAsset.customer_asset_id,
+                      task_id: selectedOrder.id,
+                      key: 'TOTALIZER_AFTER_READING',
+                      value: previousTotalizerAfterValue,
+                      quantity_dispensed: assetQuantity,
+                    });
+                  }
+                }
+
+                // Step 2e: Update vehicle totalizer reading with final value
+                const driverVehicleDetails = orderStore.getState().driverVehicleDetails;
+                const currentOrder = orderStore.getState().currentDriverOrder;
+                const vehicleId = driverVehicleDetails?.id || currentOrder?.driver_vehicle_id;
+
+                console.log('🚗 Normal flow - Vehicle totalizer update:', {
+                  vehicleId,
+                  finalTotalizerValue: previousTotalizerAfterValue,
+                });
+
+                if (vehicleId) {
+                  await orderService.updateTotalizerReading({
+                    totalizer_reading: parseFloat(previousTotalizerAfterValue),
+                    vehicle_id: vehicleId,
+                  });
+                  console.log('✅ Vehicle totalizer reading updated for normal flow');
+                } else {
+                  console.error('❌ No vehicle ID found for normal flow totalizer update');
+                }
+              } else {
+                console.warn('⚠️ Current asset not found in task values for normal flow');
+              }
+            } else {
+              console.warn('⚠️ No task values found for normal flow');
+            }
+          } catch (totalizerError) {
+            console.error(
+              '⚠️ Failed to update totalizer readings for normal flow:',
+              totalizerError,
+            );
+            // Don't block the quantity update if totalizer update fails
+          }
         }
       }
 

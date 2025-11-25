@@ -7,7 +7,12 @@ import {ScaledSheet} from 'react-native-size-matters';
 import {useDebounce} from 'use-debounce';
 
 // components
-import {Button, FocusAwareStatusBar, FullScreenLoader} from '@/components';
+import {
+  Button,
+  Divider,
+  FocusAwareStatusBar,
+  FullScreenLoader,
+} from '@/components';
 import {
   AssetCard,
   AssetSearchBar,
@@ -20,6 +25,7 @@ import OrderCancellationRequest from '../components/OrderCancellationRequest';
 import {orderStore, authStore} from '@/globalStore';
 import {FBBackground, FBColorPalette} from '@/types/styles';
 import orderService from '../services';
+import {Divide} from 'phosphor-react-native';
 
 const ChooseAssetScreen: React.FC = () => {
   const navigation = useNavigation<StackNavigationProp<OrderStackParamList>>();
@@ -180,7 +186,7 @@ const ChooseAssetScreen: React.FC = () => {
         navigation.navigate('buddy-challan-normal');
       } else {
         // Tower/Bowser driver with buddycan
-        navigation.navigate('normal-buddy-challan');
+        navigation.navigate('tower-buddy-challan');
       }
     } else {
       // Regular delivery flow - navigate to normal delivery challan
@@ -400,6 +406,7 @@ const ChooseAssetScreen: React.FC = () => {
 
       <View style={styles.container as ViewStyle}>
         <OrderInfoCard />
+        <Divider height={8} />
 
         <AssetSummaryCard />
 

@@ -41,7 +41,7 @@ type BuddyChallanNavigationProp = StackNavigationProp<
 type ImageCaptureType = 'challan' | 'technician' | 'imap';
 type LoaderTypes = 'challanImage' | 'technicianImage' | 'imapImage';
 
-const BuddyChallanScreen: React.FC = () => {
+const TowerBuddyChallanScreen: React.FC = () => {
   const navigation = useNavigation<BuddyChallanNavigationProp>();
   const cameraRef = useRef<RNCamera | null>(null);
 
@@ -239,7 +239,9 @@ const BuddyChallanScreen: React.FC = () => {
       Toast.show({
         type: 'success',
         text1: 'Photo Captured',
-        text2: `${imageType.charAt(0).toUpperCase() + imageType.slice(1)} image saved. It will be uploaded when you mark order complete.`,
+        text2: `${
+          imageType.charAt(0).toUpperCase() + imageType.slice(1)
+        } image saved. It will be uploaded when you mark order complete.`,
         visibilityTime: 3000,
       });
     }
@@ -307,7 +309,7 @@ const BuddyChallanScreen: React.FC = () => {
     }
   };
 
-   const createInvoice = async () => {
+  const createInvoice = async () => {
     try {
       const assetsToBeInvoiced =
         dispenseCompletedAssets
@@ -373,11 +375,24 @@ const BuddyChallanScreen: React.FC = () => {
   const createChallanTask = async () => {
     try {
       const coordinates = await getCurrentLocation();
+
+      // Get fresh uploaded URLs from store (not from hooks which may not have updated yet)
+      const currentState = orderStore.getState();
+      const freshChallanUrl = currentState.challanUploadedUrl || '';
+      const freshTechnicianUrl = currentState.technicianUploadedUrl || '';
+      const freshImapUrl = currentState.imapUploadedUrl || '';
+
+      console.log('📤 Creating challan tasks with URLs:', {
+        challanUrl: freshChallanUrl,
+        technicianUrl: freshTechnicianUrl,
+        imapUrl: freshImapUrl,
+      });
+
       // Create challan task
       await orderService.upsertStepTaskAction({
         object: {
           key: 'CHALLAN',
-          url: challanUploadedUrl || challanImageData || '',
+          url: freshChallanUrl,
           value: '0.0',
           quantity_dispensed: dispensedQuantity,
           task_id: currentDriverOrder?.id || '',
@@ -392,7 +407,7 @@ const BuddyChallanScreen: React.FC = () => {
       await orderService.upsertStepTaskAction({
         object: {
           key: 'TECHNICIAN',
-          url: technicianUploadedUrl || technicianImageData || '',
+          url: freshTechnicianUrl,
           value: '0.0',
           task_id: currentDriverOrder?.id || '',
         },
@@ -402,7 +417,7 @@ const BuddyChallanScreen: React.FC = () => {
       await orderService.upsertStepTaskAction({
         object: {
           key: 'IMAP',
-          url: imapUploadedUrl || imapImageData || '',
+          url: freshImapUrl,
           value: '0.0',
           task_id: currentDriverOrder?.id || '',
         },
@@ -526,27 +541,6 @@ const BuddyChallanScreen: React.FC = () => {
     }
   };
 
-  const renderDispensedAssets = () => {
-    if (!dispenseCompletedAssets || dispenseCompletedAssets.length === 0) {
-      return (
-        <Text size="sm" color="lightGray">
-          No assets dispensed
-        </Text>
-      );
-    }
-
-    return dispenseCompletedAssets.map((asset: any, index: number) => (
-      <View key={index} style={styles.assetRow}>
-        <Text size="sm" color="neutral" weight="600">
-          {asset.customer_asset?.name || 'Unknown Asset'}
-        </Text>
-        <Text size="sm" color="primary" weight="600">
-          {asset.quantity_dispensed}L
-        </Text>
-      </View>
-    ));
-  };
-
   // Success view
   if (showSuccess) {
     return <OrderSuccess />;
@@ -591,54 +585,10 @@ const BuddyChallanScreen: React.FC = () => {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
-        <OrderInfoCard />
-        {/* Order Summary */}
-        {/*    <View style={styles.vehicleDetailsContainer}>
-          <Text weight="600" size="lg" color="neutral">
-            Delivery Summary
-          </Text>
-
-          <Divider height={8} />
-
-          <View style={styles.summaryRow}>
-            <Text size="sm" color="darkGray">
-              Order Code:
-            </Text>
-            <Text size="sm" color="primary" weight="600">
-              #{currentDriverOrder?.customer_order?.order_code || 'N/A'}
-            </Text>
-          </View>
-
-          <View style={styles.summaryRow}>
-            <Text size="sm" color="darkGray">
-              Total Dispensed:
-            </Text>
-            <Text size="base" color="primary" weight="700">
-              {dispensedQuantity}L
-            </Text>
-          </View>
-
-          {rate > 0 && (
-            <View style={styles.summaryRow}>
-              <Text size="sm" color="darkGray">
-                Rate per Liter:
-              </Text>
-              <Text size="sm" color="neutral" weight="600">
-                ₹{rate.toFixed(2)}
-              </Text>
-            </View>
-          )}
-        </View>*/}
-
-        {/* Dispensed Assets */}
-        {/*  <View style={styles.vehicleDetailsContainer}>
-          <Text weight="600" size="sm" color="neutral">
-            Dispensed Assets:
-          </Text>
-          <Divider height={8} />
-          {renderDispensedAssets()}
-        </View>
-         */}
+        <OrderInfoCard
+          dispensedQuantity={dispensedQuantity}
+          dispensedAssets={dispenseCompletedAssets || []}
+        />
 
         <Divider height={10} />
 
@@ -711,7 +661,10 @@ const BuddyChallanScreen: React.FC = () => {
           isUploading={challanImageUploading}
           onCameraPress={() => openCamera('challan')}
           onRemovePhoto={() => {
-            orderStore.setState({ challanImageData: null, challanUploadedUrl: null });
+            orderStore.setState({
+              challanImageData: null,
+              challanUploadedUrl: null,
+            });
             Toast.show({
               type: 'info',
               text1: 'Image Removed',
@@ -731,7 +684,10 @@ const BuddyChallanScreen: React.FC = () => {
           isUploading={technicianImageUploading}
           onCameraPress={() => openCamera('technician')}
           onRemovePhoto={() => {
-            orderStore.setState({ technicianImageData: null, technicianUploadedUrl: null });
+            orderStore.setState({
+              technicianImageData: null,
+              technicianUploadedUrl: null,
+            });
             Toast.show({
               type: 'info',
               text1: 'Image Removed',
@@ -751,7 +707,7 @@ const BuddyChallanScreen: React.FC = () => {
           isUploading={imapImageUploading}
           onCameraPress={() => openCamera('imap')}
           onRemovePhoto={() => {
-            orderStore.setState({ imapImageData: null, imapUploadedUrl: null });
+            orderStore.setState({imapImageData: null, imapUploadedUrl: null});
             Toast.show({
               type: 'info',
               text1: 'Image Removed',
@@ -779,7 +735,12 @@ const BuddyChallanScreen: React.FC = () => {
           ]}
           variant="solid"
           onPress={handleSubmit}
-          loading={loading || challanImageUploading || technicianImageUploading || imapImageUploading}
+          loading={
+            loading ||
+            challanImageUploading ||
+            technicianImageUploading ||
+            imapImageUploading
+          }
           disabled={
             !challanImageData ||
             !technicianImageData ||
@@ -789,7 +750,9 @@ const BuddyChallanScreen: React.FC = () => {
             technicianImageUploading ||
             imapImageUploading
           }>
-          {challanImageUploading || technicianImageUploading || imapImageUploading
+          {challanImageUploading ||
+          technicianImageUploading ||
+          imapImageUploading
             ? 'Uploading Images...'
             : 'Mark Order Complete'}
         </Button>
@@ -813,12 +776,6 @@ const styles = ScaledSheet.create({
     paddingVertical: '16@vs',
   },
   summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '4@vs',
-  },
-  assetRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -908,4 +865,4 @@ const styles = ScaledSheet.create({
   },
 });
 
-export default BuddyChallanScreen;
+export default TowerBuddyChallanScreen;

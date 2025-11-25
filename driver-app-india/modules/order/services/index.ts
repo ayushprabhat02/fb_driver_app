@@ -132,6 +132,11 @@ import {
   UpdateTotalizerReadingDocument,
   UpdateTotalizerReadingMutation,
   UpdateTotalizerReadingMutationVariables,
+
+  // asset update changes
+  AssetUpdateChangesDocument,
+  AssetUpdateChangesMutation,
+  AssetUpdateChangesMutationVariables,
 } from '@/generated/graphql';
 
 /**
@@ -531,6 +536,40 @@ class OrderService {
     } catch (error) {
       console.error('Error updating totalizer reading:', error);
       throw new Error('Failed to update totalizer reading');
+    }
+  }
+
+  /**
+   * @method assetUpdateChanges
+   * @description Updates task_value records for asset changes (TOTALIZER_BEFORE_READING and TOTALIZER_AFTER_READING)
+   * @args {customer_asset_id: string, task_id: string, key: string, value: string, quantity_dispensed?: number}
+   */
+  public async assetUpdateChanges(args: {
+    customer_asset_id: string;
+    task_id: string;
+    key: string;
+    value: string;
+    quantity_dispensed?: number;
+  }) {
+    try {
+      console.log('🔄 AssetUpdateChanges API call:', args);
+
+      const response: AssetUpdateChangesMutation = await callMutation({
+        queryDocument: AssetUpdateChangesDocument,
+        variables: {
+          customer_asset_id: args.customer_asset_id,
+          task_id: args.task_id,
+          key: args.key,
+          value: args.value,
+          quantity_dispensed: args.quantity_dispensed,
+        },
+      });
+
+      console.log('✅ AssetUpdateChanges response:', response);
+      return response.update_task_value?.returning[0];
+    } catch (error) {
+      console.error('❌ Error in assetUpdateChanges:', error);
+      throw new Error('Failed to update asset changes');
     }
   }
 

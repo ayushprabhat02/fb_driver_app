@@ -196,17 +196,17 @@ const DispenseFuelScreen: React.FC = () => {
         },
       });
 
-      // Update order state to DISPENSING if currently ARRIVED
-      if (selectedOrder?.state === 'ARRIVED') {
-        await orderService.markOrderDispensing({id: selectedOrder.id});
-        orderStore.setState(state => ({
-          ...state,
-          currentDriverOrder: {
-            ...state.currentDriverOrder!,
-            state: 'DISPENSING' as any,
-          },
-        }));
-      }
+      // // Update order state to DISPENSING if currently ARRIVED
+      // if (selectedOrder?.state === 'ARRIVED') {
+      //   await orderService.markOrderDispensing({id: selectedOrder.id});
+      //   orderStore.setState(state => ({
+      //     ...state,
+      //     currentDriverOrder: {
+      //       ...state.currentDriverOrder!,
+      //       state: 'DISPENSING' as any,
+      //     },
+      //   }));
+      // }
 
       // Update vehicle totalizer reading
       if (driverVehicleId) {
@@ -279,28 +279,50 @@ const DispenseFuelScreen: React.FC = () => {
     }
 
     // Validate quantity doesn't exceed available amount
-    const totalOrderQuantity =
-      quantityToBeDispensed > 0 ? quantityToBeDispensed : 0;
-    const alreadyDispensed = fuelDispensedTillNow || 0;
-    const remainingQuantity = totalOrderQuantity - alreadyDispensed;
-    const currentAssetQuantity =
-      currentAssetForDispense?.quantity_dispensed || 0;
-    const availableQuantity = remainingQuantity + currentAssetQuantity;
+    // For asset-based dispensing (bowser/normal flow), use asset's requested quantity
+    // For global dispensing, use quantityToBeDispensed
+    const assetRequestedQuantity = currentAssetForDispense?.quantity_requested || 0;
+    const useAssetBasedValidation = assetRequestedQuantity > 0;
 
-    console.log('📊 Dispense quantity validation:', {
-      quantityDispensed: qty,
-      totalOrderQuantity,
-      fuelDispensedTillNow: alreadyDispensed,
-      currentAssetQuantity,
-      remainingQuantity,
-      availableQuantity,
-      willExceed: qty > availableQuantity,
-    });
+    let availableQuantity = 0;
+    let totalOrderQuantity = 0;
 
-    if (totalOrderQuantity > 0 && qty > availableQuantity) {
+    if (useAssetBasedValidation) {
+      // Asset-based validation (bowser orders)
+      const currentAssetQuantity = currentAssetForDispense?.quantity_dispensed || 0;
+      availableQuantity = assetRequestedQuantity;
+      totalOrderQuantity = assetRequestedQuantity;
+
+      console.log('📊 Asset-based quantity validation:', {
+        quantityDispensed: qty,
+        assetRequestedQuantity,
+        currentAssetQuantity,
+        availableQuantity,
+        willExceed: qty > availableQuantity,
+      });
+    } else {
+      // Global order validation (fillup orders)
+      totalOrderQuantity = quantityToBeDispensed > 0 ? quantityToBeDispensed : 0;
+      const alreadyDispensed = fuelDispensedTillNow || 0;
+      const remainingQuantity = totalOrderQuantity - alreadyDispensed;
+      const currentAssetQuantity = currentAssetForDispense?.quantity_dispensed || 0;
+      availableQuantity = remainingQuantity + currentAssetQuantity;
+
+      console.log('📊 Global quantity validation:', {
+        quantityDispensed: qty,
+        totalOrderQuantity,
+        fuelDispensedTillNow: alreadyDispensed,
+        currentAssetQuantity,
+        remainingQuantity,
+        availableQuantity,
+        willExceed: qty > availableQuantity,
+      });
+    }
+
+    if (availableQuantity > 0 && qty > availableQuantity) {
       Alert.alert(
         'Quantity Exceeds Available',
-        `Cannot dispense ${qty}L. Only ${availableQuantity}L available out of ${totalOrderQuantity}L total order.`,
+        `Cannot dispense ${qty}L. Only ${availableQuantity}L available for this asset.`,
       );
       return;
     }
@@ -335,22 +357,32 @@ const DispenseFuelScreen: React.FC = () => {
         quantityUploadedUrl = storeUrl || '';
       }
 
-      // Step 2: Upload totalizer after reading (skip for buddycan orders)
-      if (!isBuddyCanOrder) {
-        await orderService.upsertStepTaskAction({
-          object: {
-            key: 'TOTALIZER_AFTER_READING',
-            url: quantityUploadedUrl,
-            value: `${qty + totalizerReadingValue}`,
-            quantity_dispensed: qty,
-            task_id: selectedOrder.id,
-            customer_asset_id: currentAssetForDispense?.id,
-            location: {
-              type: 'Point',
-              coordinates: [coordinates.longitude, coordinates.latitude],
-            },
+      // Step 2: Upload totalizer after reading (for both bowser and buddycan orders)
+      await orderService.upsertStepTaskAction({
+        object: {
+          key: 'TOTALIZER_AFTER_READING',
+          url: quantityUploadedUrl,
+          value: `${qty + totalizerReadingValue}`,
+          quantity_dispensed: qty,
+          task_id: selectedOrder.id,
+          customer_asset_id: currentAssetForDispense?.id,
+          location: {
+            type: 'Point',
+            coordinates: [coordinates.longitude, coordinates.latitude],
           },
-        });
+        },
+      });
+
+      // Step 2.5: Mark order as dispensing if still in ARRIVED state (for both bowser and buddycan orders)
+      if (selectedOrder?.state === 'ARRIVED') {
+        await orderService.markOrderDispensing({id: selectedOrder.id});
+        orderStore.setState(state => ({
+          ...state,
+          currentDriverOrder: {
+            ...state.currentDriverOrder!,
+            state: 'DISPENSING' as any,
+          },
+        }));
       }
 
       // Step 3: Update asset quantity
@@ -526,15 +558,26 @@ const DispenseFuelScreen: React.FC = () => {
 
         {/* Available Quantity Display */}
         {(() => {
-          const totalOrderQuantity =
-            quantityToBeDispensed > 0 ? quantityToBeDispensed : 0;
-          const alreadyDispensed = fuelDispensedTillNow || 0;
-          const remainingQuantity = totalOrderQuantity - alreadyDispensed;
-          const currentAssetQuantity =
-            currentAssetForDispense?.quantity_dispensed || 0;
-          const availableQuantity = remainingQuantity + currentAssetQuantity;
+          const assetRequestedQuantity = currentAssetForDispense?.quantity_requested || 0;
+          const useAssetBasedValidation = assetRequestedQuantity > 0;
 
-          if (totalOrderQuantity > 0) {
+          let availableQuantity = 0;
+          let totalOrderQuantity = 0;
+
+          if (useAssetBasedValidation) {
+            // Asset-based display (bowser orders)
+            availableQuantity = assetRequestedQuantity;
+            totalOrderQuantity = assetRequestedQuantity;
+          } else {
+            // Global order display (fillup orders)
+            totalOrderQuantity = quantityToBeDispensed > 0 ? quantityToBeDispensed : 0;
+            const alreadyDispensed = fuelDispensedTillNow || 0;
+            const remainingQuantity = totalOrderQuantity - alreadyDispensed;
+            const currentAssetQuantity = currentAssetForDispense?.quantity_dispensed || 0;
+            availableQuantity = remainingQuantity + currentAssetQuantity;
+          }
+
+          if (availableQuantity > 0) {
             return (
               <View style={styles.availableQuantityContainer}>
                 <Text

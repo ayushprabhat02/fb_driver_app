@@ -77,6 +77,7 @@ const HomeLandingPage: React.FC = () => {
   const stopFillupLoader = fillupStore.use.stopLoader();
 
   const resetDeliveryStore = deliveryStore.use.resetDeliveryStore();
+  const resetOrderStore = orderStore.use.resetOrderStore();
 
   const flatListRef = useRef<FlatList>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -141,6 +142,9 @@ const HomeLandingPage: React.FC = () => {
   useFocusEffect(
     useCallback(() => {
       const refreshDataOnFocus = async () => {
+        // Reset order store to clear any previously selected order data
+        resetOrderStore();
+
         if (driverVehicleId) {
           try {
             // Call APIs when screen focuses - reject old fillup requests first
@@ -159,7 +163,7 @@ const HomeLandingPage: React.FC = () => {
       };
 
       refreshDataOnFocus();
-    }, [driverVehicleId, selectedDate]),
+    }, [driverVehicleId, selectedDate, resetOrderStore]),
   );
 
   const fetchMyProfile = async () => {

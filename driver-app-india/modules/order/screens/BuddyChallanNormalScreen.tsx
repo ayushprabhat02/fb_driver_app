@@ -293,11 +293,21 @@ const BuddyChallanNormalScreen: React.FC = () => {
     try {
       const coordinates = await getCurrentLocation();
 
+      // Get fresh uploaded URLs from store (not from hooks which may not have updated yet)
+      const currentState = orderStore.getState();
+      const freshChallanUrl = currentState.challanUploadedUrl || '';
+      const freshTechnicianUrl = currentState.technicianUploadedUrl || '';
+
+      console.log('📤 Creating challan tasks with URLs:', {
+        challanUrl: freshChallanUrl,
+        technicianUrl: freshTechnicianUrl,
+      });
+
       // Create challan task
       await orderService.upsertStepTaskAction({
         object: {
           key: 'CHALLAN',
-          url: challanUploadedUrl || '',
+          url: freshChallanUrl,
           value: '0.0',
           quantity_dispensed: dispensedQuantity,
           task_id: currentDriverOrder?.id || '',
@@ -312,7 +322,7 @@ const BuddyChallanNormalScreen: React.FC = () => {
       await orderService.upsertStepTaskAction({
         object: {
           key: 'TECHNICIAN',
-          url: technicianUploadedUrl || '',
+          url: freshTechnicianUrl,
           value: '0.0',
           task_id: currentDriverOrder?.id || '',
         },
@@ -427,30 +437,6 @@ const BuddyChallanNormalScreen: React.FC = () => {
     return <OrderSuccess />;
   }
 
-  const renderDispensedAssets = () => {
-    if (!dispenseCompletedAssets || dispenseCompletedAssets.length === 0) {
-      return (
-        <Text size="sm" color="lightGray" weight="400">
-          No assets dispensed
-        </Text>
-      );
-    }
-
-    return dispenseCompletedAssets.map((asset: any, index: number) => (
-      <View key={index}>
-        {index > 0 && <Divider height={4} />}
-        <View style={styles.assetRow}>
-          <Text size="sm" color="neutral" weight="400">
-            {asset.customer_asset?.name || 'Unknown Asset'}
-          </Text>
-          <Text size="sm" color="primary" weight="600">
-            {asset.quantity_dispensed} L
-          </Text>
-        </View>
-      </View>
-    ));
-  };
-
   // Camera view
   if (showCamera) {
     const cameraType = RNCamera.Constants.Type.back;
@@ -493,55 +479,10 @@ const BuddyChallanNormalScreen: React.FC = () => {
         <Divider height={16} />
 
         {/* Order Summary */}
-        <View style={styles.vehicleDetailsContainer}>
-          <Text weight="600" size="base" color="neutral">
-            BuddyCan Delivery Summary
-          </Text>
-
-          <Divider height={12} />
-
-          <View style={styles.summaryRow}>
-            <Text size="sm" color="darkGray" weight="400">
-              Order Code
-            </Text>
-            <Text size="sm" color="primary" weight="600">
-              #{currentDriverOrder?.customer_order?.order_code || 'N/A'}
-            </Text>
-          </View>
-
-          <Divider height={4} />
-
-          <View style={styles.summaryRow}>
-            <Text size="sm" color="darkGray" weight="400">
-              Indus ID
-            </Text>
-            <Text size="sm" color="primary" weight="600">
-              {currentDriverOrder?.organization_address?.name || 'N/A'}
-            </Text>
-          </View>
-
-          <Divider height={4} />
-
-          <View style={styles.summaryRow}>
-            <Text size="sm" color="darkGray" weight="400">
-              Total Dispensed
-            </Text>
-            <Text size="sm" color="primary" weight="600">
-              {dispensedQuantity} L
-            </Text>
-          </View>
-        </View>
-
-        <Divider height={16} />
-
-        {/* Dispensed Assets */}
-        <View style={styles.vehicleDetailsContainer}>
-          <Text weight="600" size="base" color="neutral">
-            Dispensed Assets
-          </Text>
-          <Divider height={12} />
-          {renderDispensedAssets()}
-        </View>
+        <OrderInfoCard
+          dispensedQuantity={dispensedQuantity}
+          dispensedAssets={dispenseCompletedAssets || []}
+        />
 
         <Divider height={16} />
 
@@ -628,11 +569,6 @@ const styles = ScaledSheet.create({
   },
   disabledButton: {
     opacity: 0.5,
-  },
-  assetRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
   },
   // Camera styles
   cameraContainer: {

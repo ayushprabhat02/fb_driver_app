@@ -1,0 +1,31 @@
+mutation assetUpdateChanges(
+	$customer_asset_id: uuid
+	$task_id: uuid
+	$key: String
+	$value: String
+	$quantity_dispensed: numeric = ""
+) {
+	update_task_value(
+		where: {
+			task_id: { _eq: $task_id }
+			key: { _eq: $key }
+			customer_asset_id: { _eq: $customer_asset_id }
+		}
+		_set: { value: $value, quantity_dispensed: $quantity_dispensed }
+	) {
+		affected_rows
+		returning {
+			id
+			key
+			is_active
+			quantity_dispensed
+			session_id
+			reason_id
+			task_id
+			value
+			url
+			vehicle_id
+			customer_asset_id
+		}
+	}
+}
