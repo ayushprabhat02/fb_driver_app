@@ -25,7 +25,7 @@ import {StackNavigationProp} from '@react-navigation/stack';
 import {Fillup_Request_Status_Enum} from '@/generated/graphql';
 
 // utils
-import { getCurrentLocation } from '@/utils/location';
+import {getCurrentLocation} from '@/utils/location';
 
 type LoaderTypes = 'totalizerImage' | 'quantityImage';
 
@@ -40,6 +40,8 @@ const TotalizerAfterManual: React.FC = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
   const cameraRef = useRef<RNCamera | null>(null);
+  const isCompletingOrderRef = useRef(false);
+  const isNavigatingRef = useRef(false);
   const [showCamera, setShowCamera] = useState(false);
   type ImageCaptureType = 'totalizer' | 'quantity';
 
@@ -64,9 +66,13 @@ const TotalizerAfterManual: React.FC = () => {
   // Initialize component
   useEffect(() => {
     if (!currentFillupOrder) {
-      Alert.alert('Error', 'No order assigned');
-      // @ts-ignore
-      navigation.replace('home');
+      // Only show error if we're not completing AND not navigating
+      if (!isCompletingOrderRef.current && !isNavigatingRef.current) {
+        console.log('❌ No order assigned, redirecting to home');
+        Alert.alert('Error', 'No order assigned');
+        // @ts-ignore
+        navigation.replace('home');
+      }
     } else {
       // Set the before reading value from store
       const beforeReading = orderStore.getState().totalizerBeforeReading || 0;
@@ -76,7 +82,10 @@ const TotalizerAfterManual: React.FC = () => {
 
   // Get approved quantity from fillup request
   const getApprovedQuantity = () => {
-    if (currentFillupOrder?.category === 'FILL_UP' && currentFillupOrder?.fillup_requests?.length > 0) {
+    if (
+      currentFillupOrder?.category === 'FILL_UP' &&
+      currentFillupOrder?.fillup_requests?.length > 0
+    ) {
       const fillupRequest = currentFillupOrder.fillup_requests[0];
       return fillupRequest.quantity_approved || fillupRequest.quantity || 0;
     }
@@ -86,23 +95,28 @@ const TotalizerAfterManual: React.FC = () => {
   // Validate quantity dispensed
   const validateQuantity = (dispensedQty: number) => {
     const approvedQty = getApprovedQuantity();
-    
+
     // For fillup orders, check against approved quantity
     if (currentFillupOrder?.category === 'FILL_UP') {
       if (approvedQty > 0 && dispensedQty > approvedQty) {
         return `Dispensed quantity cannot exceed approved quantity of ${approvedQty}L`;
       }
-    } 
+    }
     // For delivery orders, check against quantity to be dispensed
     else {
-      const quantityToBeDispensed = orderStore.getState().quantityToBeDispensed || 0;
-      const fuelDispensedTillNow = orderStore.getState().fuelDispensedTillNow || 0;
-      
-      if (quantityToBeDispensed > 0 && (fuelDispensedTillNow + dispensedQty) > quantityToBeDispensed) {
+      const quantityToBeDispensed =
+        orderStore.getState().quantityToBeDispensed || 0;
+      const fuelDispensedTillNow =
+        orderStore.getState().fuelDispensedTillNow || 0;
+
+      if (
+        quantityToBeDispensed > 0 &&
+        fuelDispensedTillNow + dispensedQty > quantityToBeDispensed
+      ) {
         return `Total dispensed quantity cannot exceed required quantity of ${quantityToBeDispensed}L`;
       }
     }
-    
+
     return null; // No validation error
   };
 
@@ -117,7 +131,10 @@ const TotalizerAfterManual: React.FC = () => {
     } else {
       //check conditions and return error alert if something is missing
       if (!totalizerReading && !quantityImageData) {
-        Alert.alert('Error', 'Please enter quantity dispensed and upload image');
+        Alert.alert(
+          'Error',
+          'Please enter quantity dispensed and upload image',
+        );
         return;
       } else if (!quantityImageData) {
         Alert.alert('Error', 'Please click quantity image');
@@ -129,7 +146,7 @@ const TotalizerAfterManual: React.FC = () => {
     }
 
     const dispensedQty = parseFloat(totalizerReading);
-    
+
     if (dispensedQty <= 0) {
       Alert.alert('Error', "You can't dispense 0 litres");
       return;
@@ -186,16 +203,15 @@ const TotalizerAfterManual: React.FC = () => {
           quantity_dispensed: dispensedQty,
           task_id: currentFillupOrder?.id,
           ...(currentFillupOrder?.category === 'DELIVERY'
-            ? { customer_asset_id: completedAsset?.id }
-            : { 
-                vehicle_id: completedAsset?.id || driverVehicleDetails?.id 
-              }
-          ),
+            ? {customer_asset_id: completedAsset?.id}
+            : {
+                vehicle_id: completedAsset?.id || driverVehicleDetails?.id,
+              }),
           location: {
             type: 'Point',
             coordinates: [coordinates.longitude, coordinates.latitude],
           },
-        }
+        },
       });
 
       // Update asset qty in customer order if delivery flow
@@ -210,7 +226,8 @@ const TotalizerAfterManual: React.FC = () => {
       // Update totalizer reading for vehicle (following Vue.js pattern)
       if (driverVehicleDetails?.id) {
         await orderService.updateTotalizerReading({
-          totalizer_reading: parseFloat(totalizerReading) + totalizerBeforeReading,
+          totalizer_reading:
+            parseFloat(totalizerReading) + totalizerBeforeReading,
           vehicle_id: driverVehicleDetails.id,
         });
       } else {
@@ -218,7 +235,8 @@ const TotalizerAfterManual: React.FC = () => {
         Toast.show({
           type: 'error',
           text1: 'Warning',
-          text2: 'Vehicle information not available. Totalizer reading not updated.',
+          text2:
+            'Vehicle information not available. Totalizer reading not updated.',
         });
       }
 
@@ -234,7 +252,8 @@ const TotalizerAfterManual: React.FC = () => {
         orderStore.setState(state => ({
           ...state,
           quantityDispensed: 0,
-          totalizerAfterReading: parseFloat(totalizerReading) + totalizerBeforeReading,
+          totalizerAfterReading:
+            parseFloat(totalizerReading) + totalizerBeforeReading,
         }));
         // @ts-ignore
         navigation.replace('order', {
@@ -245,9 +264,10 @@ const TotalizerAfterManual: React.FC = () => {
         orderStore.setState(state => ({
           ...state,
           quantityDispensed: 0,
-          totalizerAfterReading: parseFloat(totalizerReading) + totalizerBeforeReading,
+          totalizerAfterReading:
+            parseFloat(totalizerReading) + totalizerBeforeReading,
         }));
-        
+
         // Create challan and mark fillup complete
         await createChallanAndMarkFillupComplete();
       }
@@ -269,7 +289,7 @@ const TotalizerAfterManual: React.FC = () => {
   const createChallanAndTransactionLogs = async () => {
     try {
       const coordinates = await getCurrentLocation();
-      
+
       // Create challan task
       await orderService.upsertStepTaskAction({
         object: {
@@ -282,35 +302,40 @@ const TotalizerAfterManual: React.FC = () => {
             type: 'Point',
             coordinates: [coordinates.longitude, coordinates.latitude],
           },
-        }
+        },
       });
 
-      // Get product variation id for browser tank
-      const filteredTankProductVarId = driverVehicleDetails?.vehicle_tank_types
-        ?.filter((tank: any) => tank.tank_type.slug === 'browser-tank')
-        ?.map((tank: any) => tank.vehicle_tank_type_product_variations[0]?.product_variation?.id)?.[0];
+      // Get product variation id from fillup request (supports both fuel-tank and bowser-tank)
+      const fillupRequest = currentFillupOrder?.fillup_requests[0];
+      const productVarId =
+        fillupRequest?.vehicle_tank_type_product_variation?.product_variation
+          ?.id;
 
-      if (filteredTankProductVarId && driverVehicleDetails?.id) {
+      if (productVarId && driverVehicleDetails?.id) {
         const quantity = parseFloat(totalizerReading);
-        const fillupRequestId = currentFillupOrder?.fillup_requests[0]?.id;
+        const fillupRequestId = fillupRequest?.id;
         const vehicleId = driverVehicleDetails?.id;
-        const requestVehicleId = currentFillupOrder?.fillup_requests[0]?.driver_vehicle?.vehicle?.id;
+        const requestVehicleId = fillupRequest?.driver_vehicle?.vehicle?.id;
 
-        // Add OUT transaction
+        // Add OUT transaction (from current driver's vehicle)
         await orderService.addTransactionLogs({
           quantity,
-          product_var_id: filteredTankProductVarId,
+          product_var_id: productVarId,
           fillup_request_id: fillupRequestId,
           customer_order_id: null,
           vehicle_id: vehicleId,
           transaction_type: 'OUT',
         });
 
-        // Add IN transaction if different vehicles
-        if (currentFillupOrder?.driver_vehicle_id !== currentFillupOrder?.fillup_requests[0]?.driver_vehicle_id && requestVehicleId) {
+        // Add IN transaction if different vehicles (fuel goes to different vehicle)
+        if (
+          currentFillupOrder?.driver_vehicle_id !==
+            fillupRequest?.driver_vehicle_id &&
+          requestVehicleId
+        ) {
           await orderService.addTransactionLogs({
             quantity,
-            product_var_id: filteredTankProductVarId,
+            product_var_id: productVarId,
             fillup_request_id: fillupRequestId,
             customer_order_id: null,
             vehicle_id: requestVehicleId,
@@ -324,27 +349,48 @@ const TotalizerAfterManual: React.FC = () => {
     }
   };
 
+  console.log(
+    '-currentFillupOrder?.fillup_requests[0]?.fuel_request_type',
+    currentFillupOrder?.fillup_requests[0]?.fuel_request_type,
+  );
+
   // Create challan and mark fillup complete (following Vue.js pattern)
   const createChallanAndMarkFillupComplete = async () => {
     setDisableButton(true);
+
+    // Set flags immediately to prevent error alerts during cleanup
+    isCompletingOrderRef.current = true;
+    isNavigatingRef.current = true;
+
     try {
-      // Create challan, transaction logs and mark task delivered and fillup request as complete
+      console.log('🚀 Starting fillup completion flow...');
+
+      // Step 1: Create challan and transaction logs
+      console.log('📝 Creating challan and transaction logs...');
       await createChallanAndTransactionLogs();
-      await orderService.markOrderCompleted({ id: currentFillupOrder?.id });
-      
-      if (currentFillupOrder?.fillup_requests[0]?.fuel_request_type !== 'ROTATIONAL_FLOW') {
-        await orderService.addStockEntryForFillupOnErp({
-          state: 'DELIVERED',
-          task_id: currentFillupOrder?.id,
-        });
-      }
-      
+
+      // Step 2: Mark order completed
+      console.log('✅ Marking order as completed...');
+      await orderService.markOrderCompleted({id: currentFillupOrder?.id});
+
+      // Step 3: Add stock entry to ERP
+      console.log('📦 Adding stock entry to ERP...');
+      await orderService.addStockEntryForFillupOnErp({
+        state: 'DELIVERED',
+        task_id: currentFillupOrder?.id,
+      });
+
+      // Step 4: Update fillup request state
+      console.log('🔄 Updating fillup request state to COMPLETE...');
       await fillupService.updateFillupRequestState({
         id: currentFillupOrder?.fillup_requests[0]?.id,
         state: Fillup_Request_Status_Enum.Complete,
       });
 
-      // Clear order states (following OrderSuccess pattern)
+      console.log('✨ All APIs completed successfully');
+
+      // Clear ALL order states immediately before navigation (following Vue.js pattern)
+      console.log('🧹 Clearing order store...');
       orderStore.setState(state => ({
         ...state,
         currentDriverOrder: null,
@@ -366,17 +412,28 @@ const TotalizerAfterManual: React.FC = () => {
         currentAssetForDispense: null,
       }));
 
+      // Show success message
       Toast.show({
         type: 'success',
         text1: 'Success',
         text2: 'Challan uploaded successfully',
       });
 
-      // @ts-ignore
-      navigation.replace('home');
+      // Reset navigation stack completely to prevent going back to fill asset page
+      console.log('🏠 Resetting navigation to home...');
+      navigation.reset({
+        index: 0,
+        routes: [{name: 'home' as never}],
+      });
     } catch (e) {
-      Alert.alert('Error', 'Error uploading challan and marking fillup order complete');
-      throw new Error('Error challan, transaction logs and completing fillup');
+      console.error('❌ Error in fillup completion flow:', e);
+      // Reset flags on error so alerts can show
+      isCompletingOrderRef.current = false;
+      isNavigatingRef.current = false;
+      Alert.alert(
+        'Error',
+        'Error uploading challan and marking fillup order complete',
+      );
     } finally {
       setDisableButton(false);
     }
@@ -438,7 +495,7 @@ const TotalizerAfterManual: React.FC = () => {
         fileData: blob,
       });
       console.log('Image uploaded:', {src, storeUrl});
-      
+
       // Store the upload URL for API calls but keep the local URI for display
       if (type === 'totalizer') {
         orderStore.setState({totalizerUploadedUrl: storeUrl || src});
@@ -530,9 +587,13 @@ const TotalizerAfterManual: React.FC = () => {
     if (currentFillupOrder?.fillup_requests?.length > 0) {
       const fillupRequest = currentFillupOrder.fillup_requests[0];
       return {
-        vehicleName: fillupRequest.driver_vehicle?.vehicle?.name || 'Unknown Vehicle',
-        tankTypeName: fillupRequest.vehicle_tank_type_product_variation?.vehicle_tank_type?.tank_type?.name || 'Unknown Tank',
-        requestedQuantity: fillupRequest.quantity_approved || fillupRequest.quantity || 0,
+        vehicleName:
+          fillupRequest.driver_vehicle?.vehicle?.name || 'Unknown Vehicle',
+        tankTypeName:
+          fillupRequest.vehicle_tank_type_product_variation?.vehicle_tank_type
+            ?.tank_type?.name || 'Unknown Tank',
+        requestedQuantity:
+          fillupRequest.quantity_approved || fillupRequest.quantity || 0,
       };
     }
     return {
@@ -551,7 +612,6 @@ const TotalizerAfterManual: React.FC = () => {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
-
         {/* Vehicle Info Card */}
         <VehicleInfoCard
           vehicleName={vehicleInfo.vehicleName}
@@ -584,16 +644,17 @@ const TotalizerAfterManual: React.FC = () => {
             onChangeText={setTotalizerReading}
           />
         </View>
-        
+
         {/* Display approved quantity information */}
-        {currentFillupOrder?.category === 'FILL_UP' && getApprovedQuantity() > 0 && (
-          <View style={styles.approvedQuantityContainer}>
-            <Text style={styles.approvedQuantityText}>
-              Approved Quantity: {getApprovedQuantity()}L
-            </Text>
-          </View>
-        )}
-        
+        {currentFillupOrder?.category === 'FILL_UP' &&
+          getApprovedQuantity() > 0 && (
+            <View style={styles.approvedQuantityContainer}>
+              <Text style={styles.approvedQuantityText}>
+                Approved Quantity: {getApprovedQuantity()}L
+              </Text>
+            </View>
+          )}
+
         <Divider height={10} />
 
         <ImageContainer
@@ -602,7 +663,10 @@ const TotalizerAfterManual: React.FC = () => {
           isUploading={quantityImageUploading}
           onCameraPress={() => openCamera('quantity')}
           uploadingText="Uploading quantity image..."
-          required={currentFillupOrder?.is_enable_totalizer_reading_image_upload || false}
+          required={
+            currentFillupOrder?.is_enable_totalizer_reading_image_upload ||
+            false
+          }
         />
         <Divider height={10} />
       </ScrollView>
@@ -612,7 +676,8 @@ const TotalizerAfterManual: React.FC = () => {
           style={[
             styles.button,
             (!totalizerReading ||
-             (currentFillupOrder?.is_enable_totalizer_reading_image_upload && !quantityImageData)) &&
+              (currentFillupOrder?.is_enable_totalizer_reading_image_upload &&
+                !quantityImageData)) &&
               styles.disabledButton,
           ]}
           variant="solid"
@@ -621,9 +686,10 @@ const TotalizerAfterManual: React.FC = () => {
           disabled={
             disableButton ||
             !totalizerReading ||
-            (currentFillupOrder?.is_enable_totalizer_reading_image_upload && !quantityImageData)
+            (currentFillupOrder?.is_enable_totalizer_reading_image_upload &&
+              !quantityImageData)
           }>
-          {'Next'}
+          {'Mark Order as Complete'}
         </Button>
       </View>
 

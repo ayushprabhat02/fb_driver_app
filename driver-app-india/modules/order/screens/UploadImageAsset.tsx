@@ -59,10 +59,25 @@ const UploadImageAsset: React.FC = () => {
   // Initialize component (following Vue.js pattern)
   useEffect(() => {
     if (!currentFillupOrder) {
-      Alert.alert('Error', 'No order assigned');
+      // Don't show alert during navigation - just silently redirect
+      // This prevents alerts when completing orders or navigating between screens
+      console.log(
+        '❌ No order assigned in UploadImageAsset, silently redirecting to home',
+      );
       // @ts-ignore
       navigation.replace('home');
     } else {
+      // If order is in DISPENSING state, this screen should have been bypassed
+      // Navigate to the correct screen
+      if (currentFillupOrder.state === 'DISPENSING') {
+        console.log(
+          '⚡ Order is in DISPENSING state, redirecting to end totalizer',
+        );
+        // @ts-ignore
+        navigation.replace('order', {screen: 'totalizer-after-manual'});
+        return;
+      }
+
       // Pre-fill totalizer reading from vehicle details if available
       if (driverVehicleDetails?.totalizer_reading !== undefined) {
         setTotalizerReading(driverVehicleDetails.totalizer_reading.toString());
@@ -330,9 +345,13 @@ const UploadImageAsset: React.FC = () => {
     if (currentFillupOrder?.fillup_requests?.length > 0) {
       const fillupRequest = currentFillupOrder.fillup_requests[0];
       return {
-        vehicleName: fillupRequest.driver_vehicle?.vehicle?.name || 'Unknown Vehicle',
-        tankTypeName: fillupRequest.vehicle_tank_type_product_variation?.vehicle_tank_type?.tank_type?.name || 'Unknown Tank',
-        requestedQuantity: fillupRequest.quantity_approved || fillupRequest.quantity || 0,
+        vehicleName:
+          fillupRequest.driver_vehicle?.vehicle?.name || 'Unknown Vehicle',
+        tankTypeName:
+          fillupRequest.vehicle_tank_type_product_variation?.vehicle_tank_type
+            ?.tank_type?.name || 'Unknown Tank',
+        requestedQuantity:
+          fillupRequest.quantity_approved || fillupRequest.quantity || 0,
       };
     }
     return {
@@ -351,7 +370,6 @@ const UploadImageAsset: React.FC = () => {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
-
         {/* Vehicle Info Card */}
         <VehicleInfoCard
           vehicleName={vehicleInfo.vehicleName}

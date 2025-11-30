@@ -63,12 +63,15 @@ const FillupHistoryCard: React.FC<FillupHistoryCardProps> = ({item}) => {
 
   const isStateAllowed = allowedStates.includes(item.state?.toUpperCase());
 
-  // Navigate based on fuel request type - based on Vue.js logic
+  // Navigate based on fuel request type and current state - based on Vue.js logic
   const goToFillup = () => {
     if (isStateAllowed) {
       // Check if this is a fuel tank request - should navigate to HomeLandingPage
       if (item.fuel_request_type === 'FUEL_TANK') {
-        // Navigate to HomeLandingPage where FillupOrderCard will be displayed
+        // Only navigate to home if order is not already in progress
+        // If user clicks "Go to Fillup" from fillup request page, just navigate to home
+        // The FillupOrderCard on home page will handle the "Start Fillup" action
+        console.log('📍 Navigating to home for fuel tank order:', item.id);
         // @ts-ignore
         navigation.navigate('home', {
           screen: 'HomeLandingPage',

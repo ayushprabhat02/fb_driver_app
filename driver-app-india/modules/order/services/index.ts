@@ -137,6 +137,11 @@ import {
   AssetUpdateChangesDocument,
   AssetUpdateChangesMutation,
   AssetUpdateChangesMutationVariables,
+
+  // add stock entry for fillup on ERP
+  AddStockEntryForFillupOnErpDocument,
+  AddStockEntryForFillupOnErpMutation,
+  AddStockEntryForFillupOnErpMutationVariables,
 } from '@/generated/graphql';
 
 /**
@@ -934,15 +939,16 @@ class OrderService {
     try {
       console.log('AddStockEntryForFillupOnErp API call:', args);
 
-      // This would be implemented when the actual GraphQL mutation is available
-      // For now, return a mock response
-      console.log('AddStockEntryForFillupOnErp - using mock response');
+      const response: AddStockEntryForFillupOnErpMutation = await callMutation({
+        queryDocument: AddStockEntryForFillupOnErpDocument,
+        variables: {
+          state: args.state,
+          task_id: args.task_id,
+        },
+      });
 
-      return {
-        success: true,
-        state: args.state,
-        task_id: args.task_id,
-      };
+      console.log('AddStockEntryForFillupOnErp response:', response);
+      return response.addStockEntryForFillupOnErp;
     } catch (error) {
       console.error('Error adding stock entry for fillup on ERP:', error);
       throw new Error('Failed to add stock entry for fillup on ERP');

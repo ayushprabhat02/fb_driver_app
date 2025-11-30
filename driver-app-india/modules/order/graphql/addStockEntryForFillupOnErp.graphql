@@ -1,0 +1,5 @@
+mutation addStockEntryForFillupOnErp($state: String!, $task_id: uuid!) {
+  addStockEntryForFillupOnErp(object: {state: $state, task_id: $task_id}) {
+    data
+  }
+}

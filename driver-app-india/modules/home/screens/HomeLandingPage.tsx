@@ -142,8 +142,17 @@ const HomeLandingPage: React.FC = () => {
   useFocusEffect(
     useCallback(() => {
       const refreshDataOnFocus = async () => {
-        // Reset order store to clear any previously selected order data
-        resetOrderStore();
+        // Don't reset order store here - it clears currentFillupOrder during active fillup flow
+        // Only reset if there are no active orders in progress
+        const currentFillup = orderStore.getState().currentFillupOrder;
+        const currentDriver = orderStore.getState().currentDriverOrder;
+
+        // Only reset if no orders are in progress
+        if (!currentFillup && !currentDriver) {
+          resetOrderStore();
+        } else {
+          console.log('⚡ Skipping order store reset - active order in progress');
+        }
 
         if (driverVehicleId) {
           try {

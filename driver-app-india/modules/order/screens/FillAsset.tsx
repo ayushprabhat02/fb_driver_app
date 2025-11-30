@@ -1,11 +1,7 @@
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import React, {useEffect, useLayoutEffect, useState} from 'react';
-import {
-  Alert,
-  ScrollView,
-  View,
-} from 'react-native';
+import {Alert, ScrollView, View} from 'react-native';
 import {ScaledSheet} from 'react-native-size-matters';
 import Toast from 'react-native-toast-message';
 
@@ -59,24 +55,28 @@ interface FillupAsset {
 // ... existing code ...
 
 const FillAsset: React.FC = () => {
-  const navigation =
-    useNavigation<StackNavigationProp<RootStackParamList>>();
-  
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+
+  // Refs to prevent race conditions during completion
+  const isCompletingOrderRef = React.useRef(false);
+  const isNavigatingRef = React.useRef(false);
+
   // Store states
   const currentFillupOrder = orderStore.use.currentFillupOrder();
   const driverVehicleDetails = orderStore.use.driverVehicleDetails();
   const startLoader = orderStore.use.startLoader();
   const stopLoader = orderStore.use.stopLoader();
-  
+
   // Local states (following Vue.js pattern)
   const [loadingAssets, setLoadingAssets] = useState(true);
   const [isButtonDisabled, setIsButtonDisabled] = useState(false);
   const [assetFilled, setAssetFilled] = useState<any>(null);
   const [isCancellationModalOpen, setCancellationModalOpen] = useState(false);
-  
+
   // Enhanced state management (Vue-inspired)
   const fillupOrderStateFlow = orderStore.use.fillupOrderStateFlow();
-  const setCancellationModalOpenStore = orderStore.use.setCancellationModalOpen();
+  const setCancellationModalOpenStore =
+    orderStore.use.setCancellationModalOpen();
 
   // Set navigation options
   useLayoutEffect(() => {
@@ -86,29 +86,34 @@ const FillAsset: React.FC = () => {
     });
   }, [navigation]);
 
-
-
   // Initialize component (following Vue.js onMounted pattern)
   useEffect(() => {
     const initializeComponent = async () => {
       try {
         // Reset start trip loading state
         stopLoader('start-trip' as any);
-        
+
         // Check if order exists
         if (!currentFillupOrder) {
-          Alert.alert('Error', 'No order assigned');
-          // @ts-ignore
-          navigation.replace('home');
+          // Only show error if we're not completing AND not navigating
+          if (!isCompletingOrderRef.current && !isNavigatingRef.current) {
+            console.log(
+              '❌ No order assigned in FillAsset, redirecting to home',
+            );
+            // Alert.alert('Error', 'No order assigned 3');
+            // @ts-ignore
+            navigation.replace('home');
+          }
           return;
         }
 
         // Fetch completely filled asset (following Vue.js pattern)
         if (currentFillupOrder.fillup_requests?.[0]) {
-          const vehicleId = currentFillupOrder.fillup_requests[0]
-            ?.vehicle_tank_type_product_variation?.vehicle_tank_type
-            ?.vehicle?.id || driverVehicleDetails?.id;
-            
+          const vehicleId =
+            currentFillupOrder.fillup_requests[0]
+              ?.vehicle_tank_type_product_variation?.vehicle_tank_type?.vehicle
+              ?.id || driverVehicleDetails?.id;
+
           if (vehicleId) {
             // This would be implemented when the API is available
             // const filledAsset = await fetchCompletelyFilledAsset({
@@ -119,7 +124,7 @@ const FillAsset: React.FC = () => {
             // setAssetFilled(filledAsset);
           }
         }
-        
+
         setLoadingAssets(false);
       } catch (error) {
         console.error('Error initializing FillAsset:', error);
@@ -138,18 +143,24 @@ const FillAsset: React.FC = () => {
     }
 
     const fillupRequest = currentFillupOrder.fillup_requests[0];
-    
+
     // Create current asset object and save it in store (following Vue.js pattern)
     const currentAsset = {
       asset_type_id: null,
-      capacity: fillupRequest.vehicle_tank_type_product_variation?.vehicle_tank_type?.vehicle?.fuel_tank_capacity,
+      capacity:
+        fillupRequest.vehicle_tank_type_product_variation?.vehicle_tank_type
+          ?.vehicle?.fuel_tank_capacity,
       color: null,
-      description: fillupRequest.vehicle_tank_type_product_variation?.vehicle_tank_type?.vehicle?.description,
-      id: fillupRequest.vehicle_tank_type_product_variation?.vehicle_tank_type?.vehicle?.id,
-      name: fillupRequest.vehicle_tank_type_product_variation?.vehicle_tank_type?.vehicle?.name,
+      description:
+        fillupRequest.vehicle_tank_type_product_variation?.vehicle_tank_type
+          ?.vehicle?.description,
+      id: fillupRequest.vehicle_tank_type_product_variation?.vehicle_tank_type
+        ?.vehicle?.id,
+      name: fillupRequest.vehicle_tank_type_product_variation?.vehicle_tank_type
+        ?.vehicle?.name,
       organization_user_id: null,
     };
-    
+
     orderStore.setState(state => ({
       ...state,
       currentAssetForDispense: currentAsset,
@@ -161,14 +172,66 @@ const FillAsset: React.FC = () => {
         // Asset already filled, complete the order
         await createChallanAndMarkFillupComplete();
       } else {
-        // Navigate to upload image asset (totalizer before manual equivalent)
-        // @ts-ignore
-        navigation.navigate('order', {
-          screen: 'upload-image-asset',
-        });
+        // Check if order is already in DISPENSING state - skip start totalizer and go to end totalizer
+        if (currentFillupOrder.state === 'DISPENSING') {
+          console.log(
+            '⚡ Order already in DISPENSING state, skipping start totalizer and going to end totalizer',
+          );
+
+          // Fetch existing TOTALIZER_BEFORE_READING from task_value
+          try {
+            const task = await orderService.checkPartiallyFilledAssets(
+              currentFillupOrder.id,
+            );
+            const beforeReadingTask = task?.task_value?.find(
+              (t: any) =>
+                t.key === 'TOTALIZER_BEFORE_READING' &&
+                t.vehicle_id === currentAsset.id,
+            );
+            const totalizerBefore = beforeReadingTask
+              ? parseFloat(beforeReadingTask.value || '0')
+              : 0;
+
+            console.log(
+              '📊 Found existing TOTALIZER_BEFORE_READING:',
+              totalizerBefore,
+            );
+
+            // Save to store for use in end totalizer page
+            orderStore.setState(state => ({
+              ...state,
+              totalizerBeforeReading: totalizerBefore,
+            }));
+          } catch (error) {
+            console.warn(
+              '⚠️ Could not fetch TOTALIZER_BEFORE_READING, using 0:',
+              error,
+            );
+            orderStore.setState(state => ({
+              ...state,
+              totalizerBeforeReading: 0,
+            }));
+          }
+
+          // Navigate directly to end totalizer reading page
+          // @ts-ignore
+          navigation.navigate('order', {
+            screen: 'totalizer-after-manual',
+          });
+        } else {
+          // Normal flow - Navigate to upload image asset (totalizer before manual equivalent)
+          console.log('📝 Normal flow - navigating to start totalizer reading');
+          // @ts-ignore
+          navigation.navigate('order', {
+            screen: 'upload-image-asset',
+          });
+        }
       }
     } else {
-      Alert.alert('Error', 'This order is for automation. Please raise cancel request');
+      Alert.alert(
+        'Error',
+        'This order is for automation. Please raise cancel request',
+      );
     }
   };
 
@@ -176,7 +239,7 @@ const FillAsset: React.FC = () => {
   const createChallanAndTransactionLogs = async () => {
     try {
       const coordinates = await getCurrentLocation();
-      
+
       // Create challan task (following Vue.js upsertStepTaskAction pattern)
       await orderService.upsertStepTaskAction({
         object: {
@@ -189,19 +252,23 @@ const FillAsset: React.FC = () => {
             type: 'Point',
             coordinates: [coordinates.longitude, coordinates.latitude],
           },
-        }
+        },
       });
 
       // Add transaction logs (following Vue.js pattern)
       const filteredTankProductVarId = driverVehicleDetails?.vehicle_tank_types
         ?.filter((tank: any) => tank.tank_type.slug === 'browser-tank')
-        ?.map((tank: any) => tank.vehicle_tank_type_product_variations[0]?.product_variation?.id)?.[0];
+        ?.map(
+          (tank: any) =>
+            tank.vehicle_tank_type_product_variations[0]?.product_variation?.id,
+        )?.[0];
 
       if (filteredTankProductVarId) {
         const quantity = assetFilled ? assetFilled.quantity_dispensed : 0;
         const fillupRequestId = currentFillupOrder?.fillup_requests[0]?.id;
         const vehicleId = driverVehicleDetails?.id;
-        const requestVehicleId = currentFillupOrder?.fillup_requests[0]?.driver_vehicle?.vehicle?.id;
+        const requestVehicleId =
+          currentFillupOrder?.fillup_requests[0]?.driver_vehicle?.vehicle?.id;
 
         // Add OUT transaction
         await orderService.addTransactionLogs({
@@ -214,7 +281,10 @@ const FillAsset: React.FC = () => {
         });
 
         // Add IN transaction if different vehicles
-        if (currentFillupOrder?.driver_vehicle_id !== currentFillupOrder?.fillup_requests[0]?.driver_vehicle_id) {
+        if (
+          currentFillupOrder?.driver_vehicle_id !==
+          currentFillupOrder?.fillup_requests[0]?.driver_vehicle_id
+        ) {
           await orderService.addTransactionLogs({
             quantity,
             product_var_id: filteredTankProductVarId,
@@ -235,27 +305,47 @@ const FillAsset: React.FC = () => {
   const createChallanAndMarkFillupComplete = async () => {
     setIsButtonDisabled(true);
     startLoader('updateOrderState');
-    
+
+    // Set flags immediately to prevent error alerts during cleanup
+    isCompletingOrderRef.current = true;
+    isNavigatingRef.current = true;
+
     try {
-      // Create challan and transaction logs
+      console.log('🚀 Starting fillup completion flow (from FillAsset)...');
+
+      // Step 1: Create challan and transaction logs
+      console.log('📝 Creating challan and transaction logs...');
       await createChallanAndTransactionLogs();
-      
-      // Mark order completed
-      await orderService.markOrderCompleted({ id: currentFillupOrder?.id });
-      
-      // Add stock entry for fillup on ERP
-      await orderService.addStockEntryForFillupOnErp({
-        state: 'DELIVERED',
-        task_id: currentFillupOrder?.id,
-      });
-      
-      // Update fillup request state
+
+      // Step 2: Mark order completed
+      console.log('✅ Marking order as completed...');
+      await orderService.markOrderCompleted({id: currentFillupOrder?.id});
+
+      // Step 3: Add stock entry to ERP (skip for ROTATIONAL_FLOW)
+      if (
+        currentFillupOrder?.fillup_requests[0]?.fuel_request_type !==
+        'ROTATIONAL_FLOW'
+      ) {
+        console.log('📦 Adding stock entry to ERP...');
+        await orderService.addStockEntryForFillupOnErp({
+          state: 'DELIVERED',
+          task_id: currentFillupOrder?.id,
+        });
+      } else {
+        console.log('⏭️ Skipping stock entry for ROTATIONAL_FLOW');
+      }
+
+      // Step 4: Update fillup request state
+      console.log('🔄 Updating fillup request state to COMPLETE...');
       await fillupService.updateFillupRequestState({
         id: currentFillupOrder?.fillup_requests[0]?.id,
         state: Fillup_Request_Status_Enum.Complete,
       });
 
-      // Clear order states (following OrderSuccess pattern)
+      console.log('✨ All APIs completed successfully');
+
+      // Clear ALL order states immediately before navigation (following Vue.js pattern)
+      console.log('🧹 Clearing order store...');
       orderStore.setState(state => ({
         ...state,
         currentDriverOrder: null,
@@ -283,10 +373,17 @@ const FillAsset: React.FC = () => {
         text2: 'Challan uploaded and fillup order completed',
       });
 
-      // @ts-ignore
-      navigation.replace('home');
+      // Reset navigation stack completely to prevent going back to fill asset page
+      console.log('🏠 Resetting navigation to home...');
+      navigation.reset({
+        index: 0,
+        routes: [{name: 'home' as never}],
+      });
     } catch (error) {
-      console.error('Error completing fillup order:', error);
+      console.error('❌ Error completing fillup order:', error);
+      // Reset flags on error so alerts can show
+      isCompletingOrderRef.current = false;
+      isNavigatingRef.current = false;
       Toast.show({
         type: 'error',
         text1: 'Error',
@@ -312,15 +409,15 @@ const FillAsset: React.FC = () => {
         id: currentFillupOrder?.id,
         reason: comment,
       });
-      
+
       // Mark order as cancellation requested
-      await orderService.markOrderCancel({ id: currentFillupOrder?.id });
+      await orderService.markOrderCancel({id: currentFillupOrder?.id});
 
       // Update order state locally
       orderStore.setState(state => ({
         ...state,
         currentFillupOrder: state.currentFillupOrder
-          ? { ...state.currentFillupOrder, state: 'CANCELLED' as any }
+          ? {...state.currentFillupOrder, state: 'CANCELLED' as any}
           : null,
       }));
 
@@ -411,13 +508,19 @@ const FillAsset: React.FC = () => {
   };
 
   const canCancelOrder = (state: string) => {
-    return ['PENDING', 'CONFIRMED', 'IN_TRANSIT', 'ARRIVED'].includes(state?.toUpperCase());
+    return ['PENDING', 'CONFIRMED', 'IN_TRANSIT', 'ARRIVED'].includes(
+      state?.toUpperCase(),
+    );
   };
 
   // Get fillup request data
   const fillupRequest = currentFillupOrder?.fillup_requests?.[0];
-  const vehicleName = fillupRequest?.vehicle_tank_type_product_variation?.vehicle_tank_type?.vehicle?.name || 'Unknown Vehicle';
-  const tankTypeName = fillupRequest?.vehicle_tank_type_product_variation?.vehicle_tank_type?.tank_type?.name || 'Unknown Tank';
+  const vehicleName =
+    fillupRequest?.vehicle_tank_type_product_variation?.vehicle_tank_type
+      ?.vehicle?.name || 'Unknown Vehicle';
+  const tankTypeName =
+    fillupRequest?.vehicle_tank_type_product_variation?.vehicle_tank_type
+      ?.tank_type?.name || 'Unknown Tank';
   const requestedQuantity = fillupRequest?.quantity || 0;
 
   const orderState = currentFillupOrder?.state || 'PENDING';
@@ -435,7 +538,6 @@ const FillAsset: React.FC = () => {
         style={styles.container}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
-
         {/* Page Title */}
         <Text size="xl" weight="700" style={styles.pageTitle}>
           Vehicle to be Filled
@@ -529,7 +631,7 @@ const styles = ScaledSheet.create({
   },
   scrollContent: {
     paddingHorizontal: '20@s',
-    paddingTop: '20@vs',
+    // paddingTop: '20@vs',
     paddingBottom: '20@vs',
   },
   pageTitle: {

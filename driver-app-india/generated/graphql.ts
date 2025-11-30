@@ -46,6 +46,18 @@ export type Boolean_Comparison_Exp = {
   _nin?: InputMaybe<Array<Scalars['Boolean']['input']>>;
 };
 
+export type BowserAnalyticsPurchaseAndDeliveryCompInput = {
+  circle?: InputMaybe<Scalars['String']['input']>;
+  city?: InputMaybe<Scalars['String']['input']>;
+  end_date: Scalars['timestamp']['input'];
+  start_date: Scalars['timestamp']['input'];
+};
+
+export type BowserAnalyticsPurchaseAndDeliveryCompOutput = {
+  __typename?: 'BowserAnalyticsPurchaseAndDeliveryCompOutput';
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
 export type CancelCustomerOrderInput = {
   cancellation_reason_id?: InputMaybe<Scalars['uuid']['input']>;
   orderId?: InputMaybe<Scalars['uuid']['input']>;
@@ -27483,6 +27495,26 @@ export type FetchAvailableInventoryForTowerReportOutput = {
   data?: Maybe<Scalars['jsonb']['output']>;
 };
 
+export type FetchAvailableInventoryInput = {
+  circle?: InputMaybe<Scalars['String']['input']>;
+  city?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FetchAvailableInventoryOutput = {
+  __typename?: 'fetchAvailableInventoryOutput';
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
+export type FetchAvailableInventoryRawDataInput = {
+  circle?: InputMaybe<Scalars['String']['input']>;
+  city?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FetchAvailableInventoryRawDataOutput = {
+  __typename?: 'fetchAvailableInventoryRawDataOutput';
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
 export type FetchCircleForCustomerOutput = {
   __typename?: 'fetchCircleForCustomerOutput';
   data?: Maybe<Scalars['jsonb']['output']>;
@@ -27893,6 +27925,17 @@ export type FetchFilteredOrdersByTruckAndTaskStateOutput = {
   data?: Maybe<Scalars['jsonb']['output']>;
 };
 
+export type FetchFmsMonthlyDataInput = {
+  department_name?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  month_end_date?: InputMaybe<Scalars['timestamp']['input']>;
+  month_start_date?: InputMaybe<Scalars['timestamp']['input']>;
+};
+
+export type FetchFmsMonthlyDataOutput = {
+  __typename?: 'fetchFmsMonthlyDataOutput';
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
 export type FetchGpsDataForVehicleIdsInput = {
   vehicleIds?: InputMaybe<Array<InputMaybe<Scalars['uuid']['input']>>>;
 };
@@ -28176,11 +28219,24 @@ export type FetchNonDeliveredAgingReportOutput = {
 };
 
 export type FetchOpeningBalanceInput = {
-  date?: InputMaybe<Scalars['timestamp']['input']>;
+  circle?: InputMaybe<Scalars['String']['input']>;
+  city?: InputMaybe<Scalars['String']['input']>;
+  date: Scalars['timestamp']['input'];
 };
 
 export type FetchOpeningBalanceOutput = {
   __typename?: 'fetchOpeningBalanceOutput';
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
+export type FetchOpeningBalanceRawDataInput = {
+  circle?: InputMaybe<Scalars['String']['input']>;
+  city?: InputMaybe<Scalars['String']['input']>;
+  date: Scalars['timestamp']['input'];
+};
+
+export type FetchOpeningBalanceRawDataOutput = {
+  __typename?: 'fetchOpeningBalanceRawDataOutput';
   data?: Maybe<Scalars['jsonb']['output']>;
 };
 
@@ -28751,6 +28807,17 @@ export type FetchVehicleRcInput = {
 
 export type FetchVehicleRcOutput = {
   __typename?: 'fetchVehicleRcOutput';
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
+export type FetchWeeklyFmsDataInput = {
+  department_name?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  month_end_date?: InputMaybe<Scalars['timestamp']['input']>;
+  month_start_date?: InputMaybe<Scalars['timestamp']['input']>;
+};
+
+export type FetchWeeklyFmsDataOutput = {
+  __typename?: 'fetchWeeklyFmsDataOutput';
   data?: Maybe<Scalars['jsonb']['output']>;
 };
 
@@ -32015,6 +32082,20 @@ export type Float8_Comparison_Exp = {
   _nin?: InputMaybe<Array<Scalars['float8']['input']>>;
 };
 
+export type FmsAssetAndDateWiseDataInput = {
+  asset_name?: InputMaybe<Scalars['String']['input']>;
+  department_name?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  end_date?: InputMaybe<Scalars['timestamp']['input']>;
+  erp_code?: InputMaybe<Scalars['String']['input']>;
+  order_code?: InputMaybe<Scalars['String']['input']>;
+  start_date?: InputMaybe<Scalars['timestamp']['input']>;
+};
+
+export type FmsAssetAndDateWiseDataOutput = {
+  __typename?: 'fmsAssetAndDateWiseDataOutput';
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
 export type FmsAssetCountDataInput = {
   department_name?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
   end_date: Scalars['timestamp']['input'];
@@ -32023,6 +32104,20 @@ export type FmsAssetCountDataInput = {
 
 export type FmsAssetCountDataOutput = {
   __typename?: 'fmsAssetCountDataOutput';
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
+export type FmsAssetDataInput = {
+  asset_name?: InputMaybe<Scalars['String']['input']>;
+  department_name?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  end_date?: InputMaybe<Scalars['timestamp']['input']>;
+  erp_code?: InputMaybe<Scalars['String']['input']>;
+  order_code?: InputMaybe<Scalars['String']['input']>;
+  start_date?: InputMaybe<Scalars['timestamp']['input']>;
+};
+
+export type FmsAssetDataOutput = {
+  __typename?: 'fmsAssetDataOutput';
   data?: Maybe<Scalars['jsonb']['output']>;
 };
 
@@ -32038,6 +32133,28 @@ export type FmsAssetWiseRawDataInput = {
 
 export type FmsAssetWiseRawDataOutput = {
   __typename?: 'fmsAssetWiseRawDataOutput';
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
+export type FmsDepartmentAndDateWiseDataInput = {
+  department_name?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  end_date?: InputMaybe<Scalars['timestamp']['input']>;
+  start_date?: InputMaybe<Scalars['timestamp']['input']>;
+};
+
+export type FmsDepartmentAndDateWiseDataOutput = {
+  __typename?: 'fmsDepartmentAndDateWiseDataOutput';
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
+export type FmsDepartmentWiseDataInput = {
+  department_name?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  end_date?: InputMaybe<Scalars['timestamp']['input']>;
+  start_date?: InputMaybe<Scalars['timestamp']['input']>;
+};
+
+export type FmsDepartmentWiseDataOutput = {
+  __typename?: 'fmsDepartmentWiseDataOutput';
   data?: Maybe<Scalars['jsonb']['output']>;
 };
 
@@ -33841,6 +33958,18 @@ export type IciciCoBrandedCardsPaymentVerifyOutput = {
   status: Scalars['String']['output'];
   wallet_id?: Maybe<Scalars['uuid']['output']>;
   wallet_transaction_id: Scalars['uuid']['output'];
+};
+
+export type ImapErpOrderComparisionInput = {
+  circle?: InputMaybe<Scalars['String']['input']>;
+  city?: InputMaybe<Scalars['String']['input']>;
+  end_date: Scalars['timestamp']['input'];
+  start_date: Scalars['timestamp']['input'];
+};
+
+export type ImapErpOrderComparisionOutput = {
+  __typename?: 'imapErpOrderComparisionOutput';
+  data?: Maybe<Scalars['jsonb']['output']>;
 };
 
 /** columns and relationships of "indus_customer_order_job_scheduler" */
@@ -92865,6 +92994,8 @@ export type PunchBulkOrdersOutput = {
 };
 
 export type PurchaseCountAndQtyInput = {
+  circle?: InputMaybe<Scalars['String']['input']>;
+  city?: InputMaybe<Scalars['String']['input']>;
   end_date?: InputMaybe<Scalars['timestamp']['input']>;
   start_date?: InputMaybe<Scalars['timestamp']['input']>;
 };
@@ -92885,6 +93016,8 @@ export type PurchaseOrderRequestOnErpOutput = {
 };
 
 export type PurchaseRawDataInput = {
+  circle?: InputMaybe<Scalars['String']['input']>;
+  city?: InputMaybe<Scalars['String']['input']>;
   end_date?: InputMaybe<Scalars['timestamp']['input']>;
   start_date?: InputMaybe<Scalars['timestamp']['input']>;
 };
@@ -92895,12 +93028,26 @@ export type PurchaseRawDataOutput = {
 };
 
 export type PurchaseRoLevelDataInput = {
+  circle?: InputMaybe<Scalars['String']['input']>;
+  city?: InputMaybe<Scalars['String']['input']>;
   end_date?: InputMaybe<Scalars['timestamp']['input']>;
   start_date?: InputMaybe<Scalars['timestamp']['input']>;
 };
 
 export type PurchaseRoLevelDataOutput = {
   __typename?: 'purchaseRoLevelDataOutput';
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
+export type PurchaseRoLevelWeekDataInput = {
+  circle?: InputMaybe<Scalars['String']['input']>;
+  city?: InputMaybe<Scalars['String']['input']>;
+  end_date?: InputMaybe<Scalars['timestamp']['input']>;
+  start_date?: InputMaybe<Scalars['timestamp']['input']>;
+};
+
+export type PurchaseRoLevelWeekDataOutput = {
+  __typename?: 'purchaseRoLevelWeekDataOutput';
   data?: Maybe<Scalars['jsonb']['output']>;
 };
 
@@ -93556,6 +93703,7 @@ export type Purchase_Order_Updates = {
 
 export type Query_Root = {
   __typename?: 'query_root';
+  BowserAnalyticsPurchaseAndDeliveryComp?: Maybe<BowserAnalyticsPurchaseAndDeliveryCompOutput>;
   /** fetch data from the table: "SmartRefueler.dispencerLocation" */
   SmartRefueler_dispencerLocation: Array<SmartRefueler_DispencerLocation>;
   /** fetch aggregated fields from the table: "SmartRefueler.dispencerLocation" */
@@ -94031,7 +94179,9 @@ export type Query_Root = {
   fetchAllIndusTechnicians?: Maybe<FetchAllIndusTechniciansOutput>;
   fetchAllSiteCounts?: Maybe<FetchAllSiteCountsOutput>;
   fetchAllTrucksWithSiteId?: Maybe<FetchAllTrucksWithSiteIdOutput>;
+  fetchAvailableInventory?: Maybe<FetchAvailableInventoryOutput>;
   fetchAvailableInventoryForTowerReport?: Maybe<FetchAvailableInventoryForTowerReportOutput>;
+  fetchAvailableInventoryRawData?: Maybe<FetchAvailableInventoryRawDataOutput>;
   fetchCircleForCustomer?: Maybe<FetchCircleForCustomerOutput>;
   fetchCircleForTeamReport?: Maybe<FetchCircleForTeamReportOutput>;
   fetchCityForCircle?: Maybe<FetchCityForCircleOutput>;
@@ -94071,6 +94221,7 @@ export type Query_Root = {
   fetchFile?: Maybe<FileOutput>;
   fetchFilteredOrdersByCity?: Maybe<FetchFilteredOrdersByCityOutput>;
   fetchFilteredOrdersByTruckAndTaskState?: Maybe<FetchFilteredOrdersByTruckAndTaskStateOutput>;
+  fetchFmsMonthlyData?: Maybe<FetchFmsMonthlyDataOutput>;
   fetchGpsDataForVehicleIds?: Maybe<FetchGpsDataForVehicleIdsOutput>;
   fetchIndusIdsReport?: Maybe<FetchIndusIdsReportOutput>;
   fetchIndustryDeviatedOrdersAnalysisReport?: Maybe<FetchIndustryDeviatedOrdersAnalysisReportOutput>;
@@ -94093,6 +94244,7 @@ export type Query_Root = {
   fetchNonDeliveredAgingCityReport?: Maybe<FetchNonDeliveredAgingCityReportOutput>;
   fetchNonDeliveredAgingReport?: Maybe<FetchNonDeliveredAgingReportOutput>;
   fetchOpeningBalance?: Maybe<FetchOpeningBalanceOutput>;
+  fetchOpeningBalanceRawData?: Maybe<FetchOpeningBalanceRawDataOutput>;
   fetchOrderCountForPartner?: Maybe<FetchOrderCountForPartnerOutput>;
   fetchOrderCountForPartnerV1?: Maybe<FetchOrderCountForPartnerV1Output>;
   fetchOrderCountForPartnerV2?: Maybe<FetchOrderCountForPartnerV2Output>;
@@ -94136,6 +94288,7 @@ export type Query_Root = {
   fetchVehicleLiveData?: Maybe<VehicleLiveDataOutput>;
   fetchVehicleLiveDataForDashboard?: Maybe<FetchVehicleLiveDataForDashboardOutput>;
   fetchVehicleLiveDataV1?: Maybe<VehicleLiveDataV1Output>;
+  fetchWeeklyFmsData?: Maybe<FetchWeeklyFmsDataOutput>;
   /** fetch data from the table: "fetch_marker_orders" */
   fetch_marker_orders: Array<Fetch_Marker_Orders>;
   /** fetch aggregated fields from the table: "fetch_marker_orders" */
@@ -94176,8 +94329,12 @@ export type Query_Root = {
   filtered_orders_live_streaming_view: Array<Filtered_Orders_Live_Streaming_View>;
   /** fetch aggregated fields from the table: "filtered_orders_live_streaming_view" */
   filtered_orders_live_streaming_view_aggregate: Filtered_Orders_Live_Streaming_View_Aggregate;
+  fmsAssetAndDateWiseData?: Maybe<FmsAssetAndDateWiseDataOutput>;
   fmsAssetCountData?: Maybe<FmsAssetCountDataOutput>;
+  fmsAssetData?: Maybe<FmsAssetDataOutput>;
   fmsAssetWiseRawData?: Maybe<FmsAssetWiseRawDataOutput>;
+  fmsDepartmentAndDateWiseData?: Maybe<FmsDepartmentAndDateWiseDataOutput>;
+  fmsDepartmentWiseData?: Maybe<FmsDepartmentWiseDataOutput>;
   fmsOrderSummaryCount?: Maybe<FmsOrderSummaryCountOutput>;
   fmsRawOrderData?: Maybe<FmsRawOrderDataOutput>;
   /** fetch data from the table: "fuel_delivery" */
@@ -94225,6 +94382,7 @@ export type Query_Root = {
   get_nearby_partner: Array<Partner_With_Distance>;
   /** execute function "get_nearby_partner" and query aggregates on result of table type "partner_with_distance" */
   get_nearby_partner_aggregate: Partner_With_Distance_Aggregate;
+  imapErpOrderComparision?: Maybe<ImapErpOrderComparisionOutput>;
   /** fetch data from the table: "indus_customer_order_job_scheduler" */
   indus_customer_order_job_scheduler: Array<Indus_Customer_Order_Job_Scheduler>;
   /** fetch aggregated fields from the table: "indus_customer_order_job_scheduler" */
@@ -94895,6 +95053,7 @@ export type Query_Root = {
   purchaseCountAndQty?: Maybe<PurchaseCountAndQtyOutput>;
   purchaseRawData?: Maybe<PurchaseRawDataOutput>;
   purchaseRoLevelData?: Maybe<PurchaseRoLevelDataOutput>;
+  purchaseRoLevelWeekData?: Maybe<PurchaseRoLevelWeekDataOutput>;
   /** fetch data from the table: "purchase_order" */
   purchase_order: Array<Purchase_Order>;
   /** fetch aggregated fields from the table: "purchase_order" */
@@ -95133,6 +95292,7 @@ export type Query_Root = {
   /** fetch data from the table: "third_party_gps" using primary key columns */
   third_party_gps_by_pk?: Maybe<Third_Party_Gps>;
   totalClosingBalanceForTowerBussinessReport?: Maybe<TotalClosingBalanceForTowerBussinessReportOutput>;
+  totalInventoryBooked?: Maybe<TotalInventoryBookedOutput>;
   totalPurchaseForTowerBussinessReport?: Maybe<TotalPurchaseForTowerBussinessReportOutput>;
   totalSaleForTowerBussinessReport?: Maybe<TotalSaleForTowerBussinessReportOutput>;
   /** fetch data from the table: "transaction_type" */
@@ -95294,6 +95454,11 @@ export type Query_Root = {
   wallet_transactions_invoice_knokoff_aggregate: Wallet_Transactions_Invoice_Knokoff_Aggregate;
   /** fetch data from the table: "wallet_transactions_invoice_knokoff" using primary key columns */
   wallet_transactions_invoice_knokoff_by_pk?: Maybe<Wallet_Transactions_Invoice_Knokoff>;
+};
+
+
+export type Query_RootBowserAnalyticsPurchaseAndDeliveryCompArgs = {
+  object: BowserAnalyticsPurchaseAndDeliveryCompInput;
 };
 
 
@@ -97156,8 +97321,18 @@ export type Query_RootFetchAllTrucksWithSiteIdArgs = {
 };
 
 
+export type Query_RootFetchAvailableInventoryArgs = {
+  object: FetchAvailableInventoryInput;
+};
+
+
 export type Query_RootFetchAvailableInventoryForTowerReportArgs = {
   object?: InputMaybe<FetchAvailableInventoryForTowerReportInput>;
+};
+
+
+export type Query_RootFetchAvailableInventoryRawDataArgs = {
+  object: FetchAvailableInventoryRawDataInput;
 };
 
 
@@ -97326,6 +97501,11 @@ export type Query_RootFetchFilteredOrdersByTruckAndTaskStateArgs = {
 };
 
 
+export type Query_RootFetchFmsMonthlyDataArgs = {
+  object: FetchFmsMonthlyDataInput;
+};
+
+
 export type Query_RootFetchGpsDataForVehicleIdsArgs = {
   object: FetchGpsDataForVehicleIdsInput;
 };
@@ -97428,6 +97608,11 @@ export type Query_RootFetchNonDeliveredAgingReportArgs = {
 
 export type Query_RootFetchOpeningBalanceArgs = {
   object: FetchOpeningBalanceInput;
+};
+
+
+export type Query_RootFetchOpeningBalanceRawDataArgs = {
+  object: FetchOpeningBalanceRawDataInput;
 };
 
 
@@ -97611,6 +97796,11 @@ export type Query_RootFetchVehicleLiveDataV1Args = {
 };
 
 
+export type Query_RootFetchWeeklyFmsDataArgs = {
+  object: FetchWeeklyFmsDataInput;
+};
+
+
 export type Query_RootFetch_Marker_OrdersArgs = {
   distinct_on?: InputMaybe<Array<Fetch_Marker_Orders_Select_Column>>;
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -97775,13 +97965,33 @@ export type Query_RootFiltered_Orders_Live_Streaming_View_AggregateArgs = {
 };
 
 
+export type Query_RootFmsAssetAndDateWiseDataArgs = {
+  object: FmsAssetAndDateWiseDataInput;
+};
+
+
 export type Query_RootFmsAssetCountDataArgs = {
   object: FmsAssetCountDataInput;
 };
 
 
+export type Query_RootFmsAssetDataArgs = {
+  object: FmsAssetDataInput;
+};
+
+
 export type Query_RootFmsAssetWiseRawDataArgs = {
   object: FmsAssetWiseRawDataInput;
+};
+
+
+export type Query_RootFmsDepartmentAndDateWiseDataArgs = {
+  object: FmsDepartmentAndDateWiseDataInput;
+};
+
+
+export type Query_RootFmsDepartmentWiseDataArgs = {
+  object: FmsDepartmentWiseDataInput;
 };
 
 
@@ -97985,6 +98195,11 @@ export type Query_RootGet_Nearby_Partner_AggregateArgs = {
   offset?: InputMaybe<Scalars['Int']['input']>;
   order_by?: InputMaybe<Array<Partner_With_Distance_Order_By>>;
   where?: InputMaybe<Partner_With_Distance_Bool_Exp>;
+};
+
+
+export type Query_RootImapErpOrderComparisionArgs = {
+  object: ImapErpOrderComparisionInput;
 };
 
 
@@ -100581,6 +100796,11 @@ export type Query_RootPurchaseRoLevelDataArgs = {
 };
 
 
+export type Query_RootPurchaseRoLevelWeekDataArgs = {
+  object: PurchaseRoLevelWeekDataInput;
+};
+
+
 export type Query_RootPurchase_OrderArgs = {
   distinct_on?: InputMaybe<Array<Purchase_Order_Select_Column>>;
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -101495,6 +101715,11 @@ export type Query_RootThird_Party_Gps_By_PkArgs = {
 
 export type Query_RootTotalClosingBalanceForTowerBussinessReportArgs = {
   object: TotalClosingBalanceForTowerBussinessReportInput;
+};
+
+
+export type Query_RootTotalInventoryBookedArgs = {
+  object: TotalInventoryBookedInput;
 };
 
 
@@ -124342,6 +124567,18 @@ export type TotalClosingBalanceForTowerBussinessReportOutput = {
   data?: Maybe<Scalars['jsonb']['output']>;
 };
 
+export type TotalInventoryBookedInput = {
+  circle?: InputMaybe<Scalars['String']['input']>;
+  city?: InputMaybe<Scalars['String']['input']>;
+  end_date: Scalars['timestamp']['input'];
+  start_date: Scalars['timestamp']['input'];
+};
+
+export type TotalInventoryBookedOutput = {
+  __typename?: 'totalInventoryBookedOutput';
+  data?: Maybe<Scalars['jsonb']['output']>;
+};
+
 export type TotalPurchaseForTowerBussinessReportInput = {
   end_date: Scalars['timestamp']['input'];
   registration_number?: InputMaybe<Array<Scalars['String']['input']>>;
@@ -135435,6 +135672,14 @@ export type FetchNearestZonesQueryVariables = Exact<{
 
 export type FetchNearestZonesQuery = { __typename?: 'query_root', partner: Array<{ __typename?: 'partner', id: any, name?: string | null, partner_localities: Array<{ __typename?: 'partner_localities', is_active: boolean, locality?: { __typename?: 'localities', name?: string | null, area: any, is_buddycan_delivery?: boolean | null, is_minimum_order_quantity_enabled?: boolean | null, minimum_order_quantity?: number | null } | null }> }> };
 
+export type AddStockEntryForFillupOnErpMutationVariables = Exact<{
+  state: Scalars['String']['input'];
+  task_id: Scalars['uuid']['input'];
+}>;
+
+
+export type AddStockEntryForFillupOnErpMutation = { __typename?: 'mutation_root', addStockEntryForFillupOnErp?: { __typename?: 'addStockEntryForFillupOnErpOutput', data?: any | null } | null };
+
 export type AddTaskCancellationReasonMutationVariables = Exact<{
   object: Task_Cancellation_Reasons_Insert_Input;
 }>;
@@ -135892,6 +136137,7 @@ export const FetchOrderStatsForDriverDocument = {"kind":"Document","definitions"
 export const LastCustomerOrderDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"lastCustomerOrder"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"organization_user_id"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"uuid"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"customer_order_stateflow"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"IntValue","value":"1"}},{"kind":"Argument","name":{"kind":"Name","value":"offset"},"value":{"kind":"IntValue","value":"0"}},{"kind":"Argument","name":{"kind":"Name","value":"order_by"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"created_at"},"value":{"kind":"EnumValue","value":"desc"}}]}},{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"state"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_eq"},"value":{"kind":"EnumValue","value":"DELIVERED"}}]}},{"kind":"ObjectField","name":{"kind":"Name","value":"customer_order"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"organization_user_id"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_eq"},"value":{"kind":"Variable","name":{"kind":"Name","value":"organization_user_id"}}}]}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"customer_order"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"order_code"}},{"kind":"Field","name":{"kind":"Name","value":"amount"}},{"kind":"Field","name":{"kind":"Name","value":"amount_paid"}},{"kind":"Field","name":{"kind":"Name","value":"amount_to_be_paid"}},{"kind":"Field","name":{"kind":"Name","value":"otp"}},{"kind":"Field","name":{"kind":"Name","value":"voucher_discount"}},{"kind":"Field","name":{"kind":"Name","value":"is_otp_required"}},{"kind":"Field","name":{"kind":"Name","value":"customer_order_customer_assets"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"customer_asset"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"capacity"}},{"kind":"Field","name":{"kind":"Name","value":"color"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"organization_user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"total_limit"}},{"kind":"Field","name":{"kind":"Name","value":"limit_used"}},{"kind":"Field","name":{"kind":"Name","value":"role"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"role"}}]}},{"kind":"Field","name":{"kind":"Name","value":"limit_used"}},{"kind":"Field","name":{"kind":"Name","value":"user"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"first_name"}},{"kind":"Field","name":{"kind":"Name","value":"middle_name"}},{"kind":"Field","name":{"kind":"Name","value":"last_name"}},{"kind":"Field","name":{"kind":"Name","value":"phone_number"}},{"kind":"Field","name":{"kind":"Name","value":"pan_number"}},{"kind":"Field","name":{"kind":"Name","value":"email"}}]}},{"kind":"Field","name":{"kind":"Name","value":"organization"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"pan_number"}},{"kind":"Field","name":{"kind":"Name","value":"is_business"}},{"kind":"Field","name":{"kind":"Name","value":"credit_days"}},{"kind":"Field","name":{"kind":"Name","value":"allowed_credit_limit"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"asset_type"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"invoices"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"invoiced_items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"actual_amount"}},{"kind":"Field","name":{"kind":"Name","value":"actual_qty"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"customer_asset"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"capacity"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"invoiced_items_aggregate"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"aggregate"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"sum"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"actual_amount"}},{"kind":"Field","name":{"kind":"Name","value":"actual_qty"}}]}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"organizationAddressByShippingAddressId"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"address_line1"}},{"kind":"Field","name":{"kind":"Name","value":"address_line2"}},{"kind":"Field","name":{"kind":"Name","value":"house_number"}},{"kind":"Field","name":{"kind":"Name","value":"instruction"}},{"kind":"Field","name":{"kind":"Name","value":"landMark"}},{"kind":"Field","name":{"kind":"Name","value":"city"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"district"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"state_id"}}]}},{"kind":"Field","name":{"kind":"Name","value":"organization_address_payment_methods"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"customer_payment_method"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"value"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"city_id"}},{"kind":"Field","name":{"kind":"Name","value":"country"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"alpha_code2"}},{"kind":"Field","name":{"kind":"Name","value":"alpha_code3"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"official_state"}},{"kind":"Field","name":{"kind":"Name","value":"numeric_code_id"}}]}},{"kind":"Field","name":{"kind":"Name","value":"country_id"}},{"kind":"Field","name":{"kind":"Name","value":"house_number"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"landMark"}},{"kind":"Field","name":{"kind":"Name","value":"localities_id"}},{"kind":"Field","name":{"kind":"Name","value":"location"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"organization_user_id"}},{"kind":"Field","name":{"kind":"Name","value":"pincode"}},{"kind":"Field","name":{"kind":"Name","value":"state_id"}},{"kind":"Field","name":{"kind":"Name","value":"street_address"}},{"kind":"Field","name":{"kind":"Name","value":"address_type"}},{"kind":"Field","name":{"kind":"Name","value":"state"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"country_id"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"numeric_code_id"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"billing_address_id"}},{"kind":"Field","name":{"kind":"Name","value":"delivery_fee"}},{"kind":"Field","name":{"kind":"Name","value":"delivery_preference"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"instruction"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"is_prepaid"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"order_date"}},{"kind":"Field","name":{"kind":"Name","value":"service_tax"}},{"kind":"Field","name":{"kind":"Name","value":"shipping_address_id"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"tax"}},{"kind":"Field","name":{"kind":"Name","value":"customer_order_items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"actual_amount"}},{"kind":"Field","name":{"kind":"Name","value":"actual_delivery_date"}},{"kind":"Field","name":{"kind":"Name","value":"actual_qty"}},{"kind":"Field","name":{"kind":"Name","value":"amount"}},{"kind":"Field","name":{"kind":"Name","value":"voucher_discount"}},{"kind":"Field","name":{"kind":"Name","value":"created_at"}},{"kind":"Field","name":{"kind":"Name","value":"delivery_fee"}},{"kind":"Field","name":{"kind":"Name","value":"estimate_delivery_date"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"unit_price"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"order_id"}},{"kind":"Field","name":{"kind":"Name","value":"product_variation_id"}},{"kind":"Field","name":{"kind":"Name","value":"product_variation"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"product"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"category"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}},{"kind":"Field","name":{"kind":"Name","value":"sku"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}}]}},{"kind":"Field","name":{"kind":"Name","value":"variation"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"variation_name"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}},{"kind":"Field","name":{"kind":"Name","value":"expiry_date"}}]}},{"kind":"Field","name":{"kind":"Name","value":"qty"}},{"kind":"Field","name":{"kind":"Name","value":"service_tax"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"task_id"}},{"kind":"Field","name":{"kind":"Name","value":"tax"}},{"kind":"Field","name":{"kind":"Name","value":"unit"}}]}}]}}]}}]}}]} as unknown as DocumentNode<LastCustomerOrderQuery, LastCustomerOrderQueryVariables>;
 export const CheckServiceAblilityDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"checkServiceAblility"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"latitude"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Float"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"longitude"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Float"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"partner"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"partner_localities"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"locality"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"area"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_st_contains"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"type"},"value":{"kind":"StringValue","value":"Point","block":false}},{"kind":"ObjectField","name":{"kind":"Name","value":"coordinates"},"value":{"kind":"ListValue","values":[{"kind":"Variable","name":{"kind":"Name","value":"longitude"}},{"kind":"Variable","name":{"kind":"Name","value":"latitude"}}]}}]}}]}}]}},{"kind":"ObjectField","name":{"kind":"Name","value":"is_active"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_eq"},"value":{"kind":"BooleanValue","value":true}}]}}]}},{"kind":"ObjectField","name":{"kind":"Name","value":"category"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_eq"},"value":{"kind":"EnumValue","value":"FRANCHISE"}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"is_fuelbuddy"}},{"kind":"Field","name":{"kind":"Name","value":"partner_localities"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"locality"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"area"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_st_contains"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"type"},"value":{"kind":"StringValue","value":"Point","block":false}},{"kind":"ObjectField","name":{"kind":"Name","value":"coordinates"},"value":{"kind":"ListValue","values":[{"kind":"Variable","name":{"kind":"Name","value":"longitude"}},{"kind":"Variable","name":{"kind":"Name","value":"latitude"}}]}}]}}]}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"product_partner_localities_prices"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"parent_id"}},{"kind":"Field","name":{"kind":"Name","value":"product_variation"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"product"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"locality"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"is_buddycan_delivery"}},{"kind":"Field","name":{"kind":"Name","value":"is_minimum_order_quantity_enabled"}},{"kind":"Field","name":{"kind":"Name","value":"minimum_order_quantity"}},{"kind":"Field","name":{"kind":"Name","value":"area"}},{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]} as unknown as DocumentNode<CheckServiceAblilityQuery, CheckServiceAblilityQueryVariables>;
 export const FetchNearestZonesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"fetchNearestZones"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"latitude"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Float"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"longitude"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Float"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"distance_meters"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Float"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"partner"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"partner_localities"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"locality"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"area"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_st_d_within"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"distance"},"value":{"kind":"Variable","name":{"kind":"Name","value":"distance_meters"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"from"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"type"},"value":{"kind":"StringValue","value":"Point","block":false}},{"kind":"ObjectField","name":{"kind":"Name","value":"coordinates"},"value":{"kind":"ListValue","values":[{"kind":"Variable","name":{"kind":"Name","value":"longitude"}},{"kind":"Variable","name":{"kind":"Name","value":"latitude"}}]}}]}}]}}]}}]}},{"kind":"ObjectField","name":{"kind":"Name","value":"is_active"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_eq"},"value":{"kind":"BooleanValue","value":true}}]}}]}},{"kind":"ObjectField","name":{"kind":"Name","value":"category"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_eq"},"value":{"kind":"EnumValue","value":"FRANCHISE"}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"partner_localities"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"is_active"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_eq"},"value":{"kind":"BooleanValue","value":true}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"locality"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"area"}},{"kind":"Field","name":{"kind":"Name","value":"is_buddycan_delivery"}},{"kind":"Field","name":{"kind":"Name","value":"is_minimum_order_quantity_enabled"}},{"kind":"Field","name":{"kind":"Name","value":"minimum_order_quantity"}}]}}]}}]}}]}}]} as unknown as DocumentNode<FetchNearestZonesQuery, FetchNearestZonesQueryVariables>;
+export const AddStockEntryForFillupOnErpDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"addStockEntryForFillupOnErp"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"state"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"task_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"uuid"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"addStockEntryForFillupOnErp"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"object"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"state"},"value":{"kind":"Variable","name":{"kind":"Name","value":"state"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"task_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"task_id"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"data"}}]}}]}}]} as unknown as DocumentNode<AddStockEntryForFillupOnErpMutation, AddStockEntryForFillupOnErpMutationVariables>;
 export const AddTaskCancellationReasonDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"addTaskCancellationReason"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"object"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"task_cancellation_reasons_insert_input"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"insert_task_cancellation_reasons_one"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"object"},"value":{"kind":"Variable","name":{"kind":"Name","value":"object"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"task_id"}},{"kind":"Field","name":{"kind":"Name","value":"reason"}}]}}]}}]} as unknown as DocumentNode<AddTaskCancellationReasonMutation, AddTaskCancellationReasonMutationVariables>;
 export const AddingVehicleInventoryTransactionLogsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"addingVehicleInventoryTransactionLogs"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"object"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"vehicle_inventory_transaction_logs_insert_input"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"insert_vehicle_inventory_transaction_logs_one"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"object"},"value":{"kind":"Variable","name":{"kind":"Name","value":"object"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"fillup_request_id"}},{"kind":"Field","name":{"kind":"Name","value":"customer_order_id"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"product_variation_id"}},{"kind":"Field","name":{"kind":"Name","value":"quantity"}},{"kind":"Field","name":{"kind":"Name","value":"transaction_type"}},{"kind":"Field","name":{"kind":"Name","value":"unit"}},{"kind":"Field","name":{"kind":"Name","value":"vehicle_id"}}]}}]}}]} as unknown as DocumentNode<AddingVehicleInventoryTransactionLogsMutation, AddingVehicleInventoryTransactionLogsMutationVariables>;
 export const AssetUpdateChangesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"assetUpdateChanges"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"customer_asset_id"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"uuid"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"task_id"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"uuid"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"key"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"value"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"quantity_dispensed"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"numeric"}},"defaultValue":{"kind":"StringValue","value":"","block":false}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"update_task_value"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"task_id"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_eq"},"value":{"kind":"Variable","name":{"kind":"Name","value":"task_id"}}}]}},{"kind":"ObjectField","name":{"kind":"Name","value":"key"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_eq"},"value":{"kind":"Variable","name":{"kind":"Name","value":"key"}}}]}},{"kind":"ObjectField","name":{"kind":"Name","value":"customer_asset_id"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"_eq"},"value":{"kind":"Variable","name":{"kind":"Name","value":"customer_asset_id"}}}]}}]}},{"kind":"Argument","name":{"kind":"Name","value":"_set"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"value"},"value":{"kind":"Variable","name":{"kind":"Name","value":"value"}}},{"kind":"ObjectField","name":{"kind":"Name","value":"quantity_dispensed"},"value":{"kind":"Variable","name":{"kind":"Name","value":"quantity_dispensed"}}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"affected_rows"}},{"kind":"Field","name":{"kind":"Name","value":"returning"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"key"}},{"kind":"Field","name":{"kind":"Name","value":"is_active"}},{"kind":"Field","name":{"kind":"Name","value":"quantity_dispensed"}},{"kind":"Field","name":{"kind":"Name","value":"session_id"}},{"kind":"Field","name":{"kind":"Name","value":"reason_id"}},{"kind":"Field","name":{"kind":"Name","value":"task_id"}},{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"vehicle_id"}},{"kind":"Field","name":{"kind":"Name","value":"customer_asset_id"}}]}}]}}]}}]} as unknown as DocumentNode<AssetUpdateChangesMutation, AssetUpdateChangesMutationVariables>;
