@@ -124,7 +124,7 @@ const FillupRequest: React.FC = () => {
     return tankTypeOptions.find(opt => opt.value === watchedTankType)?.details;
   }, [watchedTankType, isRotationFlow, tankTypeOptions]);
 
-  console.log('----currentTankDetails-----', currentTankDetails);
+  // console.log('----currentTankDetails-----', currentTankDetails);
 
   const maxCapacity = useMemo(() => {
     if (isRotationFlow) {

@@ -152,7 +152,6 @@ const FillupIndent: React.FC = () => {
             break;
 
           case 'PURCHASE_INVOICE_REQUEST':
-          case 'PURCHASE_RECEIPT_REQUEST':
             console.log(
               'App resumed: Already approved, showing mark complete button',
             );
@@ -166,6 +165,15 @@ const FillupIndent: React.FC = () => {
                 [{text: 'OK'}],
               );
             }, 500);
+            break;
+
+          case 'PURCHASE_RECEIPT_REQUEST':
+            console.log(
+              'App resumed: Awaiting further approval (PURCHASE_RECEIPT_REQUEST)',
+            );
+            setWaitingForApproval(true);
+            setApproved(false);
+            startApprovalPolling();
             break;
 
           case 'INDENT_UPLOAD_REJECTED':
@@ -471,13 +479,6 @@ const FillupIndent: React.FC = () => {
       const vehicleId =
         fillupDetails?.partner_order?.fillup_requests[0]
           ?.vehicle_tank_type_product_variation?.vehicle_tank_type?.vehicle?.id;
-
-      console.log('Checking required data:');
-      console.log('- partnerOrderItemId:', partnerOrderItemId);
-      console.log('- partnerOrderId:', partnerOrderId);
-      console.log('- productVariationId:', productVariationId);
-      console.log('- vehicleId:', vehicleId);
-      console.log('- completedFilledQuantity:', completedFilledQuantity);
 
       // Use quantity_approved as fallback if completedFilledQuantity is not available
       const quantityToUse =

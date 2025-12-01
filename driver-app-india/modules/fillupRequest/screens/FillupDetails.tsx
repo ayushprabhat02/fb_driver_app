@@ -11,7 +11,12 @@ import {ScaledSheet} from 'react-native-size-matters';
 import {useNavigation, useRoute} from '@react-navigation/native';
 
 // Components
-import {HeaderAvoidingContainer, Text, Divider} from '@/components';
+import {
+  HeaderAvoidingContainer,
+  Text,
+  Divider,
+  FullScreenLoader,
+} from '@/components';
 
 // Services
 import fillupService from '../services';
@@ -44,37 +49,37 @@ const FillupDetails: React.FC = () => {
 
   const fillupDetails = fillupStore.use.fillupRequestDetails();
 
-  console.log('----fillupDetails-----', fillupDetails);
+  // console.log('----fillupDetails-----', fillupDetails);
 
-  // Debug location availability
-  useEffect(() => {
-    if (fillupDetails) {
-      console.log('=== LOCATION DEBUG ===');
-      console.log(
-        'task?.partner_address?.location:',
-        fillupDetails.task?.partner_address?.location,
-      );
-      console.log(
-        'partner_order?.partner_address?.location:',
-        fillupDetails.partner_order?.partner_address?.location,
-      );
-      console.log(
-        'partner_order?.partner_user?.partner?.location:',
-        fillupDetails.partner_order?.partner_user?.partner?.location,
-      );
-      console.log(
-        'task?.fillup_requests?.[0]?.driver_vehicle?.vehicle?.partner_address?.location:',
-        fillupDetails.task?.fillup_requests?.[0]?.driver_vehicle?.vehicle
-          ?.partner_address?.location,
-      );
-      console.log(
-        'task?.fillup_requests?.[0]?.driver_vehicle?.vehicle?.location:',
-        fillupDetails.task?.fillup_requests?.[0]?.driver_vehicle?.vehicle
-          ?.location,
-      );
-      console.log('=== END LOCATION DEBUG ===');
-    }
-  }, [fillupDetails]);
+  // // Debug location availability
+  // useEffect(() => {
+  //   if (fillupDetails) {
+  //     console.log('=== LOCATION DEBUG ===');
+  //     console.log(
+  //       'task?.partner_address?.location:',
+  //       fillupDetails.task?.partner_address?.location,
+  //     );
+  //     console.log(
+  //       'partner_order?.partner_address?.location:',
+  //       fillupDetails.partner_order?.partner_address?.location,
+  //     );
+  //     console.log(
+  //       'partner_order?.partner_user?.partner?.location:',
+  //       fillupDetails.partner_order?.partner_user?.partner?.location,
+  //     );
+  //     console.log(
+  //       'task?.fillup_requests?.[0]?.driver_vehicle?.vehicle?.partner_address?.location:',
+  //       fillupDetails.task?.fillup_requests?.[0]?.driver_vehicle?.vehicle
+  //         ?.partner_address?.location,
+  //     );
+  //     console.log(
+  //       'task?.fillup_requests?.[0]?.driver_vehicle?.vehicle?.location:',
+  //       fillupDetails.task?.fillup_requests?.[0]?.driver_vehicle?.vehicle
+  //         ?.location,
+  //     );
+  //     console.log('=== END LOCATION DEBUG ===');
+  //   }
+  // }, [fillupDetails]);
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -379,33 +384,33 @@ const FillupDetails: React.FC = () => {
     }
   };
 
-  // if (loading || fillupLoaders.fetchFillupRequestById) {
-  //   return (
-  //     <FullScreenLoader
-  //       showLoader={true}
-  //       loaderText="Loading fillup details..."
-  //     />
-  //   );
-  // }
-
   if (!fillupDetails) {
     return (
-      <HeaderAvoidingContainer>
-        <View style={styles.errorContainer}>
-          <Text size="lg" weight="bold" color="error">
-            Fillup details not found
-          </Text>
-          <TouchableOpacity
-            style={styles.goBackButton}
-            onPress={() => navigation.goBack()}>
-            <Text size="base" weight="bold" color="white">
-              Go Back
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </HeaderAvoidingContainer>
+      <FullScreenLoader
+        showLoader={true}
+        loaderText="Loading fillup details..."
+      />
     );
   }
+
+  // if (!fillupDetails) {
+  //   return (
+  //     <HeaderAvoidingContainer>
+  //       <View style={styles.errorContainer}>
+  //         <Text size="lg" weight="bold" color="error">
+  //           Fillup details not found
+  //         </Text>
+  //         <TouchableOpacity
+  //           style={styles.goBackButton}
+  //           onPress={() => navigation.goBack()}>
+  //           <Text size="base" weight="bold" color="white">
+  //             Go Back
+  //           </Text>
+  //         </TouchableOpacity>
+  //       </View>
+  //     </HeaderAvoidingContainer>
+  //   );
+  // }
 
   return (
     <HeaderAvoidingContainer>
@@ -521,7 +526,7 @@ const FillupDetails: React.FC = () => {
                 style={styles.buttonIcon}
               />
               <Text size="base" weight="bold" color="white">
-                {navigationLoading ? 'Opening Maps...' : 'Navigate'}
+                Navigate
               </Text>
             </TouchableOpacity>
 

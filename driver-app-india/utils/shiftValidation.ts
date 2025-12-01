@@ -1,8 +1,8 @@
-import { DateTime } from 'luxon';
+import {DateTime} from 'luxon';
 import Toast from 'react-native-toast-message';
-import { signOut } from '@/modules/auth/services';
-import { getDriverVehicleId } from '@/utils/localStorage';
-import { authStore } from '@/globalStore';
+import {signOut} from '@/modules/auth/services';
+import {getDriverVehicleId} from '@/utils/localStorage';
+import {authStore} from '@/globalStore';
 import checkinService from '@/modules/checkin/services';
 
 /**
@@ -33,9 +33,9 @@ export const validateShiftPeriodically = async (
       return;
     }
 
-    	const today = DateTime.now()
-		.set({ millisecond: 0 })
-		.toISO({ suppressMilliseconds: true });
+    const today = DateTime.now()
+      .set({millisecond: 0})
+      .toISO({suppressMilliseconds: true});
 
     const shiftScheduleArray = await checkinService.fetchDriverVehicleId({
       dateTime: today,
@@ -55,7 +55,7 @@ export const validateShiftPeriodically = async (
 
     // Check if current time exceeds shift end time
     // Matching Vue.js logic: use 1 hour buffer (current time + 1 hour) for validation
-    const currentTimeWithBuffer = DateTime.now().plus({ hours: 1 });
+    const currentTimeWithBuffer = DateTime.now().plus({hours: 0});
     const shiftEndTime = DateTime.fromISO(shiftSchedule.end_time);
 
     if (currentTimeWithBuffer > shiftEndTime) {
@@ -83,7 +83,7 @@ export const setupShiftValidation = (
   driverVehicleId: string | null,
   intervalRef: React.MutableRefObject<NodeJS.Timeout | null>,
 ): (() => void) | undefined => {
-  const { AppState } = require('react-native');
+  const {AppState} = require('react-native');
   const graphqlClient = authStore.getState().graphQLClient;
 
   if (!graphqlClient || !driverVehicleId) {

@@ -88,14 +88,15 @@ const FillupHistoryCard: React.FC<FillupHistoryCardProps> = ({item}) => {
   };
 
   const getQuantityDisplay = (item: any): string => {
-    console.log('Calculating quantity for item:', JSON.stringify(item));
+    // console.log('Calculating quantity for item:', JSON.stringify(item));
     if (!item) return '-';
 
     // Case 1: Partner order with COMPLETE state
     if (item.partner_order && item.state === 'COMPLETE') {
-      const value = item?.partner_order?.partner_order_items?.[0]
-        ?.partner_order_item_values?.find((v: any) => v.key === 'FILLED_QUANTITY')
-        ?.value;
+      const value =
+        item?.partner_order?.partner_order_items?.[0]?.partner_order_item_values?.find(
+          (v: any) => v.key === 'FILLED_QUANTITY',
+        )?.value;
       return value ? `${value}L` : '-';
     }
 
@@ -107,8 +108,9 @@ const FillupHistoryCard: React.FC<FillupHistoryCardProps> = ({item}) => {
 
     // Case 3: Task data for COMPLETE state
     if (item.task && item.state === 'COMPLETE') {
-      const quantity = item?.task?.task_values?.find((v: any) => v.key === 'CHALLAN')
-        ?.quantity_dispensed;
+      const quantity = item?.task?.task_values?.find(
+        (v: any) => v.key === 'CHALLAN',
+      )?.quantity_dispensed;
       return quantity ? `${quantity}L` : '-';
     }
 
@@ -149,7 +151,7 @@ const FillupHistoryCard: React.FC<FillupHistoryCardProps> = ({item}) => {
             Qty :{' '}
           </Text>
           <Text size="sm" weight="500" color="neutral">
-              {getQuantityDisplay(item)}
+            {getQuantityDisplay(item)}
           </Text>
         </View>
 
