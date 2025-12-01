@@ -1,21 +1,42 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import {ScrollView, View} from 'react-native';
 
 import {ScaledSheet} from 'react-native-size-matters';
 
 // store
-// import {businessStore} from '@/globalStore'; // Business module deleted
+import userStore from '../store';
+import {authStore} from '@/globalStore';
+
+// services
+import userService from '../services';
 
 // components
 import {Avatar, Divider, HeaderAvoidingContainer, Text} from '@/components';
 
 // types & styles
-
 import {FBBorders, FBColorPalette} from '@/types/styles';
 
 const Profile: React.FC = () => {
-  // const activeDeliveryOrgUser = businessStore.use.activeDeliveryOrgUser(); // Business module deleted
-  const activeDeliveryOrgUser = null; // Mock for deleted business module
+  // Get user profile from userStore (GraphQL data)
+  const loggedInUser = userStore.use.loggedInUser();
+
+  // Get Firebase user for email
+  const firebaseUser = authStore.use.firebaseUser();
+
+  // Fetch user profile on mount
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        await userService.fetchMyProfile();
+      } catch (error) {
+        console.error('Failed to fetch user profile:', error);
+      }
+    };
+
+    if (!loggedInUser) {
+      fetchProfile();
+    }
+  }, [loggedInUser]);
 
   return (
     <HeaderAvoidingContainer>
@@ -30,7 +51,9 @@ const Profile: React.FC = () => {
           variant="rounded"
           buttonStyle={styles.avatarStyle}
           buttonTextSize="4xl"
-          fullName={`${activeDeliveryOrgUser?.organization?.name}`}
+          fullName={[loggedInUser?.first_name, loggedInUser?.last_name]
+            .filter(Boolean)
+            .join(' ')}
         />
         <View style={styles.form}>
           <View>
@@ -40,7 +63,7 @@ const Profile: React.FC = () => {
             <Divider height={4} />
             <View style={styles.credentials}>
               <Text color="disabledInputText">
-                {`${activeDeliveryOrgUser?.user?.first_name} ${activeDeliveryOrgUser?.user?.last_name}`}
+                {loggedInUser?.first_name || ''}
               </Text>
             </View>
           </View>
@@ -52,7 +75,7 @@ const Profile: React.FC = () => {
             <Divider height={4} />
             <View style={styles.credentials}>
               <Text color="disabledInputText">
-                {`${activeDeliveryOrgUser?.user?.first_name} ${activeDeliveryOrgUser?.user?.last_name}`}
+                {loggedInUser?.last_name || ''}
               </Text>
             </View>
           </View>
@@ -65,10 +88,7 @@ const Profile: React.FC = () => {
             <Divider height={4} />
             <View style={styles.credentials}>
               <Text color="disabledInputText">
-                {
-                  activeDeliveryOrgUser?.organization
-                    ?.technical_contact_phone_number
-                }
+                {loggedInUser?.phone_number || ''}
               </Text>
             </View>
           </View>
@@ -80,7 +100,7 @@ const Profile: React.FC = () => {
             <Divider height={4} />
             <View style={styles.credentials}>
               <Text color="disabledInputText">
-                {`${activeDeliveryOrgUser?.user?.email || ''}`}
+                {firebaseUser?.email || ''}
               </Text>
             </View>
           </View>

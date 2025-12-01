@@ -52,7 +52,7 @@ const UserNavigator: React.FC = () => {
         options={{
           title: '',
           headerLeft: BackButtonArrow,
-          headerRight: HeaderRight,
+          // headerRight: HeaderRight,
         }}
       />
       <UserStack.Screen
