@@ -281,7 +281,8 @@ const DispenseFuelScreen: React.FC = () => {
     // Validate quantity doesn't exceed available amount
     // For asset-based dispensing (bowser/normal flow), use asset's requested quantity
     // For global dispensing, use quantityToBeDispensed
-    const assetRequestedQuantity = currentAssetForDispense?.quantity_requested || 0;
+    const assetRequestedQuantity =
+      currentAssetForDispense?.quantity_requested || 0;
     const useAssetBasedValidation = assetRequestedQuantity > 0;
 
     let availableQuantity = 0;
@@ -289,7 +290,8 @@ const DispenseFuelScreen: React.FC = () => {
 
     if (useAssetBasedValidation) {
       // Asset-based validation (bowser orders)
-      const currentAssetQuantity = currentAssetForDispense?.quantity_dispensed || 0;
+      const currentAssetQuantity =
+        currentAssetForDispense?.quantity_dispensed || 0;
       availableQuantity = assetRequestedQuantity;
       totalOrderQuantity = assetRequestedQuantity;
 
@@ -302,10 +304,12 @@ const DispenseFuelScreen: React.FC = () => {
       });
     } else {
       // Global order validation (fillup orders)
-      totalOrderQuantity = quantityToBeDispensed > 0 ? quantityToBeDispensed : 0;
+      totalOrderQuantity =
+        quantityToBeDispensed > 0 ? quantityToBeDispensed : 0;
       const alreadyDispensed = fuelDispensedTillNow || 0;
       const remainingQuantity = totalOrderQuantity - alreadyDispensed;
-      const currentAssetQuantity = currentAssetForDispense?.quantity_dispensed || 0;
+      const currentAssetQuantity =
+        currentAssetForDispense?.quantity_dispensed || 0;
       availableQuantity = remainingQuantity + currentAssetQuantity;
 
       console.log('📊 Global quantity validation:', {
@@ -497,41 +501,44 @@ const DispenseFuelScreen: React.FC = () => {
   return (
     <View style={{flex: 1, backgroundColor: FBBackground.white}}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Totalizer Before Reading - Hidden for BuddyCan orders */}
-        {!isBuddyCanOrder && (
-          <>
-            <View style={{marginBottom: 4, marginTop: 8, flexDirection: 'row'}}>
-              <Text size="base" weight="600">
-                Totalizer Reading{' '}
-              </Text>
-              <Text size="base" weight="600" style={{color: FBColors.error}}>
-                *
-              </Text>
-            </View>
-            <TextInput
-              keyboardType="numeric"
-              style={styles.inputStyle}
-              placeholder="Totalizer reading"
-              placeholderTextColor={FBColors.placeHolderPrimary}
-              value={totalizerReading}
-              onChangeText={setTotalizerReading}
-            />
-            <Divider height={10} />
-            <ImageContainer
-              label="Upload Totalizer Reading"
-              imageData={totalizerImageData}
-              isUploading={totalizerImageUploading}
-              onCameraPress={() => openCamera('totalizer')}
-              onRemovePhoto={removeTotalizerImage}
-              uploadingText="Uploading..."
-              required={
-                selectedOrder?.is_enable_totalizer_reading_image_upload || false
-              }
-            />
+        {/* Totalizer Before Reading - Hidden for BuddyCan orders and when flag is disabled */}
+        {!isBuddyCanOrder &&
+          selectedOrder?.is_enable_totalizer_reading_image_upload && (
+            <>
+              <View
+                style={{marginBottom: 4, marginTop: 8, flexDirection: 'row'}}>
+                <Text size="base" weight="600">
+                  Totalizer Reading{' '}
+                </Text>
+                <Text size="base" weight="600" style={{color: FBColors.error}}>
+                  *
+                </Text>
+              </View>
+              <TextInput
+                keyboardType="numeric"
+                style={styles.inputStyle}
+                placeholder="Totalizer reading"
+                placeholderTextColor={FBColors.placeHolderPrimary}
+                value={totalizerReading}
+                onChangeText={setTotalizerReading}
+              />
+              <Divider height={10} />
+              <ImageContainer
+                label="Upload Totalizer Reading"
+                imageData={totalizerImageData}
+                isUploading={totalizerImageUploading}
+                onCameraPress={() => openCamera('totalizer')}
+                onRemovePhoto={removeTotalizerImage}
+                uploadingText="Uploading..."
+                required={
+                  selectedOrder?.is_enable_totalizer_reading_image_upload ||
+                  false
+                }
+              />
 
-            <Divider height={20} />
-          </>
-        )}
+              <Divider height={20} />
+            </>
+          )}
 
         {/* Quantity Dispensed */}
         <View
@@ -558,7 +565,8 @@ const DispenseFuelScreen: React.FC = () => {
 
         {/* Available Quantity Display */}
         {(() => {
-          const assetRequestedQuantity = currentAssetForDispense?.quantity_requested || 0;
+          const assetRequestedQuantity =
+            currentAssetForDispense?.quantity_requested || 0;
           const useAssetBasedValidation = assetRequestedQuantity > 0;
 
           let availableQuantity = 0;
@@ -570,10 +578,12 @@ const DispenseFuelScreen: React.FC = () => {
             totalOrderQuantity = assetRequestedQuantity;
           } else {
             // Global order display (fillup orders)
-            totalOrderQuantity = quantityToBeDispensed > 0 ? quantityToBeDispensed : 0;
+            totalOrderQuantity =
+              quantityToBeDispensed > 0 ? quantityToBeDispensed : 0;
             const alreadyDispensed = fuelDispensedTillNow || 0;
             const remainingQuantity = totalOrderQuantity - alreadyDispensed;
-            const currentAssetQuantity = currentAssetForDispense?.quantity_dispensed || 0;
+            const currentAssetQuantity =
+              currentAssetForDispense?.quantity_dispensed || 0;
             availableQuantity = remainingQuantity + currentAssetQuantity;
           }
 

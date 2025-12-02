@@ -576,6 +576,12 @@ const NormalDeliveryChallanScreen: React.FC = () => {
           imageData={challanImageData}
           isUploading={challanImageUploading}
           onCameraPress={() => openCamera('challan')}
+          onRemovePhoto={() => {
+            orderStore.setState({
+              challanImageData: null,
+              challanUploadedUrl: null,
+            });
+          }}
           uploadingText="Uploading challan image..."
           required={true}
         />

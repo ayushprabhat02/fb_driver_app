@@ -492,6 +492,12 @@ const BuddyChallanNormalScreen: React.FC = () => {
           imageData={challanImageData}
           isUploading={challanImageUploading}
           onCameraPress={() => openCamera('challan')}
+          onRemovePhoto={() => {
+            orderStore.setState({
+              challanImageData: null,
+              challanUploadedUrl: null,
+            });
+          }}
           uploadingText="Uploading challan image..."
           required={true}
         />
@@ -504,6 +510,12 @@ const BuddyChallanNormalScreen: React.FC = () => {
           imageData={technicianImageData}
           isUploading={technicianImageUploading}
           onCameraPress={() => openCamera('technician')}
+          onRemovePhoto={() => {
+            orderStore.setState({
+              technicianImageData: null,
+              technicianUploadedUrl: null,
+            });
+          }}
           uploadingText="Uploading technician image..."
           required={true}
         />
