@@ -80,7 +80,7 @@ const OrderSuccess: React.FC = () => {
       <View style={styles.container}>
         <SuccessAnimation />
         <Text weight="bold" size="xl" color="primary">
-          Order Successful!
+          Delivery Successful!
         </Text>
         <Divider />
         <Text weight="bold" size="sm" color="steelBlue" appearance="light">
