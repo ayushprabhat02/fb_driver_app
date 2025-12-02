@@ -97,6 +97,11 @@ import {
   MarkTaskLiveDispensingMutation,
   MarkTaskLiveDispensingMutationVariables,
 
+  // update rank for task
+  UpdateRankForTaskDocument,
+  UpdateRankForTaskMutation,
+  UpdateRankForTaskMutationVariables,
+
   // inline mutations to import
   UpdateAssetQtyDocument,
   UpdateAssetQtyMutation,
@@ -1201,6 +1206,25 @@ class OrderService {
       });
     } catch (error) {
       console.error('❌ Error syncing asset states:', error);
+    }
+  }
+
+  /**
+   * @method updateRankForTask
+   * @description Updates task ranking to prioritize selected order (matching Vue.js implementation)
+   * @param args - Array of {taskId, rank_id} objects
+   */
+  public async updateRankForTask(args: UpdateRankForTaskMutationVariables) {
+    try {
+      const response: UpdateRankForTaskMutation = await callMutation({
+        queryDocument: UpdateRankForTaskDocument,
+        variables: args,
+      });
+
+      return response.updateRankForTask;
+    } catch (error) {
+      console.error('Error updating task rank:', error);
+      throw error;
     }
   }
 }

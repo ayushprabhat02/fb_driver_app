@@ -33,14 +33,28 @@ export const canSelectOrder = (
   order: any,
   validationState: OrderValidationState,
   isLoading: boolean = false,
+  driverOrders: any[] = [],
+  userRole: string | null = null,
 ): boolean => {
   // Rule 0: Disable selection if any loading state
   if (isLoading) {
     return false;
   }
 
+  // Rule 0.5: If user is not a tower_driver, only allow selection of the first order
+  // (matching Vue.js implementation for normal drivers)
+  if (userRole && userRole !== 'tower_driver') {
+    const firstOrder = driverOrders[0];
+    if (!firstOrder || order.id !== firstOrder.id) {
+      return false;
+    }
+  }
+
   // Rule 1: If fillup history incomplete, only allow fillup orders
-  if (validationState.hasIncompleteFillupHistory && order.category !== 'FILL_UP') {
+  if (
+    validationState.hasIncompleteFillupHistory &&
+    order.category !== 'FILL_UP'
+  ) {
     return false;
   }
 
@@ -65,7 +79,9 @@ export const canSelectOrder = (
   }
 
   // Rule 6: Allow orders in active states
-  if (['ASSIGNED', 'IN_TRANSIT', 'ARRIVED', 'DISPENSING'].includes(order.state)) {
+  if (
+    ['ASSIGNED', 'IN_TRANSIT', 'ARRIVED', 'DISPENSING'].includes(order.state)
+  ) {
     return true;
   }
 
@@ -75,16 +91,40 @@ export const canSelectOrder = (
 export const showOrderSelectionAlert = (
   order: any,
   validationState: OrderValidationState,
+  userRole: string | null = null,
+  driverOrders: any[] = [],
 ): void => {
   let title = 'Cannot Select Order';
   let message = '';
 
+  // Check for normal driver restriction first
+  if (userRole && userRole !== 'tower_driver') {
+    const firstOrder = driverOrders[0];
+    if (firstOrder && order.id !== firstOrder.id) {
+      title = 'Complete First Order First';
+      message =
+        'You must complete the first order in the list before selecting other orders.';
+      Alert.alert(title, message, [
+        {
+          text: 'OK',
+          style: 'default',
+        },
+      ]);
+      return;
+    }
+  }
+
   if (validationState.hasDispensingOrder && order.state !== 'DISPENSING') {
     title = 'Complete Dispensing Order First';
-    message = 'You must complete the order in dispensing state before selecting a new order.';
-  } else if (validationState.hasIncompleteFillupHistory && order.category !== 'FILL_UP') {
+    message =
+      'You must complete the order in dispensing state before selecting a new order.';
+  } else if (
+    validationState.hasIncompleteFillupHistory &&
+    order.category !== 'FILL_UP'
+  ) {
     title = 'Complete Fillup History First';
-    message = 'You must complete all incomplete fillup orders before selecting delivery orders.';
+    message =
+      'You must complete all incomplete fillup orders before selecting delivery orders.';
   } else if (validationState.hasFillupOrder && order.category !== 'FILL_UP') {
     title = 'Fillup Orders Have Priority';
     message = 'Complete fillup orders before selecting delivery orders.';

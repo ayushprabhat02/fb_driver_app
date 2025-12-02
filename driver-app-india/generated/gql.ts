@@ -80,6 +80,7 @@ const documents = {
     "mutation markOrderCompleted($id: uuid!, $state: task_state_enum) {\n  update_task_by_pk(pk_columns: {id: $id}, _set: {state: $state}) {\n    id\n    state\n    category\n  }\n}": types.MarkOrderCompletedDocument,
     "mutation markOrderDispensing($task_id: uuid!) {\n  update_task_by_pk(pk_columns: {id: $task_id}, _set: {state: DISPENSING}) {\n    id\n    state\n  }\n}": types.MarkOrderDispensingDocument,
     "mutation updateAssetQty($customerAssetId: uuid, $customerOrderId: uuid, $qty: numeric) {\n  update_customer_order_customer_asset(\n    where: {customer_asset_id: {_eq: $customerAssetId}, customer_order_id: {_eq: $customerOrderId}}\n    _set: {quantity_dispensed: $qty}\n  ) {\n    returning {\n      customer_asset_id\n      id\n      is_active\n      quantity_dispensed\n    }\n  }\n}": types.UpdateAssetQtyDocument,
+    "mutation updateRankForTask($updateRankForTaskList: [updateRankForTaskObj!]) {\n  updateRankForTask(object: {updateRankForTaskList: $updateRankForTaskList}) {\n    response\n  }\n}": types.UpdateRankForTaskDocument,
     "mutation MarkTaskLiveDispensing($id: uuid!, $is_live_dispensing: Boolean) {\n  update_task_by_pk(\n    pk_columns: {id: $id}\n    _set: {is_live_dispensing: $is_live_dispensing}\n  ) {\n    category\n    id\n    is_live_dispensing\n  }\n}": types.MarkTaskLiveDispensingDocument,
     "mutation updateTotalizerReading($totalizer_reading: numeric!, $vehicle_id: uuid!) {\n  update_vehicle(\n    where: {id: {_eq: $vehicle_id}}\n    _set: {totalizer_reading: $totalizer_reading}\n  ) {\n    returning {\n      totalizer_reading\n    }\n  }\n}": types.UpdateTotalizerReadingDocument,
     "mutation UpsertStepTaskAction($object: upsertTaskValueInput!) {\n  upsertTaskValue(object: $object) {\n    id\n    is_updated\n    is_inserted\n  }\n}": types.UpsertStepTaskActionDocument,
@@ -390,6 +391,10 @@ export function graphql(source: "mutation markOrderDispensing($task_id: uuid!) {
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "mutation updateAssetQty($customerAssetId: uuid, $customerOrderId: uuid, $qty: numeric) {\n  update_customer_order_customer_asset(\n    where: {customer_asset_id: {_eq: $customerAssetId}, customer_order_id: {_eq: $customerOrderId}}\n    _set: {quantity_dispensed: $qty}\n  ) {\n    returning {\n      customer_asset_id\n      id\n      is_active\n      quantity_dispensed\n    }\n  }\n}"): (typeof documents)["mutation updateAssetQty($customerAssetId: uuid, $customerOrderId: uuid, $qty: numeric) {\n  update_customer_order_customer_asset(\n    where: {customer_asset_id: {_eq: $customerAssetId}, customer_order_id: {_eq: $customerOrderId}}\n    _set: {quantity_dispensed: $qty}\n  ) {\n    returning {\n      customer_asset_id\n      id\n      is_active\n      quantity_dispensed\n    }\n  }\n}"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "mutation updateRankForTask($updateRankForTaskList: [updateRankForTaskObj!]) {\n  updateRankForTask(object: {updateRankForTaskList: $updateRankForTaskList}) {\n    response\n  }\n}"): (typeof documents)["mutation updateRankForTask($updateRankForTaskList: [updateRankForTaskObj!]) {\n  updateRankForTask(object: {updateRankForTaskList: $updateRankForTaskList}) {\n    response\n  }\n}"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

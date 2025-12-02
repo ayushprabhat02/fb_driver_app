@@ -1,0 +1,5 @@
+mutation updateRankForTask($updateRankForTaskList: [updateRankForTaskObj!]) {
+  updateRankForTask(object: {updateRankForTaskList: $updateRankForTaskList}) {
+    response
+  }
+}

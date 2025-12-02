@@ -6,7 +6,7 @@ import {FBBorders} from '@/types/styles';
 import {DateTime} from 'luxon';
 import {X} from 'phosphor-react-native';
 import orderStore from '../../store';
-import {homeStore} from '@/globalStore';
+import {homeStore, authStore} from '@/globalStore';
 import fillupStore from '@/modules/fillupRequest/store';
 import {canSelectOrder, getOrderValidationState, showOrderSelectionAlert} from '@/utils/orderValidation';
 import orderService from '../../services';
@@ -24,9 +24,10 @@ const NormalOrderCard: React.FC<Props> = ({order, onRefreshOrders}) => {
   const driverOrders = homeStore.use.driverOrders();
   const fillupHistory = fillupStore.use.fillupHistory();
   const isLoadingOrder = homeStore.use.loaders().driverCurrentOrder;
+  const userRole = authStore.use.userRole();
 
   const validationState = getOrderValidationState(driverOrders || [], fillupHistory || []);
-  const canSelect = canSelectOrder(order, validationState, isLoadingOrder);
+  const canSelect = canSelectOrder(order, validationState, isLoadingOrder, driverOrders || [], userRole);
 
   const getOrderStateColor = (state: string) => {
     switch (state) {
@@ -63,7 +64,7 @@ const NormalOrderCard: React.FC<Props> = ({order, onRefreshOrders}) => {
     }
   };
 
-  const handleOrderSelect = () => {
+  const handleOrderSelect = async () => {
     if (isSelected) {
       orderStore.setState(state => ({
         ...state,
@@ -72,7 +73,7 @@ const NormalOrderCard: React.FC<Props> = ({order, onRefreshOrders}) => {
     } else {
       // Check if order can be selected
       if (!canSelect) {
-        showOrderSelectionAlert(order, validationState);
+        showOrderSelectionAlert(order, validationState, userRole, driverOrders || []);
         return;
       }
 
@@ -80,6 +81,34 @@ const NormalOrderCard: React.FC<Props> = ({order, onRefreshOrders}) => {
         ...state,
         currentDriverOrder: order,
       }));
+
+      // Update rank for task (matching Vue.js implementation)
+      // Move selected order to rank 1 and push all others down
+      try {
+        const rankingList = [];
+
+        // Add selected order at rank 1
+        rankingList.push({taskId: order.id, rank_id: 1});
+
+        // Add all other orders at subsequent ranks
+        let currentRank = 2;
+        (driverOrders || []).forEach((otherOrder: any) => {
+          if (otherOrder.id !== order.id) {
+            rankingList.push({taskId: otherOrder.id, rank_id: currentRank});
+            currentRank++;
+          }
+        });
+
+        if (rankingList.length > 0) {
+          await orderService.updateRankForTask({
+            updateRankForTaskList: rankingList,
+          });
+          console.log('✅ Task ranking updated successfully');
+        }
+      } catch (error) {
+        // Silent error - ranking is not critical
+        console.error('Error updating task rank:', error);
+      }
     }
   };
 
