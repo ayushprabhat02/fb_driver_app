@@ -147,6 +147,11 @@ import {
   AddStockEntryForFillupOnErpDocument,
   AddStockEntryForFillupOnErpMutation,
   AddStockEntryForFillupOnErpMutationVariables,
+
+  // verify order OTP
+  VerifyOrderOtpDocument,
+  VerifyOrderOtpMutation,
+  VerifyOrderOtpMutationVariables,
 } from '@/generated/graphql';
 
 /**
@@ -1225,6 +1230,39 @@ class OrderService {
     } catch (error) {
       console.error('Error updating task rank:', error);
       throw error;
+    }
+  }
+
+  /**
+   * @method verifyOrderOtp
+   * @description Verifies OTP for dispense authorization (matching Vue.js implementation)
+   * @param args - {order_id: string, otp: string}
+   * @returns Promise<boolean> - true if OTP is verified, false otherwise
+   */
+  public async verifyOrderOtp(args: {order_id: string; otp: string}) {
+    try {
+      orderStore.setState(state => ({
+        ...state,
+        loaders: {...state.loaders, verifyDispenseOtp: true},
+      }));
+
+      const response: VerifyOrderOtpMutation = await callMutation({
+        queryDocument: VerifyOrderOtpDocument,
+        variables: {
+          order_id: args.order_id,
+          otp: args.otp, // Send as string - GraphQL client handles conversion
+        },
+      });
+
+      return response.verifyOrderOtp?.isVerified || false;
+    } catch (error) {
+      console.error('Error verifying OTP:', error);
+      throw error;
+    } finally {
+      orderStore.setState(state => ({
+        ...state,
+        loaders: {...state.loaders, verifyDispenseOtp: false},
+      }));
     }
   }
 }

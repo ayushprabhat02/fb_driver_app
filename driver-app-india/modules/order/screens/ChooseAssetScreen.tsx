@@ -1,10 +1,12 @@
 import type {OrderStackParamList} from '@/navigator/containers/Order';
 import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import type {StackNavigationProp} from '@react-navigation/stack';
-import React, {useCallback, useEffect, useLayoutEffect, useState} from 'react';
+import React, {useCallback, useEffect, useLayoutEffect, useState, useRef} from 'react';
 import {Alert, FlatList, View, ViewStyle} from 'react-native';
 import {ScaledSheet} from 'react-native-size-matters';
 import {useDebounce} from 'use-debounce';
+import BottomSheet, {BottomSheetBackdrop} from '@gorhom/bottom-sheet';
+import Toast from 'react-native-toast-message';
 
 // components
 import {
@@ -20,12 +22,12 @@ import {
   OrderInfoCard,
 } from '../components';
 import OrderCancellationRequest from '../components/OrderCancellationRequest';
+import DispenseOtpBottomSheet from '../components/DispenseOtpBottomSheet';
 
 // styles
 import {orderStore, authStore} from '@/globalStore';
 import {FBBackground, FBColorPalette} from '@/types/styles';
 import orderService from '../services';
-import {Divide} from 'phosphor-react-native';
 
 const ChooseAssetScreen: React.FC = () => {
   const navigation = useNavigation<StackNavigationProp<OrderStackParamList>>();
@@ -35,10 +37,16 @@ const ChooseAssetScreen: React.FC = () => {
   const currentDriverOrder = orderStore.use.currentDriverOrder();
   const orderAssets = orderStore.use.orderAssets();
   const userRole = authStore.use.userRole();
+  const isAuthorizedForDispense = orderStore.use.isAuthorizedForDispense();
+  const setIsAuthorizedForDispense = orderStore.use.setIsAuthorizedForDispense();
 
   const stopLoader = orderStore.use.stopLoader();
   const startLoader = orderStore.use.startLoader();
   const orderLoader = orderStore.use.loaders();
+
+  // OTP bottom sheet
+  const otpBottomSheetRef = useRef<BottomSheet>(null);
+  const [pendingAsset, setPendingAsset] = useState<any>(null);
 
   // Get assets with videos uploaded but no quantity entered (need "Fill Remaining")
   const assetsWithUploadedVideos = orderStore.use.assetsWithUploadedVideos();
@@ -134,6 +142,27 @@ const ChooseAssetScreen: React.FC = () => {
       currentAssetForDispense: assetForDispense,
     }));
 
+    // 🔐 OTP CHECK (matching Vue.js implementation)
+    // Check if OTP is required and user is not yet authorized
+    const customerOrderId =
+      'customer_order' in selectedOrder && selectedOrder.customer_order
+        ? selectedOrder.customer_order.id
+        : selectedOrder.id;
+    const isOtpRequired = selectedOrder?.customer_order?.is_otp_required;
+
+    console.log('🔐 OTP Check:', {
+      isOtpRequired,
+      isAuthorizedForDispense,
+      customerOrderId,
+    });
+
+    if (isOtpRequired && !isAuthorizedForDispense) {
+      console.log('🔐 OTP Required - opening OTP bottom sheet');
+      setPendingAsset(asset);
+      otpBottomSheetRef.current?.expand();
+      return;
+    }
+
     // Check user role and order type for navigation
     const isTowerDriver = userRole === 'tower_driver';
     const isBuddyCanFlow = selectedOrder?.is_enable_buddycan_flow;
@@ -153,6 +182,58 @@ const ChooseAssetScreen: React.FC = () => {
       // Normal drivers skip live streaming - go to dispense fuel screen
       console.log('🚗 Normal driver - navigating to dispense-fuel');
       navigation.navigate('dispense-fuel');
+    }
+  };
+
+  // OTP Verification Handler
+  const handleOtpVerify = async (otp: string) => {
+    const selectedOrder = currentFillupOrder || currentDriverOrder;
+    if (!selectedOrder) return;
+
+    const customerOrderId =
+      'customer_order' in selectedOrder && selectedOrder.customer_order
+        ? selectedOrder.customer_order.id
+        : selectedOrder.id;
+
+    try {
+      const isVerified = await orderService.verifyOrderOtp({
+        order_id: customerOrderId,
+        otp: otp,
+      });
+
+      if (isVerified) {
+        // OTP verified successfully
+        setIsAuthorizedForDispense(true);
+
+        // Show success toast
+        Toast.show({
+          type: 'success',
+          text1: 'Success',
+          text2: 'OTP verified successfully',
+        });
+
+        // Close bottom sheet
+        otpBottomSheetRef.current?.close();
+
+        // Wait for bottom sheet to close, then navigate directly
+        setTimeout(() => {
+          const isTowerDriver = userRole === 'tower_driver';
+
+          console.log('✅ OTP Verified - navigating to dispense screen');
+
+          if (isTowerDriver) {
+            navigation.navigate('live-stream');
+          } else {
+            navigation.navigate('dispense-fuel');
+          }
+        }, 500);
+      } else {
+        // OTP verification failed - show blocking alert
+        Alert.alert('Error', 'Incorrect OTP. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error verifying OTP:', error);
+      Alert.alert('Error', 'Failed to verify OTP. Please try again.');
     }
   };
 
@@ -477,6 +558,22 @@ const ChooseAssetScreen: React.FC = () => {
         showLoader={orderLoader.chooseAsset}
         loaderText="Loading assets..."
       />
+
+      {/* 🔐 OTP Bottom Sheet for dispense authorization */}
+      <BottomSheet
+        ref={otpBottomSheetRef}
+        index={-1}
+        snapPoints={['50%']}
+        enablePanDownToClose
+        backdropComponent={props => (
+          <BottomSheetBackdrop
+            {...props}
+            disappearsOnIndex={-1}
+            appearsOnIndex={0}
+          />
+        )}>
+        <DispenseOtpBottomSheet onVerifySuccess={handleOtpVerify} />
+      </BottomSheet>
     </View>
   );
 };

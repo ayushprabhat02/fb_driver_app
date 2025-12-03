@@ -26,7 +26,8 @@ type LoaderTypes =
   | 'quantityBottomSheet' // For quantity bottom sheet operations
   | 'cancelFillupOrder' // For fillup order cancellation
   | 'fetchCancellationReasons' // For fetching cancellation reasons
-  | 'updateOrderState'; // For updating order state
+  | 'updateOrderState' // For updating order state
+  | 'verifyDispenseOtp'; // For OTP verification
 
 type Loaders = {
   totalizerImage: boolean;
@@ -44,6 +45,7 @@ type Loaders = {
   cancelFillupOrder: boolean;
   fetchCancellationReasons: boolean;
   updateOrderState: boolean;
+  verifyDispenseOtp: boolean;
 };
 
 type FillupOrderStateFlow = {
@@ -127,6 +129,10 @@ type OrderStore = {
 
   // driver vehicle details
   driverVehicleDetails: any | null;
+
+  // OTP authorization for dispense (matching Vue.js implementation)
+  isAuthorizedForDispense: boolean;
+  dispenseOtpBottomSheetOpen: boolean;
 };
 
 type OrderActions = {
@@ -158,6 +164,10 @@ type OrderActions = {
   setCancellationModalOpen: (isOpen: boolean) => void;
   setOrderDetailsModalOpen: (isOpen: boolean) => void;
   updateFillupOrderState: (newState: string) => void;
+
+  // OTP authorization actions
+  setIsAuthorizedForDispense: (isAuthorized: boolean) => void;
+  setDispenseOtpBottomSheetOpen: (isOpen: boolean) => void;
 };
 
 /*
@@ -192,6 +202,7 @@ const orderInitialState: OrderStore = {
     cancelFillupOrder: false,
     fetchCancellationReasons: false,
     updateOrderState: false,
+    verifyDispenseOtp: false,
   },
 
   // bottom sheet
@@ -242,6 +253,10 @@ const orderInitialState: OrderStore = {
   driverVehicleDetails: null,
 
   pendingQuantity: 0,
+
+  // OTP authorization initial state
+  isAuthorizedForDispense: false,
+  dispenseOtpBottomSheetOpen: false,
 };
 
 const orderPaginationInitialState = {
@@ -402,6 +417,19 @@ const orderStore = create<OrderStore & OrderActions>(set => ({
       currentFillupOrder: state.currentFillupOrder
         ? { ...state.currentFillupOrder, state: newState as any }
         : null,
+    })),
+
+  // OTP authorization action implementations (matching Vue.js)
+  setIsAuthorizedForDispense: (isAuthorized: boolean) =>
+    set(state => ({
+      ...state,
+      isAuthorizedForDispense: isAuthorized,
+    })),
+
+  setDispenseOtpBottomSheetOpen: (isOpen: boolean) =>
+    set(state => ({
+      ...state,
+      dispenseOtpBottomSheetOpen: isOpen,
     })),
 }));
 

@@ -1,0 +1,5 @@
+mutation verifyOrderOtp($order_id: uuid!, $otp: numeric!) {
+  verifyOrderOtp(object: {order_id: $order_id, otp: $otp}) {
+    isVerified
+  }
+}
