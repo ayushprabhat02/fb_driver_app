@@ -103,8 +103,8 @@ const NormalDeliveryChallanScreen: React.FC = () => {
           });
 
           const priceData = await orderService.fetchDeliveryProductsWithPrices({
-            id: franchise?.partner_localities?.[0]
-              ?.product_partner_localities_prices?.[0]?.parent_id,
+            id: franchise?.partner_localities[0]
+              ?.product_partner_localities_prices[0]?.parent_id,
           });
 
           setRate(priceData?.[0]?.sale_price || 0);
@@ -266,9 +266,9 @@ const NormalDeliveryChallanScreen: React.FC = () => {
 
   const createInvoice = async () => {
     try {
-      // Create invoice items from dispensed assets (following Vue.js pattern)
+      // Create invoice items from dispensed assets (using dispenseCompletedAssets from store)
       const assetsToBeInvoiced =
-        currentDriverOrder?.customer_order?.customer_order_customer_assets
+        dispenseCompletedAssets
           ?.filter(
             (asset: any) =>
               asset.quantity_dispensed && !isNaN(asset.quantity_dispensed),

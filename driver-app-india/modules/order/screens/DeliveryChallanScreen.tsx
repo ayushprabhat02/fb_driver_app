@@ -262,9 +262,9 @@ const DeliveryChallanScreen: React.FC = () => {
 
   const createInvoice = async () => {
     try {
-      // Create invoice items from dispensed assets (following Vue.js pattern)
+      // Create invoice items from dispensed assets (using dispenseCompletedAssets from store)
       const assetsToBeInvoiced =
-        currentDriverOrder?.customer_order?.customer_order_customer_assets
+        dispenseCompletedAssets
           ?.filter(
             (asset: any) =>
               asset.quantity_dispensed && !isNaN(asset.quantity_dispensed),

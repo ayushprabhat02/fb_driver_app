@@ -5,7 +5,8 @@ import {useNavigation} from '@react-navigation/native';
 import {Container, Text, Button} from '@/components';
 import {FBBackground} from '@/types/styles';
 import {retrieveCoordsFromString} from '@/utils/general';
-import {homeStore, orderStore} from '@/globalStore';
+import {updateOrderQuantity} from '@/utils/orderUtil';
+import {homeStore, orderStore, authStore} from '@/globalStore';
 import orderService from '@/modules/order/services';
 import {MapPin, NavigationArrow} from 'phosphor-react-native';
 
@@ -18,6 +19,7 @@ const ReachLocationScreen: React.FC<ReachLocationScreenProps> = () => {
 
   const currentDriverOrder = orderStore.use.currentDriverOrder();
   const currentFillupOrder = orderStore.use.currentFillupOrder();
+  const userRole = authStore.use.userRole();
 
   // Get the current selected order
   const selectedOrder = currentFillupOrder || currentDriverOrder;
@@ -133,6 +135,10 @@ const ReachLocationScreen: React.FC<ReachLocationScreenProps> = () => {
     setArrivedLoading(true);
 
     try {
+      // Update order quantity in store (critical for dispense fuel screen)
+      updateOrderQuantity(selectedOrder);
+      console.log('📊 Updated quantity to be dispensed for order');
+
       // Mark order as ARRIVED
       const response = await orderService.markOrderArrived({
         id: selectedOrder.id,
@@ -176,17 +182,61 @@ const ReachLocationScreen: React.FC<ReachLocationScreenProps> = () => {
         }
       }
 
-      // Navigate to appropriate asset screen
+      // Navigate based on order type and test requirements
       if (isFillupOrder) {
+        // Fillup orders go to fill-asset
         // @ts-ignore
         navigation.navigate('address', {
           screen: 'fill-asset',
         });
       } else {
-        // @ts-ignore
-        navigation.navigate('order', {
-          screen: 'choose-asset',
+        // Driver orders - implement test flow logic
+        const isTowerDriver = userRole === 'tower_driver';
+        const isBuddyCanFlow = selectedOrder?.is_enable_buddycan_flow;
+        const isTestRequired =
+          selectedOrder?.is_enable_customer_location_test;
+
+        console.log('🚦 Navigation decision:', {
+          userRole,
+          isTowerDriver,
+          isBuddyCanFlow,
+          isTestRequired,
         });
+
+        // Tower driver → choose-asset (skip test)
+        if (isTowerDriver) {
+          console.log('🏢 Tower driver - navigating to choose-asset');
+          // @ts-ignore
+          navigation.navigate('order', {
+            screen: 'choose-asset',
+          });
+        }
+        // Normal driver + NOT buddycan (bowser) → select-test (always show test)
+        else if (!isBuddyCanFlow) {
+          console.log('🚛 Bowser order - navigating to select-test');
+          // @ts-ignore
+          navigation.navigate('order', {
+            screen: 'select-test',
+          });
+        }
+        // Normal driver + buddycan + test required → select-test
+        else if (isBuddyCanFlow && isTestRequired) {
+          console.log('🧪 BuddyCan with test required - navigating to select-test');
+          // @ts-ignore
+          navigation.navigate('order', {
+            screen: 'select-test',
+          });
+        }
+        // Normal driver + buddycan + test NOT required → choose-asset (skip test)
+        else {
+          console.log(
+            '⏭️ BuddyCan without test - navigating to choose-asset',
+          );
+          // @ts-ignore
+          navigation.navigate('order', {
+            screen: 'choose-asset',
+          });
+        }
       }
     } catch (error) {
       console.error('Error marking order as arrived:', error);

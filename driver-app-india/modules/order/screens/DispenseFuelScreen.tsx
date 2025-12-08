@@ -212,7 +212,7 @@ const DispenseFuelScreen: React.FC = () => {
       if (driverVehicleId) {
         await orderService.updateTotalizerReading({
           totalizer_reading: totalizerReadingValue,
-          vehicle_id: driverVehicleId,
+          vehicle_id: driverVehicleDetails?.id,
         });
       }
 
@@ -405,7 +405,7 @@ const DispenseFuelScreen: React.FC = () => {
       if (!isBuddyCanOrder && driverVehicleId) {
         await orderService.updateTotalizerReading({
           totalizer_reading: qty + totalizerReadingValue,
-          vehicle_id: driverVehicleId,
+          vehicle_id: driverVehicleDetails?.id,
         });
       }
 

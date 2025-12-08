@@ -21,6 +21,7 @@ query checkServiceAblility($latitude: Float, $longitude: Float) {
           area: {
             _st_contains: {type: "Point", coordinates: [$longitude, $latitude]}
           }
+          is_active: {_eq: true}
         }
       }
     ) {
