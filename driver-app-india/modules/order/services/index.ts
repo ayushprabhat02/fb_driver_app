@@ -737,9 +737,57 @@ class OrderService {
   }
 
   /**
+   * @method isUniquenessViolationError
+   * @description Helper to detect uniqueness violation errors (matching Vue.js implementation)
+   * @private
+   */
+  private isUniquenessViolationError(error: any): boolean {
+    if (!error) return false;
+
+    // Check GraphQL response errors
+    if (error.response?.errors) {
+      return error.response.errors.some((err: any) =>
+        // PostgreSQL uniqueness constraint violations
+        err.message?.includes('duplicate key value violates unique constraint') ||
+        err.message?.includes('Uniqueness violation') ||
+        err.extensions?.code === 'constraint-violation' ||
+        err.extensions?.internal?.error?.message?.includes('duplicate key') ||
+        // Common uniqueness violation patterns
+        err.message?.includes('already exists') ||
+        err.message?.includes('duplicate') ||
+        err.message?.includes('unique constraint')
+      );
+    }
+
+    // Check GraphQL errors array (Apollo/urql format)
+    if (error.graphQLErrors) {
+      return error.graphQLErrors.some((err: any) =>
+        err.message?.includes('duplicate key value violates unique constraint') ||
+        err.message?.includes('Uniqueness violation') ||
+        err.message?.includes('unique constraint') ||
+        err.message?.includes('already exists') ||
+        err.extensions?.code === 'constraint-violation'
+      );
+    }
+
+    // Check direct error messages
+    if (error.message) {
+      return (
+        error.message.includes('duplicate key value violates unique constraint') ||
+        error.message.includes('Uniqueness violation') ||
+        error.message.includes('already exists') ||
+        error.message.includes('unique constraint')
+      );
+    }
+
+    return false;
+  }
+
+  /**
    * @method createInvoice
-   * @description Creates an invoice for the order
+   * @description Creates an invoice for the order (matching Vue.js implementation with duplicate handling)
    * @args {delivery_fee: string, actual_amount: string, dispensedQty: string, invoiced_items: object[], charges: number, tax: number, discount: number}
+   * @returns {Promise<{success: boolean, alreadyDelivered: boolean}>}
    */
   public async createInvoice(args: {
     delivery_fee: string;
@@ -750,7 +798,7 @@ class OrderService {
     tax: number;
     discount: number;
     customer_order_id: string;
-  }) {
+  }): Promise<{success: boolean; alreadyDelivered: boolean}> {
     try {
       console.log('CreateInvoice API call:', args);
 
@@ -773,10 +821,65 @@ class OrderService {
         },
       });
 
-      return response.insert_invoice_one;
-    } catch (error) {
-      console.error('Error creating invoice:', error);
-      throw new Error('Failed to create invoice');
+      console.log('✅ Invoice created successfully - order NOT yet marked as delivered');
+      return {success: true, alreadyDelivered: false};
+    } catch (error: any) {
+      console.log('🔍 Invoice creation error:', error);
+      console.log('🔍 Error details:', JSON.stringify(error, null, 2));
+
+      // Check if this is a uniqueness violation error (invoice already exists)
+      // Comprehensive check matching Vue.js implementation
+      const isUniquenessViolation = this.isUniquenessViolationError(error);
+      console.log('🔍 Is uniqueness violation:', isUniquenessViolation);
+
+      if (isUniquenessViolation) {
+        console.log('📋 Invoice already exists in ERP - treating as idempotent success');
+
+        try {
+          // Get current driver order ID from store
+          const currentOrder = orderStore.getState().currentDriverOrder;
+          const orderId = currentOrder?.id;
+
+          if (orderId) {
+            console.log('🔄 Marking order as Delivered in duplicate invoice handler');
+
+            await callMutation({
+              queryDocument: ChangeTaskStateDocument,
+              variables: {
+                id: orderId,
+                state: Task_State_Enum.Delivered,
+              },
+            });
+
+            console.log('✅ Order marked as Delivered successfully (duplicate invoice path)');
+
+            // Update store to keep state fresh
+            if (currentOrder) {
+              orderStore.setState(state => ({
+                ...state,
+                currentDriverOrder: {
+                  ...currentOrder,
+                  state: Task_State_Enum.Delivered as any,
+                },
+              }));
+              console.log('📦 Store updated with Delivered state');
+            }
+
+            // Return flag indicating we already marked as delivered
+            return {success: true, alreadyDelivered: true};
+          } else {
+            console.error('❌ Order ID not found, cannot update state');
+            throw new Error('Order ID not found for state update');
+          }
+        } catch (stateUpdateError) {
+          console.error('❌ Failed to update order state:', stateUpdateError);
+          throw new Error('Failed to update order state');
+        }
+      } else {
+        // For other errors, throw as before
+        console.error('Error creating invoice:', error);
+        throw new Error('Failed to create invoice');
+      }
     }
   }
 

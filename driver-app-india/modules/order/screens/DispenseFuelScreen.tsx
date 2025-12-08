@@ -1,11 +1,10 @@
-import React, {useRef, useState, useEffect} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   ScrollView,
   StyleSheet,
   View,
   Alert,
   TextInput,
-  TouchableOpacity,
 } from 'react-native';
 import {
   Button,
@@ -18,9 +17,6 @@ import {FBBackground, FBColors} from '@/types/styles';
 import {commonInputStyles} from '@/styles';
 import {orderStore, checkinStore} from '@/globalStore';
 import {ImageContainer} from '@/modules/checkin/components';
-import {RNCamera} from 'react-native-camera';
-import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
-import supportService from '@/modules/support/services';
 import orderService from '../services';
 import checkinService from '@/modules/checkin/services';
 import Toast from 'react-native-toast-message';
@@ -28,14 +24,8 @@ import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {getCurrentLocation} from '@/utils/location';
 
-type LoaderTypes = 'totalizerImage' | 'quantityImage';
-type ImageType = 'totalizer' | 'quantity';
-
 const DispenseFuelScreen: React.FC = () => {
   const navigation = useNavigation<StackNavigationProp<any>>();
-  const cameraRef = useRef<RNCamera | null>(null);
-  const [showCamera, setShowCamera] = useState(false);
-  const [imageType, setImageType] = useState<ImageType>('totalizer');
   const [totalizerReading, setTotalizerReading] = useState('');
   const [quantityDispensed, setQuantityDispensed] = useState('');
   const [disableButton, setDisableButton] = useState(false);
@@ -44,6 +34,7 @@ const DispenseFuelScreen: React.FC = () => {
     useState(false);
   const [isSubmittingTotalizerBefore, setIsSubmittingTotalizerBefore] =
     useState(false);
+  const [quantityUploadedUrl, setQuantityUploadedUrl] = useState('');
 
   const totalizerImageData = orderStore.use.totalizerImageData();
   const totalizerUploadedUrl = orderStore.use.totalizerUploadedUrl();
@@ -167,19 +158,8 @@ const DispenseFuelScreen: React.FC = () => {
       const totalizerReadingValue = parseFloat(totalizerReading);
       const coordinates = await getCurrentLocation();
 
-      // Step 1: Upload totalizer image to GCS if not already uploaded
-      let uploadedUrl = totalizerUploadedUrl || '';
-      if (totalizerImageData && !totalizerUploadedUrl) {
-        const blob = await (await fetch(totalizerImageData)).blob();
-        const {storeUrl} = await supportService.uploadFile({
-          fileName: 'totalizer_before.jpg',
-          contentType: 'image/jpeg',
-          fileData: blob,
-        });
-        uploadedUrl = storeUrl || '';
-        // Store the uploaded URL in the store
-        orderStore.setState({totalizerUploadedUrl: uploadedUrl});
-      }
+      // Step 1: Use already uploaded totalizer image URL (images are uploaded by ImageContainer component)
+      const uploadedUrl = totalizerUploadedUrl || '';
 
       // Step 2: Upload totalizer before reading with store URL
       await orderService.upsertStepTaskAction({
@@ -349,23 +329,14 @@ const DispenseFuelScreen: React.FC = () => {
         : parseFloat(totalizerReading);
       const coordinates = await getCurrentLocation();
 
-      // Step 1: Upload quantity dispensed image if needed
-      let quantityUploadedUrl = '';
-      if (quantityImageData) {
-        const blob = await (await fetch(quantityImageData)).blob();
-        const {storeUrl} = await supportService.uploadFile({
-          fileName: 'quantity.jpg',
-          contentType: 'image/jpeg',
-          fileData: blob,
-        });
-        quantityUploadedUrl = storeUrl || '';
-      }
+      // Step 1: Use already uploaded quantity image URL (images are uploaded by ImageContainer component)
+      const quantityImageUrl = quantityUploadedUrl || '';
 
       // Step 2: Upload totalizer after reading (for both bowser and buddycan orders)
       await orderService.upsertStepTaskAction({
         object: {
           key: 'TOTALIZER_AFTER_READING',
-          url: quantityUploadedUrl,
+          url: quantityImageUrl,
           value: `${qty + totalizerReadingValue}`,
           quantity_dispensed: qty,
           task_id: selectedOrder.id,
@@ -430,14 +401,19 @@ const DispenseFuelScreen: React.FC = () => {
     }
   };
 
-  const openCamera = async (type: ImageType) => {
-    const permission = await check(PERMISSIONS.ANDROID.CAMERA);
-    if (permission === RESULTS.DENIED) {
-      const result = await request(PERMISSIONS.ANDROID.CAMERA);
-      if (result !== RESULTS.GRANTED) return;
-    }
-    setImageType(type);
-    setShowCamera(true);
+  // Image capture handlers - using new ImageContainer API with automatic upload
+  const handleTotalizerImageCaptured = (imageUri: string, storeUrl: string) => {
+    orderStore.setState({
+      totalizerImageData: imageUri,
+      totalizerUploadedUrl: storeUrl,
+    });
+  };
+
+  const handleQuantityImageCaptured = (imageUri: string, storeUrl: string) => {
+    orderStore.setState({
+      quantityImageData: imageUri,
+    });
+    setQuantityUploadedUrl(storeUrl);
   };
 
   const removeTotalizerImage = () => {
@@ -453,50 +429,6 @@ const DispenseFuelScreen: React.FC = () => {
       quantityImageData: null,
     });
   };
-
-  const handleTakePhoto = async () => {
-    if (cameraRef.current) {
-      const data = await cameraRef.current.takePictureAsync({
-        quality: 0.5,
-        base64: true,
-      });
-      setShowCamera(false);
-
-      if (imageType === 'totalizer') {
-        // Just store the image data, upload will happen in handleTotalizerBeforeSubmit
-        orderStore.setState({
-          totalizerImageData: data.uri,
-          totalizerUploadedUrl: null, // Reset uploaded URL when new image is taken
-        });
-      } else {
-        // Just store the image data, upload will happen in confirmQuantity
-        orderStore.setState({quantityImageData: data.uri});
-      }
-    }
-  };
-
-  if (showCamera) {
-    return (
-      <View style={styles.cameraContainer}>
-        <RNCamera
-          ref={cameraRef}
-          style={styles.preview}
-          type={RNCamera.Constants.Type.back}
-          captureAudio={false}
-        />
-        <View style={styles.cameraButtonContainer}>
-          <TouchableOpacity onPress={handleTakePhoto} style={styles.capture}>
-            <Text style={styles.buttonText}>Take Photo</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setShowCamera(false)}
-            style={styles.capture}>
-            <Text style={styles.buttonText}>Cancel</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
 
   return (
     <View style={{flex: 1, backgroundColor: FBBackground.white}}>
@@ -526,8 +458,9 @@ const DispenseFuelScreen: React.FC = () => {
               <ImageContainer
                 label="Upload Totalizer Reading"
                 imageData={totalizerImageData}
+                imageStoreUrl={totalizerUploadedUrl}
                 isUploading={totalizerImageUploading}
-                onCameraPress={() => openCamera('totalizer')}
+                onImageCaptured={handleTotalizerImageCaptured}
                 onRemovePhoto={removeTotalizerImage}
                 uploadingText="Uploading..."
                 required={
@@ -607,8 +540,9 @@ const DispenseFuelScreen: React.FC = () => {
         <ImageContainer
           label="Quantity Dispensed Image"
           imageData={quantityImageData}
+          imageStoreUrl={null}
           isUploading={quantityImageUploading}
-          onCameraPress={() => openCamera('quantity')}
+          onImageCaptured={handleQuantityImageCaptured}
           onRemovePhoto={removeQuantityImage}
           uploadingText="Uploading..."
           required={

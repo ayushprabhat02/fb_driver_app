@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useState, useEffect} from 'react';
 import {View, ScrollView, TouchableOpacity, TextInput} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
@@ -9,16 +9,11 @@ import {ScaledSheet} from 'react-native-size-matters';
 import {Button, Divider, Text, FullScreenLoader} from '@/components';
 import {ImageContainer} from '@/modules/checkin/components';
 
-// Camera
-import {RNCamera} from 'react-native-camera';
-import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
-
 // Store
 import {checkinStore, orderStore} from '@/globalStore';
 
 // Services
 import orderService from '../services';
-import supportService from '@/modules/support/services';
 
 // Utils
 import {getCurrentLocation} from '@/utils/location';
@@ -38,17 +33,11 @@ type BuddyChallanNavigationProp = StackNavigationProp<
   'buddy-challan'
 >;
 
-type ImageCaptureType = 'challan' | 'technician' | 'imap';
-type LoaderTypes = 'challanImage' | 'technicianImage' | 'imapImage';
-
 const TowerBuddyChallanScreen: React.FC = () => {
   const navigation = useNavigation<BuddyChallanNavigationProp>();
-  const cameraRef = useRef<RNCamera | null>(null);
 
   // State
   const [loading, setLoading] = useState(false);
-  const [showCamera, setShowCamera] = useState(false);
-  const [imageType, setImageType] = useState<ImageCaptureType | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [processingOrder, setProcessingOrder] = useState(false);
 
@@ -196,102 +185,47 @@ const TowerBuddyChallanScreen: React.FC = () => {
     return true;
   };
 
-  const openCamera = async (type: ImageCaptureType) => {
-    const cameraPermission = await check(PERMISSIONS.ANDROID.CAMERA);
-    if (cameraPermission === RESULTS.DENIED) {
-      const result = await request(PERMISSIONS.ANDROID.CAMERA);
-      if (result !== RESULTS.GRANTED) {
-        console.log('Camera permission denied');
-        return;
-      }
-    }
-    setImageType(type);
-    setShowCamera(true);
+  // Image capture handlers - using new ImageContainer API with automatic upload
+  const handleChallanImageCaptured = (imageUri: string, storeUrl: string) => {
+    orderStore.setState({
+      challanImageData: imageUri,
+      challanUploadedUrl: storeUrl,
+    });
   };
 
-  const handleTakePhoto = async () => {
-    if (cameraRef.current && imageType) {
-      const options = {quality: 0.5, base64: true};
-      const data = await cameraRef.current.takePictureAsync(options);
-      setShowCamera(false);
-
-      // Only store image locally, don't upload immediately
-      switch (imageType) {
-        case 'challan':
-          orderStore.setState({
-            challanImageData: data.uri,
-          });
-          break;
-        case 'technician':
-          orderStore.setState({
-            technicianImageData: data.uri,
-          });
-          break;
-        case 'imap':
-          orderStore.setState({
-            imapImageData: data.uri,
-          });
-          break;
-        default:
-          break;
-      }
-
-      Toast.show({
-        type: 'success',
-        text1: 'Photo Captured',
-        text2: `${
-          imageType.charAt(0).toUpperCase() + imageType.slice(1)
-        } image saved. It will be uploaded when you mark order complete.`,
-        visibilityTime: 3000,
-      });
-    }
+  const handleTechnicianImageCaptured = (imageUri: string, storeUrl: string) => {
+    orderStore.setState({
+      technicianImageData: imageUri,
+      technicianUploadedUrl: storeUrl,
+    });
   };
 
-  const uploadImage = async (
-    uri: string,
-    type: string,
-    loaderType: LoaderTypes,
-  ) => {
-    try {
-      const blob = await (await fetch(uri)).blob();
-      const fileName = `BuddyChallan_${type}_${
-        currentDriverOrder?.customer_order?.order_code
-      }_${Date.now()}.jpg`;
+  const handleImapImageCaptured = (imageUri: string, storeUrl: string) => {
+    orderStore.setState({
+      imapImageData: imageUri,
+      imapUploadedUrl: storeUrl,
+    });
+  };
 
-      const {src, storeUrl} = await supportService.uploadFile({
-        fileName,
-        contentType: 'image/jpeg',
-        fileData: blob,
-      });
+  const handleRemoveChallan = () => {
+    orderStore.setState({
+      challanImageData: null,
+      challanUploadedUrl: null,
+    });
+  };
 
-      // Store the upload URL for API calls but keep the local URI for display
-      if (type === 'challan') {
-        orderStore.setState({challanUploadedUrl: storeUrl || src});
-      } else if (type === 'technician') {
-        orderStore.setState({technicianUploadedUrl: storeUrl || src});
-      } else if (type === 'imap') {
-        orderStore.setState({imapUploadedUrl: storeUrl || src});
-      }
+  const handleRemoveTechnician = () => {
+    orderStore.setState({
+      technicianImageData: null,
+      technicianUploadedUrl: null,
+    });
+  };
 
-      console.log('Image uploaded:', {src, storeUrl});
-    } catch (error) {
-      console.error('Upload error:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'Upload Error',
-        text2: `Failed to upload ${type} image`,
-      });
-      // Reset the local image on upload failure
-      if (type === 'challan') {
-        orderStore.setState({challanImageData: null});
-      } else if (type === 'technician') {
-        orderStore.setState({technicianImageData: null});
-      } else if (type === 'imap') {
-        orderStore.setState({imapImageData: null});
-      }
-    } finally {
-      orderStore.getState().stopLoader(loaderType);
-    }
+  const handleRemoveImap = () => {
+    orderStore.setState({
+      imapImageData: null,
+      imapUploadedUrl: null,
+    });
   };
 
   const createFuelDeliveryRecord = async () => {
@@ -309,7 +243,10 @@ const TowerBuddyChallanScreen: React.FC = () => {
     }
   };
 
-  const createInvoice = async () => {
+  const createInvoice = async (): Promise<{
+    success: boolean;
+    alreadyDelivered: boolean;
+  }> => {
     try {
       const assetsToBeInvoiced =
         dispenseCompletedAssets
@@ -355,7 +292,14 @@ const TowerBuddyChallanScreen: React.FC = () => {
       const discount = parseFloat(deliveryFeeData?.discount || '0');
       const calculatedFinalAmount = totalAmount + deliveryFee - discount;
 
-      await orderService.createInvoice({
+      console.log('📋 Creating invoice with amounts:', {
+        totalAmount,
+        deliveryFee,
+        discount,
+        calculatedFinalAmount,
+      });
+
+      const invoiceResult = await orderService.createInvoice({
         delivery_fee: String(deliveryFeeData?.delivery_fees || 0),
         actual_amount: String(calculatedFinalAmount),
         dispensedQty: String(dispensedQuantity),
@@ -367,6 +311,12 @@ const TowerBuddyChallanScreen: React.FC = () => {
         discount: discount,
         customer_order_id: currentDriverOrder?.customer_order?.id || '',
       });
+
+      if (invoiceResult.alreadyDelivered) {
+        console.log('📋 Invoice handler already marked order as Delivered');
+      }
+
+      return invoiceResult;
     } catch (error) {
       throw new Error('Error creating invoice');
     }
@@ -461,30 +411,6 @@ const TowerBuddyChallanScreen: React.FC = () => {
     }
   };
 
-  const uploadAllImages = async () => {
-    try {
-      // Upload challan image
-      if (challanImageData && !challanUploadedUrl) {
-        orderStore.getState().startLoader('challanImage');
-        await uploadImage(challanImageData, 'challan', 'challanImage');
-      }
-
-      // Upload technician image
-      if (technicianImageData && !technicianUploadedUrl) {
-        orderStore.getState().startLoader('technicianImage');
-        await uploadImage(technicianImageData, 'technician', 'technicianImage');
-      }
-
-      // Upload IMAP image
-      if (imapImageData && !imapUploadedUrl) {
-        orderStore.getState().startLoader('imapImage');
-        await uploadImage(imapImageData, 'imap', 'imapImage');
-      }
-    } catch (error) {
-      throw new Error('Failed to upload images');
-    }
-  };
-
   const handleSubmit = async () => {
     if (!validateForm()) {
       return;
@@ -500,17 +426,13 @@ const TowerBuddyChallanScreen: React.FC = () => {
     }
 
     try {
+      // Images are already uploaded by ImageContainer component
+      // Show fullscreen loader for operations
+      setProcessingOrder(true);
       setLoading(true);
 
-      // Step 0: Upload all images first
-      await uploadAllImages();
-
-      // After images are uploaded, show fullscreen loader for remaining operations
-      setProcessingOrder(true);
-      setLoading(false);
-
       // Step 1: Create invoice
-      await createInvoice();
+      const invoiceResult = await createInvoice();
 
       // Step 2: Create challan and technician tasks
       await createChallanTask();
@@ -522,7 +444,14 @@ const TowerBuddyChallanScreen: React.FC = () => {
       await addTransactionLogs();
 
       // Step 5: Mark order as completed
-      await markOrderCompleted();
+      // await markOrderCompleted();
+      if (invoiceResult.alreadyDelivered) {
+        console.log(
+          '⏭️ Skipping markOrderCompleted - invoice handler already marked order as Delivered',
+        );
+      } else {
+        await markOrderCompleted();
+      }
 
       // Note: OrderSuccess component will handle cleanup and navigation
 
@@ -544,36 +473,6 @@ const TowerBuddyChallanScreen: React.FC = () => {
   // Success view
   if (showSuccess) {
     return <OrderSuccess />;
-  }
-
-  // Camera view
-  if (showCamera) {
-    const cameraType = RNCamera.Constants.Type.back;
-
-    return (
-      <View style={styles.cameraContainer}>
-        <RNCamera
-          ref={cameraRef}
-          style={styles.preview}
-          type={cameraType}
-          captureAudio={false}
-        />
-        <View style={styles.cameraButtonContainer}>
-          <TouchableOpacity onPress={handleTakePhoto} style={styles.capture}>
-            <Text size="sm" color="neutral">
-              Take Photo
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setShowCamera(false)}
-            style={styles.capture}>
-            <Text size="sm" color="neutral">
-              Cancel
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
   }
 
   return (
@@ -658,19 +557,10 @@ const TowerBuddyChallanScreen: React.FC = () => {
         <ImageContainer
           label="Upload Delivery Challan"
           imageData={challanImageData}
+          imageStoreUrl={challanUploadedUrl}
           isUploading={challanImageUploading}
-          onCameraPress={() => openCamera('challan')}
-          onRemovePhoto={() => {
-            orderStore.setState({
-              challanImageData: null,
-              challanUploadedUrl: null,
-            });
-            Toast.show({
-              type: 'info',
-              text1: 'Image Removed',
-              text2: 'Challan image has been removed. You can retake it.',
-            });
-          }}
+          onImageCaptured={handleChallanImageCaptured}
+          onRemovePhoto={handleRemoveChallan}
           uploadingText="Uploading challan image..."
           required={true}
         />
@@ -681,19 +571,10 @@ const TowerBuddyChallanScreen: React.FC = () => {
         <ImageContainer
           label="Technician Image"
           imageData={technicianImageData}
+          imageStoreUrl={technicianUploadedUrl}
           isUploading={technicianImageUploading}
-          onCameraPress={() => openCamera('technician')}
-          onRemovePhoto={() => {
-            orderStore.setState({
-              technicianImageData: null,
-              technicianUploadedUrl: null,
-            });
-            Toast.show({
-              type: 'info',
-              text1: 'Image Removed',
-              text2: 'Technician image has been removed. You can retake it.',
-            });
-          }}
+          onImageCaptured={handleTechnicianImageCaptured}
+          onRemovePhoto={handleRemoveTechnician}
           uploadingText="Uploading technician image..."
           required={true}
         />
@@ -704,16 +585,10 @@ const TowerBuddyChallanScreen: React.FC = () => {
         <ImageContainer
           label="Upload IMAP Image"
           imageData={imapImageData}
+          imageStoreUrl={imapUploadedUrl}
           isUploading={imapImageUploading}
-          onCameraPress={() => openCamera('imap')}
-          onRemovePhoto={() => {
-            orderStore.setState({imapImageData: null, imapUploadedUrl: null});
-            Toast.show({
-              type: 'info',
-              text1: 'Image Removed',
-              text2: 'IMAP image has been removed. You can retake it.',
-            });
-          }}
+          onImageCaptured={handleImapImageCaptured}
+          onRemovePhoto={handleRemoveImap}
           uploadingText="Uploading IMAP photo..."
           required={true}
         />
@@ -800,31 +675,6 @@ const styles = ScaledSheet.create({
   },
   disabledButton: {
     opacity: 0.5,
-  },
-  // Camera styles
-  cameraContainer: {
-    flex: 1,
-    flexDirection: 'column',
-    backgroundColor: 'black',
-  },
-  preview: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-  },
-  cameraButtonContainer: {
-    flex: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  capture: {
-    flex: 0,
-    backgroundColor: '#fff',
-    borderRadius: '5@s',
-    padding: '15@s',
-    paddingHorizontal: '20@s',
-    alignSelf: 'center',
-    margin: '20@s',
   },
   // Dropdown styles
   dropdownContainer: {

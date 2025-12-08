@@ -20,22 +20,16 @@ import {
   ScrollView,
   StyleSheet,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
-import {RNCamera} from 'react-native-camera';
-import {check, PERMISSIONS, request, RESULTS} from 'react-native-permissions';
 import {ImageContainer} from '../components';
 import checkinService from '../services';
-import {LoaderTypes} from '../store';
 import {DateTime} from 'luxon';
 import {useTranslation} from 'react-i18next';
 
 type RootStackParamList = {
   home: undefined;
 };
-
-type ImageCaptureType = 'selfie' | 'refueller' | 'odometer' | 'totalizer';
 
 const CheckinPageCustomer: React.FC = () => {
   const {t} = useTranslation();
@@ -51,9 +45,6 @@ const CheckinPageCustomer: React.FC = () => {
   }, [isCheckedIn, navigation]);
 
   const scrollViewRef = useRef<ScrollView>(null);
-  const cameraRef = useRef<RNCamera | null>(null);
-  const [showCamera, setShowCamera] = useState(false);
-  const [imageType, setImageType] = useState<ImageCaptureType | null>(null);
   const [odometerReading, setOdometerReading] = useState('');
   const [totalizerReading, setTotalizerReading] = useState('');
 
@@ -191,162 +182,65 @@ const CheckinPageCustomer: React.FC = () => {
     initializeCheckin();
   }, []);
 
-  const openCamera = async (type: ImageCaptureType) => {
-    const cameraPermission = await check(PERMISSIONS.ANDROID.CAMERA);
-    if (cameraPermission === RESULTS.DENIED) {
-      const result = await request(PERMISSIONS.ANDROID.CAMERA);
-      if (result !== RESULTS.GRANTED) {
-        return;
-      }
-    }
-    setImageType(type);
-    setShowCamera(true);
+  // Image capture handlers - using new ImageContainer API with automatic upload
+  const handleSelfieImageCaptured = (imageUri: string, storeUrl: string) => {
+    checkinStore.setState({
+      selfieImageData: imageUri,
+      selfieStoreUrl: storeUrl,
+    });
   };
 
-  const handleTakePhoto = async () => {
-    if (cameraRef.current && imageType) {
-      const options = {quality: 0.5, base64: true};
-      const data = await cameraRef.current.takePictureAsync(options);
-      setShowCamera(false);
-      let loaderType: LoaderTypes | null = null;
-
-      switch (imageType) {
-        case 'selfie':
-          loaderType = 'isSelfieImageUploading';
-          checkinStore.setState(state => ({
-            ...state,
-            selfieImageData: data.uri,
-          }));
-          break;
-        case 'refueller':
-          loaderType = 'isRefuellerImageUploading';
-          checkinStore.setState(state => ({
-            ...state,
-            refuellerImageData: data.uri,
-          }));
-          break;
-        case 'odometer':
-          loaderType = 'isOdometerImageUploading';
-          checkinStore.setState(state => ({
-            ...state,
-            odometerImageData: data.uri,
-          }));
-          break;
-        case 'totalizer':
-          loaderType = 'isTotalizerImageUploading';
-          checkinStore.setState(state => ({
-            ...state,
-            totalizerImageData: data.uri,
-          }));
-          break;
-      }
-
-      if (loaderType) {
-        startLoader(loaderType);
-        await uploadImage(data.uri, imageType, loaderType);
-      }
-    }
+  const handleRefuellerImageCaptured = (imageUri: string, storeUrl: string) => {
+    checkinStore.setState({
+      refuellerImageData: imageUri,
+      refuellerStoreUrl: storeUrl,
+    });
   };
 
-  const uploadImage = async (
-    uri: string,
-    type: string,
-    loaderType: LoaderTypes,
-  ) => {
-    try {
-      const blob = await (await fetch(uri)).blob();
-      const {storeUrl} = await supportService.uploadFile({
-        fileName: `${type}.jpg`,
-        contentType: 'image/jpeg',
-        fileData: blob,
-      });
-
-      if (type === 'selfie' && storeUrl) {
-        checkinStore.setState(state => ({...state, selfieStoreUrl: storeUrl}));
-      } else if (type === 'refueller' && storeUrl) {
-        checkinStore.setState(state => ({
-          ...state,
-          refuellerStoreUrl: storeUrl,
-        }));
-      } else if (type === 'odometer' && storeUrl) {
-        checkinStore.setState(state => ({
-          ...state,
-          odometerStoreUrl: storeUrl,
-        }));
-      } else if (type === 'totalizer' && storeUrl) {
-        checkinStore.setState(state => ({
-          ...state,
-          totalizerStoreUrl: storeUrl,
-        }));
-      }
-    } catch (error) {
-      console.error('Upload error:', error);
-    } finally {
-      stopLoader(loaderType);
-    }
+  const handleOdometerImageCaptured = (imageUri: string, storeUrl: string) => {
+    checkinStore.setState({
+      odometerImageData: imageUri,
+      odometerStoreUrl: storeUrl,
+    });
   };
 
-  const handleRemoveImage = (type: ImageCaptureType) => {
-    switch (type) {
-      case 'selfie':
-        checkinStore.setState(state => ({
-          ...state,
-          selfieImageData: null,
-          selfieStoreUrl: null,
-        }));
-        break;
-      case 'refueller':
-        checkinStore.setState(state => ({
-          ...state,
-          refuellerImageData: null,
-          refuellerStoreUrl: null,
-        }));
-        break;
-      case 'odometer':
-        checkinStore.setState(state => ({
-          ...state,
-          odometerImageData: null,
-          odometerStoreUrl: null,
-        }));
-        setOdometerReading('');
-        break;
-      case 'totalizer':
-        checkinStore.setState(state => ({
-          ...state,
-          totalizerImageData: null,
-          totalizerStoreUrl: null,
-        }));
-        setTotalizerReading('');
-        break;
-    }
+  const handleTotalizerImageCaptured = (imageUri: string, storeUrl: string) => {
+    checkinStore.setState({
+      totalizerImageData: imageUri,
+      totalizerStoreUrl: storeUrl,
+    });
   };
 
-  if (showCamera) {
-    return (
-      <View style={styles.cameraContainer}>
-        <RNCamera
-          ref={cameraRef}
-          style={styles.preview}
-          type={
-            imageType === 'selfie'
-              ? RNCamera.Constants.Type.front
-              : RNCamera.Constants.Type.back
-          }
-          captureAudio={false}
-        />
-        <View style={styles.cameraButtonContainer}>
-          <TouchableOpacity onPress={handleTakePhoto} style={styles.capture}>
-            <Text style={styles.buttonText}>{t('checkin.take_photo')}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setShowCamera(false)}
-            style={styles.capture}>
-            <Text style={styles.buttonText}>{t('common.cancel')}</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
+  // Remove image handlers
+  const handleRemoveSelfie = () => {
+    checkinStore.setState({
+      selfieImageData: null,
+      selfieStoreUrl: null,
+    });
+  };
+
+  const handleRemoveRefueller = () => {
+    checkinStore.setState({
+      refuellerImageData: null,
+      refuellerStoreUrl: null,
+    });
+  };
+
+  const handleRemoveOdometer = () => {
+    checkinStore.setState({
+      odometerImageData: null,
+      odometerStoreUrl: null,
+    });
+    setOdometerReading('');
+  };
+
+  const handleRemoveTotalizer = () => {
+    checkinStore.setState({
+      totalizerImageData: null,
+      totalizerStoreUrl: null,
+    });
+    setTotalizerReading('');
+  };
 
   const isFormValid =
     selfieStoreUrl &&
@@ -391,9 +285,10 @@ const CheckinPageCustomer: React.FC = () => {
         <ImageContainer
           label="Upload Selfie"
           imageData={selfieImageData}
+          imageStoreUrl={selfieStoreUrl}
           isUploading={isSelfieImageUploading}
-          onCameraPress={() => openCamera('selfie')}
-          onRemovePhoto={() => handleRemoveImage('selfie')}
+          onImageCaptured={handleSelfieImageCaptured}
+          onRemovePhoto={handleRemoveSelfie}
           uploadingText="Uploading selfie..."
           required={true}
         />
@@ -401,9 +296,10 @@ const CheckinPageCustomer: React.FC = () => {
         <ImageContainer
           label={t('checkin.upload_refueller_image')}
           imageData={refuellerImageData}
+          imageStoreUrl={refuellerStoreUrl}
           isUploading={isRefuellerImageUploading}
-          onCameraPress={() => openCamera('refueller')}
-          onRemovePhoto={() => handleRemoveImage('refueller')}
+          onImageCaptured={handleRefuellerImageCaptured}
+          onRemovePhoto={handleRemoveRefueller}
           uploadingText={t('checkin.uploading_refueller')}
           required={true}
         />
@@ -424,9 +320,10 @@ const CheckinPageCustomer: React.FC = () => {
         <ImageContainer
           label="Upload Totalizer Image"
           imageData={totalizerImageData}
+          imageStoreUrl={totalizerStoreUrl}
           isUploading={isTotalizerImageUploading}
-          onCameraPress={() => openCamera('totalizer')}
-          onRemovePhoto={() => handleRemoveImage('totalizer')}
+          onImageCaptured={handleTotalizerImageCaptured}
+          onRemovePhoto={handleRemoveTotalizer}
           uploadingText="Uploading totalizer..."
           required={true}
         />
@@ -447,9 +344,10 @@ const CheckinPageCustomer: React.FC = () => {
         <ImageContainer
           label="Upload Odometer Image"
           imageData={odometerImageData}
+          imageStoreUrl={odometerStoreUrl}
           isUploading={isOdometerImageUploading}
-          onCameraPress={() => openCamera('odometer')}
-          onRemovePhoto={() => handleRemoveImage('odometer')}
+          onImageCaptured={handleOdometerImageCaptured}
+          onRemovePhoto={handleRemoveOdometer}
           uploadingText="Uploading odometer..."
           required={true}
         />
@@ -505,33 +403,6 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     width: '100%',
     marginTop: 8,
-  },
-  cameraContainer: {
-    flex: 1,
-    flexDirection: 'column',
-    backgroundColor: 'black',
-  },
-  preview: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-  },
-  cameraButtonContainer: {
-    flex: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  capture: {
-    flex: 0,
-    backgroundColor: '#fff',
-    borderRadius: 5,
-    padding: 15,
-    paddingHorizontal: 20,
-    alignSelf: 'center',
-    margin: 20,
-  },
-  buttonText: {
-    fontSize: 14,
   },
   disabledButton: {
     opacity: 0.6,

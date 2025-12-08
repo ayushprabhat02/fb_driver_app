@@ -39,29 +39,17 @@ const CheckoutPage: React.FC = () => {
   const driverVehicleId = checkinStore.use.driverVehicleId();
   const isCheckedOut = checkoutStore.use.isCheckedOut();
 
-  // Add camera reference
-  const cameraRef = React.useRef<RNCamera>(null);
-
   useEffect(() => {
     if (isCheckedOut) {
       // After checkout, we'll be signing out, so no need to navigate
     }
   }, [isCheckedOut]);
 
-  const [showCamera, setShowCamera] = useState(false);
-  type ImageCaptureType = 'selfie' | 'refueller';
-
-  const [imageType, setImageType] = useState<ImageCaptureType | null>(null);
-
   const selfieImageData = checkoutStore.use.selfieImageData();
   const selfieStoreUrl = checkoutStore.use.selfieStoreUrl();
   const refuellerImageData = checkoutStore.use.refuellerImageData();
   const refuellerStoreUrl = checkoutStore.use.refuellerStoreUrl();
 
-  const isSelfieImageUploading =
-    checkoutStore.use.loaders().isSelfieImageUploading;
-  const isRefuellerImageUploading =
-    checkoutStore.use.loaders().isRefuellerImageUploading;
   const isCheckingOut = checkoutStore.use.loaders().isCheckingOut;
 
   const startLoader = checkoutStore.use.startLoader();
@@ -192,45 +180,12 @@ const CheckoutPage: React.FC = () => {
     }
   };
 
-  const openCamera = async (type: ImageCaptureType) => {
-    const cameraPermission = await check(PERMISSIONS.ANDROID.CAMERA);
-    if (cameraPermission === RESULTS.DENIED) {
-      const result = await request(PERMISSIONS.ANDROID.CAMERA);
-      if (result !== RESULTS.GRANTED) {
-        console.log('Camera permission denied');
-        return;
-      }
-    }
-    setImageType(type);
-    setShowCamera(true);
+  const handleSelfieImageCaptured = (imageUri: string, storeUrl: string) => {
+    checkoutStore.getState().setSelfieImageData(imageUri, storeUrl);
   };
 
-  const handleTakePhoto = async () => {
-    if (cameraRef.current && imageType) {
-      const options = {quality: 0.5, base64: true};
-      const data = await cameraRef.current.takePictureAsync(options);
-      setShowCamera(false);
-      let loaderType: any = null;
-      switch (imageType) {
-        case 'selfie':
-          loaderType = 'isSelfieImageUploading';
-          // Set the local image data for immediate display
-          checkoutStore.getState().setSelfieImageData(data.uri, null);
-          break;
-        case 'refueller':
-          loaderType = 'isRefuellerImageUploading';
-          // Set the local image data for immediate display
-          checkoutStore.getState().setRefuellerImageData(data.uri, null);
-          break;
-        default:
-          break;
-      }
-
-      if (loaderType !== null) {
-        startLoader(loaderType);
-        await uploadImage(data.uri, imageType, loaderType);
-      }
-    }
+  const handleRefuellerImageCaptured = (imageUri: string, storeUrl: string) => {
+    checkoutStore.getState().setRefuellerImageData(imageUri, storeUrl);
   };
 
   const handleRemoveSelfie = () => {
@@ -241,60 +196,7 @@ const CheckoutPage: React.FC = () => {
     checkoutStore.getState().setRefuellerImageData(null, null);
   };
 
-  const uploadImage = async (uri: string, type: string, loaderType: any) => {
-    try {
-      const blob = await (await fetch(uri)).blob();
-      const {src, storeUrl} = await supportService.uploadFile({
-        fileName: `${type}.jpg`,
-        contentType: 'image/jpeg',
-        fileData: blob,
-      });
-      console.log('Image uploaded:', {src, storeUrl});
 
-      // Store the uploaded URL in the store based on image type
-      // Keep the local image data for display, only update the store URL
-      if (type === 'selfie' && storeUrl) {
-        checkoutStore.getState().setSelfieImageData(uri, storeUrl);
-      } else if (type === 'refueller' && storeUrl) {
-        checkoutStore.getState().setRefuellerImageData(uri, storeUrl);
-      }
-    } catch (error) {
-      console.error('Upload error:', error);
-    } finally {
-      stopLoader(loaderType);
-    }
-  };
-
-  if (showCamera) {
-    // Use front camera for selfie, back camera for refueller
-    const cameraType =
-      imageType === 'selfie'
-        ? RNCamera.Constants.Type.front
-        : RNCamera.Constants.Type.back;
-
-    return (
-      <View style={styles.cameraContainer}>
-        <RNCamera
-          ref={cameraRef}
-          style={styles.preview}
-          type={cameraType}
-          captureAudio={false}
-        />
-        <View style={styles.cameraButtonContainer}>
-          <TouchableOpacity onPress={handleTakePhoto} style={styles.capture}>
-            <Text style={styles.buttonText}>
-              Take {imageType === 'selfie' ? 'Selfie' : 'Photo'}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setShowCamera(false)}
-            style={styles.capture}>
-            <Text style={styles.buttonText}>Cancel</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
 
   return (
     <HeaderAvoidingContainer paddingHorizontal={0}>
@@ -311,8 +213,9 @@ const CheckoutPage: React.FC = () => {
         <ImageContainer
           label="Upload Selfie"
           imageData={selfieImageData}
-          isUploading={isSelfieImageUploading}
-          onCameraPress={() => openCamera('selfie')}
+          imageStoreUrl={selfieStoreUrl}
+          isUploading={false}
+          onImageCaptured={handleSelfieImageCaptured}
           onRemovePhoto={handleRemoveSelfie}
           uploadingText="Uploading selfie..."
           required={true}
@@ -321,8 +224,9 @@ const CheckoutPage: React.FC = () => {
         <ImageContainer
           label="Refueller Details"
           imageData={refuellerImageData}
-          isUploading={isRefuellerImageUploading}
-          onCameraPress={() => openCamera('refueller')}
+          imageStoreUrl={refuellerStoreUrl}
+          isUploading={false}
+          onImageCaptured={handleRefuellerImageCaptured}
           onRemovePhoto={handleRemoveRefueller}
           uploadingText="Uploading refueller image..."
           required={true}

@@ -1,22 +1,17 @@
-import React, {useState, useEffect, useRef} from 'react';
-import {View, ScrollView, TouchableOpacity} from 'react-native';
+import React, {useState, useEffect} from 'react';
+import {View, ScrollView} from 'react-native';
 import Toast from 'react-native-toast-message';
 import {ScaledSheet} from 'react-native-size-matters';
 
 // Components
-import {Button, Divider, Text, FullScreenLoader} from '@/components';
+import {Button, Divider, FullScreenLoader} from '@/components';
 import {ImageContainer} from '@/modules/checkin/components';
-
-// Camera
-import {RNCamera} from 'react-native-camera';
-import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
 
 // Store
 import {checkinStore, orderStore} from '@/globalStore';
 
 // Services
 import orderService from '../services';
-import supportService from '@/modules/support/services';
 
 // Utils
 import {getCurrentLocation} from '@/utils/location';
@@ -26,16 +21,9 @@ import {FBBackground, FBBorders} from '@/types/styles';
 import {OrderSuccess} from '@/modules/home/components';
 import {OrderInfoCard} from '../components';
 
-type ImageCaptureType = 'challan' | 'technician';
-type LoaderTypes = 'challanImage' | 'technicianImage';
-
 const BuddyChallanNormalScreen: React.FC = () => {
-  const cameraRef = useRef<RNCamera | null>(null);
-
   // State
   const [loading, setLoading] = useState(false);
-  const [showCamera, setShowCamera] = useState(false);
-  const [imageType, setImageType] = useState<ImageCaptureType | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [processingOrder, setProcessingOrder] = useState(false);
 
@@ -140,93 +128,42 @@ const BuddyChallanNormalScreen: React.FC = () => {
     return true;
   };
 
-  const openCamera = async (type: ImageCaptureType) => {
-    const cameraPermission = await check(PERMISSIONS.ANDROID.CAMERA);
-    if (cameraPermission === RESULTS.DENIED) {
-      const result = await request(PERMISSIONS.ANDROID.CAMERA);
-      if (result !== RESULTS.GRANTED) {
-        console.log('Camera permission denied');
-        return;
-      }
-    }
-    setImageType(type);
-    setShowCamera(true);
+  // Image capture handlers - using new ImageContainer API with automatic upload
+  const handleChallanImageCaptured = (imageUri: string, storeUrl: string) => {
+    orderStore.setState({
+      challanImageData: imageUri,
+      challanUploadedUrl: storeUrl,
+    });
   };
 
-  const handleTakePhoto = async () => {
-    if (cameraRef.current && imageType) {
-      const options = {quality: 0.5, base64: true};
-      const data = await cameraRef.current.takePictureAsync(options);
-      setShowCamera(false);
-
-      // Store image locally
-      switch (imageType) {
-        case 'challan':
-          orderStore.setState({
-            challanImageData: data.uri,
-          });
-          break;
-        case 'technician':
-          orderStore.setState({
-            technicianImageData: data.uri,
-          });
-          break;
-        default:
-          break;
-      }
-
-      Toast.show({
-        type: 'success',
-        text1: 'Photo Captured',
-        text2: `${
-          imageType.charAt(0).toUpperCase() + imageType.slice(1)
-        } image saved`,
-        visibilityTime: 2000,
-      });
-    }
-  };
-
-  const uploadImage = async (
-    uri: string,
-    type: string,
-    loaderType: LoaderTypes,
+  const handleTechnicianImageCaptured = (
+    imageUri: string,
+    storeUrl: string,
   ) => {
-    try {
-      const blob = await (await fetch(uri)).blob();
-      const fileName = `BuddyCan_${type}_${
-        currentDriverOrder?.customer_order?.order_code
-      }_${Date.now()}.jpg`;
-
-      const {src, storeUrl} = await supportService.uploadFile({
-        fileName,
-        contentType: 'image/jpeg',
-        fileData: blob,
-      });
-
-      // Store the upload URL
-      if (type === 'challan') {
-        orderStore.setState({challanUploadedUrl: storeUrl || src});
-      } else if (type === 'technician') {
-        orderStore.setState({technicianUploadedUrl: storeUrl || src});
-      } else if (type === 'imap') {
-        orderStore.setState({imapUploadedUrl: storeUrl || src});
-      }
-
-      return storeUrl || src;
-    } catch (error) {
-      console.error('Upload error:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'Upload Error',
-        text2: `Failed to upload ${type} image`,
-      });
-      throw error;
-    } finally {
-      orderStore.getState().stopLoader(loaderType);
-    }
+    orderStore.setState({
+      technicianImageData: imageUri,
+      technicianUploadedUrl: storeUrl,
+    });
   };
 
-  const createInvoice = async () => {
+  const handleRemoveChallan = () => {
+    orderStore.setState({
+      challanImageData: null,
+      challanUploadedUrl: null,
+    });
+  };
+
+  const handleRemoveTechnician = () => {
+    orderStore.setState({
+      technicianImageData: null,
+      technicianUploadedUrl: null,
+    });
+  };
+
+  const createInvoice = async (): Promise<{
+    success: boolean;
+    alreadyDelivered: boolean;
+  }> => {
     try {
       const assetsToBeInvoiced =
         dispenseCompletedAssets
@@ -272,7 +209,14 @@ const BuddyChallanNormalScreen: React.FC = () => {
       const discount = parseFloat(deliveryFeeData?.discount || '0');
       const calculatedFinalAmount = totalAmount + deliveryFee - discount;
 
-      await orderService.createInvoice({
+      console.log('📋 Creating invoice with amounts:', {
+        totalAmount,
+        deliveryFee,
+        discount,
+        calculatedFinalAmount,
+      });
+
+      const invoiceResult = await orderService.createInvoice({
         delivery_fee: String(deliveryFeeData?.delivery_fees || 0),
         actual_amount: String(calculatedFinalAmount),
         dispensedQty: String(dispensedQuantity),
@@ -284,6 +228,12 @@ const BuddyChallanNormalScreen: React.FC = () => {
         discount: discount,
         customer_order_id: currentDriverOrder?.customer_order?.id || '',
       });
+
+      if (invoiceResult.alreadyDelivered) {
+        console.log('📋 Invoice handler already marked order as Delivered');
+      }
+
+      return invoiceResult;
     } catch (error) {
       throw new Error('Error creating invoice');
     }
@@ -363,24 +313,6 @@ const BuddyChallanNormalScreen: React.FC = () => {
     }
   };
 
-  const uploadAllImages = async () => {
-    try {
-      // Upload challan image
-      if (challanImageData && !challanUploadedUrl) {
-        orderStore.getState().startLoader('challanImage');
-        await uploadImage(challanImageData, 'challan', 'challanImage');
-      }
-
-      // Upload technician image
-      if (technicianImageData && !technicianUploadedUrl) {
-        orderStore.getState().startLoader('technicianImage');
-        await uploadImage(technicianImageData, 'technician', 'technicianImage');
-      }
-    } catch (error) {
-      throw new Error('Failed to upload images');
-    }
-  };
-
   const handleSubmit = async () => {
     if (!validateForm()) {
       return;
@@ -396,17 +328,13 @@ const BuddyChallanNormalScreen: React.FC = () => {
     }
 
     try {
+      // Images are already uploaded by ImageContainer component
+      // Show fullscreen loader for operations
+      setProcessingOrder(true);
       setLoading(true);
 
-      // Step 0: Upload all images first
-      await uploadAllImages();
-
-      // Show fullscreen loader for remaining operations
-      setProcessingOrder(true);
-      setLoading(false);
-
       // Step 1: Create invoice
-      await createInvoice();
+      const invoiceResult = await createInvoice();
 
       // Step 2: Create challan and technician tasks
       await createChallanTask();
@@ -414,8 +342,14 @@ const BuddyChallanNormalScreen: React.FC = () => {
       // Step 3: Add transaction logs
       await addTransactionLogs();
 
-      // Step 4: Mark order as completed
-      await markOrderCompleted();
+      // Step 4: Mark order as completed (skip if invoice handler already marked as delivered)
+      if (invoiceResult.alreadyDelivered) {
+        console.log(
+          '⏭️ Skipping markOrderCompleted - invoice handler already marked order as Delivered',
+        );
+      } else {
+        await markOrderCompleted();
+      }
 
       // Show success screen
       setShowSuccess(true);
@@ -435,36 +369,6 @@ const BuddyChallanNormalScreen: React.FC = () => {
   // Success view
   if (showSuccess) {
     return <OrderSuccess />;
-  }
-
-  // Camera view
-  if (showCamera) {
-    const cameraType = RNCamera.Constants.Type.back;
-
-    return (
-      <View style={styles.cameraContainer}>
-        <RNCamera
-          ref={cameraRef}
-          style={styles.preview}
-          type={cameraType}
-          captureAudio={false}
-        />
-        <View style={styles.cameraButtonContainer}>
-          <TouchableOpacity onPress={handleTakePhoto} style={styles.capture}>
-            <Text size="sm" color="neutral">
-              Take Photo
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setShowCamera(false)}
-            style={styles.capture}>
-            <Text size="sm" color="neutral">
-              Cancel
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
   }
 
   return (
@@ -490,14 +394,10 @@ const BuddyChallanNormalScreen: React.FC = () => {
         <ImageContainer
           label="Challan"
           imageData={challanImageData}
+          imageStoreUrl={challanUploadedUrl}
           isUploading={challanImageUploading}
-          onCameraPress={() => openCamera('challan')}
-          onRemovePhoto={() => {
-            orderStore.setState({
-              challanImageData: null,
-              challanUploadedUrl: null,
-            });
-          }}
+          onImageCaptured={handleChallanImageCaptured}
+          onRemovePhoto={handleRemoveChallan}
           uploadingText="Uploading challan image..."
           required={true}
         />
@@ -508,14 +408,10 @@ const BuddyChallanNormalScreen: React.FC = () => {
         <ImageContainer
           label="Technician"
           imageData={technicianImageData}
+          imageStoreUrl={technicianUploadedUrl}
           isUploading={technicianImageUploading}
-          onCameraPress={() => openCamera('technician')}
-          onRemovePhoto={() => {
-            orderStore.setState({
-              technicianImageData: null,
-              technicianUploadedUrl: null,
-            });
-          }}
+          onImageCaptured={handleTechnicianImageCaptured}
+          onRemovePhoto={handleRemoveTechnician}
           uploadingText="Uploading technician image..."
           required={true}
         />
@@ -581,31 +477,6 @@ const styles = ScaledSheet.create({
   },
   disabledButton: {
     opacity: 0.5,
-  },
-  // Camera styles
-  cameraContainer: {
-    flex: 1,
-    flexDirection: 'column',
-    backgroundColor: 'black',
-  },
-  preview: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-  },
-  cameraButtonContainer: {
-    flex: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  capture: {
-    flex: 0,
-    backgroundColor: '#fff',
-    borderRadius: '5@s',
-    padding: '15@s',
-    paddingHorizontal: '20@s',
-    alignSelf: 'center',
-    margin: '20@s',
   },
 });
 

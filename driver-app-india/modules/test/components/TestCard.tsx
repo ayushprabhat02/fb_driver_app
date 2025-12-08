@@ -1,4 +1,4 @@
-import React, {useState, useRef} from 'react';
+import React, {useState} from 'react';
 import {
   View,
   StyleSheet,
@@ -6,12 +6,7 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
-  Platform,
-  Modal,
-  StatusBar,
 } from 'react-native';
-import {RNCamera} from 'react-native-camera';
-import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
 import {useTranslation} from 'react-i18next';
 
 // Components
@@ -20,7 +15,6 @@ import {ImageContainer} from '@/modules/checkin/components';
 
 // Services
 import testService from '../services';
-import supportService from '@/modules/support/services';
 
 // Types
 import {FBColors, FBBackground} from '@/types/styles';
@@ -33,11 +27,9 @@ interface TestCardProps {
 
 const TestCard: React.FC<TestCardProps> = ({test, onTestComplete}) => {
   const {t} = useTranslation();
-  const cameraRef = useRef<RNCamera | null>(null);
 
   const [isExpanded, setIsExpanded] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showCamera, setShowCamera] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   // Form data state
@@ -54,84 +46,10 @@ const TestCard: React.FC<TestCardProps> = ({test, onTestComplete}) => {
     setFormData(prev => ({...prev, [key]: value}));
   };
 
-  const openCamera = async () => {
-    try {
-      const permission =
-        Platform.OS === 'ios'
-          ? PERMISSIONS.IOS.CAMERA
-          : PERMISSIONS.ANDROID.CAMERA;
-
-      const result = await check(permission);
-
-      if (result !== RESULTS.GRANTED) {
-        const requestResult = await request(permission);
-        if (requestResult !== RESULTS.GRANTED) {
-          Alert.alert(
-            'Permission Denied',
-            'Camera permission is required to take photos',
-          );
-          return;
-        }
-      }
-
-      setShowCamera(true);
-    } catch (error) {
-      console.error('Error checking camera permission:', error);
-    }
-  };
-
-  const uploadImage = async (uri: string) => {
-    try {
-      setIsUploadingImage(true);
-      console.log('🔧 TestCard - Starting image upload for URI:', uri);
-
-      // Convert URI to blob
-      const blob = await (await fetch(uri)).blob();
-      console.log('🔧 TestCard - Blob created, size:', blob.size);
-
-      // Upload to GCS via supportService
-      const {storeUrl} = await supportService.uploadFile({
-        fileName: `test_${test.slug}_${Date.now()}.jpg`,
-        contentType: 'image/jpeg',
-        fileData: blob,
-      });
-
-      console.log('🔧 TestCard - Upload successful, storeUrl:', storeUrl);
-
-      if (storeUrl) {
-        updateFormData('imageStoreUrl', storeUrl);
-      } else {
-        throw new Error('Upload failed - no storeUrl returned');
-      }
-    } catch (error) {
-      console.error('🔧 TestCard - Upload error:', error);
-      Alert.alert('Upload Error', 'Failed to upload image. Please try again.');
-      // Clear the image on upload failure
-      updateFormData('imageUri', undefined);
-    } finally {
-      setIsUploadingImage(false);
-    }
-  };
-
-  const takePicture = async () => {
-    if (cameraRef.current) {
-      try {
-        const options = {quality: 0.5, base64: false};
-        const data = await cameraRef.current.takePictureAsync(options);
-
-        console.log('🔧 TestCard - Picture taken:', data.uri);
-
-        // Store local URI for preview
-        updateFormData('imageUri', data.uri);
-        setShowCamera(false);
-
-        // Upload to GCS immediately
-        await uploadImage(data.uri);
-      } catch (error) {
-        console.error('Error taking picture:', error);
-        Alert.alert('Error', 'Failed to take picture');
-      }
-    }
+  // Image capture handlers - using new ImageContainer API with automatic upload
+  const handleTestImageCaptured = (imageUri: string, storeUrl: string) => {
+    updateFormData('imageUri', imageUri);
+    updateFormData('imageStoreUrl', storeUrl);
   };
 
   const removeImage = () => {
@@ -239,35 +157,7 @@ const TestCard: React.FC<TestCardProps> = ({test, onTestComplete}) => {
   };
 
   return (
-    <>
-      {/* Fullscreen Camera Modal */}
-      <Modal
-        visible={showCamera}
-        animationType="slide"
-        onRequestClose={() => setShowCamera(false)}>
-        <StatusBar hidden />
-        <View style={styles.cameraContainer}>
-          <RNCamera
-            ref={cameraRef}
-            style={styles.preview}
-            type={RNCamera.Constants.Type.back}
-            captureAudio={false}
-          />
-          <View style={styles.cameraButtonContainer}>
-            <TouchableOpacity onPress={takePicture} style={styles.capture}>
-              <Text style={styles.buttonText}>{t('checkin.take_photo')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setShowCamera(false)}
-              style={styles.capture}>
-              <Text style={styles.buttonText}>{t('common.cancel')}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Test Card */}
-      <View style={styles.container}>
+    <View style={styles.container}>
         <TouchableOpacity
           style={styles.header}
           onPress={toggleExpand}
@@ -369,8 +259,9 @@ const TestCard: React.FC<TestCardProps> = ({test, onTestComplete}) => {
               <ImageContainer
                 label={`Test Result Image`}
                 imageData={formData.imageUri || null}
+                imageStoreUrl={formData.imageStoreUrl || null}
                 isUploading={isUploadingImage}
-                onCameraPress={openCamera}
+                onImageCaptured={handleTestImageCaptured}
                 onRemovePhoto={removeImage}
                 uploadingText="Uploading test image..."
                 required={requiresImage}
@@ -418,8 +309,7 @@ const TestCard: React.FC<TestCardProps> = ({test, onTestComplete}) => {
             )}
           </View>
         )}
-      </View>
-    </>
+    </View>
   );
 };
 
@@ -473,33 +363,6 @@ const styles = StyleSheet.create({
   failedButton: {
     borderColor: FBColors.error,
     borderWidth: 2,
-  },
-  cameraContainer: {
-    flex: 1,
-    flexDirection: 'column',
-    backgroundColor: 'black',
-  },
-  preview: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-  },
-  cameraButtonContainer: {
-    flex: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  capture: {
-    flex: 0,
-    backgroundColor: '#fff',
-    borderRadius: 5,
-    padding: 15,
-    paddingHorizontal: 20,
-    alignSelf: 'center',
-    margin: 20,
-  },
-  buttonText: {
-    fontSize: 14,
   },
   loadingOverlay: {
     position: 'absolute',

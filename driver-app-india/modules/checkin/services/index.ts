@@ -281,17 +281,41 @@ class CheckinService {
 
   /**
    * @method completeCheckIn
-   * @description Complete check-in process with refueller store URL and location - Following fuelbuddy-driver flow
+   * @description Complete check-in process - supports tower driver (refueller only) and normal/customer driver (all images)
+   * Following fuelbuddy-driver Vue.js implementation
    */
   public async completeCheckIn(checkInData: {
     refuellerStoreUrl: string;
+    selfieStoreUrl?: string;
+    odometerStoreUrl?: string;
+    totalizerStoreUrl?: string;
+    odometerReading?: string;
+    totalizerReading?: string;
     location: {lat: number; lng: number};
     driverVehicleId: string;
   }) {
     try {
-      const {refuellerStoreUrl, location, driverVehicleId} = checkInData;
+      const {
+        refuellerStoreUrl,
+        selfieStoreUrl,
+        odometerStoreUrl,
+        totalizerStoreUrl,
+        odometerReading,
+        totalizerReading,
+        location,
+        driverVehicleId,
+      } = checkInData;
 
-      console.log('Starting check-in process with data:', checkInData);
+      console.log('🔑 Starting check-in process with data:', {
+        hasRefueller: !!refuellerStoreUrl,
+        hasSelfie: !!selfieStoreUrl,
+        hasOdometer: !!odometerStoreUrl,
+        hasTotalizer: !!totalizerStoreUrl,
+        odometerReading,
+        totalizerReading,
+        location,
+        driverVehicleId,
+      });
 
       // Step 1: Prepare check-in data object following fuelbuddy-driver pattern
       // Use fallback coordinates if location is 0,0 (GPS failed)
@@ -301,39 +325,93 @@ class CheckinService {
           ? '(77.5946,12.9716)' // Bangalore coordinates as fallback
           : `(${location.lng},${location.lat})`;
 
+      // Build driver_duty_photos array based on what images are provided
+      // Matching Vue.js implementation: BeforeCheckIn.vue lines 393-436
+      const driverDutyPhotos: Array<{
+        category: Photo_Type_Enum;
+        is_active: boolean;
+        url: string;
+      }> = [];
+
+      // Add photos in the order specified by Vue.js implementation
+      // For normal/customer driver: totalizer, odometer, selfie, refueller
+      if (totalizerStoreUrl) {
+        driverDutyPhotos.push({
+          category: Photo_Type_Enum.TotalizerStart,
+          is_active: true,
+          url: totalizerStoreUrl,
+        });
+      }
+
+      if (odometerStoreUrl) {
+        driverDutyPhotos.push({
+          category: Photo_Type_Enum.OdometerStart,
+          is_active: true,
+          url: odometerStoreUrl,
+        });
+      }
+
+      if (selfieStoreUrl) {
+        driverDutyPhotos.push({
+          category: Photo_Type_Enum.SelfieStart,
+          is_active: true,
+          url: selfieStoreUrl,
+        });
+      }
+
+      // Refueller image is always required (both tower and normal driver)
+      driverDutyPhotos.push({
+        category: Photo_Type_Enum.RefuellerStart,
+        is_active: true,
+        url: refuellerStoreUrl,
+      });
+
+      console.log(
+        '📸 driver_duty_photos array constructed with',
+        driverDutyPhotos.length,
+        'photos:',
+        driverDutyPhotos.map(p => p.category),
+      );
+
       const checkInObject = {
         is_active: true,
         location: locationPoint,
         name: 'Driver Check-in',
-        odometer: '0', // Default for simplified flow
-        totallizer: '0', // Default for simplified flow
+        odometer: odometerReading || '0', // Use provided reading or default to '0'
+        totallizer: totalizerReading || '0', // Use provided reading or default to '0'
         category: Login_Type_Enum.CheckIn, // Maps to 'CHECK_IN' as in Vue project
         driver_vehicle_id: driverVehicleId,
         driver_duty_photos: {
-          data: [
-            {
-              category: Photo_Type_Enum.RefuellerStart, // As in Vue project line 429
-              is_active: true,
-              url: refuellerStoreUrl,
-            },
-          ],
+          data: driverDutyPhotos,
         },
       };
 
+      console.log(
+        '📤 Check-in object prepared:',
+        JSON.stringify(checkInObject, null, 2),
+      );
+
       // Step 2: Execute driverCheckIn API call
-      console.log('Calling driverCheckIn API...');
+      console.log('🔄 Calling driverCheckIn API...');
       const checkInResponse = await this.driverCheckIn({
         object: checkInObject,
       });
 
       if (checkInResponse.insert_driver_duty_log_one) {
+        console.log(
+          '✅ driverCheckIn API successful:',
+          checkInResponse.insert_driver_duty_log_one,
+        );
+
         // Step 3: Update driver vehicle state to checked-in and idle
-        console.log('Updating driver vehicle state...');
+        console.log('🔄 Updating driver vehicle state...');
         await this.updateDriverVehicleStateById({
           id: driverVehicleId,
           state: Login_Type_Enum.CheckIn,
           status: Partner_Vehicle_State_Enum.Idle,
         });
+
+        console.log('✅ Driver vehicle state updated successfully');
 
         // Step 4: Update local state to mark as checked-in
         checkinStore.setState(state => ({
@@ -341,7 +419,7 @@ class CheckinService {
           isCheckedIn: true,
         }));
 
-        console.log('Check-in process completed successfully');
+        console.log('✅ Check-in process completed successfully');
 
         Toast.show({
           type: 'success',
@@ -354,7 +432,7 @@ class CheckinService {
 
       throw new Error('Check-in response invalid');
     } catch (error) {
-      console.error('Error completing check-in process:', error);
+      console.error('❌ Error completing check-in process:', error);
       Toast.show({
         type: 'error',
         text1: 'Check-in Failed',

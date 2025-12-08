@@ -1,25 +1,20 @@
-import React, {useState, useEffect, useRef} from 'react';
-import {View, ScrollView, TouchableOpacity} from 'react-native';
+import React, {useState, useEffect} from 'react';
+import {View, ScrollView} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import Toast from 'react-native-toast-message';
 import {ScaledSheet} from 'react-native-size-matters';
 
 // Components
-import {Button, Divider, Text} from '@/components';
+import {Button, Divider} from '@/components';
 import {ImageContainer} from '@/modules/checkin/components';
 import OrderInfoCard from '../components/OrderInfoCard';
-
-// Camera
-import {RNCamera} from 'react-native-camera';
-import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
 
 // Store
 import {checkinStore, orderStore} from '@/globalStore';
 
 // Services
 import orderService from '../services';
-import supportService from '@/modules/support/services';
 
 // Utils
 import {getCurrentLocation} from '@/utils/location';
@@ -38,17 +33,11 @@ type DeliveryChallanNavigationProp = StackNavigationProp<
   'delivery-challan'
 >;
 
-type ImageCaptureType = 'challan';
-type LoaderTypes = 'challanImage';
-
 const NormalDeliveryChallanScreen: React.FC = () => {
   const navigation = useNavigation<DeliveryChallanNavigationProp>();
-  const cameraRef = useRef<RNCamera | null>(null);
 
   // State
   const [loading, setLoading] = useState(false);
-  const [showCamera, setShowCamera] = useState(false);
-  const [imageType, setImageType] = useState<ImageCaptureType | null>(null);
 
   // Store
   const currentDriverOrder = orderStore.use.currentDriverOrder();
@@ -171,81 +160,19 @@ const NormalDeliveryChallanScreen: React.FC = () => {
     return true;
   };
 
-  const openCamera = async (type: ImageCaptureType) => {
-    const cameraPermission = await check(PERMISSIONS.ANDROID.CAMERA);
-    if (cameraPermission === RESULTS.DENIED) {
-      const result = await request(PERMISSIONS.ANDROID.CAMERA);
-      if (result !== RESULTS.GRANTED) {
-        console.log('Camera permission denied');
-        return;
-      }
-    }
-    setImageType(type);
-    setShowCamera(true);
+  // Image capture handler - using new ImageContainer API with automatic upload
+  const handleChallanImageCaptured = (imageUri: string, storeUrl: string) => {
+    orderStore.setState({
+      challanImageData: imageUri,
+      challanUploadedUrl: storeUrl,
+    });
   };
 
-  const handleTakePhoto = async () => {
-    if (cameraRef.current && imageType) {
-      const options = {quality: 0.5, base64: true};
-      const data = await cameraRef.current.takePictureAsync(options);
-      setShowCamera(false);
-
-      let loaderType: LoaderTypes | null = null;
-      switch (imageType) {
-        case 'challan':
-          loaderType = 'challanImage';
-          orderStore.setState({
-            challanImageData: data.uri,
-          });
-          break;
-        default:
-          break;
-      }
-
-      if (loaderType !== null) {
-        orderStore.getState().startLoader(loaderType);
-        await uploadImage(data.uri, imageType, loaderType);
-      }
-    }
-  };
-
-  const uploadImage = async (
-    uri: string,
-    type: string,
-    loaderType: LoaderTypes,
-  ) => {
-    try {
-      const blob = await (await fetch(uri)).blob();
-      const fileName = `DeliveryChallan_${type}_${
-        currentDriverOrder?.customer_order?.order_code
-      }_${Date.now()}.jpg`;
-
-      const {src, storeUrl} = await supportService.uploadFile({
-        fileName,
-        contentType: 'image/jpeg',
-        fileData: blob,
-      });
-
-      // Store the upload URL for API calls but keep the local URI for display
-      if (type === 'challan') {
-        orderStore.setState({challanUploadedUrl: storeUrl || src});
-      }
-
-      console.log('Image uploaded:', {src, storeUrl});
-    } catch (error) {
-      console.error('Upload error:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'Upload Error',
-        text2: `Failed to upload ${type} image`,
-      });
-      // Reset the local image on upload failure
-      if (type === 'challan') {
-        orderStore.setState({challanImageData: null});
-      }
-    } finally {
-      orderStore.getState().stopLoader(loaderType);
-    }
+  const handleRemoveChallan = () => {
+    orderStore.setState({
+      challanImageData: null,
+      challanUploadedUrl: null,
+    });
   };
 
   // COMMENTED OUT: Fuel delivery record not needed for normal driver flow
@@ -264,7 +191,10 @@ const NormalDeliveryChallanScreen: React.FC = () => {
   //   }
   // };
 
-  const createInvoice = async () => {
+  const createInvoice = async (): Promise<{
+    success: boolean;
+    alreadyDelivered: boolean;
+  }> => {
     try {
       // Create invoice items from dispensed assets (using dispenseCompletedAssets from store)
       const assetsToBeInvoiced =
@@ -312,7 +242,7 @@ const NormalDeliveryChallanScreen: React.FC = () => {
       const calculatedFinalAmount = totalAmount + deliveryFee - discount;
 
       // Create invoice (following Vue.js pattern)
-      await orderService.createInvoice({
+      const invoiceResult = await orderService.createInvoice({
         delivery_fee: String(deliveryFeeData?.delivery_fees || 0),
         actual_amount: String(calculatedFinalAmount),
         dispensedQty: String(dispensedQuantity),
@@ -324,6 +254,14 @@ const NormalDeliveryChallanScreen: React.FC = () => {
         discount: discount,
         customer_order_id: currentDriverOrder?.customer_order?.id || '',
       });
+
+      if (invoiceResult.alreadyDelivered) {
+        console.log(
+          '📋 Invoice handler already marked order as Delivered - will skip markOrderCompleted',
+        );
+      }
+
+      return invoiceResult;
     } catch (error) {
       throw new Error('Error creating invoice');
     }
@@ -423,7 +361,7 @@ const NormalDeliveryChallanScreen: React.FC = () => {
       setLoading(true);
 
       // Step 1: Create invoice
-      await createInvoice();
+      const invoiceResult = await createInvoice();
 
       // Step 2: Create challan task
       await createChallanTask();
@@ -434,8 +372,14 @@ const NormalDeliveryChallanScreen: React.FC = () => {
       // Step 4: Add transaction logs (optional)
       await addTransactionLogs();
 
-      // Step 5: Mark order as completed
-      await markOrderCompleted();
+      // Step 5: Mark order as completed (skip if invoice handler already marked as delivered)
+      if (invoiceResult.alreadyDelivered) {
+        console.log(
+          '⏭️ Skipping markOrderCompleted - invoice handler already marked order as Delivered',
+        );
+      } else {
+        await markOrderCompleted();
+      }
 
       // Note: OrderSuccess component will handle cleanup and navigation
 
@@ -462,36 +406,6 @@ const NormalDeliveryChallanScreen: React.FC = () => {
       setLoading(false);
     }
   };
-
-  // Camera view
-  if (showCamera) {
-    const cameraType = RNCamera.Constants.Type.back;
-
-    return (
-      <View style={styles.cameraContainer}>
-        <RNCamera
-          ref={cameraRef}
-          style={styles.preview}
-          type={cameraType}
-          captureAudio={false}
-        />
-        <View style={styles.cameraButtonContainer}>
-          <TouchableOpacity onPress={handleTakePhoto} style={styles.capture}>
-            <Text size="sm" color="neutral">
-              Take Photo
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setShowCamera(false)}
-            style={styles.capture}>
-            <Text size="sm" color="neutral">
-              Cancel
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
 
   return (
     <View style={styles.container}>
@@ -574,14 +488,10 @@ const NormalDeliveryChallanScreen: React.FC = () => {
         <ImageContainer
           label="Challan"
           imageData={challanImageData}
+          imageStoreUrl={challanUploadedUrl}
           isUploading={challanImageUploading}
-          onCameraPress={() => openCamera('challan')}
-          onRemovePhoto={() => {
-            orderStore.setState({
-              challanImageData: null,
-              challanUploadedUrl: null,
-            });
-          }}
+          onImageCaptured={handleChallanImageCaptured}
+          onRemovePhoto={handleRemoveChallan}
           uploadingText="Uploading challan image..."
           required={true}
         />
@@ -627,31 +537,6 @@ const styles = ScaledSheet.create({
   },
   disabledButton: {
     opacity: 0.5,
-  },
-  // Camera styles
-  cameraContainer: {
-    flex: 1,
-    flexDirection: 'column',
-    backgroundColor: 'black',
-  },
-  preview: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-  },
-  cameraButtonContainer: {
-    flex: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  capture: {
-    flex: 0,
-    backgroundColor: '#fff',
-    borderRadius: '5@s',
-    padding: '15@s',
-    paddingHorizontal: '20@s',
-    alignSelf: 'center',
-    margin: '20@s',
   },
   // Dropdown styles
   dropdownContainer: {

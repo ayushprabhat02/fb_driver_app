@@ -9,8 +9,6 @@ import {
 } from 'react-native';
 import {ScaledSheet} from 'react-native-size-matters';
 import {useNavigation, useRoute} from '@react-navigation/native';
-import {RNCamera} from 'react-native-camera';
-import {check, PERMISSIONS, request, RESULTS} from 'react-native-permissions';
 
 // Components
 import {HeaderAvoidingContainer, Text, FullScreenLoader} from '@/components';
@@ -26,7 +24,6 @@ import fillupStore from '../store';
 
 // Utils
 import {FBColors, FBBackground} from '@/types/styles';
-import supportService from '@/modules/support/services';
 import orderService from '@/modules/order/services';
 
 // Types & Enums
@@ -54,10 +51,8 @@ const FillupIndent: React.FC = () => {
   const [isIndentImageUploading, setIsIndentImageUploading] = useState(false);
   const [waitingForApproval, setWaitingForApproval] = useState(false);
   const [approved, setApproved] = useState(false);
-  const [showCamera, setShowCamera] = useState(false);
   const [completedFilledQuantity, setCompletedFilledQuantity] = useState('');
 
-  const cameraRef = useRef<RNCamera | null>(null);
   const pollInterval = useRef<NodeJS.Timeout>();
 
   const fillupDetails = fillupStore.use.fillupRequestDetails();
@@ -230,48 +225,10 @@ const FillupIndent: React.FC = () => {
     initializeComponent();
   }, [fillupDetails, navigation, startApprovalPolling]);
 
-  const openCamera = async () => {
-    const cameraPermission = await check(PERMISSIONS.ANDROID.CAMERA);
-    if (cameraPermission === RESULTS.DENIED) {
-      const result = await request(PERMISSIONS.ANDROID.CAMERA);
-      if (result !== RESULTS.GRANTED) {
-        console.log('Camera permission denied');
-        return;
-      }
-    }
-    setShowCamera(true);
-  };
-
-  const handleTakePhoto = async () => {
-    if (cameraRef.current) {
-      const options = {quality: 0.5, base64: true};
-      const data = await cameraRef.current.takePictureAsync(options);
-      setShowCamera(false);
-      setIndentImageData(data.uri);
-      setIsIndentImageUploading(true);
-      await uploadImage(data.uri);
-    }
-  };
-
-  const uploadImage = async (uri: string) => {
-    try {
-      const blob = await (await fetch(uri)).blob();
-      const {src, storeUrl} = await supportService.uploadFile({
-        fileName: 'indent.jpg',
-        contentType: 'image/jpeg',
-        fileData: blob,
-      });
-      console.log('Image uploaded:', {src, storeUrl});
-
-      if (storeUrl) {
-        setIndentStoreUrl(storeUrl);
-      }
-    } catch (error) {
-      console.error('Upload error:', error);
-      Alert.alert('Error', 'Failed to upload image. Please try again.');
-    } finally {
-      setIsIndentImageUploading(false);
-    }
+  // Image capture handlers - using new ImageContainer API with automatic upload
+  const handleIndentImageCaptured = (imageUri: string, storeUrl: string) => {
+    setIndentImageData(imageUri);
+    setIndentStoreUrl(storeUrl);
   };
 
   const removeImage = () => {
@@ -579,33 +536,6 @@ const FillupIndent: React.FC = () => {
     }
   };
 
-  if (showCamera) {
-    const cameraType = RNCamera.Constants.Type.back;
-
-    return (
-      <View style={cameraStyles.cameraContainer}>
-        <RNCamera
-          ref={cameraRef}
-          style={cameraStyles.preview}
-          type={cameraType}
-          captureAudio={false}
-        />
-        <View style={cameraStyles.cameraButtonContainer}>
-          <TouchableOpacity
-            onPress={handleTakePhoto}
-            style={cameraStyles.capture}>
-            <Text style={cameraStyles.buttonText}>Take Photo</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setShowCamera(false)}
-            style={cameraStyles.capture}>
-            <Text style={cameraStyles.buttonText}>Cancel</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
-
   if (loading) {
     return (
       <FullScreenLoader
@@ -740,8 +670,9 @@ const FillupIndent: React.FC = () => {
             <ImageContainer
               label="Indent Image"
               imageData={indentImageData}
+              imageStoreUrl={indentStoreUrl}
               isUploading={isIndentImageUploading}
-              onCameraPress={openCamera}
+              onImageCaptured={handleIndentImageCaptured}
               onRemovePhoto={removeImage}
               uploadingText="Uploading indent image..."
               required={true}
@@ -916,36 +847,6 @@ const styles = ScaledSheet.create({
     borderRadius: '8@s',
     marginTop: '24@vs',
     alignItems: 'center',
-  },
-});
-
-const cameraStyles = StyleSheet.create({
-  cameraContainer: {
-    flex: 1,
-    flexDirection: 'column',
-    backgroundColor: 'black',
-  },
-  preview: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-  },
-  cameraButtonContainer: {
-    flex: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  capture: {
-    flex: 0,
-    backgroundColor: '#fff',
-    borderRadius: 5,
-    padding: 15,
-    paddingHorizontal: 20,
-    alignSelf: 'center',
-    margin: 20,
-  },
-  buttonText: {
-    fontSize: 14,
   },
 });
 

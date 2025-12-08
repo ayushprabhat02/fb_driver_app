@@ -5,7 +5,6 @@ import {
   View,
   Alert,
   TextInput,
-  TouchableOpacity,
 } from 'react-native';
 import {Button, Divider, HeaderAvoidingContainer, Text} from '@/components';
 import {FBBackground, FBColors} from '@/types/styles';
@@ -14,9 +13,6 @@ import {orderStore} from '@/globalStore';
 import {checkinStore} from '@/globalStore'; // Add checkinStore import
 import {ImageContainer} from '@/modules/checkin/components';
 import {VehicleInfoCard} from '../components';
-import {RNCamera} from 'react-native-camera';
-import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
-import supportService from '@/modules/support/services';
 import orderService from '../services';
 import fillupService from '../../fillupRequest/services';
 import Toast from 'react-native-toast-message';
@@ -26,8 +22,6 @@ import {Fillup_Request_Status_Enum} from '@/generated/graphql';
 
 // utils
 import {getCurrentLocation} from '@/utils/location';
-
-type LoaderTypes = 'totalizerImage' | 'quantityImage';
 
 type RootStackParamList = {
   home: undefined;
@@ -39,23 +33,16 @@ type RootStackParamList = {
 const TotalizerAfterManual: React.FC = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
-  const cameraRef = useRef<RNCamera | null>(null);
   const isCompletingOrderRef = useRef(false);
   const isNavigatingRef = useRef(false);
-  const [showCamera, setShowCamera] = useState(false);
-  type ImageCaptureType = 'totalizer' | 'quantity';
-
-  const [imageType, setImageType] = useState<ImageCaptureType | null>(null);
   const [totalizerReading, setTotalizerReading] = useState(''); // This should be dispensed quantity
   const [disableButton, setDisableButton] = useState(false);
   const [totalizerBeforeReading, setTotalizerBeforeReading] = useState(0);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [quantityUploadedUrl, setQuantityUploadedUrl] = useState('');
 
   // Use orderStore for image data
-  const totalizerImageData = orderStore.use.totalizerImageData();
   const quantityImageData = orderStore.use.quantityImageData();
-  const totalizerUploadedUrl = orderStore.use.totalizerUploadedUrl();
-  const totalizerImageUploading = orderStore.use.loaders().totalizerImage;
   const quantityImageUploading = orderStore.use.loaders().quantityImage;
   const currentFillupOrder = orderStore.use.currentFillupOrder();
   const currentAssetForDispense = orderStore.use.currentAssetForDispense();
@@ -169,17 +156,8 @@ const TotalizerAfterManual: React.FC = () => {
       setDisableButton(true);
       startLoader('upsertTaskAction');
 
-      // Upload image if available
-      let uploadedUrl = '';
-      if (quantityImageData) {
-        const blob = await (await fetch(quantityImageData)).blob();
-        const {src, storeUrl} = await supportService.uploadFile({
-          fileName: 'quantity.jpg',
-          contentType: 'image/jpeg',
-          fileData: blob,
-        });
-        uploadedUrl = storeUrl || src || '';
-      }
+      // Image already uploaded by ImageContainer
+      const uploadedUrl = quantityUploadedUrl || '';
 
       const coordinates = await getCurrentLocation();
 
@@ -439,72 +417,19 @@ const TotalizerAfterManual: React.FC = () => {
     }
   };
 
-  const openCamera = async (type: ImageCaptureType) => {
-    const cameraPermission = await check(PERMISSIONS.ANDROID.CAMERA);
-    if (cameraPermission === RESULTS.DENIED) {
-      const result = await request(PERMISSIONS.ANDROID.CAMERA);
-      if (result !== RESULTS.GRANTED) {
-        console.log('Camera permission denied');
-        return;
-      }
-    }
-    setImageType(type);
-    setShowCamera(true);
+  // Image capture handlers - using new ImageContainer API with automatic upload
+  const handleQuantityImageCaptured = (imageUri: string, storeUrl: string) => {
+    orderStore.setState({
+      quantityImageData: imageUri,
+    });
+    setQuantityUploadedUrl(storeUrl);
   };
 
-  const handleTakePhoto = async () => {
-    if (cameraRef.current && imageType) {
-      const options = {quality: 0.5, base64: true};
-      const data = await cameraRef.current.takePictureAsync(options);
-      setShowCamera(false);
-      let loaderType: LoaderTypes | null = null;
-      switch (imageType) {
-        case 'totalizer':
-          loaderType = 'totalizerImage';
-          orderStore.setState({
-            totalizerImageData: data.uri,
-          });
-          break;
-        case 'quantity':
-          loaderType = 'quantityImage';
-          orderStore.setState({
-            quantityImageData: data.uri,
-          });
-          break;
-        default:
-          break;
-      }
-
-      if (loaderType !== null) {
-        orderStore.getState().startLoader(loaderType);
-        await uploadImage(data.uri, imageType, loaderType);
-      }
-    }
-  };
-
-  const uploadImage = async (
-    uri: string,
-    type: string,
-    loaderType: LoaderTypes,
-  ) => {
-    try {
-      const blob = await (await fetch(uri)).blob();
-      const {src, storeUrl} = await supportService.uploadFile({
-        fileName: `${type}.jpg`,
-        contentType: 'image/jpeg',
-        fileData: blob,
-      });
-      console.log('Image uploaded:', {src, storeUrl});
-
-      // Store the upload URL for API calls but keep the local URI for display
-      if (type === 'totalizer') {
-        orderStore.setState({totalizerUploadedUrl: storeUrl || src});
-      }
-    } catch (error) {
-      console.error('Upload error:', error);
-    } finally {
-      orderStore.getState().stopLoader(loaderType);
-    }
+  const handleRemoveQuantity = () => {
+    orderStore.setState({
+      quantityImageData: null,
+    });
+    setQuantityUploadedUrl('');
   };
 
   const confirmQuantity = async () => {
@@ -514,31 +439,6 @@ const TotalizerAfterManual: React.FC = () => {
   const editQuantity = () => {
     setShowConfirmModal(false);
   };
-
-  if (showCamera) {
-    const cameraType = RNCamera.Constants.Type.back;
-
-    return (
-      <View style={styles.cameraContainer}>
-        <RNCamera
-          ref={cameraRef}
-          style={styles.preview}
-          type={cameraType}
-          captureAudio={false}
-        />
-        <View style={styles.cameraButtonContainer}>
-          <TouchableOpacity onPress={handleTakePhoto} style={styles.capture}>
-            <Text style={styles.buttonText}>Take Photo</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setShowCamera(false)}
-            style={styles.capture}>
-            <Text style={styles.buttonText}>Cancel</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
 
   // Get order status color (matching FillupOrderCard styling)
   const getOrderStatusColor = (state: string) => {
@@ -660,8 +560,10 @@ const TotalizerAfterManual: React.FC = () => {
         <ImageContainer
           label="Quantity Dispensed"
           imageData={quantityImageData}
+          imageStoreUrl={quantityUploadedUrl}
           isUploading={quantityImageUploading}
-          onCameraPress={() => openCamera('quantity')}
+          onImageCaptured={handleQuantityImageCaptured}
+          onRemovePhoto={handleRemoveQuantity}
           uploadingText="Uploading quantity image..."
           required={
             currentFillupOrder?.is_enable_totalizer_reading_image_upload ||
@@ -747,33 +649,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '400',
     width: '100%',
-  },
-  cameraContainer: {
-    flex: 1,
-    flexDirection: 'column',
-    backgroundColor: 'black',
-  },
-  preview: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-  },
-  cameraButtonContainer: {
-    flex: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  capture: {
-    flex: 0,
-    backgroundColor: '#fff',
-    borderRadius: 5,
-    padding: 15,
-    paddingHorizontal: 20,
-    alignSelf: 'center',
-    margin: 20,
-  },
-  buttonText: {
-    fontSize: 14,
   },
   requiredLabel: {
     marginBottom: 4,

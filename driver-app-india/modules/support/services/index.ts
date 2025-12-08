@@ -227,7 +227,9 @@ class SupportService {
       headers: {
         'Content-Type': args.contentType,
       },
+      transformRequest: [data => data],
     });
+
     const src = await this.fetchFile(uploadFile?.storeUrl);
     return {src: src, storeUrl: uploadFile?.storeUrl};
   }

@@ -50,13 +50,8 @@ const CheckinPage: React.FC = () => {
   }, [isCheckedIn, navigation]);
 
   const scrollViewRef = useRef<ScrollView>(null);
-  const cameraRef = useRef<RNCamera | null>(null);
   const odometerViewY = useRef(0);
   const [isSubmitState, setIsSubmitState] = useState(false);
-  const [showCamera, setShowCamera] = useState(false);
-  type ImageCaptureType = 'refueller' | 'odometer' | 'totalizer';
-
-  const [imageType, setImageType] = useState<ImageCaptureType | null>(null);
   // Commented out for simplified flow
   // const [odometerReading, setOdometerReading] = useState('');
   // const [totalizerReading, setTotalizerReading] = useState('');
@@ -68,8 +63,6 @@ const CheckinPage: React.FC = () => {
   // const odometerImageData = checkinStore.use.odometerImageData();
   // const totalizerImageData = checkinStore.use.totalizerImageData();
 
-  const isRefuellerImageUploading =
-    checkinStore.use.loaders().isRefuellerImageUploading;
   const isCheckingIn = checkinStore.use.loaders().isCheckingIn;
   // Commented out for simplified flow
   // const isRefuellerImageUploading =
@@ -193,118 +186,21 @@ const CheckinPage: React.FC = () => {
     initializeCheckin();
   }, []);
 
-  const openCamera = async (type: ImageCaptureType) => {
-    const cameraPermission = await check(PERMISSIONS.ANDROID.CAMERA);
-    if (cameraPermission === RESULTS.DENIED) {
-      const result = await request(PERMISSIONS.ANDROID.CAMERA);
-      if (result !== RESULTS.GRANTED) {
-        console.log('Camera permission denied');
-        return;
-      }
-    }
-    setImageType(type);
-    setShowCamera(true);
-  };
-
-  const handleTakePhoto = async () => {
-    if (cameraRef.current && imageType) {
-      const options = {quality: 0.5, base64: true};
-      const data = await cameraRef.current.takePictureAsync(options);
-      setShowCamera(false);
-      let loaderType: LoaderTypes | null = null;
-      switch (imageType) {
-        case 'refueller':
-          loaderType = 'isRefuellerImageUploading';
-          checkinStore.setState(state => ({
-            ...state,
-            refuellerImageData: data.uri,
-          }));
-          break;
-        case 'odometer':
-          loaderType = 'isOdometerImageUploading';
-          checkinStore.setState(state => ({
-            ...state,
-            odometerImageData: data.uri,
-          }));
-          break;
-        case 'totalizer':
-          loaderType = 'isTotalizerImageUploading';
-          checkinStore.setState(state => ({
-            ...state,
-            totalizerImageData: data.uri,
-          }));
-          break;
-        default:
-          break;
-      }
-
-      if (loaderType !== null) {
-        startLoader(loaderType);
-        await uploadImage(data.uri, imageType, loaderType);
-      }
-    }
+  const handleRefuellerImageCaptured = (imageUri: string, storeUrl: string) => {
+    checkinStore.setState({
+      refuellerImageData: imageUri,
+      refuellerStoreUrl: storeUrl,
+    });
   };
 
   const handleRemoveRefueller = () => {
-    checkinStore.setState(state => ({
-      ...state,
+    checkinStore.setState({
       refuellerImageData: null,
       refuellerStoreUrl: null,
-    }));
+    });
   };
 
-  const uploadImage = async (
-    uri: string,
-    type: string,
-    loaderType: LoaderTypes,
-  ) => {
-    try {
-      const blob = await (await fetch(uri)).blob();
-      const {src, storeUrl} = await supportService.uploadFile({
-        fileName: `${type}.jpg`,
-        contentType: 'image/jpeg',
-        fileData: blob,
-      });
-      console.log('Image uploaded:', {src, storeUrl});
 
-      // Store the uploaded URL in the store based on image type
-      if (type === 'refueller' && storeUrl) {
-        checkinStore.setState(state => ({
-          ...state,
-          refuellerStoreUrl: storeUrl,
-        }));
-      }
-    } catch (error) {
-      console.error('Upload error:', error);
-    } finally {
-      stopLoader(loaderType);
-    }
-  };
-
-  if (showCamera) {
-    const cameraType = RNCamera.Constants.Type.back;
-
-    return (
-      <View style={styles.cameraContainer}>
-        <RNCamera
-          ref={cameraRef}
-          style={styles.preview}
-          type={cameraType}
-          captureAudio={false}
-        />
-        <View style={styles.cameraButtonContainer}>
-          <TouchableOpacity onPress={handleTakePhoto} style={styles.capture}>
-            <Text style={styles.buttonText}>{t('checkin.take_photo')}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setShowCamera(false)}
-            style={styles.capture}>
-            <Text style={styles.buttonText}>{t('common.cancel')}</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
 
   return (
     <HeaderAvoidingContainer paddingHorizontal={0}>
@@ -359,8 +255,9 @@ const CheckinPage: React.FC = () => {
         <ImageContainer
           label={t('checkin.upload_refueller_image')}
           imageData={refuellerImageData}
-          isUploading={isRefuellerImageUploading}
-          onCameraPress={() => openCamera('refueller')}
+          imageStoreUrl={refuellerStoreUrl}
+          isUploading={false}
+          onImageCaptured={handleRefuellerImageCaptured}
           onRemovePhoto={handleRemoveRefueller}
           uploadingText={t('checkin.uploading_refueller')}
           required={true}

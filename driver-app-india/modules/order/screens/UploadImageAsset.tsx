@@ -1,11 +1,10 @@
-import React, {useRef, useState, useEffect} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   ScrollView,
   StyleSheet,
   View,
   Alert,
   TextInput,
-  TouchableOpacity,
 } from 'react-native';
 import {Button, Divider, HeaderAvoidingContainer, Text} from '@/components';
 import {FBBackground, FBColors} from '@/types/styles';
@@ -13,12 +12,8 @@ import {commonInputStyles} from '@/styles';
 import {orderStore, checkinStore} from '@/globalStore';
 import {ImageContainer} from '@/modules/checkin/components';
 import {VehicleInfoCard} from '../components';
-import {RNCamera} from 'react-native-camera';
-import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
-import supportService from '@/modules/support/services';
 import orderService from '../services';
 import Toast from 'react-native-toast-message';
-type LoaderTypes = 'totalizerImage' | 'quantityImage';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 
@@ -35,21 +30,13 @@ type RootStackParamList = {
 const UploadImageAsset: React.FC = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
-  const cameraRef = useRef<RNCamera | null>(null);
-  const [showCamera, setShowCamera] = useState(false);
-  type ImageCaptureType = 'totalizer' | 'quantity';
-
-  const [imageType, setImageType] = useState<ImageCaptureType | null>(null);
   const [totalizerReading, setTotalizerReading] = useState('');
-  const [quantityDispensed, setQuantityDispensed] = useState('');
   const [disableButton, setDisableButton] = useState(false);
 
   // Use orderStore for image data
   const totalizerImageData = orderStore.use.totalizerImageData();
-  const quantityImageData = orderStore.use.quantityImageData();
   const totalizerUploadedUrl = orderStore.use.totalizerUploadedUrl();
   const totalizerImageUploading = orderStore.use.loaders().totalizerImage;
-  const quantityImageUploading = orderStore.use.loaders().quantityImage;
   const currentFillupOrder = orderStore.use.currentFillupOrder();
   const currentAssetForDispense = orderStore.use.currentAssetForDispense();
   const driverVehicleDetails = checkinStore.use.driverVehicleDetails();
@@ -205,98 +192,20 @@ const UploadImageAsset: React.FC = () => {
     }
   };
 
-  const openCamera = async (type: ImageCaptureType) => {
-    const cameraPermission = await check(PERMISSIONS.ANDROID.CAMERA);
-    if (cameraPermission === RESULTS.DENIED) {
-      const result = await request(PERMISSIONS.ANDROID.CAMERA);
-      if (result !== RESULTS.GRANTED) {
-        console.log('Camera permission denied');
-        return;
-      }
-    }
-    setImageType(type);
-    setShowCamera(true);
+  // Image capture handler - using new ImageContainer API with automatic upload
+  const handleTotalizerImageCaptured = (imageUri: string, storeUrl: string) => {
+    orderStore.setState({
+      totalizerImageData: imageUri,
+      totalizerUploadedUrl: storeUrl,
+    });
   };
 
-  const handleTakePhoto = async () => {
-    if (cameraRef.current && imageType) {
-      const options = {quality: 0.5, base64: true};
-      const data = await cameraRef.current.takePictureAsync(options);
-      setShowCamera(false);
-      let loaderType: LoaderTypes | null = null;
-      switch (imageType) {
-        case 'totalizer':
-          loaderType = 'totalizerImage';
-          orderStore.setState({
-            totalizerImageData: data.uri,
-          });
-          break;
-        case 'quantity':
-          loaderType = 'quantityImage';
-          orderStore.setState({
-            quantityImageData: data.uri,
-          });
-          break;
-        default:
-          break;
-      }
-
-      if (loaderType !== null) {
-        orderStore.getState().startLoader(loaderType);
-        await uploadImage(data.uri, imageType, loaderType);
-      }
-    }
+  const handleRemoveTotalizer = () => {
+    orderStore.setState({
+      totalizerImageData: null,
+      totalizerUploadedUrl: null,
+    });
   };
-
-  const uploadImage = async (
-    uri: string,
-    type: string,
-    loaderType: LoaderTypes,
-  ) => {
-    try {
-      const blob = await (await fetch(uri)).blob();
-      const {src, storeUrl} = await supportService.uploadFile({
-        fileName: `${type}.jpg`,
-        contentType: 'image/jpeg',
-        fileData: blob,
-      });
-      console.log('Image uploaded:', {src, storeUrl});
-
-      // Store the upload URL for API calls but keep the local URI for display
-      if (type === 'totalizer') {
-        orderStore.setState({totalizerUploadedUrl: storeUrl || src});
-      }
-    } catch (error) {
-      console.error('Upload error:', error);
-    } finally {
-      orderStore.getState().stopLoader(loaderType);
-    }
-  };
-
-  if (showCamera) {
-    const cameraType = RNCamera.Constants.Type.back;
-
-    return (
-      <View style={styles.cameraContainer}>
-        <RNCamera
-          ref={cameraRef}
-          style={styles.preview}
-          type={cameraType}
-          captureAudio={false}
-        />
-        <View style={styles.cameraButtonContainer}>
-          <TouchableOpacity onPress={handleTakePhoto} style={styles.capture}>
-            <Text style={styles.buttonText}>Take Photo</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setShowCamera(false)}
-            style={styles.capture}>
-            <Text style={styles.buttonText}>Cancel</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
 
   // Get order status color (matching FillupOrderCard styling)
   const getOrderStatusColor = (state: string) => {
@@ -407,8 +316,10 @@ const UploadImageAsset: React.FC = () => {
         <ImageContainer
           label="Upload Totalizer Reading"
           imageData={totalizerImageData}
+          imageStoreUrl={totalizerUploadedUrl}
           isUploading={totalizerImageUploading}
-          onCameraPress={() => openCamera('totalizer')}
+          onImageCaptured={handleTotalizerImageCaptured}
+          onRemovePhoto={handleRemoveTotalizer}
           uploadingText="Uploading totalizer image..."
           required={
             currentFillupOrder?.is_enable_totalizer_reading_image_upload ||
@@ -476,33 +387,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '400',
     width: '100%',
-  },
-  cameraContainer: {
-    flex: 1,
-    flexDirection: 'column',
-    backgroundColor: 'black',
-  },
-  preview: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-  },
-  cameraButtonContainer: {
-    flex: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  capture: {
-    flex: 0,
-    backgroundColor: '#fff',
-    borderRadius: 5,
-    padding: 15,
-    paddingHorizontal: 20,
-    alignSelf: 'center',
-    margin: 20,
-  },
-  buttonText: {
-    fontSize: 14,
   },
   image: {
     width: '100%',
