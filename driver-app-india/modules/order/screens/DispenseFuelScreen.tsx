@@ -118,6 +118,7 @@ const DispenseFuelScreen: React.FC = () => {
 
   // Auto-submit totalizer before reading when both fields are filled
   // Skip for buddycan orders as they don't need totalizer
+  // Skip when totalizer is disabled (is_enable_totalizer_reading_image_upload is false)
   useEffect(() => {
     if (isBuddyCanOrder) {
       // For buddycan orders, mark totalizer as submitted automatically
@@ -125,11 +126,17 @@ const DispenseFuelScreen: React.FC = () => {
       return;
     }
 
+    // Skip if totalizer reading is not enabled for this order
+    if (!selectedOrder?.is_enable_totalizer_reading_image_upload) {
+      // Mark as submitted to allow proceeding without totalizer
+      setTotalizerBeforeSubmitted(true);
+      return;
+    }
+
     const shouldSubmitTotalizerBefore =
       !totalizerBeforeSubmitted &&
       totalizerReading &&
-      (!selectedOrder?.is_enable_totalizer_reading_image_upload ||
-        totalizerImageData);
+      totalizerImageData; // Image is required when totalizer is enabled
 
     if (shouldSubmitTotalizerBefore) {
       handleTotalizerBeforeSubmit();
@@ -139,6 +146,7 @@ const DispenseFuelScreen: React.FC = () => {
     totalizerImageData,
     totalizerBeforeSubmitted,
     isBuddyCanOrder,
+    selectedOrder?.is_enable_totalizer_reading_image_upload,
   ]);
 
   const handleTotalizerBeforeSubmit = async () => {
@@ -146,7 +154,8 @@ const DispenseFuelScreen: React.FC = () => {
       !selectedOrder ||
       totalizerBeforeSubmitted ||
       isSubmittingTotalizerBefore ||
-      isBuddyCanOrder // Skip for buddycan orders
+      isBuddyCanOrder || // Skip for buddycan orders
+      !selectedOrder?.is_enable_totalizer_reading_image_upload // Skip when totalizer is disabled
     ) {
       return;
     }
@@ -372,8 +381,12 @@ const DispenseFuelScreen: React.FC = () => {
         customerOrderId: customerOrderId,
       });
 
-      // Step 4: Update vehicle totalizer reading to final value (skip for buddycan orders)
-      if (!isBuddyCanOrder && driverVehicleId) {
+      // Step 4: Update vehicle totalizer reading to final value (skip for buddycan orders and when totalizer is disabled)
+      if (
+        !isBuddyCanOrder &&
+        selectedOrder?.is_enable_totalizer_reading_image_upload &&
+        driverVehicleId
+      ) {
         await orderService.updateTotalizerReading({
           totalizer_reading: qty + totalizerReadingValue,
           vehicle_id: driverVehicleDetails?.id,
