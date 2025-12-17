@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -8,15 +8,15 @@ import {
   ImageStyle,
   Alert,
 } from 'react-native';
-import {ScaledSheet} from 'react-native-size-matters';
-import {useNavigation} from '@react-navigation/native';
+import { ScaledSheet } from 'react-native-size-matters';
+import { useNavigation } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
-import {Text, QuantityBottomSheet} from '@/components';
-import {FBColors, FBBackground, FBBorders, FontSizeEnum} from '@/types/styles';
-import {orderStore} from '@/globalStore';
+import { Text, QuantityBottomSheet } from '@/components';
+import { FBColors, FBBackground, FBBorders, FontSizeEnum } from '@/types/styles';
+import { orderStore } from '@/globalStore';
 import orderService from '../services';
-import {removeAssetWithUploadedVideo as removeAssetFromPersistentStorage} from '@/utils/streamStorage';
-import {getCurrentLocation} from '@/utils/location';
+import { removeAssetWithUploadedVideo as removeAssetFromPersistentStorage } from '@/utils/streamStorage';
+import { getCurrentLocation } from '@/utils/location';
 
 interface AssetCardProps {
   assetName: string;
@@ -74,7 +74,14 @@ const AssetCard: React.FC<AssetCardProps> = ({
   // Check if asset needs "Fill Remaining" (has video but no quantity)
   const isAssetPartiallyFilled = () => {
     const assetId = getAssetId();
-    return assetsWithUploadedVideos.includes(assetId);
+    const hasVideo = assetsWithUploadedVideos.includes(assetId);
+
+    // 🧪 TESTING MODE: Return false to allow re-recording
+    if (__DEV__) {
+      return false;
+    }
+
+    return hasVideo;
   };
 
   // Helper function to check if asset has interrupted recording
@@ -418,7 +425,7 @@ const AssetCard: React.FC<AssetCardProps> = ({
       // Mark order as dispensing when quantity is entered (first-time quantity entry)
       if (quantity > 0 && filledQuantity === 0) {
         try {
-          await orderService.markOrderDispensing({id: selectedOrder.id});
+          await orderService.markOrderDispensing({ id: selectedOrder.id });
           console.log('✅ Order marked as DISPENSING after quantity entry');
         } catch (orderStateError) {
           console.error(
@@ -454,6 +461,9 @@ const AssetCard: React.FC<AssetCardProps> = ({
     const hasInterruptedRecording =
       assetsWithInterruptedRecording.includes(assetId);
 
+    // 🧪 TESTING MODE: Allow re-recording even if video exists (for debugging)
+    const ENABLE_TESTING_MODE = __DEV__; // Set to true to enable testing
+
     // Priority 0: If order is completely dispensed, show Order Complete
     if (isOrderCompletelyDispensed) {
       return 'Order Complete';
@@ -470,13 +480,19 @@ const AssetCard: React.FC<AssetCardProps> = ({
     }
 
     // Priority 3: If streaming done but no quantity OR partially filled with quantity, show Fill Remaining
-    if (hasUploadedVideo || isInPartiallyFilled) {
+    // 🧪 SKIP IN TESTING MODE to allow multiple recordings
+    if (!ENABLE_TESTING_MODE && (hasUploadedVideo || isInPartiallyFilled)) {
       return 'Fill Remaining';
     }
 
     // Priority 4: If no streaming done and no quantity, show Start Dispense
     if (filledQuantity === 0 && !hasUploadedVideo) {
       return 'Start Dispense';
+    }
+
+    // 🧪 TESTING MODE: Even if video uploaded, allow re-recording
+    if (ENABLE_TESTING_MODE && hasUploadedVideo && filledQuantity === 0) {
+      return 'Start Dispense'; // Changed from 'Fill Remaining'
     }
 
     // Priority 5: If some quantity but no streaming recorded and not marked as partially filled, show Complete
@@ -561,26 +577,28 @@ const AssetCard: React.FC<AssetCardProps> = ({
           )}
         </View>
       </View>
-
       <TouchableOpacity
         style={[
           styles.dispenseButton as ViewStyle,
           getButtonText() === 'Fill Remaining' &&
-            (styles.fillRemainingButton as ViewStyle),
+          (styles.fillRemainingButton as ViewStyle),
           getButtonText() === 'Resume Recording' &&
-            (styles.resumeRecordingButton as ViewStyle),
+          (styles.resumeRecordingButton as ViewStyle),
           (disabled ||
             getButtonText() === 'Complete' ||
             getButtonText() === 'Order Complete' ||
             isDisabledDueToOtherFillRemaining()) &&
-            (styles.disabledButton as ViewStyle),
+          (styles.disabledButton as ViewStyle),
         ]}
         onPress={
-          hasInterruptedRecording()
+          // 🧪 TESTING MODE: Always go to handleStartDispense in dev mode
+          __DEV__
             ? handleStartDispense
-            : isAssetPartiallyFilled()
-            ? handleFilledQuantityPress
-            : handleStartDispense
+            : hasInterruptedRecording()
+              ? handleStartDispense
+              : isAssetPartiallyFilled()
+                ? handleFilledQuantityPress
+                : handleStartDispense
         }
         disabled={
           disabled ||
@@ -594,9 +612,9 @@ const AssetCard: React.FC<AssetCardProps> = ({
           weight="600"
           color={
             disabled ||
-            getButtonText() === 'Complete' ||
-            getButtonText() === 'Order Complete' ||
-            isDisabledDueToOtherFillRemaining()
+              getButtonText() === 'Complete' ||
+              getButtonText() === 'Order Complete' ||
+              isDisabledDueToOtherFillRemaining()
               ? 'disabledInputText'
               : 'white'
           }>

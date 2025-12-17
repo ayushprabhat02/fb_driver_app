@@ -1,0 +1,21 @@
+{
+  "name": "webrtc-signaling-server",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.21.2",
+    "mediasoup": "^3.19.4",
+    "uuid": "^11.1.0",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "@flydotio/dockerfile": "^0.7.8",
+    "nodemon": "^2.0.22"
+  }
+}

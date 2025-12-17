@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View,
   Alert,
@@ -8,13 +8,13 @@ import {
   TouchableOpacity,
   PermissionsAndroid,
 } from 'react-native';
-import {RNCamera} from 'react-native-camera';
-import {RTCView} from 'react-native-webrtc';
-import {useNavigation} from '@react-navigation/native';
-import {StackNavigationProp} from '@react-navigation/stack';
-import {request, PERMISSIONS, RESULTS, check} from 'react-native-permissions';
+import { RNCamera } from 'react-native-camera';
+import { RTCView } from 'react-native-webrtc';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { request, PERMISSIONS, RESULTS, check } from 'react-native-permissions';
 import Toast from 'react-native-toast-message';
-import {ScaledSheet} from 'react-native-size-matters';
+import { ScaledSheet } from 'react-native-size-matters';
 import RNFS from 'react-native-fs';
 import DocumentPicker from 'react-native-document-picker';
 
@@ -32,7 +32,7 @@ import CameraOverlay from '../components/CameraOverlay';
 import StreamControls from '../components/StreamControls';
 
 // Store
-import {checkinStore, orderStore} from '@/globalStore';
+import { checkinStore, orderStore } from '@/globalStore';
 
 // Services
 import orderService from '../services';
@@ -44,9 +44,9 @@ import {
 } from '../services/mediasoupSetup';
 
 // Types
-import {FBColors, FBBackground} from '@/types/styles';
-import {OrderStackParamList} from '@/navigator/containers/Order';
-import {getCurrentLocation} from '@/utils/location';
+import { FBColors, FBBackground } from '@/types/styles';
+import { OrderStackParamList } from '@/navigator/containers/Order';
+import { getCurrentLocation } from '@/utils/location';
 import {
   saveStreamState,
   getStreamState,
@@ -70,7 +70,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   // State
-  const [mode, setMode] = useState<'live' | 'record' | null>(null); // User selects mode
+  const [mode, setMode] = useState<'live' | 'record' | null>('live'); // Auto-set to live streaming (no selection)
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
@@ -133,33 +133,33 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   const loaders = orderStore.use.loaders();
 
   // Minimum streaming duration set to 5 minutes for all users
-  const streamingDurationSeconds = 300; // 5 minutes (300 seconds)
-  // const streamingDurationSeconds = 10; //10 seconds
+  // const streamingDurationSeconds = 300; // 5 minutes (300 seconds)
+  const streamingDurationSeconds = 10; //10 seconds
 
   const WS_URL = 'wss://soup.fuelbuddy.in';
 
   type SoupMessage =
-    | {type: 'join-room'; isViewer: boolean}
-    | {type: 'leave-room'}
-    | {type: 'get-rtp-capabilities'}
-    | {type: 'create-send-transport'}
-    | {type: 'create-recv-transport'}
-    | {type: 'connect-transport'; transportId: string; dtlsParameters: any}
+    | { type: 'join-room'; isViewer: boolean }
+    | { type: 'leave-room' }
+    | { type: 'get-rtp-capabilities' }
+    | { type: 'create-send-transport' }
+    | { type: 'create-recv-transport' }
+    | { type: 'connect-transport'; transportId: string; dtlsParameters: any }
     | {
-        type: 'produce';
-        transportId: string;
-        kind: 'audio' | 'video';
-        rtpParameters: any;
-      }
+      type: 'produce';
+      transportId: string;
+      kind: 'audio' | 'video';
+      rtpParameters: any;
+    }
     | {
-        type: 'consume';
-        transportId: string;
-        producerId: string;
-        rtpCapabilities: any;
-      }
-    | {type: 'resume-consumer'; consumerId: string}
-    | {type: 'ping'}
-    | {type: string; [k: string]: any}; // generic
+      type: 'consume';
+      transportId: string;
+      producerId: string;
+      rtpCapabilities: any;
+    }
+    | { type: 'resume-consumer'; consumerId: string }
+    | { type: 'ping' }
+    | { type: string;[k: string]: any }; // generic
 
   // Build the same roomId as Vue: `${orderCode}-${driverVehicleId}-${assetId}`
   const roomId = React.useMemo(() => {
@@ -206,7 +206,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           // optional keepalive/ping
           if (!pingIntervalRef.current) {
             pingIntervalRef.current = setInterval(() => {
-              sendToSoup({type: 'ping'});
+              sendToSoup({ type: 'ping' });
             }, 15000);
           }
           resolve();
@@ -234,7 +234,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
             // Step 1: After joining room, request RTP capabilities
             if (data.type === 'room-joined') {
               console.log('[WebRTC] Room joined, requesting RTP capabilities');
-              sendToSoup({type: 'get-rtp-capabilities'});
+              sendToSoup({ type: 'get-rtp-capabilities' });
             }
 
             // Step 2: When server sends RTP caps, create Device and request send transport
@@ -254,7 +254,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
                 console.log(
                   '[WebRTC] Device loaded, requesting send transport',
                 );
-                sendToSoup({type: 'create-send-transport'});
+                sendToSoup({ type: 'create-send-transport' });
               } catch (err: any) {
                 console.error('[WebRTC] Device load error:', err);
                 Toast.show({
@@ -283,7 +283,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
                 // Handle connect event
                 sendTransportRef.current.on(
                   'connect',
-                  async ({dtlsParameters}: any, callback: any) => {
+                  async ({ dtlsParameters }: any, callback: any) => {
                     console.log('[WebRTC] Transport connecting...');
                     sendToSoup({
                       type: 'connect-transport',
@@ -297,7 +297,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
                 // Handle produce event
                 sendTransportRef.current.on(
                   'produce',
-                  async ({kind, rtpParameters}: any, callback: any) => {
+                  async ({ kind, rtpParameters }: any, callback: any) => {
                     console.log(`[WebRTC] Producing ${kind} track`);
                     sendToSoup({
                       type: 'produce',
@@ -305,7 +305,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
                       kind,
                       rtpParameters,
                     });
-                    callback({id: `${kind}-${Date.now()}`});
+                    callback({ id: `${kind}-${Date.now()}` });
                   },
                 );
 
@@ -332,7 +332,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
                 if (videoTrack) {
                   const videoProducer = await sendTransportRef.current.produce({
                     track: videoTrack,
-                    encodings: [{maxBitrate: 2000000}],
+                    encodings: [{ maxBitrate: 2000000 }],
                   });
                   producersRef.current.push(videoProducer);
                   console.log('[WebRTC] ✅ Video producer created');
@@ -352,6 +352,10 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
                   '[WebRTC] 🎉 Live streaming ACTIVE - dashboard should see video now!',
                 );
 
+                // Request server-side recording
+                console.log('[RECORDING] Requesting server to start recording...');
+                sendToSoup({ type: 'start-recording', roomId });
+
                 Toast.show({
                   type: 'success',
                   text1: 'Live Streaming Active!',
@@ -366,6 +370,59 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
                 });
               }
             }
+
+            // Handle server recording completion
+            if (data.type === 'recording-complete') {
+              console.log('[RECORDING] Server recording complete:', data);
+              try {
+                const storeUrl = data.videoUrl || data.storeUrl;
+                const fileName = `Order_Code_${currentDriverOrder?.customer_order?.order_code || Date.now()}.webm`;
+
+                if (storeUrl) {
+                  console.log('[RECORDING] Uploading video URL to database:', storeUrl);
+
+                  // Save to database using upsertStepTaskAction
+                  await orderService.upsertStepTaskAction({
+                    object: {
+                      key: 'LIVE_STREAM_RECORDING',
+                      url: storeUrl,
+                      value: fileName,
+                      quantity_dispensed: 0,
+                      task_id: currentDriverOrder?.id,
+                      customer_asset_id: currentAssetForDispense?.id,
+                    },
+                  });
+
+                  setIsStreamUploaded(true);
+                  console.log('[RECORDING] ✅ Recording URL saved to database');
+
+                  Toast.show({
+                    type: 'success',
+                    text1: 'Recording Saved',
+                    text2: 'Video uploaded successfully!',
+                  });
+                } else {
+                  console.warn('[RECORDING] No video URL in recording-complete event');
+                }
+              } catch (err: any) {
+                console.error('[RECORDING] Error saving recording:', err);
+                Toast.show({
+                  type: 'error',
+                  text1: 'Recording Save Failed',
+                  text2: err.message || 'Could not save recording',
+                });
+              }
+            }
+
+            // Handle recording errors
+            if (data.type === 'recording-error') {
+              console.error('[RECORDING] Server recording error:', data.error);
+              Toast.show({
+                type: 'error',
+                text1: 'Recording Failed',
+                text2: data.error || 'Server could not record stream',
+              });
+            }
           } catch (err) {
             console.log('[WebRTC] bad json', err);
           }
@@ -379,8 +436,8 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
     try {
       if (wsRef.current && wsOpenRef.current) {
         try {
-          sendToSoup({type: 'leave-room'});
-        } catch {}
+          sendToSoup({ type: 'leave-room' });
+        } catch { }
         wsRef.current?.close();
       }
     } finally {
@@ -664,15 +721,15 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         });
 
         // Get media stream for live streaming
-        const {mediaDevices} = require('../services/mediasoupSetup');
+        const { mediaDevices } = require('../services/mediasoupSetup');
 
         try {
           const stream = await mediaDevices.getUserMedia({
             video: {
               facingMode: 'environment',
-              width: {ideal: 1280},
-              height: {ideal: 720},
-              frameRate: {ideal: 30},
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+              frameRate: { ideal: 30 },
             },
             audio: true,
           });
@@ -688,7 +745,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
                 return;
               }
               sendToSoup(
-                {type: 'join-room', isViewer: false} as any,
+                { type: 'join-room', isViewer: false } as any,
                 false,
                 roomIdLocal,
               );
@@ -830,9 +887,8 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       Toast.show({
         type: 'error',
         text1: 'Cannot Stop Recording',
-        text2: `Please record for at least ${
-          streamingDurationSeconds / 60
-        } minutes before stopping`,
+        text2: `Please record for at least ${streamingDurationSeconds / 60
+          } minutes before stopping`,
       });
       return;
     }
@@ -857,7 +913,11 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         is_live_dispensing: false,
       });
 
-      // Stop camera recording if in record mode
+      // Request server to stop recording and upload
+      console.log('[RECORDING] Requesting server to stop recording...');
+      sendToSoup({ type: 'stop-recording', roomId });
+
+      // Stop camera recording if in record mode (legacy code)
       if (mode === 'record' && cameraRef.current && (isRecording || isPaused)) {
         cameraRef.current.stopRecording();
       }
@@ -897,7 +957,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         deviceRef.current = null;
 
         if (wsRef.current && wsOpenRef.current) {
-          sendToSoup({type: 'leave-room'});
+          sendToSoup({ type: 'leave-room' });
         }
 
         console.log('[WebRTC] ✅ Live stream stopped');
@@ -1109,7 +1169,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         const uploadResult = await supportService.uploadVideoFile({
           fileName: fileName,
           contentType: contentType,
-          fileData: {uri: data.uri, path: filePath},
+          fileData: { uri: data.uri, path: filePath },
         });
 
         if (uploadResult.storeUrl) {
@@ -1210,8 +1270,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
 
     Alert.alert(
       'Video File Location',
-      `File Path: ${recordedVideoFile}\n\nFile Exists: ${
-        fileExists ? 'Yes' : 'No'
+      `File Path: ${recordedVideoFile}\n\nFile Exists: ${fileExists ? 'Yes' : 'No'
       }
 
 For Android Emulator:
@@ -1229,7 +1288,7 @@ For iOS Simulator:
             console.log('File path:', recordedVideoFile);
           },
         },
-        {text: 'OK'},
+        { text: 'OK' },
       ],
     );
   };
@@ -1267,8 +1326,7 @@ For iOS Simulator:
 
         Alert.alert(
           'Upload Video',
-          `Are you sure you want to upload this video?\n\nFile: ${
-            selectedFile.name
+          `Are you sure you want to upload this video?\n\nFile: ${selectedFile.name
           }\nSize: ${((selectedFile.size || 0) / 1024 / 1024).toFixed(2)}MB`,
           [
             {
@@ -1306,14 +1364,13 @@ For iOS Simulator:
       const detectedFormat = selectedFile.type?.includes('webm')
         ? 'webm'
         : selectedFile.type?.includes('mp4')
-        ? 'mp4'
-        : selectedFile.name?.toLowerCase().includes('.webm')
-        ? 'webm'
-        : 'mp4';
+          ? 'mp4'
+          : selectedFile.name?.toLowerCase().includes('.webm')
+            ? 'webm'
+            : 'mp4';
       const contentType = selectedFile.type || `video/${detectedFormat}`;
-      const fileName = `Upload_${
-        currentDriverOrder?.customer_order?.order_code
-      }_${Date.now()}.${detectedFormat}`;
+      const fileName = `Upload_${currentDriverOrder?.customer_order?.order_code
+        }_${Date.now()}.${detectedFormat}`;
 
       const fileData = {
         uri: selectedFile.uri,
@@ -1515,7 +1572,7 @@ For iOS Simulator:
           const assetId =
             asset.customer_asset?.id || asset.id || asset.customer_asset_id;
           if (assetId === currentAssetId) {
-            return {...asset, quantity_dispensed: quantity};
+            return { ...asset, quantity_dispensed: quantity };
           }
           return asset;
         });
@@ -1586,12 +1643,12 @@ For iOS Simulator:
           quantity_dispensed: quantity,
           task_id: currentDriverOrder?.id,
           ...(orderStore.getState().currentDriverOrder?.category === 'DELIVERY'
-            ? {customer_asset_id: `${currentAssetId}`}
+            ? { customer_asset_id: `${currentAssetId}` }
             : {
-                vehicle_id:
-                  currentAssetId ||
-                  checkinStore.getState().driverVehicleDetails?.id,
-              }),
+              vehicle_id:
+                currentAssetId ||
+                checkinStore.getState().driverVehicleDetails?.id,
+            }),
           location: {
             type: 'Point',
             coordinates: [coordinates.longitude, coordinates.latitude],
@@ -1623,7 +1680,7 @@ For iOS Simulator:
           const assetId =
             asset.customer_asset?.id || asset.id || asset.customer_asset_id;
           if (assetId === currentAssetId) {
-            return {...asset, quantity_dispensed: quantity};
+            return { ...asset, quantity_dispensed: quantity };
           }
           return asset;
         });
@@ -1732,13 +1789,11 @@ For iOS Simulator:
               Customer Name:
             </Text>
             <Text weight="400" size="sm" style={styles.orderValue as any}>
-              {`${
-                currentDriverOrder?.customer_order?.organization_user?.user
-                  ?.first_name || ''
-              } ${
-                currentDriverOrder?.customer_order?.organization_user?.user
+              {`${currentDriverOrder?.customer_order?.organization_user?.user
+                ?.first_name || ''
+                } ${currentDriverOrder?.customer_order?.organization_user?.user
                   ?.last_name || ''
-              }`.trim() || 'N/A'}
+                }`.trim() || 'N/A'}
             </Text>
           </View>
 
@@ -1753,52 +1808,7 @@ For iOS Simulator:
         </CardElevated>
       </View>
 
-      {/* Mode Selection - Show BEFORE camera */}
-      {!mode && !hasStreamedOnce && (
-        <View style={styles.modeSelectionSection}>
-          <CardElevated cardStyle={styles.modeSelectionCard}>
-            <Text weight="bold" size="lg" style={styles.modeTitle as any}>
-              Choose Recording Mode
-            </Text>
-            <Text size="sm" style={styles.modeSubtitle as any}>
-              Select how you want to record your fuel delivery
-            </Text>
 
-            <TouchableOpacity
-              style={styles.modeOption}
-              onPress={() => setMode('live')}>
-              <View style={styles.modeIconContainer}>
-                <Text style={styles.modeIcon as any}>📹</Text>
-              </View>
-              <View style={styles.modeContent}>
-                <Text weight="600" size="base">
-                  Live Streaming
-                </Text>
-                <Text size="sm" style={styles.modeDescription as any}>
-                  Stream live video to dashboard in real-time (No recording
-                  saved)
-                </Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.modeOption}
-              onPress={() => setMode('record')}>
-              <View style={styles.modeIconContainer}>
-                <Text style={styles.modeIcon as any}>🎥</Text>
-              </View>
-              <View style={styles.modeContent}>
-                <Text weight="600" size="base">
-                  Video Recording
-                </Text>
-                <Text size="sm" style={styles.modeDescription as any}>
-                  Record video file for upload (No live streaming)
-                </Text>
-              </View>
-            </TouchableOpacity>
-          </CardElevated>
-        </View>
-      )}
 
       {/* Video Section - Shows AFTER mode selection */}
       {mode && (
