@@ -584,7 +584,8 @@ const AssetCard: React.FC<AssetCardProps> = ({
           (styles.fillRemainingButton as ViewStyle),
           getButtonText() === 'Resume Recording' &&
           (styles.resumeRecordingButton as ViewStyle),
-          (disabled ||
+          // 🧪 TESTING MODE: Never disable button in dev mode
+          !__DEV__ && (disabled ||
             getButtonText() === 'Complete' ||
             getButtonText() === 'Order Complete' ||
             isDisabledDueToOtherFillRemaining()) &&
@@ -601,26 +602,35 @@ const AssetCard: React.FC<AssetCardProps> = ({
                 : handleStartDispense
         }
         disabled={
-          disabled ||
-          getButtonText() === 'Complete' ||
-          getButtonText() === 'Order Complete' ||
-          isDisabledDueToOtherFillRemaining()
+          // 🧪 TESTING MODE: Never disable button in dev mode
+          __DEV__ ? false : (
+            disabled ||
+            getButtonText() === 'Complete' ||
+            getButtonText() === 'Order Complete' ||
+            isDisabledDueToOtherFillRemaining()
+          )
         }
         activeOpacity={0.7}>
         <Text
           size="sm"
           weight="600"
           color={
-            disabled ||
-              getButtonText() === 'Complete' ||
-              getButtonText() === 'Order Complete' ||
-              isDisabledDueToOtherFillRemaining()
-              ? 'disabledInputText'
-              : 'white'
+            // 🧪 TESTING MODE: Always show white text in dev mode
+            __DEV__ ? 'white' : (
+              disabled ||
+                getButtonText() === 'Complete' ||
+                getButtonText() === 'Order Complete' ||
+                isDisabledDueToOtherFillRemaining()
+                ? 'disabledInputText'
+                : 'white'
+            )
           }>
-          {isDisabledDueToOtherFillRemaining()
-            ? 'Fill Other Asset First'
-            : getButtonText()}
+          {/* 🧪 TESTING MODE: Always show "Start Dispense" in dev mode */}
+          {__DEV__ ? 'Start Dispense' : (
+            isDisabledDueToOtherFillRemaining()
+              ? 'Fill Other Asset First'
+              : getButtonText()
+          )}
         </Text>
       </TouchableOpacity>
 
