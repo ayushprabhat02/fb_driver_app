@@ -97,10 +97,10 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
     }
   };
 
-  console.log('----quantityno----', parseFloat(quantity));
-  console.log('-----pendingQuantity----', pendingQuantity);
+  // console.log('----quantityno----', parseFloat(quantity));
+  // console.log('-----pendingQuantity----', pendingQuantity);
 
-  console.log('----isFillingRemaining----', isFillingRemaining);
+  // console.log('----isFillingRemaining----', isFillingRemaining);
 
   const handleProceed = async () => {
     let quantityNum = parseFloat(quantity);
@@ -133,7 +133,8 @@ const QuantityBottomSheet: React.FC<QuantityBottomSheetProps> = ({
       Toast.show({
         type: 'error',
         text1: 'Invalid Quantity',
-        text2: 'For BuddyCan orders, quantity must be in multiples of 20 liters',
+        text2:
+          'For BuddyCan orders, quantity must be in multiples of 20 liters',
       });
       return;
     }

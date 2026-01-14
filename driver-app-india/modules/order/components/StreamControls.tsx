@@ -26,29 +26,18 @@ interface StreamControlsProps {
 
 const StreamControls: React.FC<StreamControlsProps> = ({
   isRecording,
-  isPaused,
-  isLoading,
   canStopStream,
   hasStreamedOnce,
   streamingState,
   isStreamUploaded,
   onStartRecording,
-  onPauseRecording,
-  onResumeRecording,
   onStopRecording,
   onNext,
   isStartingRecording,
-  isPausingRecording,
-  isResumingRecording,
   isStoppingRecording,
 }) => {
   const canProceedNext = () => {
-    return (
-      !isRecording &&
-      !isPaused &&
-      hasStreamedOnce &&
-      streamingState === 'stopped'
-    );
+    return !isRecording && hasStreamedOnce && streamingState === 'stopped';
   };
 
   const getNextButtonText = () => {
@@ -57,9 +46,9 @@ const StreamControls: React.FC<StreamControlsProps> = ({
 
   return (
     <View style={styles.controlsContainer}>
-      {/* Recording Button Container - Fixed Height */}
+      {/* Streaming Button Container - Fixed Height */}
       <View style={styles.recordingButtonContainer}>
-        {!isRecording && !isPaused ? (
+        {!isRecording ? (
           !isStreamUploaded && (
             <Button
               variant="solid"
@@ -67,57 +56,23 @@ const StreamControls: React.FC<StreamControlsProps> = ({
               disabled={isStartingRecording || isStoppingRecording}
               loading={isStartingRecording || isStoppingRecording}
               style={[styles.button, styles.recordButton]}>
-              {isStoppingRecording ? 'Processing...' : 'Start Recording'}
+              {isStoppingRecording ? 'Processing...' : 'Start Stream'}
             </Button>
           )
-        ) : isRecording && !isPaused ? (
-          <View style={styles.buttonRow}>
-            <Button
-              variant="outlined"
-              onPress={onPauseRecording}
-              disabled={isPausingRecording || isStoppingRecording}
-              loading={isPausingRecording}
-              style={[styles.button, styles.pauseButton]}>
-              Pause
-            </Button>
-            <Button
-              variant="solid"
-              onPress={onStopRecording}
-              disabled={!canStopStream || isStoppingRecording}
-              loading={isStoppingRecording}
-              style={[
-                styles.button,
-                styles.stopButton,
-                (!canStopStream || isStoppingRecording) &&
-                  styles.disabledButton,
-              ]}>
-              Stop Recording
-            </Button>
-          </View>
-        ) : isPaused ? (
-          <View style={styles.buttonRow}>
-            <Button
-              variant="solid"
-              onPress={onResumeRecording}
-              disabled={isResumingRecording || isStoppingRecording}
-              loading={isResumingRecording}
-              style={[styles.button, styles.resumeButton]}>
-              Resume Recording
-            </Button>
-            <Button
-              variant="solid"
-              onPress={onStopRecording}
-              disabled={!canStopStream || isStoppingRecording}
-              loading={isStoppingRecording}
-              style={[
-                styles.button,
-                styles.stopButton,
-                (!canStopStream || isStoppingRecording) && styles.disabledButton,
-              ]}>
-              Stop Recording
-            </Button>
-          </View>
-        ) : null}
+        ) : (
+          <Button
+            variant="solid"
+            onPress={onStopRecording}
+            disabled={!canStopStream || isStoppingRecording}
+            loading={isStoppingRecording}
+            style={[
+              styles.button,
+              styles.stopButton,
+              (!canStopStream || isStoppingRecording) && styles.disabledButton,
+            ]}>
+            Stop Stream
+          </Button>
+        )}
       </View>
 
       {/* Next Button - Always Present */}
@@ -139,16 +94,11 @@ const styles = ScaledSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 20,
     gap: 10,
-    minHeight: 140, // Increased height to accommodate two-button layout
+    minHeight: 120,
   },
   recordingButtonContainer: {
-    minHeight: 60, // Increased height for two-button layout
+    minHeight: 50,
     justifyContent: 'center',
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: 12,
-    justifyContent: 'space-between',
   },
   button: {
     marginVertical: '4@vs',
@@ -156,18 +106,8 @@ const styles = ScaledSheet.create({
   recordButton: {
     backgroundColor: FBColors.primary,
   },
-  pauseButton: {
-    borderColor: '#F59E0B', // Amber color
-    borderWidth: 2,
-    flex: 1,
-  },
-  resumeButton: {
-    backgroundColor: '#10B981', // Emerald color
-    flex: 1,
-  },
   stopButton: {
     backgroundColor: FBColors.error,
-    flex: 1,
   },
   disabledButton: {
     opacity: 0.5,

@@ -1,29 +1,35 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useState, useEffect, useRef, useCallback} from 'react';
 import {
   View,
   Alert,
   ActivityIndicator,
   Platform,
   StyleSheet,
-  TouchableOpacity,
-  PermissionsAndroid,
 } from 'react-native';
-import {RNCamera} from 'react-native-camera';
 import {useNavigation} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {request, PERMISSIONS, RESULTS, check} from 'react-native-permissions';
 import Toast from 'react-native-toast-message';
 import {ScaledSheet} from 'react-native-size-matters';
-import RNFS from 'react-native-fs';
-import DocumentPicker from 'react-native-document-picker';
+
+// WebRTC imports
+import {
+  RTCView,
+  mediaDevices,
+  MediaStream,
+  registerGlobals,
+} from 'react-native-webrtc';
+import * as mediasoupClient from 'mediasoup-client';
+import type {Device, Transport, Producer} from 'mediasoup-client/lib/types';
+
+// Register WebRTC globals for mediasoup-client compatibility
+registerGlobals();
 
 // Components
 import {
   Text,
   CardElevated,
   QuantityBottomSheet,
-  Divider,
-  Button,
   FullScreenLoader,
 } from '@/components';
 import PermissionScreen from '../components/PermissionScreen';
@@ -31,23 +37,22 @@ import CameraOverlay from '../components/CameraOverlay';
 import StreamControls from '../components/StreamControls';
 
 // Store
-import {checkinStore, orderStore} from '@/globalStore';
+import {checkinStore, orderStore, authStore} from '@/globalStore';
 
 // Services
 import orderService from '../services';
-import supportService from '@/modules/support/services';
 
 // Types
 import {FBColors, FBBackground} from '@/types/styles';
 import {OrderStackParamList} from '@/navigator/containers/Order';
 import {getCurrentLocation} from '@/utils/location';
 import {
-  saveStreamState,
-  getStreamState,
   clearStreamState,
-  hasPausedStreamForTask,
   saveAssetWithUploadedVideo,
 } from '@/utils/streamStorage';
+
+// Firebase
+import auth from '@react-native-firebase/auth';
 
 type LiveStreamNavigationProp = StackNavigationProp<
   OrderStackParamList,
@@ -58,14 +63,31 @@ interface LiveStreamScreenProps {
   route?: any;
 }
 
+// WebSocket URL for mediasoup server
+// const WS_URL = 'wss://soup.fuelbuddy.in';
+// Staging URL
+const WS_URL = 'https://staging-soup.fuelbuddy.dev/rooms';
+// LOCAL
+// const WS_URL = 'ws://localhost:3000';
+
+// Video quality settings
+const VIDEO_WIDTH = 640;
+const VIDEO_HEIGHT = 480;
+const VIDEO_FRAMERATE = 15;
+
 const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   const navigation = useNavigation<LiveStreamNavigationProp>();
-  const cameraRef = useRef<RNCamera | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // WebRTC refs
+  const wsRef = useRef<WebSocket | null>(null);
+  const deviceRef = useRef<Device | null>(null);
+  const sendTransportRef = useRef<Transport | null>(null);
+  const producersRef = useRef<Producer[]>([]);
+  const localStreamRef = useRef<MediaStream | null>(null);
+
   // State
-  const [isRecording, setIsRecording] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [permissionStatus, setPermissionStatus] = useState({
     camera: 'unknown',
@@ -77,23 +99,15 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   const [hasStreamedOnce, setHasStreamedOnce] = useState(false);
   const [isStreamUploaded, setIsStreamUploaded] = useState(false);
   const [streamingState, setStreamingState] = useState<
-    'not_started' | 'started' | 'paused' | 'stopped'
+    'not_started' | 'started' | 'stopped'
   >('not_started');
   const [showQuantityBottomSheet, setShowQuantityBottomSheet] = useState(false);
-  const [uploadError, setUploadError] = useState(false);
-  const [recordedVideoFile, setRecordedVideoFile] = useState<string | null>(
-    null,
-  );
-  const [isManualUploading, setIsManualUploading] = useState(false);
-  const [showUploadOptions, setShowUploadOptions] = useState(false);
-  const [isUploadingFromDevice, setIsUploadingFromDevice] = useState(false);
-  const [showCamera, setShowCamera] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
 
-  // Individual button loading states
-  const [isStartingRecording, setIsStartingRecording] = useState(false);
-  const [isPausingRecording, setIsPausingRecording] = useState(false);
-  const [isResumingRecording, setIsResumingRecording] = useState(false);
-  const [isStoppingRecording, setIsStoppingRecording] = useState(false);
+  // Button loading states
+  const [isStartingStream, setIsStartingStream] = useState(false);
+  const [isStoppingStream, setIsStoppingStream] = useState(false);
 
   // Store
   const currentDriverOrder = orderStore.use.currentDriverOrder();
@@ -104,18 +118,24 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   const addAssetWithUploadedVideo = orderStore.use.addAssetWithUploadedVideo();
   const removeAssetWithUploadedVideo =
     orderStore.use.removeAssetWithUploadedVideo();
-  const fuelDispensedTillNow = orderStore.use.fuelDispensedTillNow();
-  const quantityToBeDispensed = orderStore.use.quantityToBeDispensed();
-  const currentAssetForDispense = orderStore.use.currentAssetForDispense();
   const startLoader = orderStore.use.startLoader();
   const stopLoader = orderStore.use.stopLoader();
   const loaders = orderStore.use.loaders();
 
-  // console.log('--currentDriverOrder---', currentDriverOrder);
+  // Minimum streaming duration (10 seconds for testing)
+  const streamingDurationSeconds = 10;
 
-  // Minimum streaming duration set to 5 minutes for all users
-  // const streamingDurationSeconds = 300; // 5 minutes (300 seconds)
-  const streamingDurationSeconds = 10; //10 seconds
+  // Generate room ID similar to Vue.js
+  const getRoomId = useCallback(() => {
+    const currentTask = orderStore.getState().currentDriverOrder;
+    const currentAsset = orderStore.getState().currentAssetForDispense;
+    const orderCode = currentTask?.customer_order?.order_code;
+    const driverVehicleId = currentTask?.driver_vehicle_id;
+    const assetId = currentAsset?.id;
+    return orderCode && driverVehicleId && assetId
+      ? `${orderCode}-${driverVehicleId}-${assetId}`
+      : '';
+  }, []);
 
   // Get current asset's filled quantity
   const getCurrentAssetFilledQuantity = () => {
@@ -131,47 +151,14 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
     return currentAsset?.quantity_dispensed || 0;
   };
 
-  // Check permissions and restore state on component mount
+  // Check permissions on mount
   useEffect(() => {
     checkPermissions();
-    restoreStreamState();
   }, []);
 
-  // Restore stream state from storage
-  const restoreStreamState = async () => {
-    if (!currentDriverOrder?.id || !currentAssetForDispense?.id) return;
-
-    try {
-      const hasPaused = await hasPausedStreamForTask(
-        currentDriverOrder.id,
-        currentAssetForDispense.id,
-      );
-
-      if (hasPaused) {
-        const savedState = await getStreamState();
-        setIsPaused(true);
-        setStreamingState('paused');
-        setRecordingDuration(savedState.recordingDuration);
-        setHasStreamedOnce(savedState.hasStreamedOnce);
-        setCanStopStream(
-          savedState.recordingDuration >= streamingDurationSeconds,
-        );
-
-        Toast.show({
-          type: 'info',
-          text1: 'Paused Recording Found',
-          text2:
-            'Your previous recording session was paused. You can resume it.',
-        });
-      }
-    } catch (error) {
-      console.error('Failed to restore stream state:', error);
-    }
-  };
-
-  // Setup recording timer (increments duration only when recording and not paused)
+  // Timer effect - only runs when streaming
   useEffect(() => {
-    if (!isRecording || isPaused) {
+    if (!isStreaming) {
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
@@ -180,20 +167,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
     }
 
     timerRef.current = setInterval(() => {
-      setRecordingDuration(prev => {
-        const newDuration = prev + 1;
-        // Save state periodically during recording
-        saveStreamState({
-          isRecording: true,
-          isPaused: false,
-          recordingDuration: newDuration,
-          streamingState: 'started',
-          hasStreamedOnce: true,
-          taskId: currentDriverOrder?.id || null,
-          assetId: currentAssetForDispense?.id || null,
-        });
-        return newDuration;
-      });
+      setRecordingDuration(prev => prev + 1);
     }, 1000);
 
     return () => {
@@ -202,26 +176,31 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         timerRef.current = null;
       }
     };
-  }, [isRecording, isPaused]);
+  }, [isStreaming]);
 
-  // Enable stop after threshold using latest state
+  // Enable stop after threshold
   useEffect(() => {
     if (
-      isRecording &&
+      isStreaming &&
       recordingDuration >= streamingDurationSeconds &&
       !canStopStream
     ) {
-      console.log(
-        `Enabling stop: duration=${recordingDuration}, threshold=${streamingDurationSeconds}, canStopStream=${canStopStream}`,
-      );
       setCanStopStream(true);
       Toast.show({
         type: 'info',
         text1: 'Minimum Duration Reached',
-        text2: 'You can now stop the recording',
+        text2: 'You can now stop the stream',
       });
     }
-  }, [recordingDuration, isRecording, streamingDurationSeconds, canStopStream]);
+  }, [recordingDuration, isStreaming, canStopStream]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      cleanupMediasoup();
+      cleanupLocalMedia();
+    };
+  }, []);
 
   const checkPermissions = async () => {
     try {
@@ -237,14 +216,12 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           ? PERMISSIONS.IOS.MICROPHONE
           : PERMISSIONS.ANDROID.RECORD_AUDIO;
 
-      // Check current status
       const currentCameraStatus = await check(cameraPermission);
       const currentMicStatus = await check(micPermission);
 
       let cameraResult = currentCameraStatus;
       let micResult = currentMicStatus;
 
-      // Request permissions if not granted
       if (currentCameraStatus !== RESULTS.GRANTED) {
         cameraResult = await request(cameraPermission);
       }
@@ -271,8 +248,8 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       } else {
         setHasPermission(false);
       }
-    } catch (error) {
-      console.error('Permission error:', error);
+    } catch (err) {
+      console.error('Permission error:', err);
       setHasPermission(false);
       Toast.show({
         type: 'error',
@@ -284,514 +261,440 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
     }
   };
 
-  const startRecording = async () => {
-    if (!cameraRef.current || isRecording) return;
+  // Send message via WebSocket
+  const sendMessage = useCallback(
+    async (msg: any) => {
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        // Get fresh values from store
+        const currentTask = orderStore.getState().currentDriverOrder;
+        const currentAsset = orderStore.getState().currentAssetForDispense;
+        const userId = authStore.getState().firebaseUser?.uid;
+        const authToken = authStore.getState().authToken;
 
+        // Get fresh Firebase ID token
+        let idToken = authToken;
+        const firebaseUser = auth().currentUser;
+        if (firebaseUser && !idToken) {
+          try {
+            idToken = await firebaseUser.getIdToken();
+          } catch (e) {
+            console.error('Failed to get Firebase ID token:', e);
+          }
+        }
+
+        const userData = {
+          userId: userId,
+          userClaim: null, // Will be filled by server if needed
+          authToken: idToken,
+          refreshToken: null, // Not supported in React Native Firebase
+          organisationUserId: null,
+          email: firebaseUser?.email,
+          taskId: currentTask?.id,
+          customerAssetId: currentAsset?.id,
+        };
+
+        const messagePayload = {
+          ...msg,
+          roomId: getRoomId(),
+          isViewer: false,
+          user: userData,
+        };
+
+        console.log(`[WebSocket] Sending message:`, {
+          type: msg.type,
+          hasAuthToken: !!userData.authToken,
+          userId: userData.userId,
+        });
+
+        wsRef.current.send(JSON.stringify(messagePayload));
+      }
+    },
+    [getRoomId],
+  );
+
+  // Initialize WebSocket
+  const initWebSocket = (): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      wsRef.current = new WebSocket(WS_URL);
+
+      wsRef.current.onopen = () => {
+        console.log('[WebSocket] Connected');
+        resolve();
+      };
+
+      wsRef.current.onerror = e => {
+        console.error('[WebSocket] Error:', e);
+        reject(new Error('WebSocket connection failed'));
+      };
+
+      wsRef.current.onmessage = handleWebSocketMessage;
+
+      wsRef.current.onclose = () => {
+        console.log('[WebSocket] Closed');
+      };
+    });
+  };
+
+  // Handle WebSocket messages
+  const handleWebSocketMessage = async (event: {data?: string}) => {
     try {
-      setIsStartingRecording(true);
-      setStreamingState('started');
+      if (!event.data) return;
+      const msg = JSON.parse(event.data);
+      console.log('[WebSocket] Received:', msg.type);
+
+      switch (msg.type) {
+        case 'room-joined':
+          deviceRef.current = new mediasoupClient.Device();
+          sendMessage({type: 'get-rtp-capabilities'});
+          break;
+
+        case 'rtp-capabilities':
+          if (deviceRef.current && !deviceRef.current.loaded) {
+            try {
+              await deviceRef.current.load({
+                routerRtpCapabilities: msg.rtpCapabilities,
+              });
+              sendMessage({type: 'create-send-transport'});
+            } catch (err: any) {
+              setError(`Error loading device: ${err.message}`);
+              console.error(err);
+            }
+          }
+          break;
+
+        case 'transport-created':
+          if (msg.direction === 'send') {
+            await setupSendTransport(msg.transportOptions);
+          }
+          break;
+
+        case 'recording-stopped':
+          // Server-side recording finished - receive the video URL
+          console.log(
+            '[WebSocket] Recording stopped, video URL:',
+            msg.videoUrl,
+          );
+          if (msg.videoUrl) {
+            await handleRecordingComplete(msg.videoUrl);
+          }
+          break;
+
+        case 'error':
+          setError(msg.error);
+          console.error('[WebSocket] Error:', msg.error);
+          break;
+      }
+    } catch (err) {
+      console.error('[WebSocket] Message parse error:', err);
+    }
+  };
+
+  // Setup send transport for producing video/audio
+  const setupSendTransport = async (transportOptions: any) => {
+    if (!deviceRef.current) return;
+
+    sendTransportRef.current =
+      deviceRef.current.createSendTransport(transportOptions);
+
+    sendTransportRef.current.on('connect', ({dtlsParameters}, callback) => {
+      sendMessage({
+        type: 'connect-transport',
+        transportId: sendTransportRef.current?.id,
+        dtlsParameters,
+      });
+      callback();
+    });
+
+    sendTransportRef.current.on(
+      'produce',
+      ({kind, rtpParameters}, callback) => {
+        sendMessage({
+          type: 'produce',
+          transportId: sendTransportRef.current?.id,
+          kind,
+          rtpParameters,
+        });
+        callback({id: Date.now().toString()});
+      },
+    );
+
+    // Produce local tracks
+    await produceLocalTracks();
+  };
+
+  // Produce video and audio tracks
+  const produceLocalTracks = async () => {
+    if (!localStreamRef.current || !sendTransportRef.current) return;
+
+    const tracks = localStreamRef.current.getTracks();
+
+    for (const track of tracks) {
+      try {
+        const producer = await sendTransportRef.current.produce({
+          track,
+        });
+        producersRef.current.push(producer);
+        console.log(`[MediaSoup] Produced ${track.kind} track`);
+      } catch (err) {
+        console.error(`[MediaSoup] Failed to produce ${track.kind}:`, err);
+      }
+    }
+  };
+
+  // Cleanup mediasoup resources
+  const cleanupMediasoup = () => {
+    producersRef.current.forEach(p => p.close());
+    producersRef.current = [];
+
+    sendTransportRef.current?.close();
+    sendTransportRef.current = null;
+
+    wsRef.current?.close();
+    wsRef.current = null;
+
+    deviceRef.current = null;
+  };
+
+  // Cleanup local media
+  const cleanupLocalMedia = () => {
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach(track => track.stop());
+      localStreamRef.current = null;
+    }
+    setLocalStream(null);
+  };
+
+  // Handle recording complete with server URL
+  const handleRecordingComplete = async (videoUrl: string) => {
+    try {
+      startLoader('uploadVideo');
+
+      const currentTask = orderStore.getState().currentDriverOrder;
+      const currentAsset = orderStore.getState().currentAssetForDispense;
+
+      // Save the task action with server-provided video URL
+      await orderService.upsertStepTaskAction({
+        object: {
+          key: 'LIVE_STREAM_RECORDING',
+          url: videoUrl,
+          value: `Recording_${currentTask?.customer_order?.order_code}.webm`,
+          quantity_dispensed: 0,
+          task_id: currentTask?.id,
+          customer_asset_id: currentAsset?.id,
+        },
+      });
+
+      // Mark asset as having uploaded video
+      const currentAssetId = currentAsset?.id;
+      if (currentAssetId) {
+        addAssetWithUploadedVideo(currentAssetId);
+        await saveAssetWithUploadedVideo(currentTask?.id || '', currentAssetId);
+      }
+
+      setIsStreamUploaded(true);
+
+      Toast.show({
+        type: 'success',
+        text1: 'Stream Recorded',
+        text2: 'Video has been saved to cloud storage',
+      });
+    } catch (err) {
+      console.error('Error saving recording:', err);
+      Toast.show({
+        type: 'error',
+        text1: 'Recording Save Failed',
+        text2: 'Failed to save recording data',
+      });
+    } finally {
+      stopLoader('uploadVideo');
+      setIsStoppingStream(false);
+    }
+  };
+
+  // Start streaming
+  const startStream = async () => {
+    try {
+      setIsStartingStream(true);
+      setError(null);
 
       // Validate required data
-      if (!currentDriverOrder?.customer_order?.id) {
+      const currentTask = orderStore.getState().currentDriverOrder;
+      const currentAsset = orderStore.getState().currentAssetForDispense;
+
+      if (!currentTask?.customer_order?.id) {
         throw new Error('Order data is missing');
       }
 
-      const currentAssetId = currentAssetForDispense?.id;
-      if (!currentAssetId) {
+      if (!currentAsset?.id) {
         throw new Error('Asset data is missing');
       }
 
-      if (!hasStreamedOnce) {
-        setHasStreamedOnce(true);
-      }
-
-      // Show camera when starting new recording
-      setShowCamera(true);
-
-      // Always reset timer states when starting new recording
-      console.log('Starting recording - resetting timer states');
+      // Reset states
       setRecordingDuration(0);
       setCanStopStream(false);
+      setHasStreamedOnce(true);
+      setStreamingState('started');
 
-      // Update stream status via API (no loader for task state)
+      // Get camera stream using react-native-webrtc
+      const stream = await mediaDevices.getUserMedia({
+        video: {
+          facingMode: 'environment',
+          width: VIDEO_WIDTH,
+          height: VIDEO_HEIGHT,
+          frameRate: VIDEO_FRAMERATE,
+        },
+        audio: true,
+      });
+
+      localStreamRef.current = stream as MediaStream;
+      setLocalStream(stream as MediaStream);
+
+      // Update stream status via API
       await orderService.upsertStepTaskAction({
         object: {
           key: 'STREAM_STARTED',
           url: '',
           value: new Date().toISOString(),
-          task_id: currentDriverOrder?.id,
-          customer_asset_id: currentAssetId,
+          task_id: currentTask?.id,
+          customer_asset_id: currentAsset?.id,
         },
       });
 
       await orderService.updateTaskLiveDispensingStatus({
-        task_id: currentDriverOrder?.id,
+        task_id: currentTask?.id,
         is_live_dispensing: true,
       });
 
-      // Set recording state IMMEDIATELY before starting camera recording
-      setIsRecording(true);
+      // Connect to WebSocket and join room
+      await initWebSocket();
+      sendMessage({
+        type: 'join-room',
+        isViewer: false,
+        orderCode: currentTask?.customer_order?.order_code,
+        driverVehicleId: currentTask?.driver_vehicle_id,
+        assetId: currentAsset?.id,
+      });
 
-      const recordOptions = {
-        quality: RNCamera.Constants.VideoQuality['720p'],
-        videoBitrate: 800000,
-        audioBitrate: 64000,
-      };
+      setIsStreaming(true);
 
       Toast.show({
         type: 'success',
-        text1: 'Recording Started',
-        text2: 'Live stream is now recording',
+        text1: 'Stream Started',
+        text2: 'Live streaming is now active',
       });
-
-      // Start recording without blocking the UI
-      const recordPromise = cameraRef.current.recordAsync(recordOptions);
-
-      recordPromise.then(handleRecordingFinished).catch(error => {
-        console.error('Recording error:', error);
-        Toast.show({
-          type: 'error',
-          text1: 'Recording Error',
-          text2: 'An error occurred while recording',
-        });
-      });
-    } catch (error) {
-      console.error('Start recording error:', error);
-      setIsRecording(false); // Reset recording state on error
+    } catch (err: any) {
+      console.error('Start stream error:', err);
+      setError(err.message);
+      cleanupLocalMedia();
       Toast.show({
         type: 'error',
-        text1: 'Recording Failed',
-        text2: 'Unable to start recording',
+        text1: 'Stream Failed',
+        text2: err.message || 'Unable to start streaming',
       });
     } finally {
-      setIsStartingRecording(false);
+      setIsStartingStream(false);
     }
   };
 
-  const pauseRecording = async () => {
-    if (!cameraRef.current || !isRecording || isPaused) return;
-
-    try {
-      setIsPausingRecording(true);
-      setIsPaused(true);
-      setStreamingState('paused');
-
-      // Update stream status via API (no loader for task state)
-      await orderService.upsertStepTaskAction({
-        object: {
-          key: 'STREAM_PAUSED',
-          url: '',
-          value: new Date().toISOString(),
-          task_id: currentDriverOrder?.id,
-          customer_asset_id: currentAssetForDispense?.id,
-        },
-      });
-
-      // Save paused state
-      await saveStreamState({
-        isRecording: true,
-        isPaused: true,
-        recordingDuration,
-        streamingState: 'paused',
-        hasStreamedOnce: true,
-        taskId: currentDriverOrder?.id || null,
-        assetId: currentAssetForDispense?.id || null,
-      });
-
-      Toast.show({
-        type: 'info',
-        text1: 'Recording Paused',
-        text2: 'You can resume recording anytime',
-      });
-    } catch (error) {
-      console.error('Pause recording error:', error);
-      setIsPaused(false);
-      Toast.show({
-        type: 'error',
-        text1: 'Pause Failed',
-        text2: 'Unable to pause recording',
-      });
-    } finally {
-      setIsPausingRecording(false);
-    }
-  };
-
-  const resumeRecording = async () => {
-    if (!cameraRef.current || !isPaused) return;
-
-    try {
-      setIsResumingRecording(true);
-      setIsPaused(false);
-      setStreamingState('started');
-
-      // Update stream status via API (no loader for task state)
-      await orderService.upsertStepTaskAction({
-        object: {
-          key: 'STREAM_RESUMED',
-          url: '',
-          value: new Date().toISOString(),
-          task_id: currentDriverOrder?.id,
-          customer_asset_id: currentAssetForDispense?.id,
-        },
-      });
-
-      // Update stream status
-      await saveStreamState({
-        isRecording: true,
-        isPaused: false,
-        recordingDuration,
-        streamingState: 'started',
-        hasStreamedOnce: true,
-        taskId: currentDriverOrder?.id || null,
-        assetId: currentAssetForDispense?.id || null,
-      });
-
-      Toast.show({
-        type: 'success',
-        text1: 'Recording Resumed',
-        text2: 'Live stream is recording again',
-      });
-    } catch (error) {
-      console.error('Resume recording error:', error);
-      setIsPaused(true);
-      Toast.show({
-        type: 'error',
-        text1: 'Resume Failed',
-        text2: 'Unable to resume recording',
-      });
-    } finally {
-      setIsResumingRecording(false);
-    }
-  };
-
-  const stopRecording = async () => {
-    if (!cameraRef.current || (!isRecording && !isPaused)) return;
-
-    // Prevent stopping if minimum duration not reached
+  // Stop streaming
+  const stopStream = async () => {
     if (!canStopStream) {
       Toast.show({
         type: 'error',
-        text1: 'Cannot Stop Recording',
-        text2: `Please record for at least ${
-          streamingDurationSeconds / 60
-        } minutes before stopping`,
+        text1: 'Cannot Stop Stream',
+        text2: `Please stream for at least ${streamingDurationSeconds} seconds`,
       });
       return;
     }
 
     try {
-      setIsStoppingRecording(true);
+      setIsStoppingStream(true);
       setStreamingState('stopped');
 
-      // Update stream status via API (no loader for task state)
+      const currentTask = orderStore.getState().currentDriverOrder;
+      const currentAsset = orderStore.getState().currentAssetForDispense;
+
+      // Update stream status via API
       await orderService.upsertStepTaskAction({
         object: {
           key: 'STREAM_STOPPED',
           url: '',
           value: new Date().toISOString(),
-          task_id: currentDriverOrder?.id,
-          customer_asset_id: currentAssetForDispense?.id,
+          task_id: currentTask?.id,
+          customer_asset_id: currentAsset?.id,
         },
       });
 
       await orderService.updateTaskLiveDispensingStatus({
-        task_id: currentDriverOrder?.id || '',
+        task_id: currentTask?.id || '',
         is_live_dispensing: false,
       });
 
-      // Stop camera recording if recording was ever started (regardless of pause state)
-      if (isRecording || isPaused) {
-        cameraRef.current.stopRecording();
-        // NOTE: isStoppingRecording will remain true until handleRecordingFinished completes
-        // This prevents user from clicking Start Recording before upload finishes
-      }
+      // Send leave-room message - server will send recording-stopped with video URL
+      sendMessage({type: 'leave-room'});
 
-      setIsRecording(false);
-      setIsPaused(false);
-
-      // Reset timer states
+      // Stop timer
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
       }
-      setCanStopStream(false);
-      setRecordingDuration(0);
 
-      // Clear persisted state since recording is complete
+      // Cleanup
+      cleanupMediasoup();
+      cleanupLocalMedia();
+
+      setIsStreaming(false);
+      setRecordingDuration(0);
+      setCanStopStream(false);
+
+      // Clear persisted state
       await clearStreamState();
 
-      // Remove from interrupted recording array since recording is now complete
-      const currentAssetId = currentAssetForDispense?.id;
-      if (currentAssetId) {
-        orderStore.setState(state => ({
-          ...state,
-          assetsWithInterruptedRecording:
-            state.assetsWithInterruptedRecording.filter(
-              id => id !== currentAssetId,
-            ),
-        }));
-      }
-
       Toast.show({
-        type: 'success',
-        text1: 'Recording Stopped',
-        text2: 'Processing video... Please wait',
+        type: 'info',
+        text1: 'Stream Stopped',
+        text2: 'Processing recording... Please wait',
       });
 
-      // Hide camera after recording is stopped
-      setShowCamera(false);
+      // Note: isStoppingStream will be reset in handleRecordingComplete
+      // when we receive the recording-stopped message with video URL
 
-      // DON'T reset isStoppingRecording here - it will be reset in handleRecordingFinished
-      // This keeps all buttons disabled during upload
-    } catch (error) {
-      console.error('Stop recording error:', error);
+      // If we don't receive recording-stopped within 10 seconds,
+      // reset the state anyway
+      setTimeout(() => {
+        setIsStoppingStream(prev => {
+          if (prev) {
+            // Server didn't respond with video URL
+            Toast.show({
+              type: 'info',
+              text1: 'Stream Complete',
+              text2: 'Recording saved on server',
+            });
+            setIsStreamUploaded(true);
+            return false;
+          }
+          return prev;
+        });
+      }, 10000);
+    } catch (err: any) {
+      console.error('Stop stream error:', err);
       Toast.show({
         type: 'error',
         text1: 'Stop Failed',
-        text2: 'Unable to stop recording properly',
+        text2: 'Unable to stop stream properly',
       });
-      // Only reset on error
-      setIsStoppingRecording(false);
-    }
-    // NOTE: No finally block - isStoppingRecording stays true until upload completes
-  };
-
-  // Check storage permissions for Android
-  const checkStoragePermissions = async (): Promise<boolean> => {
-    if (Platform.OS !== 'android') {
-      return true; // iOS doesn't require explicit storage permissions for app directories
-    }
-
-    try {
-      // For Android 13+ (API 33+), WRITE_EXTERNAL_STORAGE is deprecated
-      // For Android 10-12 (API 29-32), scoped storage is used
-      // For older versions, we still need WRITE_EXTERNAL_STORAGE
-      const androidVersion = Platform.Version as number;
-
-      // For Android 10+ (API 29+), try without permission first
-      if (androidVersion >= 29) {
-        // Android 10+ uses scoped storage, might not need explicit permission
-        // Try to write directly and fall back to permission request if it fails
-        return true;
-      }
-
-      // For older Android versions, check for WRITE_EXTERNAL_STORAGE permission
-      const permission = PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE;
-      const hasPermission = await PermissionsAndroid.check(permission);
-
-      if (hasPermission) {
-        return true;
-      }
-
-      // Request permission if not granted
-      const granted = await PermissionsAndroid.request(permission, {
-        title: 'Storage Permission',
-        message:
-          'This app needs access to storage to save recorded videos to Downloads folder',
-        buttonNeutral: 'Ask Me Later',
-        buttonNegative: 'Cancel',
-        buttonPositive: 'OK',
-      });
-
-      return granted === PermissionsAndroid.RESULTS.GRANTED;
-    } catch (error) {
-      console.error('Error checking storage permissions:', error);
-      return false;
-    }
-  };
-
-  const saveVideoToDevice = async (
-    sourceUri: string,
-    fileName: string,
-  ): Promise<string | null> => {
-    try {
-      // Create a unique file path in the Documents directory (always accessible)
-      const documentsPath = RNFS.DocumentDirectoryPath;
-      const videoPath = `${documentsPath}/${fileName}`;
-
-      // Copy the video file to Documents directory (this should always work)
-      await RNFS.copyFile(sourceUri, videoPath);
-      console.log(`Video saved locally at: ${videoPath}`);
-
-      let externalPath = null;
-      let savedToDownloads = false;
-
-      // Try to save to external storage (Downloads folder) for easier access
-      if (Platform.OS === 'android') {
-        try {
-          const hasStoragePermission = await checkStoragePermissions();
-
-          if (hasStoragePermission) {
-            const downloadsPath = RNFS.DownloadDirectoryPath;
-            externalPath = `${downloadsPath}/${fileName}`;
-            await RNFS.copyFile(sourceUri, externalPath);
-            savedToDownloads = true;
-            console.log(`Video also saved to Downloads: ${externalPath}`);
-          } else {
-            console.log(
-              'Storage permission denied - video saved to app folder only',
-            );
-          }
-        } catch (externalError) {
-          console.warn('Failed to save to Downloads folder:', externalError);
-          // Continue with internal storage only
-        }
-      }
-
-      // Show appropriate success message
-      Toast.show({
-        type: 'info',
-        text1: 'Video Saved Locally',
-        text2: savedToDownloads
-          ? 'Saved to Downloads folder and app documents'
-          : 'Saved in app documents folder',
-        visibilityTime: 4000,
-      });
-
-      return externalPath || videoPath;
-    } catch (error) {
-      console.error('Failed to save video locally:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'Save Failed',
-        text2: 'Unable to save video to device',
-        visibilityTime: 4000,
-      });
-      return null;
-    }
-  };
-
-  const getVideoFormat = (uri: string, codec?: string) => {
-    // Prefer extension if present
-    if (uri?.toLowerCase().endsWith('.mp4')) return 'mp4';
-    if (uri?.toLowerCase().endsWith('.mov')) return 'mp4'; // iOS sometimes
-    // If codec hints are available
-    if (codec && /mp4|h264|avc|aac/i.test(codec)) return 'mp4';
-    // RNCamera default is MP4 on both platforms
-    return 'mp4';
-  };
-
-  const handleRecordingFinished = async (data: any) => {
-    try {
-      startLoader('uploadVideo');
-
-      // Detect actual video format
-      const videoFormat = getVideoFormat(data.uri, data.codec);
-      const contentType = `video/${videoFormat}`;
-      const fileName = `Recording_${currentDriverOrder?.customer_order?.order_code}.${videoFormat}`;
-
-      let uploadedUrl = data.uri || ''; // Fallback to local URI
-      let uploadSuccess = false;
-      let localVideoPath: string | null = null;
-
-      // Always save video locally first
-      localVideoPath = await saveVideoToDevice(data.uri, fileName);
-      if (localVideoPath) {
-        setRecordedVideoFile(localVideoPath);
-      }
-
-      try {
-        // Convert video URI to blob for upload
-        // const response = await fetch(data.uri);
-        // const blob = await response.blob();
-
-        // console.log(`Video size: ${(blob.size / 1024 / 1024).toFixed(2)} MB`);
-        // console.log(
-        //   `Video format detected: ${videoFormat}, Content-Type: ${contentType}`,
-        // );
-
-        // // Upload video to Google Cloud Storage
-        // const uploadResult = await supportService.uploadFile({
-        //   fileName: fileName,
-        //   contentType: contentType,
-        //   fileData: blob,
-        // });
-
-        const filePath = data.uri.replace('file://', '');
-        const fileStats = await RNFS.stat(filePath);
-        console.log(
-          `Video size: ${(fileStats.size / 1024 / 1024).toFixed(2)} MB`,
-        );
-        console.log(`Uploading real file from: ${filePath}`);
-
-        const uploadResult = await supportService.uploadVideoFile({
-          fileName: fileName,
-          contentType: contentType,
-          fileData: {uri: data.uri, path: filePath}, // pass file path
-        });
-
-        if (uploadResult.storeUrl) {
-          uploadedUrl = uploadResult.storeUrl;
-          uploadSuccess = true;
-          setIsStreamUploaded(true);
-          setUploadError(false);
-        }
-        // Hide camera after recording is complete, regardless of upload success
-        setShowCamera(false);
-      } catch (uploadError) {
-        console.warn('Cloud upload failed, video saved locally:', uploadError);
-        setUploadError(true);
-        uploadSuccess = false;
-        // Continue with local URI as fallback
-      }
-
-      // Save the task action with uploaded video URL or local URI (no loader for task state)
-      await orderService.upsertStepTaskAction({
-        object: {
-          key: 'LIVE_STREAM_RECORDING',
-          url: uploadedUrl,
-          value: fileName,
-          quantity_dispensed: 0,
-          task_id: currentDriverOrder?.id,
-          customer_asset_id: currentAssetForDispense?.id,
-        },
-      });
-
-      // Mark asset as having uploaded video
-      const currentAssetId = currentAssetForDispense?.id;
-      if (currentAssetId && uploadSuccess) {
-        addAssetWithUploadedVideo(currentAssetId);
-        // Also save to persistent storage
-        await saveAssetWithUploadedVideo(
-          currentDriverOrder?.id || '',
-          currentAssetId,
-        );
-      }
-
-      Toast.show({
-        type: uploadSuccess ? 'success' : 'info',
-        text1: uploadSuccess ? 'Recording Uploaded' : 'Recording Saved Locally',
-        text2: uploadSuccess
-          ? 'Successfully uploaded to cloud storage'
-          : 'Video saved to device - you can retry upload manually',
-      });
-    } catch (error) {
-      console.error('Process recording error:', error);
-      setIsStreamUploaded(false);
-      setUploadError(true);
-      Toast.show({
-        type: 'error',
-        text1: 'Processing Failed',
-        text2: 'Failed to save recording. Please try again.',
-      });
-    } finally {
-      stopLoader('uploadVideo');
-      // IMPORTANT: Reset isStoppingRecording after upload is complete
-      // This re-enables the Start Recording button
-      setIsStoppingRecording(false);
-      console.log('✅ Upload process completed - buttons re-enabled');
+      setIsStoppingStream(false);
     }
   };
 
   const goNext = () => {
     const canProceed =
-      (!isRecording && hasStreamedOnce && streamingState === 'stopped') ||
-      (!isRecording && hasStreamedOnce && isStreamUploaded); // Allow if video was uploaded from device
+      !isStreaming && hasStreamedOnce && streamingState === 'stopped';
 
     if (!canProceed) {
       Alert.alert(
-        'Complete Video Upload',
-        'Please complete video recording/upload before proceeding to the next step.',
+        'Complete Streaming',
+        'Please complete streaming (start and stop) before proceeding to the next step.',
       );
       return;
     }
@@ -802,345 +705,42 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
     setRecordingDuration(0);
     setCanStopStream(false);
 
-    // Show quantity bottom sheet for tower drivers
+    // Show quantity bottom sheet
     setShowQuantityBottomSheet(true);
   };
 
-  const showVideoLocation = async () => {
-    if (!recordedVideoFile) {
-      Toast.show({
-        type: 'info',
-        text1: 'No Video File',
-        text2: 'No video file recorded yet',
-      });
-      return;
-    }
-
-    // Check if file exists
-    const fileExists = await RNFS.exists(recordedVideoFile);
-
-    Alert.alert(
-      'Video File Location',
-      `File Path: ${recordedVideoFile}\n\nFile Exists: ${
-        fileExists ? 'Yes' : 'No'
-      }
-
-For Android Emulator:
-1. Use Device File Explorer in Android Studio
-2. Navigate to: /data/data/com.customer_app_in/files/
-3. Or check Downloads folder
-
-For iOS Simulator:
-1. Simulator → Device → Photos
-2. Or check app sandbox in Finder`,
-      [
-        {
-          text: 'Copy Path',
-          onPress: () => {
-            // You can implement clipboard copy here if needed
-            console.log('File path:', recordedVideoFile);
-          },
-        },
-        {text: 'OK'},
-      ],
-    );
-  };
-
-  const uploadVideoFromDevice = async () => {
-    try {
-      setIsUploadingFromDevice(true);
-
-      // Open document picker to select video file
-      const result = await DocumentPicker.pick({
-        type: [DocumentPicker.types.video],
-        allowMultiSelection: false,
-      });
-
-      if (result && result.length > 0) {
-        const selectedFile = result[0];
-
-        // Validate file size (limit to 100MB)
-        const maxSizeInBytes = 100 * 1024 * 1024; // 100MB
-        if (selectedFile.size && selectedFile.size > maxSizeInBytes) {
-          Toast.show({
-            type: 'error',
-            text1: 'File Too Large',
-            text2: 'Please select a video file smaller than 100MB',
-          });
-          return;
-        }
-
-        // Validate file type
-        if (!selectedFile.type?.includes('video/')) {
-          Toast.show({
-            type: 'error',
-            text1: 'Invalid File Type',
-            text2: 'Please select a valid video file',
-          });
-          return;
-        }
-
-        // Show confirmation dialog
-        Alert.alert(
-          'Upload Video',
-          `Are you sure you want to upload this video?\n\nFile: ${
-            selectedFile.name
-          }\nSize: ${((selectedFile.size || 0) / 1024 / 1024).toFixed(2)}MB`,
-          [
-            {
-              text: 'Cancel',
-              style: 'cancel',
-            },
-            {
-              text: 'Upload',
-              onPress: () => processSelectedVideo(selectedFile),
-            },
-          ],
-        );
-      }
-    } catch (error) {
-      if (DocumentPicker.isCancel(error)) {
-        // User cancelled the picker
-        console.log('User cancelled video selection');
-      } else {
-        console.error('Error picking video:', error);
-        Toast.show({
-          type: 'error',
-          text1: 'Selection Failed',
-          text2: 'Failed to select video file',
-        });
-      }
-    } finally {
-      setIsUploadingFromDevice(false);
-    }
-  };
-
-  console.log('---recordedVideoFile------', recordedVideoFile);
-
-  const processSelectedVideo = async (selectedFile: any) => {
-    try {
-      startLoader('uploadVideo');
-      setIsUploadingFromDevice(true);
-
-      // Detect video format from selected file
-      const detectedFormat = selectedFile.type?.includes('webm')
-        ? 'webm'
-        : selectedFile.type?.includes('mp4')
-        ? 'mp4'
-        : selectedFile.name?.toLowerCase().includes('.webm')
-        ? 'webm'
-        : 'mp4';
-      const contentType = selectedFile.type || `video/${detectedFormat}`;
-      const fileName = `Upload_${
-        currentDriverOrder?.customer_order?.order_code
-      }_${Date.now()}.${detectedFormat}`;
-
-      // Try to upload the file directly using the file object
-      // Many upload services can handle the file object with uri, type, and name
-      const fileData = {
-        uri: selectedFile.uri,
-        type: contentType,
-        name: fileName,
-      };
-
-      console.log(
-        `Selected video size: ${(
-          (selectedFile.size || 0) /
-          1024 /
-          1024
-        ).toFixed(2)} MB`,
-      );
-      console.log(
-        `Selected video format: ${detectedFormat}, Content-Type: ${contentType}`,
-      );
-
-      // Upload video to Google Cloud Storage
-      const uploadResult = await supportService.uploadVideoFile({
-        fileName: fileName,
-        contentType: contentType,
-        fileData: fileData, // Pass the file object directly
-      });
-
-      if (uploadResult.storeUrl) {
-        // Save the task action with uploaded video URL (no loader for task state)
-        await orderService.upsertStepTaskAction({
-          object: {
-            key: 'LIVE_STREAM_RECORDING',
-            url: uploadResult.storeUrl,
-            value: fileName,
-            quantity_dispensed: 0,
-            task_id: currentDriverOrder?.id,
-            customer_asset_id: currentAssetForDispense?.id,
-          },
-        });
-
-        // Mark asset as having uploaded video
-        const currentAssetId = currentAssetForDispense?.id;
-        if (currentAssetId) {
-          addAssetWithUploadedVideo(currentAssetId);
-        }
-
-        // Mark as streamed and completed
-        setHasStreamedOnce(true);
-        setStreamingState('stopped');
-        setIsStreamUploaded(true);
-        setUploadError(false); // Clear any previous upload errors
-
-        // Clear any recorded video file since we uploaded from device
-        setRecordedVideoFile(null);
-
-        Toast.show({
-          type: 'success',
-          text1: 'Upload Successful',
-          text2: 'Video has been uploaded successfully',
-        });
-      }
-    } catch (error) {
-      console.error('Upload error:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'Upload Failed',
-        text2:
-          error instanceof Error
-            ? error.message
-            : 'Failed to upload selected video. Please try again.',
-      });
-    } finally {
-      stopLoader('uploadVideo');
-      setIsUploadingFromDevice(false);
-    }
-  };
-
-  const handleManualUpload = async () => {
-    if (!recordedVideoFile) {
-      Toast.show({
-        type: 'error',
-        text1: 'No Recording Found',
-        text2: 'No video file available for upload',
-      });
-      return;
-    }
-
-    try {
-      startLoader('uploadVideo');
-      setIsManualUploading(true);
-
-      // Detect format from recorded file path
-      const detectedFormat = recordedVideoFile.toLowerCase().includes('.webm')
-        ? 'webm'
-        : 'mp4';
-      const contentType = `video/${detectedFormat}`;
-      const fileName = `Recording_${currentDriverOrder?.customer_order?.order_code}.${detectedFormat}`;
-
-      // Create file object for upload
-      const fileData = {
-        uri: recordedVideoFile,
-        type: contentType,
-        name: fileName,
-      };
-
-      console.log(
-        `Manual upload format detected: ${detectedFormat}, Content-Type: ${contentType}`,
-      );
-
-      // Upload video to Google Cloud Storage
-      const uploadResult = await supportService.uploadVideoFile({
-        fileName: fileName,
-        contentType: contentType,
-        fileData: fileData,
-      });
-
-      if (uploadResult.storeUrl) {
-        // Update the task action with the new URL (no loader for task state)
-        await orderService.upsertStepTaskAction({
-          object: {
-            key: 'LIVE_STREAM_RECORDING',
-            url: uploadResult.storeUrl,
-            value: fileName,
-            quantity_dispensed: 0,
-            task_id: currentDriverOrder?.id,
-            customer_asset_id: currentAssetForDispense?.id,
-          },
-        });
-
-        // Mark asset as having uploaded video
-        const currentAssetId = currentAssetForDispense?.id;
-        if (currentAssetId) {
-          addAssetWithUploadedVideo(currentAssetId);
-        }
-
-        setUploadError(false);
-        setIsStreamUploaded(true);
-
-        Toast.show({
-          type: 'success',
-          text1: 'Upload Successful',
-          text2: 'Video has been uploaded to cloud storage',
-        });
-
-        // Clean up local file after successful upload (optional - keep for backup)
-        // try {
-        //   await RNFS.unlink(recordedVideoFile);
-        //   setRecordedVideoFile(null);
-        // } catch (cleanupError) {
-        //   console.warn('Failed to delete local file:', cleanupError);
-        // }
-      }
-    } catch (error) {
-      console.error('Manual upload error:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'Upload Failed',
-        text2:
-          error instanceof Error
-            ? error.message
-            : 'Failed to upload video. Please try again later.',
-      });
-    } finally {
-      stopLoader('uploadVideo');
-      setIsManualUploading(false);
-    }
-  };
-
   const handleSkipQuantityAndGoBack = () => {
-    // If video was uploaded but user doesn't want to enter quantity now,
-    // mark asset as partially filled so they can fill it later
     const currentAssetId = orderStore.getState().currentAssetForDispense?.id;
     const assetsWithUploadedVideos =
       orderStore.getState().assetsWithUploadedVideos;
 
     if (currentAssetId && assetsWithUploadedVideos.includes(currentAssetId)) {
-      // Asset has uploaded video but no quantity dispensed, mark as partially filled
       addPartiallyFilledAsset(currentAssetId);
     }
 
-    // Navigate back to choose asset screen
     navigation.navigate('choose-asset');
   };
 
   const handleQuantityProceedBuddyCan = async (quantity: number) => {
     try {
-      // Start loading but keep bottomsheet open
       startLoader('uploadVideo');
 
       const currentAssetId = orderStore.getState().currentAssetForDispense?.id;
+      const currentTask = orderStore.getState().currentDriverOrder;
 
-      // Validate required data
-      if (!currentDriverOrder?.id || !currentAssetId) {
+      if (!currentTask?.id || !currentAssetId) {
         throw new Error('Missing required order or asset data');
       }
 
-      // Get current location for task action
       const coordinates = await getCurrentLocation();
 
-      // First, create step task action (following Vue.js pattern with TOTALIZER_AFTER_READING)
       const taskActionResponse = await orderService.upsertStepTaskAction({
         object: {
           key: 'TOTALIZER_AFTER_READING',
-          url: '', // No image URL for livestream flow
+          url: '',
           value: '0.0',
           quantity_dispensed: quantity,
-          task_id: currentDriverOrder?.id, // Use task_id not customer_order.id
+          task_id: currentTask?.id,
           customer_asset_id: currentAssetId,
           location: {
             type: 'Point',
@@ -1149,26 +749,22 @@ For iOS Simulator:
         },
       });
 
-      // Check if taskAction was successful (following Vue.js error handling)
       if (typeof taskActionResponse === 'string') {
         throw new Error(taskActionResponse);
       }
 
-      // Update asset quantity (using correct parameters matching Vue.js)
       await orderService.updateAssetQty({
         customerAssetId: currentAssetId,
-        customerOrderId: currentDriverOrder?.customer_order?.id,
+        customerOrderId: currentTask?.customer_order?.id,
         qty: quantity,
       });
 
-      // Mark order as dispensing ONLY if it's currently in ARRIVED state (following Vue.js pattern)
-      if (currentDriverOrder?.state === 'ARRIVED') {
+      if (currentTask?.state === 'ARRIVED') {
         await orderService.markOrderDispensing({
-          id: currentDriverOrder.id,
+          id: currentTask.id,
         });
       }
 
-      // Update the local store to reflect the change immediately
       const updatedAssets = orderStore
         .getState()
         .orderAssets?.map((asset: any) => {
@@ -1185,7 +781,6 @@ For iOS Simulator:
         orderAssets: updatedAssets,
       }));
 
-      // Get requested quantity for this asset to determine if it's partially filled
       const currentAsset = updatedAssets?.find((asset: any) => {
         const assetId =
           asset.customer_asset?.id || asset.id || asset.customer_asset_id;
@@ -1194,76 +789,57 @@ For iOS Simulator:
 
       const requestedQuantity = currentAsset?.quantity_requested || 0;
 
-      // Remove from uploaded videos array since quantity is now entered
       removeAssetWithUploadedVideo(currentAssetId);
 
-      // Update partially filled assets array based on the dispensed quantity
       if (quantity > 0 && quantity < requestedQuantity) {
-        // Asset is now partially filled
         addPartiallyFilledAsset(currentAssetId);
       } else if (quantity >= requestedQuantity) {
-        // Asset is now complete, remove from partially filled array
         removePartiallyFilledAsset(currentAssetId);
       }
 
-      // Stop loader before closing bottomsheet
       stopLoader('uploadVideo');
-
-      // Close bottomsheet only after successful update
       setShowQuantityBottomSheet(false);
 
-      // Show success toast
       Toast.show({
         type: 'success',
         text1: 'Quantity Updated',
         text2: `${quantity}L has been dispensed`,
       });
 
-      // Navigate to choose asset page (following Vue.js flow)
       navigation.navigate('choose-asset');
-    } catch (error) {
-      console.error('Error in handleQuantityProceedBuddyCan:', error);
-
-      // Stop loader on error
+    } catch (err: any) {
+      console.error('Error in handleQuantityProceedBuddyCan:', err);
       stopLoader('uploadVideo');
-
-      // Keep bottomsheet open on error so user can retry
       Toast.show({
         type: 'error',
         text1: 'Update Failed',
-        text2:
-          error instanceof Error
-            ? error.message
-            : 'Failed to update quantity. Please try again.',
+        text2: err.message || 'Failed to update quantity. Please try again.',
       });
     }
   };
 
   const handleQuantityProceedBowser = async (quantity: number) => {
     try {
-      // Start loading but keep bottomsheet open
       startLoader('uploadVideo');
 
       const currentAssetId = orderStore.getState().currentAssetForDispense?.id;
-      const driverVehicleId = currentDriverOrder?.driver_vehicle_id;
+      const currentTask = orderStore.getState().currentDriverOrder;
+      const driverVehicleId = currentTask?.driver_vehicle_id;
 
-      // Validate required data for bowser (FILL_UP)
-      if (!currentDriverOrder?.id || (!currentAssetId && !driverVehicleId)) {
+      if (!currentTask?.id || (!currentAssetId && !driverVehicleId)) {
         throw new Error('Missing required order or vehicle data for bowser');
       }
 
-      // Get current location for task action
       const coordinates = await getCurrentLocation();
 
-      // Create step task action for bowser (similar to Vue totalizer after manual)
       const taskActionResponse = await orderService.upsertStepTaskAction({
         object: {
           key: 'TOTALIZER_AFTER_READING',
-          url: '', // No image URL for livestream flow
-          value: '0.0', // This would be totalizer reading + before reading in Vue
+          url: '',
+          value: '0.0',
           quantity_dispensed: quantity,
-          task_id: currentDriverOrder?.id,
-          ...(orderStore.getState().currentDriverOrder?.category === 'DELIVERY'
+          task_id: currentTask?.id,
+          ...(currentTask?.category === 'DELIVERY'
             ? {customer_asset_id: `${currentAssetId}`}
             : {
                 vehicle_id:
@@ -1277,29 +853,24 @@ For iOS Simulator:
         },
       });
 
-      // Check if taskAction was successful
       if (typeof taskActionResponse === 'string') {
         throw new Error(taskActionResponse);
       }
 
-      // Update asset quantity (using correct parameters matching Vue.js)
-      if (orderStore.getState().currentDriverOrder?.category === 'DELIVERY') {
+      if (currentTask?.category === 'DELIVERY') {
         await orderService.updateAssetQty({
           customerAssetId: currentAssetId,
-          customerOrderId: currentDriverOrder?.customer_order?.id,
+          customerOrderId: currentTask?.customer_order?.id,
           qty: quantity,
         });
       }
 
-      // For bowser, no asset quantity update needed as it's vehicle-to-vehicle transfer
-      // Mark order as dispensing if in ARRIVED state
-      if (currentDriverOrder?.state === 'ARRIVED') {
+      if (currentTask?.state === 'ARRIVED') {
         await orderService.markOrderDispensing({
-          id: currentDriverOrder.id,
+          id: currentTask.id,
         });
       }
 
-      // Update the local store to reflect the change immediately
       const updatedAssets = orderStore
         .getState()
         .orderAssets?.map((asset: any) => {
@@ -1311,29 +882,11 @@ For iOS Simulator:
           return asset;
         });
 
-      // Get requested quantity for this asset to determine if it's partially filled
       const currentAsset = updatedAssets?.find((asset: any) => {
         const assetId =
           asset.customer_asset?.id || asset.id || asset.customer_asset_id;
         return assetId === currentAssetId;
       });
-
-      // Update both orderAssets and quantityDispensed in store for bowser
-      console.log('=== BOWSER QUANTITY UPDATE DEBUG ===');
-      console.log('currentAssetId:', currentAssetId);
-      console.log('quantity:', quantity);
-      console.log(
-        'updatedAssets:',
-        JSON.stringify(
-          updatedAssets?.map(a => ({
-            id: a.customer_asset?.id || a.id,
-            quantity_dispensed: a.quantity_dispensed,
-          })),
-          null,
-          2,
-        ),
-      );
-      console.log('currentAsset found:', currentAsset);
 
       orderStore.setState(state => ({
         ...state,
@@ -1343,60 +896,43 @@ For iOS Simulator:
 
       const requestedQuantity = currentAsset?.quantity_requested || 0;
 
-      // Remove from uploaded videos array since quantity is now entered (only if currentAssetId exists)
       if (currentAssetId) {
         removeAssetWithUploadedVideo(currentAssetId);
 
-        // Update partially filled assets array based on the dispensed quantity
         if (quantity > 0 && quantity < requestedQuantity) {
-          // Asset is now partially filled
           addPartiallyFilledAsset(currentAssetId);
         } else if (quantity >= requestedQuantity) {
-          // Asset is now complete, remove from partially filled array
           removePartiallyFilledAsset(currentAssetId);
         }
       }
 
-      // Stop loader before closing bottomsheet
       stopLoader('uploadVideo');
-
-      // Close bottomsheet only after successful update
       setShowQuantityBottomSheet(false);
 
-      // Show success toast
       Toast.show({
         type: 'success',
         text1: 'Quantity Updated',
         text2: `${quantity}L has been dispensed to bowser`,
       });
 
-      // For bowser flow, navigate back or to completion screen
       navigation.navigate('choose-asset');
-    } catch (error) {
-      console.error('Error in handleQuantityProceedBowser:', error);
-
-      // Stop loader on error
+    } catch (err: any) {
+      console.error('Error in handleQuantityProceedBowser:', err);
       stopLoader('uploadVideo');
-
-      // Keep bottomsheet open on error so user can retry
       Toast.show({
         type: 'error',
         text1: 'Update Failed',
         text2:
-          error instanceof Error
-            ? error.message
-            : 'Failed to update bowser quantity. Please try again.',
+          err.message || 'Failed to update bowser quantity. Please try again.',
       });
     }
   };
 
   const handleQuantityProceed = async (quantity: number) => {
-    // Route to appropriate handler based on order category
-    if (orderStore.getState().currentDriverOrder?.is_enable_buddycan_flow) {
-      // Buddy can flow
+    const currentTask = orderStore.getState().currentDriverOrder;
+    if (currentTask?.is_enable_buddycan_flow) {
       await handleQuantityProceedBuddyCan(quantity);
-    } else if (orderStore.getState().currentDriverOrder?.is_done_locally) {
-      // Bowser flow
+    } else if (currentTask?.is_done_locally) {
       await handleQuantityProceedBowser(quantity);
     } else {
       Alert.alert(
@@ -1432,10 +968,10 @@ For iOS Simulator:
     );
   }
 
-  // Main camera interface
+  // Main streaming interface
   return (
     <View style={styles.container}>
-      {/* Header Section - Fixed height */}
+      {/* Header Section */}
       <View style={styles.headerSection}>
         <CardElevated cardStyle={styles.orderDetailsCard}>
           <View style={styles.orderDetailsHeader}>
@@ -1470,55 +1006,28 @@ For iOS Simulator:
         </CardElevated>
       </View>
 
-      {/* Camera Section - Flexible area that takes remaining space */}
-      {showCamera && (
+      {/* Camera Section */}
+      {(isStreaming || (!isStreaming && !isStreamUploaded)) && (
         <View style={styles.cameraSection}>
           <View style={styles.cameraContainer}>
-            <RNCamera
-              ref={cameraRef}
-              style={styles.camera}
-              type={RNCamera.Constants.Type.back}
-              flashMode={RNCamera.Constants.FlashMode.off}
-              captureAudio={true}
-              androidCameraPermissionOptions={{
-                title: 'Camera Permission',
-                message: 'We need camera access for live streaming',
-                buttonPositive: 'Ok',
-                buttonNegative: 'Cancel',
-              }}
-              androidRecordAudioPermissionOptions={{
-                title: 'Audio Permission',
-                message: 'We need microphone access for live streaming',
-                buttonPositive: 'Ok',
-                buttonNegative: 'Cancel',
-              }}
-            />
-
-            {/* Upload from device overlay - ONLY show after upload failure */}
-            {!isRecording &&
-              hasStreamedOnce &&
-              uploadError &&
-              !isStreamUploaded && (
-                <View style={styles.uploadOverlay}>
-                  <TouchableOpacity
-                    onPress={uploadVideoFromDevice}
-                    disabled={isUploadingFromDevice}
-                    style={styles.uploadButton}>
-                    <Text
-                      size="sm"
-                      weight="600"
-                      style={styles.uploadButtonText as any}>
-                      {isUploadingFromDevice
-                        ? 'Uploading...'
-                        : '📁 Upload Video'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              )}
+            {localStream ? (
+              <RTCView
+                streamURL={localStream.toURL()}
+                style={styles.camera}
+                objectFit="cover"
+                mirror={false}
+              />
+            ) : (
+              <View style={styles.cameraPlaceholder}>
+                <Text style={styles.placeholderText as any}>
+                  Camera preview will appear here
+                </Text>
+              </View>
+            )}
 
             <CameraOverlay
-              isRecording={isRecording}
-              isPaused={isPaused}
+              isRecording={isStreaming}
+              isPaused={false}
               recordingDuration={recordingDuration}
               canStopStream={canStopStream}
               streamingDurationSeconds={streamingDurationSeconds}
@@ -1527,98 +1036,50 @@ For iOS Simulator:
         </View>
       )}
 
-      {/* Success message when camera is hidden */}
-      {!showCamera && isStreamUploaded && (
+      {/* Success message when stream is complete */}
+      {!isStreaming && isStreamUploaded && (
         <View style={styles.cameraSection}>
           <CardElevated cardStyle={styles.successCard}>
             <View style={styles.successContent}>
               <Text weight="bold" size="lg" color="primary">
-                ✓ Video Uploaded Successfully
+                ✓ Stream Recorded Successfully
               </Text>
               <Text size="sm" style={styles.successMessage as any}>
-                Your video has been uploaded. You can now proceed to the next
-                step.
+                Your stream has been recorded and saved. You can now proceed to
+                the next step.
               </Text>
             </View>
           </CardElevated>
         </View>
       )}
 
-      {/* Controls Section - Fixed height at bottom */}
+      {/* Error message */}
+      {error && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText as any}>{error}</Text>
+        </View>
+      )}
+
+      {/* Controls Section */}
       <View style={styles.controlsSection}>
         <StreamControls
-          isRecording={isRecording}
-          isPaused={isPaused}
+          isRecording={isStreaming}
+          isPaused={false}
           isLoading={isLoading}
           canStopStream={canStopStream}
           hasStreamedOnce={hasStreamedOnce}
           streamingState={streamingState}
           isStreamUploaded={isStreamUploaded}
-          onStartRecording={startRecording}
-          onPauseRecording={pauseRecording}
-          onResumeRecording={resumeRecording}
-          onStopRecording={stopRecording}
+          onStartRecording={startStream}
+          onPauseRecording={() => {}}
+          onResumeRecording={() => {}}
+          onStopRecording={stopStream}
           onNext={goNext}
-          // Button loading states
-          isStartingRecording={isStartingRecording}
-          isPausingRecording={isPausingRecording}
-          isResumingRecording={isResumingRecording}
-          isStoppingRecording={isStoppingRecording}
+          isStartingRecording={isStartingStream}
+          isPausingRecording={false}
+          isResumingRecording={false}
+          isStoppingRecording={isStoppingStream}
         />
-
-        {/* Upload Error Section - Show within controls area when error occurs */}
-        {uploadError && hasStreamedOnce && !isStreamUploaded && (
-          <CardElevated cardStyle={styles.uploadErrorCard}>
-            <View style={styles.uploadErrorContent}>
-              <Text
-                size="base"
-                weight="600"
-                style={styles.uploadErrorTitle as any}>
-                Live Stream Upload Failed
-              </Text>
-              <Text size="sm" style={styles.uploadErrorMessage as any}>
-                {recordedVideoFile
-                  ? 'Your recorded video was saved locally. You can retry uploading it or upload a different video from your device'
-                  : 'Live stream upload failed. You can upload a video from your device to continue'}
-              </Text>
-              <View style={styles.uploadErrorActions}>
-                {recordedVideoFile && (
-                  <Button
-                    variant="solid"
-                    onPress={handleManualUpload}
-                    disabled={isManualUploading}
-                    loading={isManualUploading}
-                    style={styles.retryButton}>
-                    {isManualUploading ? 'Retrying...' : 'Retry Recorded'}
-                  </Button>
-                )}
-                <Button
-                  variant={recordedVideoFile ? 'outlined' : 'solid'}
-                  onPress={uploadVideoFromDevice}
-                  disabled={isUploadingFromDevice}
-                  loading={isUploadingFromDevice}
-                  style={[
-                    styles.uploadVideoButton,
-                    !recordedVideoFile && styles.uploadVideoButtonSolid,
-                  ]}>
-                  <Text size="sm" style={styles.uploadVideoButtonText as any}>
-                    {isUploadingFromDevice ? 'Uploading...' : 'Upload Video'}
-                  </Text>
-                </Button>
-                {recordedVideoFile && (
-                  <Button
-                    variant="outlined"
-                    onPress={showVideoLocation}
-                    style={styles.showPathButton}>
-                    <Text size="sm" style={styles.showPathButtonText as any}>
-                      Show Path
-                    </Text>
-                  </Button>
-                )}
-              </View>
-            </View>
-          </CardElevated>
-        )}
       </View>
 
       {/* Quantity Bottom Sheet */}
@@ -1636,10 +1097,10 @@ For iOS Simulator:
         existingQuantity={getCurrentAssetFilledQuantity()}
       />
 
-      {/* FullScreen Loaders - Only for video upload */}
+      {/* FullScreen Loader */}
       <FullScreenLoader
         showLoader={loaders.uploadVideo}
-        loaderText="Uploading video..."
+        loaderText="Processing stream..."
       />
     </View>
   );
@@ -1663,7 +1124,6 @@ const styles = ScaledSheet.create({
     color: FBColors.neutral,
     textAlign: 'center',
   },
-  // Header Section - Fixed height
   headerSection: {
     paddingTop: 16,
     paddingBottom: 12,
@@ -1689,10 +1149,9 @@ const styles = ScaledSheet.create({
     textAlign: 'right',
     marginLeft: 8,
   },
-  // Camera Section - Flexible area
   cameraSection: {
     flex: 1,
-    minHeight: 300, // Minimum height to ensure camera is usable
+    minHeight: 300,
     marginVertical: 8,
   },
   cameraContainer: {
@@ -1712,98 +1171,19 @@ const styles = ScaledSheet.create({
   camera: {
     flex: 1,
   },
-  uploadOverlay: {
-    position: 'absolute',
-    top: 20,
-    right: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    borderRadius: 8,
-    padding: 12,
-    zIndex: 10,
-  },
-  uploadButton: {
-    flexDirection: 'row',
+  cameraPlaceholder: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
+    backgroundColor: '#1a1a1a',
   },
-  uploadButtonText: {
-    color: 'white',
+  placeholderText: {
+    color: '#666',
+    fontSize: 14,
   },
-  // Controls Section - Fixed height at bottom
   controlsSection: {
     paddingVertical: 12,
     backgroundColor: FBColors.white,
-  },
-  // Upload Error Styles
-  uploadErrorCard: {
-    marginTop: 16,
-    padding: 16,
-    backgroundColor: '#FEF3C7', // Light amber background
-    borderColor: '#F59E0B', // Amber border
-    borderWidth: 1,
-  },
-  uploadErrorContent: {
-    alignItems: 'center',
-  },
-  uploadErrorTitle: {
-    textAlign: 'center',
-    marginBottom: 8,
-    color: '#92400E', // Dark amber text
-  },
-  uploadErrorMessage: {
-    textAlign: 'center',
-    marginBottom: 16,
-    color: '#92400E',
-  },
-  uploadErrorActions: {
-    flexDirection: 'row',
-    gap: 8,
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-  },
-  retryButton: {
-    backgroundColor: '#F59E0B',
-    borderColor: '#F59E0B',
-    minWidth: 110,
-  },
-  uploadVideoButton: {
-    borderColor: '#F59E0B',
-    minWidth: 110,
-  },
-  uploadVideoButtonSolid: {
-    backgroundColor: '#F59E0B',
-  },
-  uploadVideoButtonText: {
-    color: '#F59E0B',
-  },
-  showPathButton: {
-    borderColor: '#F59E0B',
-    minWidth: 90,
-  },
-  showPathButtonText: {
-    color: '#F59E0B',
-  },
-  // Legacy styles kept for backward compatibility
-  orderDetailsSection: {
-    paddingTop: 16,
-  },
-  cardTitle: {
-    marginBottom: 0,
-  },
-  orderInfoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  controlsContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    paddingVertical: 20,
-    paddingHorizontal: 16,
-    minHeight: 80,
   },
   successCard: {
     flex: 1,
@@ -1819,6 +1199,16 @@ const styles = ScaledSheet.create({
     marginTop: 8,
     textAlign: 'center',
     color: FBColors.neutral,
+  },
+  errorContainer: {
+    padding: 16,
+    backgroundColor: '#FFEBEE',
+    borderRadius: 8,
+    marginVertical: 8,
+  },
+  errorText: {
+    color: '#D32F2F',
+    textAlign: 'center',
   },
 });
 
