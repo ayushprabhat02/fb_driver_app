@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef, useCallback} from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Alert,
@@ -6,11 +6,11 @@ import {
   Platform,
   StyleSheet,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
-import {StackNavigationProp} from '@react-navigation/stack';
-import {request, PERMISSIONS, RESULTS, check} from 'react-native-permissions';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { request, PERMISSIONS, RESULTS, check } from 'react-native-permissions';
 import Toast from 'react-native-toast-message';
-import {ScaledSheet} from 'react-native-size-matters';
+import { ScaledSheet } from 'react-native-size-matters';
 
 // WebRTC imports
 import {
@@ -41,15 +41,15 @@ import CameraOverlay from '../components/CameraOverlay';
 import StreamControls from '../components/StreamControls';
 
 // Store
-import {checkinStore, orderStore, authStore} from '@/globalStore';
+import { checkinStore, orderStore, authStore } from '@/globalStore';
 
 // Services
 import orderService from '../services';
 
 // Types
-import {FBColors, FBBackground} from '@/types/styles';
-import {OrderStackParamList} from '@/navigator/containers/Order';
-import {getCurrentLocation} from '@/utils/location';
+import { FBColors, FBBackground } from '@/types/styles';
+import { OrderStackParamList } from '@/navigator/containers/Order';
+import { getCurrentLocation } from '@/utils/location';
 import {
   clearStreamState,
   saveAssetWithUploadedVideo,
@@ -68,11 +68,11 @@ interface LiveStreamScreenProps {
 }
 
 // WebSocket URL for mediasoup server
-const WS_URL = 'wss://soup.fuelbuddy.in';
+// const WS_URL = 'wss://soup.fuelbuddy.in';
 // Staging URL - use wss:// for WebSocket connections
 // const WS_URL = 'wss://staging-soup.fuelbuddy.dev';
 // LOCAL - use for testing with local mediasoup server
-// const WS_URL = 'ws://localhost:3000';
+const WS_URL = 'ws://localhost:3000';
 
 // Video quality settings
 const VIDEO_WIDTH = 640;
@@ -297,12 +297,6 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           user: userData,
         };
 
-        console.log(`[WebSocket] Sending message:`, {
-          type: msg.type,
-          hasAuthToken: !!userData.authToken,
-          userId: userData.userId,
-        });
-
         wsRef.current.send(JSON.stringify(messagePayload));
       }
     },
@@ -326,41 +320,31 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
 
       wsRef.current.onmessage = handleWebSocketMessage;
 
-      wsRef.current.onclose = (event: any) => {
+      wsRef.current.onclose = () => {
         console.log('[WebSocket] Closed');
-        console.log('   Close code:', event?.code);
-        console.log('   Close reason:', event?.reason);
       };
     });
   };
 
   // Handle WebSocket messages
-  const handleWebSocketMessage = async (event: {data?: string}) => {
+  const handleWebSocketMessage = async (event: { data?: string }) => {
     try {
       if (!event.data) return;
       const msg = JSON.parse(event.data);
-      console.log(
-        '📨 [WebSocket] Received message:',
-        msg.type,
-        JSON.stringify(msg, null, 2),
-      );
 
       switch (msg.type) {
         case 'room-joined':
-          console.log('✅ [MediaSoup] Room joined successfully');
           deviceRef.current = new mediasoupClient.Device();
-          sendMessage({type: 'get-rtp-capabilities'});
+          sendMessage({ type: 'get-rtp-capabilities' });
           break;
 
         case 'rtp-capabilities':
-          console.log('📡 [MediaSoup] Received RTP capabilities');
           if (deviceRef.current && !deviceRef.current.loaded) {
             try {
               await deviceRef.current.load({
                 routerRtpCapabilities: msg.rtpCapabilities,
               });
-              console.log('✅ [MediaSoup] Device loaded successfully');
-              sendMessage({type: 'create-send-transport'});
+              sendMessage({ type: 'create-send-transport' });
             } catch (err: any) {
               setError(`Error loading device: ${err.message}`);
               console.error('❌ [MediaSoup] Device load error:', err);
@@ -369,80 +353,42 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           break;
 
         case 'transport-created':
-          console.log(
-            '🚛 [MediaSoup] Transport created, direction:',
-            msg.direction,
-          );
           if (msg.direction === 'send') {
             await setupSendTransport(msg.transportOptions);
           }
           break;
 
         case 'producer-created':
-          console.log(
-            '🎬 [MediaSoup] Producer created - Video/Audio is being streamed to server',
-          );
-          console.log('   Producer ID:', msg.producerId);
           break;
 
         case 'recording-started':
-          console.log(
-            '🔴 [MediaSoup] SERVER RECORDING STARTED - Video is being recorded on server',
-          );
-          console.log('   Producer ID:', msg.producerId);
-          console.log('   Filename:', msg.filename);
-          // Save the producerId for stop-recording message
+          console.log('🔴 [Recording] Server recording started');
           recordingProducerIdRef.current = msg.producerId;
           break;
 
         case 'recording-stopped':
           // Server-side recording finished - receive the video URL
-          console.log('⏹️ [MediaSoup] SERVER RECORDING STOPPED');
-          console.log(
-            '📹 [MediaSoup] Full message:',
-            JSON.stringify(msg, null, 2),
-          );
-          console.log('   Duration:', msg.duration);
-          console.log('   Filename:', msg.filename);
-          console.log(
-            '   uploadResult:',
-            JSON.stringify(msg.uploadResult, null, 2),
-          );
-
-          // Check for video URL in uploadResult (old format) or at top level (new format)
           const videoUrl =
             msg.uploadResult?.videoUrl || msg.uploadResult?.url || msg.videoUrl;
 
           if (msg.uploadResult?.success && videoUrl) {
-            console.log(
-              '✅ [MediaSoup] Video successfully recorded on server!',
-            );
-            console.log('   Video URL:', videoUrl);
+            console.log('✅ [Recording] SUCCESS - Video URL:', videoUrl);
             await handleRecordingComplete(videoUrl);
           } else if (videoUrl) {
-            // Fallback: URL exists but success flag might be missing
-            console.log('✅ [MediaSoup] Video URL found (no success flag)');
-            console.log('   Video URL:', videoUrl);
+            console.log('✅ [Recording] Video URL found:', videoUrl);
             await handleRecordingComplete(videoUrl);
           } else {
-            console.log(
-              '⚠️ [MediaSoup] Recording stopped but no video URL received',
-            );
-            console.log('   uploadResult.error:', msg.uploadResult?.error);
-            // Close WebSocket and reset state
+            console.log('❌ [Recording] FAILED - No video URL received');
+            console.log('   Error:', msg.uploadResult?.error);
             closeWebSocket();
             setIsStoppingStream(false);
           }
           break;
 
         case 'producer-closed':
-          console.log('📤 [MediaSoup] Producer closed on server');
-          console.log('   Producer ID:', msg.producerId);
-          console.log('   Server has stopped receiving this track');
           break;
 
         case 'peer-left':
-          console.log('👋 [MediaSoup] Peer left notification received');
           break;
 
         case 'error':
@@ -451,8 +397,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           break;
 
         default:
-          console.log('ℹ️ [WebSocket] Unhandled message type:', msg.type);
-          console.log('   Full message:', JSON.stringify(msg, null, 2));
+          break;
       }
     } catch (err) {
       console.error('❌ [WebSocket] Message parse error:', err);
@@ -466,7 +411,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
     sendTransportRef.current =
       deviceRef.current.createSendTransport(transportOptions);
 
-    sendTransportRef.current.on('connect', ({dtlsParameters}, callback) => {
+    sendTransportRef.current.on('connect', ({ dtlsParameters }, callback) => {
       sendMessage({
         type: 'connect-transport',
         transportId: sendTransportRef.current?.id,
@@ -477,14 +422,14 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
 
     sendTransportRef.current.on(
       'produce',
-      ({kind, rtpParameters}, callback) => {
+      ({ kind, rtpParameters }, callback) => {
         sendMessage({
           type: 'produce',
           transportId: sendTransportRef.current?.id,
           kind,
           rtpParameters,
         });
-        callback({id: Date.now().toString()});
+        callback({ id: Date.now().toString() });
       },
     );
 
@@ -494,53 +439,29 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
 
   // Produce video and audio tracks
   const produceLocalTracks = async () => {
-    if (!localStreamRef.current || !sendTransportRef.current) {
-      console.log(
-        '⚠️ [MediaSoup] Cannot produce tracks - missing stream or transport',
-      );
-      return;
-    }
+    if (!localStreamRef.current || !sendTransportRef.current) return;
 
     const tracks = localStreamRef.current.getTracks();
-    console.log(
-      `🎥 [MediaSoup] Producing ${tracks.length} tracks to server...`,
-    );
 
     for (const track of tracks) {
       try {
-        const producer = await sendTransportRef.current.produce({
-          track,
-        });
+        const producer = await sendTransportRef.current.produce({ track });
         producersRef.current.push(producer);
-        console.log(`✅ [MediaSoup] Produced ${track.kind} track successfully`);
-        console.log(`   Track ID: ${track.id}`);
-        console.log(`   Track enabled: ${track.enabled}`);
-        console.log(`   Track readyState: ${track.readyState}`);
       } catch (err) {
         console.error(`❌ [MediaSoup] Failed to produce ${track.kind}:`, err);
       }
     }
-
-    console.log(
-      '🎬 [MediaSoup] All tracks produced - STREAMING TO SERVER STARTED',
-    );
   };
 
   // Cleanup mediasoup resources (but keep WebSocket open for recording-stopped message)
-  const cleanupMediasoup = (closeWebSocket = false) => {
-    console.log(
-      '🧹 [MediaSoup] Cleaning up mediasoup resources, closeWebSocket:',
-      closeWebSocket,
-    );
-
+  const cleanupMediasoup = (closeWs = false) => {
     producersRef.current.forEach(p => p.close());
     producersRef.current = [];
 
     sendTransportRef.current?.close();
     sendTransportRef.current = null;
 
-    // Only close WebSocket if explicitly requested (after receiving recording-stopped or on timeout)
-    if (closeWebSocket) {
+    if (closeWs) {
       wsRef.current?.close();
       wsRef.current = null;
     }
@@ -550,7 +471,6 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
 
   // Close WebSocket separately (called after receiving recording-stopped or on timeout)
   const closeWebSocket = () => {
-    console.log('🔌 [WebSocket] Closing WebSocket connection');
     wsRef.current?.close();
     wsRef.current = null;
   };
@@ -567,23 +487,13 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   // Handle recording complete with server URL
   const handleRecordingComplete = async (videoUrl: string) => {
     try {
-      console.log('💾 [Recording] Starting to save video URL to backend...');
-      console.log('   Video URL:', videoUrl);
-
       orderStore.getState().startLoader('uploadVideo');
 
       const currentTask = orderStore.getState().currentDriverOrder;
       const currentAsset = orderStore.getState().currentAssetForDispense;
 
-      console.log('📋 [Recording] Task details:', {
-        taskId: currentTask?.id,
-        orderCode: currentTask?.customer_order?.order_code,
-        assetId: currentAsset?.id,
-      });
-
       // Save the task action with server-provided video URL
-      console.log('📡 [Recording] Calling upsertStepTaskAction API...');
-      const apiResponse = await orderService.upsertStepTaskAction({
+      await orderService.upsertStepTaskAction({
         object: {
           key: 'LIVE_STREAM_RECORDING',
           url: videoUrl,
@@ -593,26 +503,16 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           customer_asset_id: currentAsset?.id,
         },
       });
-      console.log(
-        '✅ [Recording] API Response:',
-        JSON.stringify(apiResponse, null, 2),
-      );
 
       // Mark asset as having uploaded video
       const currentAssetId = currentAsset?.id;
       if (currentAssetId) {
         orderStore.getState().addAssetWithUploadedVideo(currentAssetId);
         await saveAssetWithUploadedVideo(currentTask?.id || '', currentAssetId);
-        console.log('✅ [Recording] Asset marked as having uploaded video');
       }
 
       setIsStreamUploaded(true);
-
-      console.log('🎉 [Recording] VIDEO UPLOAD COMPLETE!');
-      console.log('   ✅ Video recorded on MediaSoup server');
-      console.log('   ✅ Video URL saved to backend');
-      console.log('   ✅ Asset marked as uploaded');
-      console.log('   📹 Final Video URL:', videoUrl);
+      console.log('✅ [Recording] Video saved successfully');
 
       Toast.show({
         type: 'success',
@@ -667,7 +567,6 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       setStreamingState('started');
 
       // Get camera stream using react-native-webrtc
-      console.log('📷 [Stream] Getting camera stream...');
       const stream = await mediaDevices.getUserMedia({
         video: {
           facingMode: 'environment',
@@ -677,13 +576,11 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         },
         audio: true,
       });
-      console.log('✅ [Stream] Camera stream obtained');
 
       localStreamRef.current = stream as MediaStream;
       setLocalStream(stream as MediaStream);
 
       // Update stream status via API
-      console.log('📡 [Stream] Updating stream status via API...');
       await orderService.upsertStepTaskAction({
         object: {
           key: 'STREAM_STARTED',
@@ -698,15 +595,9 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         task_id: currentTask?.id,
         is_live_dispensing: true,
       });
-      console.log('✅ [Stream] Stream status updated');
 
       // Connect to WebSocket and join room
-      console.log('🔌 [Stream] Connecting to WebSocket:', WS_URL);
       await initWebSocket();
-      console.log('✅ [Stream] WebSocket connected');
-
-      const roomId = `${currentTask?.customer_order?.order_code}-${currentTask?.driver_vehicle_id}-${currentAsset?.id}`;
-      console.log('🏠 [Stream] Joining room:', roomId);
 
       sendMessage({
         type: 'join-room',
@@ -717,9 +608,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       });
 
       setIsStreaming(true);
-
-      console.log('🎬 [Stream] STREAM STARTED SUCCESSFULLY');
-      console.log('   Waiting for room-joined confirmation from server...');
+      console.log('✅ [Stream] Started successfully');
 
       Toast.show({
         type: 'success',
@@ -742,12 +631,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
 
   // Stop streaming
   const stopStream = async () => {
-    console.log('⏹️ [Stream] Stop stream requested...');
-    console.log('   canStopStream:', canStopStream);
-    console.log('   recordingDuration:', recordingDuration);
-
     if (!canStopStream) {
-      console.log('⚠️ [Stream] Cannot stop - minimum duration not reached');
       Toast.show({
         type: 'error',
         text1: 'Cannot Stop Stream',
@@ -757,7 +641,6 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
     }
 
     try {
-      console.log('⏹️ [Stream] Stopping stream...');
       setIsStoppingStream(true);
       setStreamingState('stopped');
 
@@ -765,7 +648,6 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       const currentAsset = orderStore.getState().currentAssetForDispense;
 
       // Update stream status via API
-      console.log('📡 [Stream] Updating stream stopped status via API...');
       await orderService.upsertStepTaskAction({
         object: {
           key: 'STREAM_STOPPED',
@@ -780,30 +662,14 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         task_id: currentTask?.id || '',
         is_live_dispensing: false,
       });
-      console.log('✅ [Stream] Stream stopped status updated');
 
-      // Send stop-recording message first (like old working code)
-      console.log('🛑 [Stream] Sending stop-recording to MediaSoup server...');
-      console.log('   roomId:', getRoomId());
-      console.log('   producerId:', recordingProducerIdRef.current);
+      // Send stop-recording to get result from server (not leave-room to avoid duplicates)
+      console.log('🛑 [Stream] Stopping recording...');
       sendMessage({
         type: 'stop-recording',
+        roomId: getRoomId(),
         producerId: recordingProducerIdRef.current,
       });
-      console.log('✅ [Stream] stop-recording event sent!');
-
-      // Clear the recording producerId
-      recordingProducerIdRef.current = null;
-
-      // Send leave-room message - server will send recording-stopped with video URL
-      const leaveTime = new Date().toISOString();
-      console.log('👋 [Stream] Sending leave-room to MediaSoup server...');
-      console.log('   Timestamp:', leaveTime);
-      console.log('   Server will now finalize recording and send video URL');
-      console.log(
-        '   Waiting up to 30 seconds for recording-stopped message...',
-      );
-      sendMessage({type: 'leave-room'});
 
       // Stop timer
       if (timerRef.current) {
@@ -812,7 +678,6 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       }
 
       // Cleanup
-      console.log('🧹 [Stream] Cleaning up local media...');
       cleanupMediasoup();
       cleanupLocalMedia();
 
@@ -823,10 +688,6 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       // Clear persisted state
       await clearStreamState();
 
-      console.log(
-        '⏳ [Stream] Waiting for server to send recording-stopped with video URL...',
-      );
-
       Toast.show({
         type: 'info',
         text1: 'Stream Stopped',
@@ -836,26 +697,17 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       // Note: isStoppingStream will be reset in handleRecordingComplete
       // when we receive the recording-stopped message with video URL
 
-      // If we don't receive recording-stopped within 30 seconds,
+      // If we don't receive recording-stopped within 2 minutes,
       // reset the state anyway and close WebSocket
       setTimeout(() => {
-        // Check if we're still waiting (isStoppingStream is still true)
-        // Use a ref check since we can't rely on state in setTimeout
         if (wsRef.current) {
           // WebSocket still open means we didn't receive recording-stopped
-          const timeoutTime = new Date().toISOString();
-          console.log(
-            '⚠️ [Stream] Timeout (30s): No recording-stopped message received from server',
-          );
-          console.log('   Timeout timestamp:', timeoutTime);
-          console.log('   WebSocket readyState:', wsRef.current?.readyState);
-          console.log('   The recording may still be processing on the server');
-          console.log('   Closing WebSocket and marking as complete');
+          console.log('⚠️ [Stream] Timeout (2min): Server still processing');
 
           // Close WebSocket
           closeWebSocket();
 
-          // Update states separately to avoid React warning
+          // Update states
           setIsStreamUploaded(true);
           setIsStoppingStream(false);
 
@@ -865,7 +717,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
             text2: 'Recording saved on server',
           });
         }
-      }, 30000);
+      }, 120000);
     } catch (err: any) {
       console.error('Stop stream error:', err);
       // Close WebSocket on error too
@@ -963,7 +815,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           const assetId =
             asset.customer_asset?.id || asset.id || asset.customer_asset_id;
           if (assetId === currentAssetId) {
-            return {...asset, quantity_dispensed: quantity};
+            return { ...asset, quantity_dispensed: quantity };
           }
           return asset;
         });
@@ -1032,12 +884,12 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           quantity_dispensed: quantity,
           task_id: currentTask?.id,
           ...(currentTask?.category === 'DELIVERY'
-            ? {customer_asset_id: `${currentAssetId}`}
+            ? { customer_asset_id: `${currentAssetId}` }
             : {
-                vehicle_id:
-                  currentAssetId ||
-                  checkinStore.getState().driverVehicleDetails?.id,
-              }),
+              vehicle_id:
+                currentAssetId ||
+                checkinStore.getState().driverVehicleDetails?.id,
+            }),
           location: {
             type: 'Point',
             coordinates: [coordinates.longitude, coordinates.latitude],
@@ -1069,7 +921,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           const assetId =
             asset.customer_asset?.id || asset.id || asset.customer_asset_id;
           if (assetId === currentAssetId) {
-            return {...asset, quantity_dispensed: quantity};
+            return { ...asset, quantity_dispensed: quantity };
           }
           return asset;
         });
@@ -1177,13 +1029,11 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
               Customer Name:
             </Text>
             <Text weight="400" size="sm" style={styles.orderValue as any}>
-              {`${
-                currentDriverOrder?.customer_order?.organization_user?.user
-                  ?.first_name || ''
-              } ${
-                currentDriverOrder?.customer_order?.organization_user?.user
+              {`${currentDriverOrder?.customer_order?.organization_user?.user
+                ?.first_name || ''
+                } ${currentDriverOrder?.customer_order?.organization_user?.user
                   ?.last_name || ''
-              }`.trim() || 'N/A'}
+                }`.trim() || 'N/A'}
             </Text>
           </View>
 
@@ -1263,8 +1113,8 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           streamingState={streamingState}
           isStreamUploaded={isStreamUploaded}
           onStartRecording={startStream}
-          onPauseRecording={() => {}}
-          onResumeRecording={() => {}}
+          onPauseRecording={() => { }}
+          onResumeRecording={() => { }}
           onStopRecording={stopStream}
           onNext={goNext}
           isStartingRecording={isStartingStream}
