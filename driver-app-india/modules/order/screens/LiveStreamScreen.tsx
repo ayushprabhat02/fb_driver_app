@@ -1,16 +1,17 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, {useState, useEffect, useRef, useCallback} from 'react';
 import {
   View,
   Alert,
   ActivityIndicator,
   Platform,
   StyleSheet,
+  TouchableOpacity,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { request, PERMISSIONS, RESULTS, check } from 'react-native-permissions';
+import {useNavigation} from '@react-navigation/native';
+import {StackNavigationProp} from '@react-navigation/stack';
+import {request, PERMISSIONS, RESULTS, check} from 'react-native-permissions';
 import Toast from 'react-native-toast-message';
-import { ScaledSheet } from 'react-native-size-matters';
+import {ScaledSheet} from 'react-native-size-matters';
 
 // WebRTC imports
 import {
@@ -25,6 +26,7 @@ import * as mediasoupClient from 'mediasoup-client';
 type Device = any;
 type Transport = any;
 type Producer = any;
+type Consumer = any;
 
 // Register WebRTC globals for mediasoup-client compatibility
 registerGlobals();
@@ -41,15 +43,15 @@ import CameraOverlay from '../components/CameraOverlay';
 import StreamControls from '../components/StreamControls';
 
 // Store
-import { checkinStore, orderStore, authStore } from '@/globalStore';
+import {checkinStore, orderStore, authStore} from '@/globalStore';
 
 // Services
 import orderService from '../services';
 
 // Types
-import { FBColors, FBBackground } from '@/types/styles';
-import { OrderStackParamList } from '@/navigator/containers/Order';
-import { getCurrentLocation } from '@/utils/location';
+import {FBColors, FBBackground} from '@/types/styles';
+import {OrderStackParamList} from '@/navigator/containers/Order';
+import {getCurrentLocation} from '@/utils/location';
 import {
   clearStreamState,
   saveAssetWithUploadedVideo,
@@ -68,13 +70,13 @@ interface LiveStreamScreenProps {
 }
 
 // WebSocket URL for mediasoup server
-// const WS_URL = 'wss://soup.fuelbuddy.in';
+const WS_URL = 'wss://soup.fuelbuddy.in';
 // Staging URL - use wss:// for WebSocket connections
 // const WS_URL = 'wss://staging-soup.fuelbuddy.dev';
 // LOCAL - use for testing with local mediasoup server
-const WS_URL = 'ws://localhost:3000';
+// const WS_URL = 'ws://localhost:3000';
 
-// Video quality settings
+// Video quality settings - matches Vue.js (server handles rotation)
 const VIDEO_WIDTH = 640;
 const VIDEO_HEIGHT = 480;
 const VIDEO_FRAMERATE = 15;
@@ -87,9 +89,12 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   const wsRef = useRef<WebSocket | null>(null);
   const deviceRef = useRef<Device | null>(null);
   const sendTransportRef = useRef<Transport | null>(null);
+  const recvTransportRef = useRef<Transport | null>(null); // For receiving remote audio
   const producersRef = useRef<Producer[]>([]);
+  const consumersRef = useRef<Consumer[]>([]); // For consuming remote producers
   const localStreamRef = useRef<MediaStream | null>(null);
   const recordingProducerIdRef = useRef<string | null>(null); // Track server recording producerId
+  const remoteStreamsRef = useRef<Map<string, MediaStream>>(new Map()); // Remote audio streams by userId
 
   // State
   const [isStreaming, setIsStreaming] = useState(false);
@@ -109,6 +114,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   const [showQuantityBottomSheet, setShowQuantityBottomSheet] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const [isDriverMicEnabled, setIsDriverMicEnabled] = useState(true); // Microphone on by default
 
   // Button loading states
   const [isStartingStream, setIsStartingStream] = useState(false);
@@ -327,7 +333,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
   };
 
   // Handle WebSocket messages
-  const handleWebSocketMessage = async (event: { data?: string }) => {
+  const handleWebSocketMessage = async (event: {data?: string}) => {
     try {
       if (!event.data) return;
       const msg = JSON.parse(event.data);
@@ -335,7 +341,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
       switch (msg.type) {
         case 'room-joined':
           deviceRef.current = new mediasoupClient.Device();
-          sendMessage({ type: 'get-rtp-capabilities' });
+          sendMessage({type: 'get-rtp-capabilities'});
           break;
 
         case 'rtp-capabilities':
@@ -344,7 +350,13 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
               await deviceRef.current.load({
                 routerRtpCapabilities: msg.rtpCapabilities,
               });
-              sendMessage({ type: 'create-send-transport' });
+              // Create send transport for streaming
+              sendMessage({type: 'create-send-transport'});
+              // Create recv transport for two-way audio (receive from Tower Ops)
+              console.log(
+                '🎧 [Two-Way] Requesting recv transport for two-way audio',
+              );
+              sendMessage({type: 'create-recv-transport'});
             } catch (err: any) {
               setError(`Error loading device: ${err.message}`);
               console.error('❌ [MediaSoup] Device load error:', err);
@@ -355,10 +367,57 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
         case 'transport-created':
           if (msg.direction === 'send') {
             await setupSendTransport(msg.transportOptions);
+          } else if (msg.direction === 'recv') {
+            // Setup recv transport for two-way audio
+            await setupRecvTransport(msg.transportOptions);
+            // Request existing producers in the room
+            sendMessage({type: 'get-producers'});
           }
           break;
 
         case 'producer-created':
+          break;
+
+        // Two-way audio: Handle existing producers in room
+        case 'producers':
+          console.log(
+            `🎧 [Two-Way] Found ${
+              msg.producers?.length || 0
+            } existing producers`,
+          );
+          if (msg.producers && Array.isArray(msg.producers)) {
+            for (const p of msg.producers) {
+              // Only consume audio producers from other users (Tower Ops)
+              if (p.kind === 'audio') {
+                console.log(
+                  `🎧 [Two-Way] Consuming existing audio producer from ${p.producerUserId}`,
+                );
+                consumeProducer(p.producerId);
+              }
+            }
+          }
+          break;
+
+        // Two-way audio: New producer joined (Tower Ops started talking)
+        case 'new-producer':
+          console.log(
+            `🎧 [Two-Way] New producer: ${msg.kind} from ${msg.producerUserId}`,
+          );
+          // Only consume audio from other users
+          if (msg.kind === 'audio') {
+            consumeProducer(msg.producerId);
+          }
+          break;
+
+        // Two-way audio: Consumer created successfully
+        case 'consumed':
+          console.log('🎧 [Two-Way] Received consumed message');
+          await handleConsumed(msg.consumerParameters);
+          break;
+
+        // Two-way audio: Consumer resumed
+        case 'consumer-resumed':
+          console.log(`🎧 [Two-Way] Consumer ${msg.consumerId} resumed`);
           break;
 
         case 'recording-started':
@@ -411,7 +470,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
     sendTransportRef.current =
       deviceRef.current.createSendTransport(transportOptions);
 
-    sendTransportRef.current.on('connect', ({ dtlsParameters }, callback) => {
+    sendTransportRef.current.on('connect', ({dtlsParameters}, callback) => {
       sendMessage({
         type: 'connect-transport',
         transportId: sendTransportRef.current?.id,
@@ -422,14 +481,14 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
 
     sendTransportRef.current.on(
       'produce',
-      ({ kind, rtpParameters }, callback) => {
+      ({kind, rtpParameters}, callback) => {
         sendMessage({
           type: 'produce',
           transportId: sendTransportRef.current?.id,
           kind,
           rtpParameters,
         });
-        callback({ id: Date.now().toString() });
+        callback({id: Date.now().toString()});
       },
     );
 
@@ -437,19 +496,133 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
     await produceLocalTracks();
   };
 
-  // Produce video and audio tracks
+  // Produce video and audio tracks - Match Vue.js exactly
+  // IMPORTANT: Vue.js produces AUDIO FIRST, then VIDEO
   const produceLocalTracks = async () => {
     if (!localStreamRef.current || !sendTransportRef.current) return;
 
-    const tracks = localStreamRef.current.getTracks();
+    const audioTrack = localStreamRef.current.getAudioTracks()[0];
+    const videoTrack = localStreamRef.current.getVideoTracks()[0];
 
-    for (const track of tracks) {
+    // Produce AUDIO FIRST (matching Vue.js order)
+    if (audioTrack) {
       try {
-        const producer = await sendTransportRef.current.produce({ track });
+        console.log('🎤 [MediaSoup] Producing audio track...');
+        const producer = await sendTransportRef.current.produce({
+          track: audioTrack,
+        });
         producersRef.current.push(producer);
+        console.log('✅ [MediaSoup] Audio producer created successfully');
       } catch (err) {
-        console.error(`❌ [MediaSoup] Failed to produce ${track.kind}:`, err);
+        console.error('❌ [MediaSoup] Failed to produce audio:', err);
       }
+    } else {
+      console.warn('⚠️ [MediaSoup] No audio track available');
+    }
+
+    // Produce VIDEO SECOND (matching Vue.js order)
+    if (videoTrack) {
+      try {
+        console.log('📹 [MediaSoup] Producing video track...');
+        const producer = await sendTransportRef.current.produce({
+          track: videoTrack,
+        });
+        producersRef.current.push(producer);
+        console.log('✅ [MediaSoup] Video producer created successfully');
+      } catch (err) {
+        console.error('❌ [MediaSoup] Failed to produce video:', err);
+      }
+    } else {
+      console.warn('⚠️ [MediaSoup] No video track available');
+    }
+  };
+
+  // Setup receive transport for consuming remote audio (two-way communication)
+  const setupRecvTransport = async (transportOptions: any) => {
+    if (!deviceRef.current) return;
+
+    recvTransportRef.current =
+      deviceRef.current.createRecvTransport(transportOptions);
+
+    recvTransportRef.current.on('connect', ({dtlsParameters}, callback) => {
+      sendMessage({
+        type: 'connect-transport',
+        transportId: recvTransportRef.current?.id,
+        dtlsParameters,
+      });
+      callback();
+    });
+
+    console.log('✅ [MediaSoup] Receive transport created for two-way audio');
+  };
+
+  // Consume a remote producer (audio from Tower Ops)
+  const consumeProducer = (producerId: string) => {
+    if (!recvTransportRef.current || !deviceRef.current) {
+      console.log('⚠️ [MediaSoup] Cannot consume - no recv transport');
+      return;
+    }
+
+    sendMessage({
+      type: 'consume',
+      transportId: recvTransportRef.current.id,
+      producerId,
+      rtpCapabilities: deviceRef.current.rtpCapabilities,
+    });
+  };
+
+  // Handle consumed message - create consumer and add track to remote stream
+  const handleConsumed = async (consumerParams: {
+    id: string;
+    producerId: string;
+    kind: string;
+    rtpParameters: any;
+    producerUserId: string;
+  }) => {
+    if (!recvTransportRef.current) return;
+
+    const {id, producerId, kind, rtpParameters, producerUserId} =
+      consumerParams;
+    console.log(`🎧 [Two-Way] Consuming ${kind} from user ${producerUserId}`);
+
+    try {
+      const consumer = await recvTransportRef.current.consume({
+        id,
+        producerId,
+        kind,
+        rtpParameters,
+      });
+
+      consumersRef.current.push(consumer);
+
+      // Get or create remote stream for this user
+      let stream = remoteStreamsRef.current.get(producerUserId);
+      if (!stream) {
+        stream = new MediaStream();
+        remoteStreamsRef.current.set(producerUserId, stream);
+        console.log(
+          `🎧 [Two-Way] Created new stream for user ${producerUserId}`,
+        );
+      }
+
+      // Add the track to the stream
+      stream.addTrack(consumer.track);
+      console.log(`🎧 [Two-Way] Added ${kind} track. Stream tracks:`, {
+        audio: stream.getAudioTracks().length,
+        video: stream.getVideoTracks().length,
+      });
+
+      // Resume the consumer
+      await consumer.resume();
+      console.log(`🎧 [Two-Way] Consumer resumed for ${kind}`);
+
+      // Tell server to resume consumer
+      sendMessage({type: 'resume-consumer', consumerId: consumer.id});
+
+      // Note: In React Native WebRTC, audio should play automatically
+      // when the track is added to a MediaStream
+    } catch (err) {
+      console.error('❌ [Two-Way] Failed to consume:', err);
     }
   };
 
@@ -458,8 +631,19 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
     producersRef.current.forEach(p => p.close());
     producersRef.current = [];
 
+    // Cleanup consumers for two-way audio
+    consumersRef.current.forEach(c => c.close());
+    consumersRef.current = [];
+
     sendTransportRef.current?.close();
     sendTransportRef.current = null;
+
+    // Cleanup recv transport
+    recvTransportRef.current?.close();
+    recvTransportRef.current = null;
+
+    // Clear remote streams
+    remoteStreamsRef.current.clear();
 
     if (closeWs) {
       wsRef.current?.close();
@@ -475,6 +659,27 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
     wsRef.current = null;
   };
 
+  // Toggle driver microphone for two-way communication
+  const toggleDriverMicrophone = () => {
+    if (!localStreamRef.current) return;
+
+    const audioTracks = localStreamRef.current.getAudioTracks();
+    if (audioTracks.length > 0) {
+      audioTracks.forEach(track => {
+        track.enabled = !track.enabled;
+      });
+      const newState = audioTracks[0].enabled;
+      setIsDriverMicEnabled(newState);
+      console.log(`🎤 [Microphone] ${newState ? 'Enabled' : 'Disabled'}`);
+
+      Toast.show({
+        type: 'info',
+        text1: newState ? 'Microphone On' : 'Microphone Off',
+        text2: newState ? 'Tower Ops can hear you' : 'Your microphone is muted',
+      });
+    }
+  };
+
   // Cleanup local media
   const cleanupLocalMedia = () => {
     if (localStreamRef.current) {
@@ -484,7 +689,6 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
     setLocalStream(null);
   };
 
-  // Handle recording complete with server URL
   const handleRecordingComplete = async (videoUrl: string) => {
     try {
       orderStore.getState().startLoader('uploadVideo');
@@ -815,7 +1019,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           const assetId =
             asset.customer_asset?.id || asset.id || asset.customer_asset_id;
           if (assetId === currentAssetId) {
-            return { ...asset, quantity_dispensed: quantity };
+            return {...asset, quantity_dispensed: quantity};
           }
           return asset;
         });
@@ -884,12 +1088,12 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           quantity_dispensed: quantity,
           task_id: currentTask?.id,
           ...(currentTask?.category === 'DELIVERY'
-            ? { customer_asset_id: `${currentAssetId}` }
+            ? {customer_asset_id: `${currentAssetId}`}
             : {
-              vehicle_id:
-                currentAssetId ||
-                checkinStore.getState().driverVehicleDetails?.id,
-            }),
+                vehicle_id:
+                  currentAssetId ||
+                  checkinStore.getState().driverVehicleDetails?.id,
+              }),
           location: {
             type: 'Point',
             coordinates: [coordinates.longitude, coordinates.latitude],
@@ -921,7 +1125,7 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           const assetId =
             asset.customer_asset?.id || asset.id || asset.customer_asset_id;
           if (assetId === currentAssetId) {
-            return { ...asset, quantity_dispensed: quantity };
+            return {...asset, quantity_dispensed: quantity};
           }
           return asset;
         });
@@ -1029,11 +1233,13 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
               Customer Name:
             </Text>
             <Text weight="400" size="sm" style={styles.orderValue as any}>
-              {`${currentDriverOrder?.customer_order?.organization_user?.user
-                ?.first_name || ''
-                } ${currentDriverOrder?.customer_order?.organization_user?.user
+              {`${
+                currentDriverOrder?.customer_order?.organization_user?.user
+                  ?.first_name || ''
+              } ${
+                currentDriverOrder?.customer_order?.organization_user?.user
                   ?.last_name || ''
-                }`.trim() || 'N/A'}
+              }`.trim() || 'N/A'}
             </Text>
           </View>
 
@@ -1074,6 +1280,21 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
               canStopStream={canStopStream}
               streamingDurationSeconds={streamingDurationSeconds}
             />
+
+            {/* Microphone toggle button for two-way communication */}
+            {isStreaming && (
+              <TouchableOpacity
+                style={[
+                  styles.micButton,
+                  isDriverMicEnabled ? styles.micButtonOn : styles.micButtonOff,
+                ]}
+                onPress={toggleDriverMicrophone}
+                activeOpacity={0.8}>
+                <Text style={styles.micButtonText as any}>
+                  {isDriverMicEnabled ? '🎤 Mic On' : '🔇 Mic Off'}
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       )}
@@ -1113,8 +1334,8 @@ const LiveStreamScreen: React.FC<LiveStreamScreenProps> = () => {
           streamingState={streamingState}
           isStreamUploaded={isStreamUploaded}
           onStartRecording={startStream}
-          onPauseRecording={() => { }}
-          onResumeRecording={() => { }}
+          onPauseRecording={() => {}}
+          onResumeRecording={() => {}}
           onStopRecording={stopStream}
           onNext={goNext}
           isStartingRecording={isStartingStream}
@@ -1251,6 +1472,34 @@ const styles = ScaledSheet.create({
   errorText: {
     color: '#D32F2F',
     textAlign: 'center',
+  },
+  // Microphone button styles for two-way communication
+  micButton: {
+    position: 'absolute',
+    bottom: 16,
+    right: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 4,
+    shadowColor: '#000000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  micButtonOn: {
+    backgroundColor: '#2196F3', // Blue when mic is on
+  },
+  micButtonOff: {
+    backgroundColor: '#757575', // Gray when mic is off
+  },
+  micButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
 
