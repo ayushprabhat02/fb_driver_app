@@ -1,5 +1,5 @@
 #import "AppDelegate.h"
-// #import <Firebase.h>
+#import <Firebase.h>
 
 #import <React/RCTBundleURLProvider.h>
 #import <GoogleMaps/GoogleMaps.h>
@@ -9,7 +9,7 @@
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
   [GMSServices provideAPIKey:@"AIzaSyCfIkG3UgZi8Yqs6bJX1inU7YX40ugzNQg"];
-  // [FIRApp configure];
+  [FIRApp configure];
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     if (![defaults boolForKey:@"notFirstRun"]) {
     [defaults setBool:YES forKey:@"notFirstRun"];

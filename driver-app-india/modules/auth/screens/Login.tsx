@@ -1,13 +1,13 @@
 // dependencies
-import {Dimensions, Image} from 'react-native';
-import React, {useEffect, useRef} from 'react';
-import {StackScreenProps} from '@react-navigation/stack';
-import BottomSheet, {BottomSheetView} from '@gorhom/bottom-sheet';
+import { Dimensions, Image } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { StackScreenProps } from '@react-navigation/stack';
+import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 // import LottieView from 'lottie-react-native';
 import FuelBuddyVueLogo from '@/assets/branding/fuelbuddy-vue-logo.svg';
 
 //components
-import {LoginForm} from '../components';
+import { LoginForm } from '../components';
 
 // stores
 import {
@@ -22,13 +22,13 @@ import {
 } from '@/globalStore';
 
 // types
-import {AuthStackParamList} from '../navigator';
-import {View} from 'react-native';
-import {FocusAwareStatusBar} from '@/components';
+import { AuthStackParamList } from '../navigator';
+import { View } from 'react-native';
+import { FocusAwareStatusBar } from '@/components';
 
 export type Props = StackScreenProps<AuthStackParamList, 'login'>;
 
-const Login: React.FC<Props> = ({navigation}: Props) => {
+const Login: React.FC<Props> = ({ navigation }: Props) => {
   const resetFillupStore = addressStore.use.resetFillupStore();
   const resetAuthStore = authStore.use.resetAuthStore();
   // const resetAssetStore = assetStore.use.resetAssetStore(); // Asset module deleted
@@ -55,8 +55,8 @@ const Login: React.FC<Props> = ({navigation}: Props) => {
   const bottomSheetRef = useRef<BottomSheet>(null);
 
   return (
-    <View style={{flex: 1, position: 'relative', alignItems: 'center'}}>
-      <FocusAwareStatusBar barStyle={'light-content'} />
+    <View style={{ flex: 1, position: 'relative', alignItems: 'center' }}>
+      <FocusAwareStatusBar barStyle={'dark-content'} />
       <View
         style={{
           width: 300,

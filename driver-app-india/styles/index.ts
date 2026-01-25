@@ -1,9 +1,9 @@
 // dependencies
-import {TextStyle, ViewStyle} from 'react-native';
-import {StackNavigationOptions} from '@react-navigation/stack';
+import { TextStyle, ViewStyle } from 'react-native';
+import { StackNavigationOptions } from '@react-navigation/stack';
 
 // types
-import {FBBackground, FBBorders, FBColors} from '@/types/styles';
+import { FBBackground, FBBorders, FBColors } from '@/types/styles';
 
 export const commonInputStyles: ViewStyle & TextStyle = {
   borderWidth: 1,
@@ -35,7 +35,6 @@ export const commonHeaderStyles: StackNavigationOptions = {
   headerTitleAlign: 'center',
   headerShown: true,
   headerTransparent: true,
-  headerStatusBarHeight: 0,
   headerStyle: {
     elevation: 0, // Remove shadow on Android
     shadowOpacity: 0, // Remove shadow on iOS

@@ -60,38 +60,35 @@ function App(): React.JSX.Element {
 
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={{ flex: 1 }}>
-
-        <GestureHandlerRootView style={{ flex: 1 }}>
-          <MenuProvider>
-            <NavigationContainer>
-              <BottomSheetModalProvider>
-                <FocusAwareStatusBar />
-                {/*
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <MenuProvider>
+          <NavigationContainer>
+            <BottomSheetModalProvider>
+              <FocusAwareStatusBar />
+              {/*
                * * We are rendering the AuthScreens and Protected screen conditionally to handle authentication.
                * * This was done in accordance with the React Navigation documentation - https://reactnavigation.org/docs/auth-flow#what-we-need
                */}
-                <StackNavigator.Navigator screenOptions={{ headerShown: false }}>
-                  {!graphqlClient ? (
-                    <StackNavigator.Screen
-                      component={AuthNavigator}
-                      name="authnav"
-                    />
-                  ) : (
-                    <StackNavigator.Screen
-                      component={ProtectedNavigator as React.ComponentType}
-                      name="protected"
-                      key="_protected"
-                    />
-                  )}
-                </StackNavigator.Navigator>
-              </BottomSheetModalProvider>
-            </NavigationContainer>
-          </MenuProvider>
-        </GestureHandlerRootView>
+              <StackNavigator.Navigator screenOptions={{ headerShown: false }}>
+                {!graphqlClient ? (
+                  <StackNavigator.Screen
+                    component={AuthNavigator}
+                    name="authnav"
+                  />
+                ) : (
+                  <StackNavigator.Screen
+                    component={ProtectedNavigator as React.ComponentType}
+                    name="protected"
+                    key="_protected"
+                  />
+                )}
+              </StackNavigator.Navigator>
+            </BottomSheetModalProvider>
+          </NavigationContainer>
+        </MenuProvider>
+      </GestureHandlerRootView>
 
-        <Toast />
-      </SafeAreaView>
+      <Toast />
     </SafeAreaProvider>
   );
 }
