@@ -47,7 +47,7 @@
   },
   "home": {
     "loadingMoreOrders": "Loading more orders...",
-    "noMoreOrders": "No more orders to load",
+    "noMoreOrders": "You have reached the end of the list",
     "noOrdersFound": "No orders found for this date",
     "todaysSummary": "Today's Summary",
     "total": "Total",

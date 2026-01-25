@@ -4,7 +4,7 @@
  */
 
 // dependencies
-import {callMutation, callQuery} from '@/utils/client';
+import { callMutation, callQuery } from '@/utils/client';
 
 // store
 import homeStore from '../store';
@@ -36,7 +36,7 @@ import {
   FetchOrderStatsForDriverV3Document,
   FetchOrderStatsForDriverV3Mutation,
 } from '@/generated/graphql';
-import {DeliveryStat} from '../types';
+import { DeliveryStat } from '../types';
 
 /**
  * @class HomeService
@@ -113,7 +113,7 @@ class HomeService {
         value: parseFloat(totalQtyDispensed.toFixed(2)),
       });
 
-      const assetObj: {[key: string]: number} = {};
+      const assetObj: { [key: string]: number } = {};
 
       response.customer_order_item.forEach(orderItem => {
         orderItem?.task?.task_values?.forEach(taskValue => {
@@ -202,9 +202,15 @@ class HomeService {
       },
     });
 
+    const currentOrders = homeStore.getState().driverOrders || [];
+    const newOrders = response.task || [];
+
     homeStore.setState(state => ({
       ...state,
-      driverOrders: response.task,
+      driverOrders:
+        args.offset && args.offset > 0
+          ? [...currentOrders, ...newOrders]
+          : newOrders,
     }));
     return response.task;
   }
